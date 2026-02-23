@@ -7,5 +7,5 @@
 * [Ладыгин Павел](https://github.com/pavel-ladygin)
 * [Фатеев Сергей](https://github.com/pricolmen)
 ## Менторы 
-[Костин Глеб](https://github.com/glebkos) – фронтенд 
-[Ильяс Нежибицкий](https://github.com/nezhibitskiy) – бэкенд 
+* [Костин Глеб](https://github.com/glebkos) – фронтенд 
+* [Ильяс Нежибицкий](https://github.com/nezhibitskiy) – бэкенд 
