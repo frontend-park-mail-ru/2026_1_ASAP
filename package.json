@@ -7,7 +7,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "srart": "node server/server.js",
-    "dev": "nodemon server/server.js"
+    "dev": "nodemon server/server.js",
+    "lint": "eslint .",
+    "prepare": "husky"
   },
   "repository": {
     "type": "git",
@@ -16,11 +18,19 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "lint-staged": {
+    "*.js": "eslint"
+  },
   "bugs": {
     "url": "https://github.com/frontend-park-mail-ru/2026_1_ASAP/issues"
   },
   "homepage": "https://github.com/frontend-park-mail-ru/2026_1_ASAP#readme",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.0.2",
+    "globals": "^17.4.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.3.2",
     "nodemon": "^3.1.14"
   },
   "dependencies": {
