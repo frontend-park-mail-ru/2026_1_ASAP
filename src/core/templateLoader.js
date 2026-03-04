@@ -4,7 +4,7 @@ export async function loadTemplate(path) {
     if (tempCahce.has(path)) {
         return tempCahce.get(path);
     }
-    const resp = await fetch(path)
+    const resp = await fetch(path);
     if (!resp.ok) {
         throw new Error(`Шаблон не найден ${path}`);
     }

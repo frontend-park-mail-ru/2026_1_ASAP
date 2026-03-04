@@ -1,26 +1,12 @@
-import { loginPage } from "../components/pages/login/login.js";
-
+import {loginPage} from "../pages/login/login.js";
+import {Layout} from "./layout/layout.js";
+import {PageManager} from "./pageManager.js";
 export class App {
     constructor() {
-        this.root = document.getElementById('app');
-        this.currentPage = null;
+        this.layout = new Layout();
+        this.pageManager = new PageManager(this.layout);
     }
-
-    init() {
-        this.showLoginPage();
-    }
-
-    async showLoginPage() {
-        const page = new loginPage();
-        await this.switchPage(page);
-    }
-
-    async switchPage(pageInstance) {
-        if (this.currentPage) {
-            this.currentPage.unmount();
-        }
-        this.currentPage = pageInstance;
-
-        await this.currentPage.mount(this.root);
+    start() {
+        this.pageManager.open(loginPage);
     }
 }
