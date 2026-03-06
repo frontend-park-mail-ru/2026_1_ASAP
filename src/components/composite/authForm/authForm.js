@@ -1,5 +1,7 @@
 import { BaseForm } from '../../../core/base/baseForm.js';
 import { Button } from '../../ui/button/button.js';
+import { Checkbox } from "../../ui/checkbox/checkbox.js";
+
 
 export class AuthForm extends BaseForm {
     render() {
@@ -11,7 +13,9 @@ export class AuthForm extends BaseForm {
                 <h1 class="auth__title">Вход</h1>
 
                 <div class="auth__field">
+                    <p class="auth__label"> Введите логин:</p>
                     <input 
+                        class="ui-input"
                         type="email" 
                         name="email" 
                         placeholder="Email"
@@ -19,8 +23,11 @@ export class AuthForm extends BaseForm {
                     />
                 </div>
 
+
                 <div class="auth__field">
-                    <input 
+                    <p class="auth__label"> Введите пароль:</p>
+                    <input
+                        class="ui-input"
                         type="password" 
                         name="password" 
                         placeholder="Пароль"
@@ -28,7 +35,14 @@ export class AuthForm extends BaseForm {
                     />
                 </div>
 
-                <div class="auth-button"></div>
+                <div class="auth__remember"></div>
+
+                <div class="auth__login"></div>
+                <div class="auth__divider">
+                    <span class="auth__divider-text">Нет аккаунта?</span>
+                </div>
+                <div class="auth__register"></div>
+
             </form>
         `;
 
@@ -36,12 +50,31 @@ export class AuthForm extends BaseForm {
     }
 
     afterMount() {
-        this.button = new Button({
+
+        this.remember = new Checkbox({
+            label: 'Запомнить меня',
+            name: 'remember'
+        });
+
+        this.remember.mount(
+            this.element.querySelector(".auth__remember")
+        );
+
+        this.loginButton = new Button({
             label: 'Войти',
         });
 
-        this.button.mount(
-            this.element.querySelector('.auth-button')
+        this.loginButton.mount(
+            this.element.querySelector('.auth__login')
+        );
+
+        this.registerButton = new Button({
+            label: 'Зарегистрироваться',
+            variant: 'secondary',
+        });
+
+        this.registerButton.mount(
+            this.element.querySelector('.auth__register')
         );
     }
 }
