@@ -1,4 +1,4 @@
-import {loginPage} from "../pages/login/login.js";
+import {LoginPage} from "../pages/login/login.js";
 import {Layout} from "./layout/layout.js";
 import {PageManager} from "./pageManager.js";
 export class App {
@@ -7,6 +7,6 @@ export class App {
         this.pageManager = new PageManager(this.layout);
     }
     start() {
-        this.pageManager.open(loginPage);
+        this.pageManager.open(LoginPage);
     }
 }

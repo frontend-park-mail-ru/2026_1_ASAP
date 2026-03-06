@@ -1,0 +1,93 @@
+.auth {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: 15px;
+}
+.auth__form {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.auth__label {
+    font: var(--font-secondary);
+    background: var(--gradient-msg);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.auth__title {
+
+    text-align: center;
+    font: var(--text-heading1);
+    letter-spacing: var(--text-heading1-letter-spacing);
+    background: var(--gradient-msg);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+
+
+
+
+}
+
+.auth__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.auth__buttons {
+
+    height: 40px;
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 12px;
+}
+
+.auth__login {
+    height: 100%;
+
+    width: 100%;
+
+
+    border: none;
+
+    cursor: pointer;
+
+}
+
+.auth__register {
+    height: 100%;
+
+    width: 100%;
+
+
+    border: none;
+
+    cursor: pointer;
+
+}
+
+.auth__divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    color: #9aa0a6;
+    font-size: 14px;
+}
+
+.auth__divider::before,
+.auth__divider::after {
+    content: "";
+
+    flex: 1;
+
+    height: 1px;
+
+    background: #d0d0d0;
+}

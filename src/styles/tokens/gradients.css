@@ -1,0 +1,24 @@
+:root {
+
+    --gradient-msg:
+        linear-gradient(
+            to right,
+            #455DBA 11%,
+            #5A8A6E 100%
+        );
+
+    --gradient-msg-reverse:
+        linear-gradient(
+            to right,
+            #5A8A6E 0%,
+            #455DBA 100%
+        );
+
+    --gradiend-button:
+        linear-gradient(
+            to right,
+            #6583FA 0%,
+            #5A8A6E 100%
+        );
+
+}
