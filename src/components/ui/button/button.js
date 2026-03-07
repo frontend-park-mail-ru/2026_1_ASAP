@@ -3,8 +3,11 @@ import { BaseComponent } from '../../../core/base/baseComponent.js';
 export class Button extends BaseComponent {
     render() {
         const button = document.createElement('button');
-        button.className = 'ui-button';
+        const variant = this.props.variant || 'primary';
+
+        button.className = `ui-button ui-button__${variant}`;
         button.textContent = this.props.label || 'Button';
+
         return button;
     }
     afterMount() {
