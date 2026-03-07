@@ -12,7 +12,6 @@
 
     --color-background: #0F102F;
 
-    --color-border:
-        rgba(255,255,255,0.1);
-
+    --color-borderDefault: #2A2A2A 75%;
+    
 }

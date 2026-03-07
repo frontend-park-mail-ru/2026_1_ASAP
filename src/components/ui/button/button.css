@@ -1,38 +1,25 @@
 .ui-button {
-
     height: 100%;
-
     width: 100%;
     padding: 0 16px;
-
-    border-radius: 8px;
-
-    border: none;
-
+    border-radius: 10px;
     cursor: pointer;
-
+    font: var(--font-secondary);
+    letter-spacing: var(--text-secondary-letter-spacing);
+    color: var(--color-text);
+    border: 0;
 }
 
-.ui-button--primary {
-
-    background: var(--color-primary);
-
-    color: white;
-
+.ui-button__primary {
+    background: var(--gradient-msg);
 }
 
-.ui-button--secondary {
-
-    background: transparent;
-
-    border: 1px solid var(--color-border);
-
+.ui-button__secondary {
+    border: 1px solid var(--color-primary);
+    color: var(--color-primary);
 }
 
 .ui-button:disabled {
-
     opacity: 0.5;
-
     cursor: not-allowed;
-
 }
