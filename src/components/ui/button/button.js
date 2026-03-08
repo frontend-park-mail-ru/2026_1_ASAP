@@ -3,7 +3,7 @@ import { BaseComponent } from '../../../core/base/baseComponent.js';
 export class Button extends BaseComponent {
     constructor(props={}) {
         super(props);
-        this.class = props.class;
+        this.class = props.class || "";
         this.label = props.label || "";
         this.icon = props.icon || "";
     }
@@ -16,10 +16,10 @@ export class Button extends BaseComponent {
             img.src = this.icon;
             button.appendChild(img);
         }
-        const variant = this.props.variant || 'primary';
 
-        button.className = `ui-button ui-button__${variant}`;
-        button.textContent = this.props.label || 'Button';
+        if (this.label !== "") {
+            button.textContent = this.props.label || '';
+        }
 
         return button;
     }
