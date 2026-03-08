@@ -1,5 +1,7 @@
 body {
     font-family: var(--font-primary);
+    margin: 0px;
     background: var(--color-background);
-    margin: 0;
+    overflow: hidden;
+    color: var(--color-text);
 }

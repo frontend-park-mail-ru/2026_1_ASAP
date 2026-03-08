@@ -6,8 +6,18 @@
 @import "./base/reset.css";
 @import "./base/base.css";
 @import "../components/composite/authForm/authForm.css";
+@import "../components/composite/searchForm/searchForm.css";
+@import "../components/composite/menuBar/menuBar.css";
+@import "../components/composite/chatItem/chatItem.css";
+@import "../components/composite/chatListItem/chatListItem.css";
+@import "../components/composite/chatListWrapper/chatListWrapper.css";
 @import "../components/ui/button/button.css";
 @import "../components/ui/input/input.css";
+@import "../components/ui/chat/chat.css";
+@import "../components/ui/avatar/avatar.css";
+@import "../components/ui/chatInfo/chatInfo.css";
+@import "../components/ui/metaChatInfo/metaChatInfo.css";
 
 @import "./pages/login.css";
 @import "../components/ui/checkbox/checkbox.css";
+@import "./pages/chats.css"
