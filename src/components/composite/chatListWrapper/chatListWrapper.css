@@ -1,0 +1,23 @@
+.chat-list-wrapper {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    background-color: var(--color-empty);
+}
+
+.chat-list-wrapper::-webkit-scrollbar {
+    width: 10px;
+    border: 1px solid var(--color-border-sidebar);
+    border-radius: 50px;
+}
+
+.chat-list-wrapper::-webkit-scrollbar-track {
+    background-color: var(--color-empty);
+}
+
+.chat-list-wrapper::-webkit-scrollbar-thumb {
+    background: var(--color-scroll);
+    border-radius: 50px;
+}

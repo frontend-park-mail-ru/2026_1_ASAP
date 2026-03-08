@@ -36,3 +36,32 @@
     cursor: not-allowed;
 
 }
+
+.delete-button {
+    display: flex;
+    align-items: center;
+    border: none;
+    background-color: var(--color-empty);
+}
+
+.add-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 2px solid rgba(242, 240, 240, 1);
+    border-radius: 10px;
+    background-color: rgba(242, 240, 240, 0);
+    cursor:pointer;
+}
+
+.add-button > img {
+    transform: rotate(45deg);
+}
+
+.menu-button {
+    background-color: var(--color-empty);
+    width: 100%;
+    border: none;
+}

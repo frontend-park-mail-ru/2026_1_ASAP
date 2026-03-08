@@ -21,4 +21,17 @@
             #5A8A6E 100%
         );
 
+    --gradient-background-chats:
+        linear-gradient(
+            to bottom, 
+            rgba(15, 16, 47, 1) 0%, 
+            rgba(4, 28, 13, 0.88) 140%
+        );
+
+    --gradient-selected-chat:
+        linear-gradient(
+            to right,
+            rgba(69, 93, 186, 1) 11%,
+            rgba(90, 138, 110, 1) 100%
+        );
 }
