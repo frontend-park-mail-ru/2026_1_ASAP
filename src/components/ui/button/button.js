@@ -16,6 +16,11 @@ export class Button extends BaseComponent {
             img.src = this.icon;
             button.appendChild(img);
         }
+        const variant = this.props.variant || 'primary';
+
+        button.className = `ui-button ui-button__${variant}`;
+        button.textContent = this.props.label || 'Button';
+
         return button;
     }
     afterMount() {

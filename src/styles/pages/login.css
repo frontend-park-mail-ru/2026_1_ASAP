@@ -1,53 +1,39 @@
 .login-page {
     min-height: 100vh;
     width: 100%;
+    overflow: hidden;
+    position: fixed;
+    inset: 0;
     display: flex;
     justify-content: center;
     align-items: center;
-
     background: #0f102f;
-
-    position: relative;
 }
 
 .login-page__glow {
-
     position: absolute;
-
     width: 410px;
     height: 520px;
-
     left: 50%;
     top: 50%;
-
     transform: translate(-50%, -50%);
-
     background: var(--gradient-msg);
-
     filter: blur(120px);
     z-index: 0;
     pointer-events: none;
-
 }
 
 
 
 .login-card {
-
     background-color: var(--color-text);
-
     border-radius: 10px;
-
-    padding: 25px;
-
     display: flex;
-
     flex-direction: column;
     gap: 25px;
     height: 520px;
     width: 100%;
     max-width: 410px;
-    aspect-ratio: 520 / 410;
-
+    align-items: center;
     z-index: 1;
 }

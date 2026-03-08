@@ -11,30 +11,29 @@ export class AuthForm extends BaseForm {
         wrapper.innerHTML = `
             <form class="auth__form">
                 <h1 class="auth__title">Вход</h1>
+                <div class="auth__inputs">
+                    <div class="auth__field">
+                        <p class="auth__label"> Введите логин:</p>
+                        <input 
+                            class="ui-input"
+                            type="email" 
+                            name="email" 
+                            placeholder="Email"
+                            required
+                        />
+                    </div>
 
-                <div class="auth__field">
-                    <p class="auth__label"> Введите логин:</p>
-                    <input 
-                        class="ui-input"
-                        type="email" 
-                        name="email" 
-                        placeholder="Email"
-                        required
-                    />
+                    <div class="auth__field">
+                        <p class="auth__label"> Введите пароль:</p>
+                        <input
+                            class="ui-input"
+                            type="password" 
+                            name="password" 
+                            placeholder="Пароль"
+                            required
+                        />
+                    </div>
                 </div>
-
-
-                <div class="auth__field">
-                    <p class="auth__label"> Введите пароль:</p>
-                    <input
-                        class="ui-input"
-                        type="password" 
-                        name="password" 
-                        placeholder="Пароль"
-                        required
-                    />
-                </div>
-
                 <div class="auth__remember"></div>
 
                 <div class="auth__login"></div>
