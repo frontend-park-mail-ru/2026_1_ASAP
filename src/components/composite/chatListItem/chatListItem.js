@@ -28,9 +28,11 @@ export class ChatListItem extends BaseForm {
             chats.forEach(chat => {
                 const item = new ChatItem({
                     class: 'chat-item--default',
-                    id: chat.ID,
-                    name: chat.Title,
-                    lastMessage: chat.LastMessage,
+                    id: chat.id,
+                    name: chat.title,
+                    lastMessage: chat.last_message?.text,
+                    dialogClass: chat.chat_type,
+                    sender: chat.last_message?.sender?.login,
                     onClick: () => this.selectChat(item)
                 });
                 item.mount(this.element);

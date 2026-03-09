@@ -10,6 +10,30 @@
     padding: 0px;
 }
 
+.message-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+    color: var(--color-text);
+    gap: 10px;
+    box-sizing: border-box;
+    margin: 0px;
+    padding: 0px;
+}
+
+.message-chanel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+    color: var(--color-text);
+    gap: 10px;
+    box-sizing: border-box;
+    margin: 0px;
+    padding: 0px;
+}
+
 p {
     margin: 0px;
     padding: 0px;
@@ -21,6 +45,10 @@ p {
 .user-name {
     font-size: 18px;
     width: 100%;
+}
+
+.sender-group {
+    color: var(--color-text-hover);
 }
 
 .group-name {
