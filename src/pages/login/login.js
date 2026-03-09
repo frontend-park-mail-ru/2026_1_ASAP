@@ -10,7 +10,7 @@ export class LoginPage extends BasePage {
         wrapper.className = 'login-page';
 
         wrapper.innerHTML = `
-            <img class="auth__logo" src="/assets/images/icons/logo.svg" alt="Логотип" />
+            <img class="auth__logo" src="/assets/images/icons/Logo.svg" alt="Логотип" />
             <div class="login-page__glow"></div>
             <div class="ui-card login-card"></div>
         `;

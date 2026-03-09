@@ -2,18 +2,16 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    gap: 15px;
     padding: 25px;
     max-width: 360px;
     width: 100%;
 }
 
 .auth__form {
-    padding-top: 31px;
     display: flex;
     flex-direction: column;
     height: 100%;
-    gap: 15px;
+    gap: 10px;
 }
 
 .auth__label {
@@ -51,9 +49,12 @@
 }
 
 .auth__login {
+    display: flex;
+    flex-direction: column;
     height: 100%;
     width: 100%;
     max-height: 42px;
+    min-height: 42px;
     border: none;
     cursor: pointer;
 }
@@ -64,6 +65,8 @@
     border: none;
     cursor: pointer;
     max-height: 42px;
+    min-height: 42px;
+
 }
 
 .auth__divider-text {
@@ -87,4 +90,28 @@
     flex: 1;
     height: 1px;
     background: #d0d0d0;
+}
+
+.auth__form-error-message {
+    font: var(--text-tertiary);
+    letter-spacing: var(--text-tertiary-letter-spacing);
+    color: var(--color-error);
+    font-size: 12px;
+    text-align: center;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    min-height: 14px; 
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.auth__form-error-message[style*="opacity: 1"] {
+    margin: 0;
+    opacity: 1;
+}
+
+.buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
 }
