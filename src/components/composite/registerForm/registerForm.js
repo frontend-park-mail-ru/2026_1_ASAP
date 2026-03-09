@@ -1,5 +1,6 @@
 import { BaseForm } from '../../../core/base/baseForm.js';
 import { Button } from '../../ui/button/button.js';
+import { authService } from '../../../services/authService.js';
 
 export class RegisterForm extends BaseForm {
     render() {
@@ -7,7 +8,12 @@ export class RegisterForm extends BaseForm {
         wrapper.className = 'auth';
         wrapper.innerHTML = `
             <form class="auth__form">
-                <h1 class="auth__title">Регистрация</h1>
+                <div class="auth__header">
+                    <div class="auth__backArrow">
+                        <img class = "auth__backArrow" src="/assets/images/icons/backArrow.svg" alt="Назад" />
+                    </div>
+                    <h1 class="auth__title">Регистрация</h1>
+                </div>
                 <div class="auth__inputs">
                     <div class="auth__field">
                         <p class="auth__label">Введите логин:</p>
@@ -32,6 +38,11 @@ export class RegisterForm extends BaseForm {
     afterMount() {
         super.afterMount();
 
+        const backArrow = this.element.querySelector('.auth__backArrow');
+        if (backArrow) {
+            backArrow.addEventListener('click', this.props.onNavigateToLogin);
+        }   
+        
         this.registerButton = new Button({
             label: 'Зарегистрироваться',
             class: 'ui-button ui-button__primary',
@@ -41,11 +52,26 @@ export class RegisterForm extends BaseForm {
             this.element.querySelector('.auth__register')
         );
     }
+
+    beforeUnmount() {
+        super.beforeUnmount();
+        const backArrow = this.element.querySelector('.auth__backArrow');
+        if (backArrow) {
+            backArrow.removeEventListener('click', this.props.onNavigateToLogin);
+        }
+    }
     
-    onSubmit(data) {
+    async onSubmit(data) {
         console.log('Данные для регистрации:', data);
-        // TODO: Валидация данных и отображение ошибок
-        // TODO: Отправить данные на сервер
-        this.props.router.navigate('/login');
+        // todo валидация данных и отображение ошибок до отправки на сервер
+
+        const result = await authService.register(data.email, data.login, data.password);
+        if (result.success) {
+            console.log('Успешная регистрация:', result.data);
+            this.props.router.navigate('/login');
+        } else {
+            console.error('Ошибка регистрации:', result.error);
+            // todo написать валидацию и показать ошибку пользователю
+        }
     }
 }

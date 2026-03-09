@@ -1,6 +1,7 @@
 import { BaseForm } from '../../../core/base/baseForm.js';
 import { Button } from '../../ui/button/button.js';
 import { Checkbox } from "../../ui/checkbox/checkbox.js";
+import { authService } from '../../../services/authService.js';
 
 
 export class AuthForm extends BaseForm {
@@ -16,9 +17,9 @@ export class AuthForm extends BaseForm {
                         <p class="auth__label"> Введите логин:</p>
                         <input 
                             class="ui-input"
-                            type="email" 
-                            name="email" 
-                            placeholder="Email"
+                            type="login" 
+                            name="login" 
+                            placeholder="Логин"
                             required
                         />
                     </div>
@@ -64,7 +65,6 @@ export class AuthForm extends BaseForm {
             label: 'Войти',
             class: 'ui-button ui-button__primary',
             type: "submit",
-            remember: this.remember.value
         });
 
         this.loginButton.mount(
@@ -82,13 +82,22 @@ export class AuthForm extends BaseForm {
             this.element.querySelector('.auth__register')
         );
     };
-    getFormData() {
-        const formData = new FormData(this.form);
-        return Object.fromEntries(formData.entries());
-    }
 
-    onSubmit(data) {
+    async onSubmit(data) {
         console.log('Данные для входа:', data);
-        this.props.router.navigate('/chats');
+        // const rememberMe = this.remember.value; пока некуда передавать
+
+        // todo валидация данных и отображение ошибок до отправки на сервер
+        const result = await authService.login(data.login, data.password);
+        console.log('Результат входа:', result);
+
+        if (result.success) {
+            console.log('Успешный вход:', result.data);
+            this.props.router.navigate('/chats');
+        } else {
+            console.error('Ошибка входа:', result.error);
+            // todo написать валидацию и показать ошибку пользователю
+
+        }
     }
 }
