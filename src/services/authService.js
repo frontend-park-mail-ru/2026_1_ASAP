@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://212.233.96.180:8080/api/v1/auth";
+const API_BASE_URL = "http://pulseapp.space:8080/api/v1/auth";
 
 class AuthService {
     async getMe() {
