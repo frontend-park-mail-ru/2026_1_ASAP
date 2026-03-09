@@ -1,12 +1,9 @@
 export class BasePage {
 
     constructor(props = {}) {
-
         this.props = props;
-
         this.root = document.createElement("div");
         this.root.className = "page";
-
     }
 
     render() {
@@ -14,15 +11,10 @@ export class BasePage {
     }
 
     mount() {
-
         this.element = this.render();
-
         this.root.innerHTML = "";
-
         this.root.appendChild(this.element);
-
         this.afterMount();
-
     }
 
     afterMount() {}
@@ -30,11 +22,8 @@ export class BasePage {
     beforeUnmount() {}
 
     unmount() {
-
         this.beforeUnmount();
-
         this.root.innerHTML = "";
-
     }
 
 }

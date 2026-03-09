@@ -6,6 +6,7 @@ export class Button extends BaseComponent {
         this.class = props.class || "";
         this.label = props.label || "";
         this.icon = props.icon || "";
+        this.type = props.type || "button";
     }
     render() {
         const button = document.createElement('button');
@@ -20,7 +21,7 @@ export class Button extends BaseComponent {
         if (this.label !== "") {
             button.textContent = this.props.label || '';
         }
-
+        button.type = this.type;
         return button;
     }
     afterMount() {

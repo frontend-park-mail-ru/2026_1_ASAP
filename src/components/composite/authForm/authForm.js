@@ -49,6 +49,7 @@ export class AuthForm extends BaseForm {
     }
 
     afterMount() {
+        super.afterMount();
 
         this.remember = new Checkbox({
             label: 'Запомнить меня',
@@ -61,7 +62,9 @@ export class AuthForm extends BaseForm {
 
         this.loginButton = new Button({
             label: 'Войти',
-            class: 'ui-button ui-button--primary',
+            class: 'ui-button ui-button__primary',
+            type: "submit",
+            remember: this.remember.value
         });
 
         this.loginButton.mount(
@@ -70,11 +73,22 @@ export class AuthForm extends BaseForm {
 
         this.registerButton = new Button({
             label: 'Зарегистрироваться',
-            variant: 'secondary',
+            class: 'ui-button ui-button__secondary',
+            type: "button",
+            onClick: this.props.onNavigateToRegister, 
         });
 
         this.registerButton.mount(
             this.element.querySelector('.auth__register')
         );
+    };
+    getFormData() {
+        const formData = new FormData(this.form);
+        return Object.fromEntries(formData.entries());
+    }
+
+    onSubmit(data) {
+        console.log('Данные для входа:', data);
+        this.props.router.navigate('/chats');
     }
 }
