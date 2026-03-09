@@ -65,7 +65,7 @@ export class RegisterForm extends BaseForm {
         console.log('Данные для регистрации:', data);
         // todo валидация данных и отображение ошибок до отправки на сервер
 
-        const result = await authService.register(data.login, data.email, data.password);
+        const result = await authService.register(data.email, data.login, data.password);
         if (result.success) {
             console.log('Успешная регистрация:', result.data);
             this.props.router.navigate('/login');

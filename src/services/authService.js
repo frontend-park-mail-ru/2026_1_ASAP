@@ -12,13 +12,13 @@ class AuthService {
         try {
             const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                credentials: 'include',
                 body: JSON.stringify(data)
             });
-
+            console.log(`Ответ от ${endpoint}:`, response);
             if (!response.ok) {
                 let errorMessage = `Ошибка сервера: ${response.status}`;
                 try {
@@ -32,6 +32,7 @@ class AuthService {
             }
 
             const result = await response.json();
+            console.log(`Данные от ${endpoint}:`, result);
             return { success: true, data: result };
 
         } catch (error) {
@@ -40,8 +41,8 @@ class AuthService {
         }
     }
 
-    async login({ email, password }) {
-        return this.sendRequest('login', { email, password });
+    async login(login, password) {
+        return this.sendRequest('login', { login, password });
     }
 
     async register(email, login, password) {
@@ -49,4 +50,4 @@ class AuthService {
     }
 }
 
-export const authService = new AuthService();
+export const authService = new AuthService(); 

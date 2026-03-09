@@ -17,9 +17,9 @@ export class AuthForm extends BaseForm {
                         <p class="auth__label"> Введите логин:</p>
                         <input 
                             class="ui-input"
-                            type="email" 
-                            name="email" 
-                            placeholder="Email"
+                            type="login" 
+                            name="login" 
+                            placeholder="Логин"
                             required
                         />
                     </div>
@@ -88,7 +88,7 @@ export class AuthForm extends BaseForm {
         // const rememberMe = this.remember.value; пока некуда передавать
 
         // todo валидация данных и отображение ошибок до отправки на сервер
-        const result = await authService.login(data.email, data.password);
+        const result = await authService.login(data.login, data.password);
         console.log('Результат входа:', result);
 
         if (result.success) {
