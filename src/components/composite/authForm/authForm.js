@@ -61,7 +61,7 @@ export class AuthForm extends BaseForm {
 
         this.loginButton = new Button({
             label: 'Войти',
-            class: 'ui-button ui-button--primary',
+            class: 'ui-button ui-button__primary',
         });
 
         this.loginButton.mount(
@@ -70,7 +70,7 @@ export class AuthForm extends BaseForm {
 
         this.registerButton = new Button({
             label: 'Зарегистрироваться',
-            variant: 'secondary',
+            class: 'ui-button ui-button__secondary',
         });
 
         this.registerButton.mount(
