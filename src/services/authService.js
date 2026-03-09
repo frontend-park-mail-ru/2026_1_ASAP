@@ -1,13 +1,20 @@
 const API_BASE_URL = "http://pulseapp.space:8080/api/v1/auth";
 
 class AuthService {
-    async getMe() {
-        return {
-            id: 1,
-            name: 'Alex',
-            email: 'alex@mail.ru'
-        };
-    }
+    async checkAuth() {
+        try {
+            const response = await fetch('http://pulseapp.space:8080/api/v1/chats',
+                {
+                    method: 'GET',
+                    credentials: 'include'
+                }
+            );
+            return response.ok;
+        } catch {
+            return false;
+        }
+    };
+
     async sendRequest(endpoint, data) {
         try {
             const response = await fetch(`${API_BASE_URL}/${endpoint}`, {

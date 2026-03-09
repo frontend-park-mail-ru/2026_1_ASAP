@@ -4,6 +4,7 @@ import { RegisterPage } from "../../pages/register/register.js";
 import { Layout } from "./layout/layout.js";
 import { PageManager } from "./pageManager.js";
 import { Router } from "./router.js";
+import { authService } from "../services/authService.js";
 
 const routes = {
     '/': LoginPage,
@@ -20,7 +21,15 @@ export class App {
         this.router.pageManager = this.pageManager;
     }
     
-    start() {
-        this.router.init();
+    async start() {
+        const isAuth = await authService.checkAuth();
+
+        if (isAuth) {
+            this.router.navigate('/chats');
+        } else {
+            this.router.navigate('/login');
+        }
+
+        window.addEventListener('popstate', () => this.router.handleRoute());
     }
 }

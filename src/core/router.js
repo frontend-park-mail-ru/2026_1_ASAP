@@ -5,21 +5,21 @@ export class Router {
     }
 
     init() {
-        window.addEventListener('popstate', () => this.handleRoute())
+        window.addEventListener('popstate', () => this.handleRoute());
 
-        this.handleRoute()
+        this.handleRoute();
     }
 
     handleRoute() {
-        const path = window.location.pathname
-        const PageClass = this.routes[path] || this.routes['404']
+        const path = window.location.pathname;
+        const PageClass = this.routes[path] || this.routes['404'];
         if (PageClass) {
-            this.pageManager.open(PageClass)
+            this.pageManager.open(PageClass);
         }
     }
 
     navigate(path) {
-        history.pushState({}, '', path)
-        this.handleRoute()
+        history.pushState({}, '', path);
+        this.handleRoute();
     }
 }

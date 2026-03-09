@@ -2,6 +2,7 @@ import { BasePage } from "../../core/base/basePage.js";
 import { SearchForm } from "../../components/composite/searchForm/searchForm.js";
 import { MenuBar } from "../../components/composite/menuBar/menuBar.js";
 import { ChatListWrapper } from "../../components/composite/chatListWrapper/chatListWrapper.js";
+import { authService } from "../../services/authService.js";
 
 export class ChatsPage extends BasePage {
     render() {
@@ -16,7 +17,13 @@ export class ChatsPage extends BasePage {
         return wrapper;
     };
 
-    afterMount() {
+    async afterMount() {
+        const isAuth = await authService.checkAuth();
+        if (!isAuth) {
+            this.props.router.navigate('/login');
+            return;
+        }
+
         this.searchForm = new SearchForm();
         this.searchForm.mount(this.element.querySelector('.chat-page__sidebar'));
 
@@ -29,7 +36,7 @@ export class ChatsPage extends BasePage {
 
     beforeUnmount() {
         this.searchForm.unmount();
-        this.chatList.unmount();
+        this.chatWrapper.unmount();
         this.menuBar.unmount();
     };
 }
