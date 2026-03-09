@@ -31,7 +31,7 @@ export class ChatsPage extends BasePage {
                     this.props.router.navigate('/login');
                 }
             });
-            this.logoutButton.mount();
+            this.logoutButton.mount(sidebar);
             this.isSettings = true;
         } else {
             this.logoutButton.unmount();
