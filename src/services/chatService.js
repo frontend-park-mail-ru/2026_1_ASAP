@@ -1,5 +1,5 @@
 const USE_MOCK = false;
-const BASE_URL = 'http://0.0.0.0:8080';
+const BASE_URL = 'http://212.233.96.180:8080';
 
 export class ChatService {
     async getChats() {
