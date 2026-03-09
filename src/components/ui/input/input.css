@@ -2,6 +2,11 @@
     outline: none;
 }
 
+.ui-input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
 .ui-input {
     height: 41px;
     border-radius: 10px;
@@ -10,7 +15,9 @@
     opacity: 0.5;
     background: rgba(255,255,255,0.05);
     color: var(--color-neutral);
-
+    width: 100%;
+    box-sizing: border-box;
+    padding-right: 40px;
 }
 
 .search-line {
@@ -32,4 +39,24 @@
     outline: none;
     border-color: var(--color-primary);
     opacity: 1;
+}
+
+.ui-input__toggle-password {
+    position: absolute;
+    right: 10px;
+    transform: translateY(-145%);
+    cursor: pointer;
+    display: flex; 
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af; 
+}
+
+.ui-input__toggle-password:hover {
+    opacity: 0.7; 
+}
+.ui-input__toggle-password img {
+    width: 20px;
+    height: 20px;
+    display: block;
 }
