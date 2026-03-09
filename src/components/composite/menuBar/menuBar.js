@@ -27,6 +27,7 @@ export class MenuBar extends BaseForm {
         this.settingsButton = new Button({
             class: "menu-button",
             icon: "../../../assets/images/icons/primaryMenuSettings.svg",
+            onClick: this.props.onSettingsClick
         });
         this.settingsButton.mount(this.element);
     }

@@ -64,3 +64,10 @@
     width: 100%;
     border: none;
 }
+
+.logout-button {
+    width: 100px;
+    height: 50px;
+    text-align: center;
+    color: var(--color-text);
+}
