@@ -24,8 +24,10 @@ export class SearchForm extends BaseForm {
             type: "text", 
             placeholder: "Поиск", 
             name: "search", 
-            class: "search-line"
+            class: "search-line",
+            showErrorText: false,
         });
+        
         this.input.mount(this.element.querySelector('.search-panel'));
 
         this.deleteButton = new Button({
