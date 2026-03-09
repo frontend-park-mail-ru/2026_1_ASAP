@@ -17,8 +17,8 @@
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    background: var(--gradient-msg);
-    filter: blur(120px);
+    background: var(--color-backgroundBlur);
+    filter: blur(238px);
     z-index: 0;
     pointer-events: none;
 }
@@ -36,4 +36,10 @@
     max-width: 410px;
     align-items: center;
     z-index: 1;
+}
+
+.auth__logo {
+   position: absolute;
+    top: 0;
+    left: 0;
 }

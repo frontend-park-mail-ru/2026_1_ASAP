@@ -21,6 +21,13 @@
             #5A8A6E 100%
         );
 
+    --gradiend-button-hover:
+        linear-gradient(
+            to right,
+            #3D5D4A 0%,
+            #324487 100%
+        );
+
     --gradient-background-chats:
         linear-gradient(
             to bottom, 

@@ -5,6 +5,7 @@
 
 @import "./base/reset.css";
 @import "./base/base.css";
+@import "../components/composite/registerForm/registerForm.css";
 @import "../components/composite/authForm/authForm.css";
 @import "../components/composite/searchForm/searchForm.css";
 @import "../components/composite/menuBar/menuBar.css";
@@ -17,7 +18,6 @@
 @import "../components/ui/avatar/avatar.css";
 @import "../components/ui/chatInfo/chatInfo.css";
 @import "../components/ui/metaChatInfo/metaChatInfo.css";
-
 @import "./pages/login.css";
 @import "../components/ui/checkbox/checkbox.css";
 @import "./pages/chats.css";

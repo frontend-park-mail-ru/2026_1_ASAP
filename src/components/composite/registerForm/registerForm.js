@@ -1,13 +1,14 @@
 import { BaseForm } from '../../../core/base/baseForm.js';
 import { Button } from '../../ui/button/button.js';
 import { authService } from '../../../services/authService.js';
+import { Input } from '../../ui/input/input.js'; 
 
 export class RegisterForm extends BaseForm {
     render() {
         const wrapper = document.createElement('div');
         wrapper.className = 'auth';
         wrapper.innerHTML = `
-            <form class="auth__form">
+            <form class="auth__form__register">
                 <div class="auth__header">
                     <div class="auth__backArrow">
                         <img class = "auth__backArrow" src="/assets/images/icons/backArrow.svg" alt="Назад" />
@@ -17,15 +18,15 @@ export class RegisterForm extends BaseForm {
                 <div class="auth__inputs">
                     <div class="auth__field">
                         <p class="auth__label">Введите логин:</p>
-                        <input class="ui-input" type="text" name="login" placeholder="Логин" required />
+                        <div data-component="login-input"></div>
                     </div>
                     <div class="auth__field">
                         <p class="auth__label">Введите почту:</p>
-                        <input class="ui-input" type="email" name="email" placeholder="Почта" required />
+                        <div data-component="email-input"></div>
                     </div>
                     <div class="auth__field">
                         <p class="auth__label">Пароль:</p>
-                        <input class="ui-input" type="password" name="password" placeholder="Пароль" required />
+                        <div data-component="password-input"></div>
                     </div>
                 </div>
                 <div class="auth__register"></div>
@@ -43,6 +44,39 @@ export class RegisterForm extends BaseForm {
             backArrow.addEventListener('click', this.props.onNavigateToLogin);
         }   
         
+        this.loginInput = new Input({
+            class: 'ui-input',
+            name: 'login',
+            placeholder: 'Логин',
+            required: true
+        });
+        this.loginInput.mount(
+            this.element.querySelector('[data-component="login-input"]')
+        );
+
+        this.emailInput = new Input({
+            class: 'ui-input',
+            name: 'email',
+            type: 'email',
+            placeholder: 'Почта',
+            required: true
+        });
+        this.emailInput.mount(
+            this.element.querySelector('[data-component="email-input"]')
+        );
+
+        this.passwordInput = new Input({
+            class: 'ui-input',
+            name: 'password',
+            type: 'password',
+            placeholder: 'Пароль',
+            required: true,
+            togglePassword: true 
+        });
+        this.passwordInput.mount(
+            this.element.querySelector('[data-component="password-input"]')
+        );
+
         this.registerButton = new Button({
             label: 'Зарегистрироваться',
             class: 'ui-button ui-button__primary',
@@ -59,6 +93,10 @@ export class RegisterForm extends BaseForm {
         if (backArrow) {
             backArrow.removeEventListener('click', this.props.onNavigateToLogin);
         }
+        this.loginInput.unmount();
+        this.emailInput.unmount();
+        this.passwordInput.unmount();
+        this.registerButton.unmount();
     }
     
     async onSubmit(data) {

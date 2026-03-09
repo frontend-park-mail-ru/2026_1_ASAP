@@ -2,7 +2,7 @@ import { BaseForm } from '../../../core/base/baseForm.js';
 import { Button } from '../../ui/button/button.js';
 import { Checkbox } from "../../ui/checkbox/checkbox.js";
 import { authService } from '../../../services/authService.js';
-
+import { Input } from '../../ui/input/input.js'; 
 
 export class AuthForm extends BaseForm {
     render() {
@@ -15,24 +15,12 @@ export class AuthForm extends BaseForm {
                 <div class="auth__inputs">
                     <div class="auth__field">
                         <p class="auth__label"> Введите логин:</p>
-                        <input 
-                            class="ui-input"
-                            type="login" 
-                            name="login" 
-                            placeholder="Логин"
-                            required
-                        />
+                        <div data-component="loginInput"></div>
                     </div>
 
                     <div class="auth__field">
                         <p class="auth__label"> Введите пароль:</p>
-                        <input
-                            class="ui-input"
-                            type="password" 
-                            name="password" 
-                            placeholder="Пароль"
-                            required
-                        />
+                        <div data-component="passwordInput"></div>
                     </div>
                 </div>
                 <div class="auth__remember"></div>
@@ -51,6 +39,29 @@ export class AuthForm extends BaseForm {
 
     afterMount() {
         super.afterMount();
+        this.loginInput = new Input({
+            type: 'login',
+            name: 'login',
+            placeholder: 'Логин',
+            required: true,
+            class: 'ui-input',
+        });
+        this.loginInput.mount(
+            this.element.querySelector("[data-component='loginInput']")
+        );
+
+
+        this.passwordInput = new Input({
+            class: 'ui-input',
+            type: 'password',
+            name: 'password',
+            placeholder: 'Пароль',
+            required: true,
+            togglePassword: true 
+        });
+        this.passwordInput.mount(
+            this.element.querySelector("[data-component='passwordInput']")
+        );
 
         this.remember = new Checkbox({
             label: 'Запомнить меня',
@@ -82,6 +93,18 @@ export class AuthForm extends BaseForm {
             this.element.querySelector('.auth__register')
         );
     };
+
+
+    beforeUnmount() {
+        super.beforeUnmount();
+
+        this.loginInput.unmount();
+        this.passwordInput.unmount();
+        this.remember.unmount();
+        this.loginButton.unmount();
+        this.registerButton.unmount();
+    }
+
 
     async onSubmit(data) {
         console.log('Данные для входа:', data);
