@@ -17,7 +17,12 @@ export class LoginPage extends BasePage {
     }
 
     afterMount() {
-        this.form = new AuthForm()
+        this.form = new AuthForm({
+            onNavigateToRegister: () => {
+                this.props.router.navigate('/register');
+            },
+            router: this.props.router
+        });
         this.form.mount(
             this.element.querySelector('.login-card')
         );
