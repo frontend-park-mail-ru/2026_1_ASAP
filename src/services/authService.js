@@ -55,6 +55,10 @@ class AuthService {
     async register(email, login, password) {
         return this.sendRequest('register', { email, login, password });
     }
+
+    async logout() {
+        return this.sendRequest('logout', {});
+    }
 }
 
 export const authService = new AuthService(); 
