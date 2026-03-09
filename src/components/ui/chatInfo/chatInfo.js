@@ -12,21 +12,21 @@ export class ChatInfo extends BaseComponent {
         switch (message.className) {
         case 'message-personal':
             message.innerHTML = `
-                <p class="user-name">Имя</p>
-                <p class="msg-text">Привет Привет Привет Привет Привет Привет Привет Привет Привет Привет Привет Привет</p>
+                <p class="user-name">${this.props.name || 'Имя'}</p>
+                <p class="msg-text">${this.props.lastMessage || ''}</p>
             `;
             break;
         case 'message-group':
             message.innerHTML = `
                 <p class="group-name">Название</p>
-                <p class="user-name">Имя</p>
-                <p class="msg-text">Привет Привет Привет Привет Привет Привет Привет Привет Привет Привет Привет Привет</p>
+                <p class="user-name">${this.props.name || 'Имя'}</p>
+                <p class="msg-text">${this.props.lastMessage || ''}</p>
             `;
             break;
         case 'message-chanel':
             message.innerHTML = `
-                <p class="chanel-name">Имя</p>
-                <p class="msg-text">Привет Привет Привет Привет Привет Привет Привет Привет Привет Привет Привет Привет</p>
+                <p class="chanel-name">${this.props.name || 'Имя'}</p>
+                <p class="msg-text">${this.props.lastMessage || ''}</p>
             `;
             break;
         };
