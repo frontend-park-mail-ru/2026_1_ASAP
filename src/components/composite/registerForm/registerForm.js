@@ -101,9 +101,9 @@ export class RegisterForm extends BaseForm {
     }
     
     async onSubmit(data) {
-        this.loginInput.setError('');
-        this.emailInput.setError('');
-        this.passwordInput.setError('');
+        this.loginInput.clearError();
+        this.emailInput.clearError();
+        this.passwordInput.clearError();
 
         const loginResult = validationService.validateLogin(data.login);
         const emailResult = validationService.validateEmail(data.email);
@@ -136,7 +136,11 @@ export class RegisterForm extends BaseForm {
             console.log('Успешная регистрация:', result.data);
             this.props.router.navigate('/chats');
         } else {
-                this.loginInput.setError(result.error || 'Ошибка регистрации');
+            console.log('Ошибка регистрации:', result);
+            if (result.error.includes("409")) {
+                this.emailInput.setError('Пользователь с такой почтой или логином уже существует');
+                this.loginInput.setError('Пользователь с таким логином уже существует');
+            }
         }
     }
 }

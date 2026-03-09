@@ -16,7 +16,7 @@
 
 .ui-button__primary:hover {
     background: var(--gradiend-button-hover);
-    transition: all 0.7s ease;
+    transition: all 0.2s ease;
 }
 
 .ui-button__secondary {
@@ -28,7 +28,7 @@
     background: var(--gradiend-button-hover);
     border: 0;
     color: var(--color-text);
-    transition: all 0.4s ease;
+    transition: all 0.2s ease;
 }
 
 .ui-button:disabled {

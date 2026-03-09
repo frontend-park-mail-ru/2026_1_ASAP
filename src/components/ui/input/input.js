@@ -10,6 +10,7 @@ export class Input extends BaseComponent {
         this.required = props.required || false;
         this.togglePassword = props.togglePassword || false; 
         this._error =  "";
+        this.showErrorText = props.showErrorText !== false;
     }
 
     render() {
@@ -32,18 +33,21 @@ export class Input extends BaseComponent {
             `;
             wrapper.appendChild(toggleIcon);
         }
-        const errorElement = document.createElement('p');
-        errorElement.className = 'ui-input__error-message';
-        errorElement.textContent = this._error;
-        wrapper.appendChild(errorElement);
+        if (this.showErrorText) {
+            const errorElement = document.createElement('p');
+            errorElement.className = 'ui-input__error-message';
+            errorElement.textContent = this._error;
+            wrapper.appendChild(errorElement);
+        }
         return wrapper;
+
     }
 
     afterMount() {
         this.inputElement = this.element.querySelector('input');
-
-        this.errorElement = this.element.querySelector('.ui-input__error-message');
-
+        if (this._error) {
+            this.errorElement = this.element.querySelector('.ui-input__error-message');
+        }
         if (this.type === 'password' && this.togglePassword) {
             this.toggleIconElement = this.element.querySelector('.ui-input__toggle-password img'); 
         

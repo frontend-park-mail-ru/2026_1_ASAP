@@ -23,7 +23,7 @@
 .ui-input:hover {
     opacity: 0.8;
     border: 1.5px solid var(--color-primary);
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
 }
 
 .search-line {
