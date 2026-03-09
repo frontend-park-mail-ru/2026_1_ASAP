@@ -1,5 +1,6 @@
 import { BaseForm } from "../../../core/base/baseForm.js";
 import { ChatItem } from "../chatItem/chatItem.js";
+import { ChatService } from "../../../services/chatService.js";
 
 export class ChatListItem extends BaseForm {
     render() {
@@ -8,60 +9,37 @@ export class ChatListItem extends BaseForm {
         return ChatListItem;
     };
 
-    afterMount() {
-        this.chatItem1 = new ChatItem({
-            class: "chat-item--default",
+    selectChat(selectedItem) {
+        this.chatItems.forEach(item => {
+            item.element.className = "chat-item--default";
         });
-        this.chatItem1.mount(this.element);
 
-        this.chatItem2 = new ChatItem({
-            class: "chat-item--default",
-        });
-        this.chatItem2.mount(this.element);
-
-        this.chatItem3 = new ChatItem({
-            class: "chat-item--selected",
-        });
-        this.chatItem3.mount(this.element);
-
-        this.chatItem4 = new ChatItem({
-            class: "chat-item--default",
-        });
-        this.chatItem4.mount(this.element);
-
-        this.chatItem5 = new ChatItem({
-            class: "chat-item--default",
-        });
-        this.chatItem5.mount(this.element);
-
-        this.chatItem6 = new ChatItem({
-            class: "chat-item--default",
-        });
-        this.chatItem6.mount(this.element);
-
-        this.chatItem7 = new ChatItem({
-            class: "chat-item--default",
-        });
-        this.chatItem7.mount(this.element);
-
-        this.chatItem8 = new ChatItem({
-            class: "chat-item--default",
-        });
-        this.chatItem8.mount(this.element);
-
-        this.chatItem9 = new ChatItem({
-            class: "chat-item--default",
-        });
-        this.chatItem9.mount(this.element);
-
-        this.chatItem10 = new ChatItem({
-            class: "chat-item--default",
-        });
-        this.chatItem10.mount(this.element);
-
-        this.chatItem11 = new ChatItem({
-            class: "chat-item--default",
-        });
-        this.chatItem11.mount(this.element);
+        selectedItem.element.className = "chat-item--selected";
+        this.activeItem = selectedItem;
     };
+
+    afterMount() {
+        this.chatItems = [];
+        this.activeItem = null;
+
+        const service = new ChatService();
+        
+        service.getChats().then(chats => {
+            chats.forEach(chat => {
+                const item = new ChatItem({
+                    class: 'chat-item--default',
+                    id: chat.ID,
+                    name: chat.Title,
+                    lastMessage: chat.LastMessage,
+                    onClick: () => this.selectChat(item)
+                });
+                item.mount(this.element);
+                this.chatItems.push(item);
+            });
+        });
+    };
+
+    beforeUnmount() {
+        this.chatItems.forEach(item => item.unmount());
+    }
 }
