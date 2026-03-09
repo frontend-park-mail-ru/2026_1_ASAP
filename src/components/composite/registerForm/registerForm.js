@@ -8,7 +8,7 @@ export class RegisterForm extends BaseForm {
         const wrapper = document.createElement('div');
         wrapper.className = 'auth';
         wrapper.innerHTML = `
-            <form class="auth__form">
+            <form class="auth__form__register">
                 <div class="auth__header">
                     <div class="auth__backArrow">
                         <img class = "auth__backArrow" src="/assets/images/icons/backArrow.svg" alt="Назад" />
@@ -96,9 +96,7 @@ export class RegisterForm extends BaseForm {
         this.loginInput.unmount();
         this.emailInput.unmount();
         this.passwordInput.unmount();
-        this.passwordConfirmInput.unmount();
         this.registerButton.unmount();
-        this.loginButton.unmount();
     }
     
     async onSubmit(data) {

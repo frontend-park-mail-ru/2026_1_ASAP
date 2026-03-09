@@ -14,9 +14,21 @@
     background: var(--gradient-msg);
 }
 
+.ui-button__primary:hover {
+    background: var(--gradiend-button-hover);
+    transition: all 0.7s ease;
+}
+
 .ui-button__secondary {
     border: 1px solid var(--color-primary);
     color: var(--color-primary);
+}
+
+.ui-button__secondary:hover {
+    background: var(--gradiend-button-hover);
+    border: 0;
+    color: var(--color-text);
+    transition: all 0.4s ease;
 }
 
 .ui-button:disabled {

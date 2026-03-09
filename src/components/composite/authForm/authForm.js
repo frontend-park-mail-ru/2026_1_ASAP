@@ -98,7 +98,7 @@ export class AuthForm extends BaseForm {
     beforeUnmount() {
         super.beforeUnmount();
 
-        this.emailInput.unmount();
+        this.loginInput.unmount();
         this.passwordInput.unmount();
         this.remember.unmount();
         this.loginButton.unmount();

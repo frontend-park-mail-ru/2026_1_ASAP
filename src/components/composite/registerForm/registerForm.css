@@ -8,12 +8,12 @@
     width: 100%;
 }
 
-.auth__form {
+.auth__form__register {
     padding-top: 31px;
     display: flex;
     flex-direction: column;
     height: 100%;
-    gap: 15px;
+    gap: 25px;
 }
 
 .auth__header {
@@ -22,26 +22,28 @@
     position: relative; 
     justify-content: center;
     margin-bottom: 10px;
+    flex-direction: row;
 }
 
 .auth__title {
     margin: 0; /* Убираем стандартные отступы у h1 */
 }
 
-.auth__back-arrow {
+.auth__backArrow {
     position: absolute;
     left: 0;
     top: 50%;
-    transform: translateY(-50%);
+    transform: translateY(-110%);
     cursor: pointer;
-    padding: 5px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-.auth__back-arrow:hover {
-    opacity: 0.7;
+.auth__backArrow:hover {
+    opacity: 1;
+    color: var(--gradient-msg);
+    transition: all 0.3s ease;
 }
 
 .auth__label {

@@ -17,8 +17,8 @@
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    background: var(--gradient-msg);
-    filter: blur(120px);
+    background: var(--color-backgroundBlur);
+    filter: blur(238px);
     z-index: 0;
     pointer-events: none;
 }

@@ -30,6 +30,10 @@
     transition: 0.2s;
 
 }
+.ui-checkbox__box:hover {
+    background: #aab0bb;
+    transition: 0.2s;
+}
 
 .ui-checkbox__box::after {
 
