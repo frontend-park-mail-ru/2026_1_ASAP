@@ -134,7 +134,7 @@ export class RegisterForm extends BaseForm {
 
         if (result.success) {
             console.log('Успешная регистрация:', result.data);
-            this.props.router.navigate('/login');
+            this.props.router.navigate('/chats');
         } else {
                 this.loginInput.setError(result.error || 'Ошибка регистрации');
         }
