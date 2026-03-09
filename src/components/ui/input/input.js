@@ -9,6 +9,7 @@ export class Input extends BaseComponent {
         this.type = props.type || "";
         this.required = props.required || false;
         this.togglePassword = props.togglePassword || false; 
+        this._error =  "";
     }
 
     render() {
@@ -31,12 +32,17 @@ export class Input extends BaseComponent {
             `;
             wrapper.appendChild(toggleIcon);
         }
-
+        const errorElement = document.createElement('p');
+        errorElement.className = 'ui-input__error-message';
+        errorElement.textContent = this._error;
+        wrapper.appendChild(errorElement);
         return wrapper;
     }
 
     afterMount() {
         this.inputElement = this.element.querySelector('input');
+
+        this.errorElement = this.element.querySelector('.ui-input__error-message');
 
         if (this.type === 'password' && this.togglePassword) {
             this.toggleIconElement = this.element.querySelector('.ui-input__toggle-password img'); 
@@ -80,4 +86,24 @@ export class Input extends BaseComponent {
     set value(val) {
         this.element.querySelector('input').value = val;
     }
+
+    setError(message) {
+        this._error = message;
+        if (this.errorElement) {
+            this.errorElement.textContent = message;
+            this.element.classList.add('ui-input-wrapper--error');
+            this.errorElement.style.opacity = '1'; 
+
+
+        }
+    }
+    
+    clearError() {
+            this._error = ''; 
+            if (this.errorElement) {
+                this.errorElement.textContent = '';
+                this.element.classList.remove('ui-input-wrapper--error');
+                this.errorElement.style.opacity = '0';
+            }  
+        }  
 }

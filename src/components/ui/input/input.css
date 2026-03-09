@@ -59,10 +59,32 @@
 }
 
 .ui-input__toggle-password:hover {
-    opacity: 0.7; 
+    opacity: 0.7;
+    transition: 0.2s;
 }
 .ui-input__toggle-password img {
     width: 20px;
     height: 20px;
     display: block;
+}
+
+
+.ui-input__error-message { 
+    color: var(--color-error);
+    font-size: 12px;
+    margin-top: 4px;
+    margin-bottom: 0;
+    min-height: 14px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    word-break: break-word; 
+    white-space: normal;
+}
+
+.ui-input-wrapper--error .ui-input { 
+    border: 1.5px solid var(--color-error-border);
+}
+
+.ui-input-wrapper--error .ui-input__error-message { 
+    opacity: 1;
 }

@@ -9,11 +9,11 @@
 }
 
 .auth__form__register {
-    padding-top: 31px;
+    padding-top: 10px;
     display: flex;
     flex-direction: column;
     height: 100%;
-    gap: 25px;
+    gap: 15px;
 }
 
 .auth__header {
@@ -26,7 +26,7 @@
 }
 
 .auth__title {
-    margin: 0; /* Убираем стандартные отступы у h1 */
+    margin: 0;
 }
 
 .auth__backArrow {

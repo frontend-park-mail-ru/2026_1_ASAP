@@ -3,6 +3,7 @@ import { Button } from '../../ui/button/button.js';
 import { Checkbox } from "../../ui/checkbox/checkbox.js";
 import { authService } from '../../../services/authService.js';
 import { Input } from '../../ui/input/input.js'; 
+import { validationService } from '../../../services/validationService.js';
 
 export class AuthForm extends BaseForm {
     render() {
@@ -10,7 +11,7 @@ export class AuthForm extends BaseForm {
         wrapper.className = 'auth';
 
         wrapper.innerHTML = `
-            <form class="auth__form">
+            <form class="auth__form" novalidate>
                 <h1 class="auth__title">Вход</h1>
                 <div class="auth__inputs">
                     <div class="auth__field">
@@ -26,10 +27,12 @@ export class AuthForm extends BaseForm {
                 <div class="auth__remember"></div>
 
                 <div class="auth__login"></div>
+                <div data-component="form-error-message"></div>
                 <div class="auth__divider">
                     <span class="auth__divider-text">Нет аккаунта?</span>
                 </div>
                 <div class="auth__register"></div>
+
 
             </form>
         `;
@@ -50,7 +53,11 @@ export class AuthForm extends BaseForm {
             this.element.querySelector("[data-component='loginInput']")
         );
 
-
+        this.formErrorElement = this.element.querySelector('[data-component="form-error-message"]');
+        if (this.formErrorElement) { 
+            this.formErrorElement.className = 'auth__form-error-message';
+        }
+        
         this.passwordInput = new Input({
             class: 'ui-input',
             type: 'password',
@@ -106,11 +113,51 @@ export class AuthForm extends BaseForm {
     }
 
 
-    async onSubmit(data) {
-        console.log('Данные для входа:', data);
-        // const rememberMe = this.remember.value; пока некуда передавать
+    showFormError(message) { 
+        if (this.formErrorElement) {
+            this.formErrorElement.textContent = message;
+            this.formErrorElement.style.opacity = '1';
+        }
+    }
 
-        // todo валидация данных и отображение ошибок до отправки на сервер
+    clearFormError() {
+        if (this.formErrorElement) {
+            this.formErrorElement.textContent = '';
+            this.formErrorElement.style.opacity = '0';
+        }
+    }
+
+    async onSubmit(data) {
+        this.loginInput.clearError();
+        this.passwordInput.clearError();
+        this.clearFormError();
+        this.loginButton.disabled = false; 
+
+
+        const loginResult = validationService.validateLogin(data.login);
+        const passwordResult = validationService.validateRequired(data.password, 'Пароль');
+
+        let isFormValid = true;
+
+        if (!loginResult.isValid) {
+            this.loginInput.setError(loginResult.message);
+            isFormValid = false;
+            this.loginButton.disabled = true;
+        }
+
+        if (!passwordResult.isValid) {
+            this.passwordInput.setError(passwordResult.message);
+            this.loginButton.disabled = true;
+            isFormValid = false;
+        }
+
+        if (!isFormValid) {
+            console.log('Форма невалидна, отправка отменена.');
+            return;
+        }
+        console.log('Форма валидна. Отправка данных для входа:', data);
+
+
         const result = await authService.login(data.login, data.password);
         console.log('Результат входа:', result);
 
@@ -118,9 +165,11 @@ export class AuthForm extends BaseForm {
             console.log('Успешный вход:', result.data);
             this.props.router.navigate('/chats');
         } else {
-            console.error('Ошибка входа:', result.error);
-            // todo написать валидацию и показать ошибку пользователю
-
+            console.log('Неверный логин или пароль:', result.error);
+            this.loginInput.setError(' '); 
+            this.passwordInput.setError(' '); 
+            this.showFormError('Неверный логин или пароль');
+            this.loginButton.disabled = true; 
         }
     }
 }

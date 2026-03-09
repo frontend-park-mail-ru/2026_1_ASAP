@@ -2,13 +2,14 @@ import { BaseForm } from '../../../core/base/baseForm.js';
 import { Button } from '../../ui/button/button.js';
 import { authService } from '../../../services/authService.js';
 import { Input } from '../../ui/input/input.js'; 
+import { validationService } from '../../../services/validationService.js';
 
 export class RegisterForm extends BaseForm {
     render() {
         const wrapper = document.createElement('div');
         wrapper.className = 'auth';
         wrapper.innerHTML = `
-            <form class="auth__form__register">
+            <form class="auth__form__register" novalidate>
                 <div class="auth__header">
                     <div class="auth__backArrow">
                         <img class = "auth__backArrow" src="/assets/images/icons/backArrow.svg" alt="Назад" />
@@ -100,16 +101,42 @@ export class RegisterForm extends BaseForm {
     }
     
     async onSubmit(data) {
-        console.log('Данные для регистрации:', data);
-        // todo валидация данных и отображение ошибок до отправки на сервер
+        this.loginInput.setError('');
+        this.emailInput.setError('');
+        this.passwordInput.setError('');
 
+        const loginResult = validationService.validateLogin(data.login);
+        const emailResult = validationService.validateEmail(data.email);
+        const passwordResult = validationService.validatePassword(data.password);
+
+        let isFormValid = true;
+
+        if (!loginResult.isValid) {
+            this.loginInput.setError(loginResult.message);
+            isFormValid = false;
+        }
+        if (!emailResult.isValid) {
+            this.emailInput.setError(emailResult.message);
+            isFormValid = false;
+        }
+        if (!passwordResult.isValid) {
+            this.passwordInput.setError(`Не хватает: ${passwordResult.missing.join(', ')}`);
+            isFormValid = false;
+        }
+
+        if (!isFormValid) {
+            console.log('Форма невалидна, отправка отменена.');
+            return;
+        }
+
+        console.log('Форма регистрации валидна. Отправка данных:', data);
         const result = await authService.register(data.email, data.login, data.password);
+
         if (result.success) {
             console.log('Успешная регистрация:', result.data);
             this.props.router.navigate('/login');
         } else {
-            console.error('Ошибка регистрации:', result.error);
-            // todo написать валидацию и показать ошибку пользователю
+                this.loginInput.setError(result.error || 'Ошибка регистрации');
         }
     }
 }

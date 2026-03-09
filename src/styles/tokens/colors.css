@@ -30,4 +30,7 @@
 
     --color-borderDefault: #2A2A2A 75%;
     
+    --color-error: #FF0000;
+
+    --color-error-border: #D80000;
 }
