@@ -19,8 +19,7 @@ export class ChatInfo extends BaseComponent {
         case 'message-group':
             message.innerHTML = `
                 <p class="group-name">${this.props.name || 'Имя'}</p>
-                <p class="user-name sender-group" style="display: inline;">${this.props.sender || 'Имя'}:</p>
-                <p style="display: inline;" class="msg-text">${this.props.lastMessage || ''}</p>
+                <p class="msg-text"><span class="sender-group">${this.props.sender || 'Имя'}: </span>${this.props.lastMessage || ''}</p>
             `;
             break;
         case 'message-chanel':
