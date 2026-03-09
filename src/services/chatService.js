@@ -5,19 +5,11 @@ export class ChatService {
     async getChats() {
         if (USE_MOCK) {
             return [
-                {ID: 1, Title: 'Имя', LastMessage: 'Привет Привет Привет Привет Привет Привет Привет Привет'},
-                {ID: 2, Title: 'Имя', LastMessage: 'Привет Привет Привет Привет Привет Привет Привет Привет'},
-                {ID: 3, Title: 'Имя', LastMessage: 'Привет Привет Привет Привет Привет Привет Привет Привет'},
-                {ID: 4, Title: 'Имя', LastMessage: 'Привет Привет Привет Привет Привет Привет Привет Привет'},
-                {ID: 5, Title: 'Имя', LastMessage: 'Привет Привет Привет Привет Привет Привет Привет Привет'},
-                {ID: 6, Title: 'Имя', LastMessage: 'Привет Привет Привет Привет Привет Привет Привет Привет'},
-                {ID: 7, Title: 'Имя', LastMessage: 'Привет Привет Привет Привет Привет Привет Привет Привет'},
-                {ID: 8, Title: 'Имя', LastMessage: 'Привет Привет Привет Привет Привет Привет Привет Привет'},
-                {ID: 9, Title: 'Имя', LastMessage: 'Привет Привет Привет Привет Привет Привет Привет Привет'},
-                {ID: 10, Title: 'Имя', LastMessage: 'Привет Привет Привет Привет Привет Привет Привет Привет'},
-                {ID: 11, Title: 'Имя', LastMessage: 'Привет Привет Привет Привет Привет Привет Привет Привет'},
-                {ID: 12, Title: 'Имя', LastMessage: 'Привет Привет Привет Привет Привет Привет Привет Привет'},
-                {ID: 13, Title: 'Имя', LastMessage: 'Привет Привет Привет Привет Привет Привет Привет Привет'},
+                { id: 1, title: 'Иван Иванов',    chat_type: 'dialog',  last_message: { text: 'Привет! Как дела?',         sender: { login: 'ivan' },    created_at: '10:00' } },
+                { id: 2, title: 'Команда проекта', chat_type: 'group',   last_message: { text: 'Встреча завтра в 10:00',    sender: { login: 'alina' },   created_at: '09:45' } },
+                { id: 3, title: 'Новости BMSTU',   chat_type: 'channel', last_message: { text: 'Расписание обновлено',      sender: { login: 'admin' },   created_at: '08:30' } },
+                { id: 4, title: 'Мария Петрова',   chat_type: 'dialog',  last_message: { text: 'Спасибо за помощь!',        sender: { login: 'maria' },   created_at: 'Вчера' } },
+                { id: 5, title: 'Фронтенд-чат',    chat_type: 'group',   last_message: { text: 'PR готов к ревью',          sender: { login: 'dmitry' },  created_at: 'Вчера' } },
             ];
         }
         const response = await fetch(`${BASE_URL}/api/v1/chats`, {
@@ -27,6 +19,7 @@ export class ChatService {
             credentials: 'include'});
         if (!response.ok)
             throw new Error(`Ошибка ${response.status}`);
-        return response.json();
+        const data = await response.json();
+        return data.body;
     };
 }

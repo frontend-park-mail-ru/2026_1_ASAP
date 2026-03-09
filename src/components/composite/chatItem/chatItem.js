@@ -18,6 +18,14 @@ export class ChatItem extends BaseForm {
         return chatItem;
     };
 
+    typeToClass() {
+        switch (this.props.dialogClass) {
+            case 'group':   return 'message-group';
+            case 'channel': return 'message-chanel';
+            default:        return 'message-personal';
+        }
+    }
+
     afterMount() {
         this.avatar = new Avatar({
             class: "chat-avatar",
@@ -26,9 +34,10 @@ export class ChatItem extends BaseForm {
         this.avatar.mount(this.element);
 
         this.chatInfo = new ChatInfo({
-            class: "message-personal",
+            class: this.typeToClass(),
             name: this.props.name,
-            lastMessage: this.props.lastMessage
+            lastMessage: this.props.lastMessage,
+            sender: this.props.sender
         });
         this.chatInfo.mount(this.element);
 
