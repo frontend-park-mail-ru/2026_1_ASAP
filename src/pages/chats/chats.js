@@ -71,7 +71,7 @@ export class ChatsPage extends BasePage {
         } else {
             this.searchForm.unmount();
             this.chatWrapper.unmount();
+            this.menuBar.unmount();
         }
-        this.menuBar.unmount();
     };
 }
