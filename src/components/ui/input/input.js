@@ -45,7 +45,7 @@ export class Input extends BaseComponent {
 
     afterMount() {
         this.inputElement = this.element.querySelector('input');
-        if (this._error) {
+        if (this.showErrorText) {
             this.errorElement = this.element.querySelector('.ui-input__error-message');
         }
         if (this.type === 'password' && this.togglePassword) {
