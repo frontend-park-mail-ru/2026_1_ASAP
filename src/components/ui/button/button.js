@@ -11,7 +11,6 @@ export class Button extends BaseComponent {
     render() {
         const button = document.createElement('button');
         button.className = this.class;
-        button.textContent = this.label || "";
         if (this.icon !== "") {
             const img = document.createElement('img');
             img.src = this.icon;
@@ -19,7 +18,9 @@ export class Button extends BaseComponent {
         }
 
         if (this.label !== "") {
-            button.textContent = this.props.label || '';
+            const span = document.createElement('span');
+            span.textContent = this.label;
+            button.appendChild(span);
         }
         button.type = this.type;
         return button;
