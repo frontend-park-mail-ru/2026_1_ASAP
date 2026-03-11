@@ -9,7 +9,9 @@
     "srart": "node server/server.js",
     "dev": "nodemon server/server.js",
     "lint": "eslint .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "build": "webpack",
+    "watch": "webpack --watch"
   },
   "repository": {
     "type": "git",
@@ -27,11 +29,19 @@
   "homepage": "https://github.com/frontend-park-mail-ru/2026_1_ASAP#readme",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "copy-webpack-plugin": "^14.0.0",
+    "css-loader": "^7.1.4",
     "eslint": "^10.0.2",
     "globals": "^17.4.0",
+    "handlebars": "^4.7.8",
+    "handlebars-loader": "^1.7.3",
+    "html-webpack-plugin": "^5.6.6",
     "husky": "^9.1.7",
     "lint-staged": "^16.3.2",
-    "nodemon": "^3.1.14"
+    "mini-css-extract-plugin": "^2.10.1",
+    "nodemon": "^3.1.14",
+    "webpack": "^5.105.4",
+    "webpack-cli": "^6.0.1"
   },
   "dependencies": {
     "express": "^4.22.1"
