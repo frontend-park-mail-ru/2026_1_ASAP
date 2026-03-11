@@ -65,8 +65,7 @@
 }
 
 .ui-checkbox__label {
-    font: var(--text-tertiary);
-    letter-spacing: var(--text-tertiary-letter-spacing);
+    font: var(--font-secondary);
     background: var(--color-secondary);
     color: var(--color-neutral);
 }
