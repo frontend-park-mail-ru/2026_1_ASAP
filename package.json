@@ -10,7 +10,7 @@
     "dev": "nodemon server/server.js",
     "lint": "eslint .",
     "prepare": "husky",
-    "precompile" : "node compileTemp.js && node patchCompiled.js"
+    "precompile" : "node compileTemp.js"
   },
   "repository": {
     "type": "git",

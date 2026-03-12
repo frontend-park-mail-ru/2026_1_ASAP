@@ -1,24 +1,16 @@
-import { loadTemplate } from "../templateLoader.js";
-
 export class Layout {
     constructor() {
         this.root = document.getElementById('app');
-        this.tempPath = '/core/layout/layout.hbs';
-        this.temp = null;
+        this.tempName = 'core/layout/layout';
     }
-    async render(content) {
-        if (!this.tempPath) {
-            throw new Error(`tempPath не указан для layout ${this.constructor.name}`);
+
+    render(content) {
+        const template = Handlebars.templates[this.tempName];
+        if (!template) {
+            throw new Error(`Шаблон ${this.tempName} не найден`);
         }
 
-        if (!this.temp) {
-            const modulePath = this.tempPath.replace('.hbs', '.precompiled.js');
-            this.temp = await loadTemplate(modulePath);
-        }
-
-        const htmlString = await this.temp({});
-        this.root.innerHTML = htmlString;
-        
+        this.root.innerHTML = template({});
         this.root.querySelector('.layout__content').appendChild(content);
     }
 }

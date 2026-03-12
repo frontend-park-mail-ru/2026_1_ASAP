@@ -1,47 +1,37 @@
-import { loadTemplate } from "../templateLoader.js";
-
 export class BasePage {
     constructor(props = {}) {
         this.props = props;
         this.root = document.createElement("div");
         this.root.className = "page";
-        this.tempPath = "";
-        this.temp = null;
+        this.tempName = "";
     }
 
-    async render() {
-        if (!this.tempPath) {
-            throw new Error(`tempPath не указан для страницы ${this.constructor.name}`);
+    render() {
+        if (!this.tempName) {
+            throw new Error(`tempName не указан для страницы ${this.constructor.name}`);
+        }
+        
+        const template = Handlebars.templates[this.tempName];
+        if (!template) {
+            throw new Error(`Шаблон ${this.tempName} не найден`);
         }
 
-        if (!this.temp) {
-            const modulePath = this.tempPath.replace('.hbs', '.precompiled.js');
-            this.temp = await loadTemplate(modulePath);
-        }
-
-        return this.temp(this.props);
-    }
-
-    async mount() {
-        const htmlString = await this.render();
-
-        this.root.innerHTML = htmlString.trim();
-
+        this.root.innerHTML = template(this.props).trim();
         this.element = this.root.firstElementChild || this.root;
-
-        if (!this.element) {
-            throw new Error("Ошибка при рендеринге страницы: не удалось создать элемент из шаблона");
-        }
-
-        await this.afterMount();
+        return this.element;
     }
 
-    async afterMount() {}
+    mount() {
+        this.render();
+        this.afterMount();
+    }
 
-    async beforeUnmount() {}
+    afterMount() {}
 
-    async unmount() {
-        await this.beforeUnmount();
+    beforeUnmount() {}
+
+    unmount() {
+        this.beforeUnmount();
         this.root.innerHTML = "";
     }
 

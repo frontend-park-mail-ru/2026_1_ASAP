@@ -8,13 +8,13 @@ export class Checkbox extends BaseComponent {
         this.label = props.label || "";
         this.name = props.name || "";
         this.checked = props.checked || false;
-        this.tempPath = "/components/ui/checkbox/checkbox.hbs";
+        this.tempName = "components/ui/checkbox/checkbox";
     }
-    async afterMount() {
+    afterMount() {
         this.inputElement = this.element.querySelector('.ui-checkbox__input');
     }
 
-    async beforeUnmount() {}
+    beforeUnmount() {}
 
     get value() {
         return this.element
