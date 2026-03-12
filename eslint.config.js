@@ -14,6 +14,16 @@ export default [
       sourceType: "module"
     }
   },
+  {
+    files: ["*.js"],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        process: "readonly"
+      },
+      sourceType: "module"
+    }
+  },
 
   {
     files: ["server/**/*.js"],
