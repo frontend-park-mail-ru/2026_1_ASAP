@@ -13,14 +13,27 @@ const routes = {
     '/chats': ChatsPage,
 };
 
+/**
+ * Главный класс приложения. Инициализирует Layout, Router и PageManager,
+ * проверяет авторизацию и запускает роутинг.
+ */
 export class App {
     constructor() {
+        /** @type {Layout} */
         this.layout = new Layout();
+
+        /** @type {Router} */
         this.router = new Router(routes); 
+        
+        /** @type {PageManager} */
         this.pageManager = new PageManager(this.layout, this.router);
         this.router.pageManager = this.pageManager;
     }
     
+    /**
+     * Запускает приложение: проверяет авторизацию и выполняет начальную навигацию.
+     * @returns {Promise<void>}
+     */
     async start() {
         const isAuth = await authService.checkAuth();
 

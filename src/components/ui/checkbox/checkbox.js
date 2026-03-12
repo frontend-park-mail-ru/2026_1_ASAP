@@ -1,7 +1,16 @@
 import { BaseComponent } from "../../../core/base/baseComponent.js";
 
+/**
+ * Компонент чекбокса.
+ */
 export class Checkbox extends BaseComponent {
 
+    /**
+     * @param {object} [props={}] - Свойства.
+     * @param {string} [props.label=''] - Текст метки.
+     * @param {string} [props.name=''] - Имя для FormData.
+     * @param {boolean} [props.checked=false] - Начальное состояние.
+     */
     constructor(props = {}) {
         super(props);
 
@@ -10,12 +19,24 @@ export class Checkbox extends BaseComponent {
         this.checked = props.checked || false;
         this.tempName = "components/ui/checkbox/checkbox";
     }
+
+    /**
+     * Монтирует дочерние компоненты и находит элемент ошибки формы.
+     */
     afterMount() {
         this.inputElement = this.element.querySelector('.ui-checkbox__input');
     }
 
+
+    /**
+     * Размонтирует дочерние компоненты и удаляет обработчик клика.
+     */
     beforeUnmount() {}
 
+    /**
+     * Текущее состояние чекбокса.
+     * @type {boolean}
+     */
     get value() {
         return this.element
             .querySelector(".ui-checkbox__input")

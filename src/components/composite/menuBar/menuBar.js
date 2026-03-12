@@ -1,12 +1,18 @@
 import { BaseForm } from '../../../core/base/baseForm.js';
 import { Button } from '../../ui/button/button.js';
 
+/**
+ * Нижнее меню с кнопками навигации: контакты, сообщения, настройки.
+ */
 export class MenuBar extends BaseForm {
     constructor(props={}) {
         super(props);
         this.tempName = "components/composite/menuBar/menuBar";
     }
 
+    /**
+     * Монтирует дочерние компоненты и находит элемент ошибки формы.
+     */
     afterMount() {
         this.contactsButton = new Button({
             class: "menu-button",

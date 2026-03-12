@@ -10,10 +10,14 @@
     border: 0;
     position: relative;
     overflow: hidden;
+    z-index: 1;
 }
 
 .ui-button__primary {
     background: var(--gradient-msg);
+    
+    position: relative;
+    z-index: 1;
 }
 
 .ui-button__primary:after {

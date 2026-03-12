@@ -4,12 +4,24 @@ import { authService } from '../../../services/authService.js';
 import { Input } from '../../ui/input/input.js'; 
 import { validationService } from '../../../services/validationService.js';
 
+/**
+ * Форма регистрации (логин + email + пароль). Валидирует ввод
+ * и отправляет данные через AuthService.
+ */
 export class RegisterForm extends BaseForm {
+    /**
+     * @param {object} [props={}] - Свойства.
+     * @param {Function} [props.onNavigateToLogin] - Колбэк перехода на страницу входа.
+     * @param {import Router} [props.router] - Роутер.
+     */
     constructor(props = {}) {
         super(props);
         this.tempName = "components/composite/registerForm/registerForm";
     }
 
+    /**
+     * Монтирует дочерние компоненты и находит элемент ошибки формы.
+     */
     afterMount() {
         super.afterMount();
 
@@ -18,6 +30,7 @@ export class RegisterForm extends BaseForm {
             backArrow.addEventListener('click', this.props.onNavigateToLogin);
         }   
         
+        /** @type {Input} Поле пароля */
         this.loginInput = new Input({
             class: 'ui-input',
             name: 'login',
@@ -29,6 +42,7 @@ export class RegisterForm extends BaseForm {
             this.element.querySelector('[data-component="login-input"]')
         );
 
+        /** @type {Input} Поле пароля */
         this.emailInput = new Input({
             class: 'ui-input',
             name: 'email',
@@ -41,6 +55,7 @@ export class RegisterForm extends BaseForm {
             this.element.querySelector('[data-component="email-input"]')
         );
 
+        /** @type {Input} Поле пароля */
         this.passwordInput = new Input({
             class: 'ui-input',
             name: 'password',
@@ -54,6 +69,7 @@ export class RegisterForm extends BaseForm {
             this.element.querySelector('[data-component="password-input"]')
         );
 
+        /** @type {Button} Кнопка регистрации */
         this.registerButton = new Button({
             label: 'Зарегистрироваться',
             class: 'ui-button ui-button__primary',
@@ -64,6 +80,9 @@ export class RegisterForm extends BaseForm {
         );
     }
 
+    /**
+     * Размонтирует все дочерние компоненты.
+     */
     beforeUnmount() {
         super.beforeUnmount();
         const backArrow = this.element.querySelector('.auth__backArrow');
@@ -76,6 +95,11 @@ export class RegisterForm extends BaseForm {
         this.registerButton.unmount();
     }
     
+    /**
+     * Валидирует данные и отправляет запрос на регистрацию.
+     * @param {{login: string, email: string, password: string}} data - Данные формы.
+     * @returns {Promise<void>}
+     */
     async onSubmit(data) {
         this.loginInput.clearError();
         this.emailInput.clearError();

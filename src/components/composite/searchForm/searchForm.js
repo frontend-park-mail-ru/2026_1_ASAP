@@ -3,17 +3,24 @@ import { Input } from '../../ui/input/input.js';
 import { Button } from '../../ui/button/button.js';
 import { Avatar } from '../../ui/avatar/avatar.js';
 
+/**
+ * Панель поиска с полем ввода, иконкой поиска и кнопкой добавления.
+ */
 export class SearchForm extends BaseForm {
     constructor(props={}) {
         super(props);
         this.tempName = "components/composite/searchForm/searchForm";
     };
 
+    /**
+     * Монтирует дочерние компоненты и находит элемент ошибки формы.
+     */
     afterMount() {
         this.searchImg = new Avatar({
             src: "../../../assets/images/icons/searchIcon.svg",
             class: "search-icon",
         });
+
         this.searchImg.mount(this.element.querySelector('.search-panel'));
         this.input = new Input({
             type: "text", 
@@ -29,6 +36,7 @@ export class SearchForm extends BaseForm {
             class: "delete-button",
             icon: "../../../assets/images/icons/deleteIcon.svg",
         });
+
         this.deleteButton.mount(this.element.querySelector('.search-panel'));
 
         this.addButton = new Button({
@@ -36,6 +44,7 @@ export class SearchForm extends BaseForm {
             icon: "../../../assets/images/icons/deleteIcon.svg",
             daughterClass: "add-icon",
         });
+        
         this.addButton.mount(this.element.querySelector('.add-button-cont'));
     }
 }

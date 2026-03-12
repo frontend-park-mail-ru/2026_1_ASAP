@@ -1,6 +1,21 @@
 import { BaseComponent } from "../../../core/base/baseComponent.js";
 
+/**
+ * Компонент текстового поля ввода с поддержкой ошибок валидации
+ * и переключения видимости пароля.
+ */
 export class Input extends BaseComponent {
+    /**
+     * @param {object} [props={}] - Свойства компонента.
+     * @param {string} [props.class=''] - CSS-класс.
+     * @param {string} [props.placeholder=''] - Плейсхолдер.
+     * @param {string} [props.name=''] - Имя поля для FormData.
+     * @param {string} [props.type=''] - Тип инпута ('text', 'password', 'email' и др.).
+     * @param {boolean} [props.required=false] - Обязательность поля.
+     * @param {boolean} [props.togglePassword=false] - Показывать ли кнопку показа/скрытия пароля.
+     * @param {boolean} [props.showErrorText=true] - Показывать ли текст ошибки.
+     * @param {Function} [props.onClick] - Обработчик клика по инпуту.
+     */
     constructor(props={}) {
         super(props);
         this.class = props.class || "";
@@ -14,6 +29,9 @@ export class Input extends BaseComponent {
         this.tempName = "components/ui/input/input";
     }
 
+    /**
+     * Монтирует дочерние компоненты и находит элемент ошибки формы.
+     */
     afterMount() {
         this.inputElement = this.element.querySelector('input');
         if (this.showErrorText) {
@@ -43,6 +61,9 @@ export class Input extends BaseComponent {
         }
     }
 
+    /**
+     * Размонтирует дочерние компоненты и удаляет обработчик клика.
+     */
     beforeUnmount() {
         if (this.type === 'password' && this.togglePassword && this.toggleIconElement) {
             this.toggleIconElement.parentNode.removeEventListener('click', this.togglePasswordHandler);
@@ -53,14 +74,23 @@ export class Input extends BaseComponent {
         }
     }
 
+    /**
+     * Текущее значение поля ввода.
+     * @type {string}
+     */
     get value() {
         return this.element.querySelector('input').value;
     }
     
+    /** @param {string} val */
     set value(val) {
         this.element.querySelector('input').value = val;
     }
 
+    /**
+     * Устанавливает сообщение об ошибке и добавляет CSS-класс ошибки.
+     * @param {string} message - Текст ошибки.
+     */
     setError(message) {
         this._error = message;
         if (this.errorElement) {
@@ -72,6 +102,9 @@ export class Input extends BaseComponent {
         }
     }
     
+    /**
+     * Очищает сообщение об ошибке и убирает CSS-класс ошибки.
+     */
     clearError() {
             this._error = ''; 
             if (this.errorElement) {
