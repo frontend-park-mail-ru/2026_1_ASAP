@@ -45,22 +45,27 @@ p {
 .user-name {
     font-size: 18px;
     width: 100%;
+    user-select: none;
 }
 
 .sender-group {
     color: var(--color-text-hover);
+    user-select: none;
 }
 
 .group-name {
     font-size: 18px;
+    user-select: none;
 }
 
 .chanel-name {
     font-size: 18px;
+    user-select: none;
 }
 
 .msg-text {
     font-size: 13px;
     width: 100%;
     box-sizing: border-box;
+    user-select: none;
 }

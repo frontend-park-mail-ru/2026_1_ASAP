@@ -3,7 +3,7 @@
         <p class="user-name">{{name}}</p>
         <p class="msg-text">{{lastMessage}}</p>
     {{else if (eq class "message-group")}}
-        <p class="group-name">${this.props.name || 'Имя'}</p>
+        <p class="group-name">{{name}}</p>
         <p class="msg-text"><span class="sender-group">{{sender}}: </span>{{lastMessage}}</p>
     {{else if (eq class "message-chanel")}}
         <p class="chanel-name">{{name}}</p>

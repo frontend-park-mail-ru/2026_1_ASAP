@@ -29,4 +29,5 @@
 .empty-field {
     font: var(--text-heading1);
     text-align: center;
+    user-select: none;
 }
