@@ -17,5 +17,10 @@
     align-items: center;
     border-radius: 11px;
     margin-right: 2px;
+    user-select: none;
+}
+
+.time {
+    user-select: none;
 }
 
