@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>services/validationService.js - Documentation</title>
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav >
+    
+    
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="App.html">App</a><ul class='methods'><li data-type='method'><a href="App.html#start">start</a></li></ul></li><li><a href="AuthForm.html">AuthForm</a><ul class='methods'><li data-type='method'><a href="AuthForm.html#afterMount">afterMount</a></li><li data-type='method'><a href="AuthForm.html#beforeUnmount">beforeUnmount</a></li><li data-type='method'><a href="AuthForm.html#clearFormError">clearFormError</a></li><li data-type='method'><a href="AuthForm.html#onSubmit">onSubmit</a></li><li data-type='method'><a href="AuthForm.html#showFormError">showFormError</a></li></ul></li><li><a href="AuthService.html">AuthService</a><ul class='methods'><li data-type='method'><a href="AuthService.html#checkAuth">checkAuth</a></li><li data-type='method'><a href="AuthService.html#login">login</a></li><li data-type='method'><a href="AuthService.html#logout">logout</a></li><li data-type='method'><a href="AuthService.html#register">register</a></li></ul></li><li><a href="Avatar.html">Avatar</a></li><li><a href="BaseComponent.html">BaseComponent</a><ul class='methods'><li data-type='method'><a href="BaseComponent.html#afterMount">afterMount</a></li><li data-type='method'><a href="BaseComponent.html#beforeUnmount">beforeUnmount</a></li><li data-type='method'><a href="BaseComponent.html#mount">mount</a></li><li data-type='method'><a href="BaseComponent.html#render">render</a></li><li data-type='method'><a href="BaseComponent.html#unmount">unmount</a></li></ul></li><li><a href="BaseForm.html">BaseForm</a><ul class='methods'><li data-type='method'><a href="BaseForm.html#afterMount">afterMount</a></li><li data-type='method'><a href="BaseForm.html#beforeUnmount">beforeUnmount</a></li><li data-type='method'><a href="BaseForm.html#onSubmit">onSubmit</a></li></ul></li><li><a href="BasePage.html">BasePage</a><ul class='methods'><li data-type='method'><a href="BasePage.html#mount">mount</a></li><li data-type='method'><a href="BasePage.html#render">render</a></li><li data-type='method'><a href="BasePage.html#unmount">unmount</a></li></ul></li><li><a href="Button.html">Button</a><ul class='methods'><li data-type='method'><a href="Button.html#afterMount">afterMount</a></li><li data-type='method'><a href="Button.html#beforeUnmount">beforeUnmount</a></li></ul></li><li><a href="ChatInfo.html">ChatInfo</a><ul class='methods'><li data-type='method'><a href="ChatInfo.html#afterMount">afterMount</a></li><li data-type='method'><a href="ChatInfo.html#beforeUnmount">beforeUnmount</a></li></ul></li><li><a href="ChatItem.html">ChatItem</a><ul class='methods'><li data-type='method'><a href="ChatItem.html#afterMount">afterMount</a></li><li data-type='method'><a href="ChatItem.html#beforeUnmount">beforeUnmount</a></li><li data-type='method'><a href="ChatItem.html#typeToClass">typeToClass</a></li></ul></li><li><a href="ChatListItem.html">ChatListItem</a><ul class='methods'><li data-type='method'><a href="ChatListItem.html#afterMount">afterMount</a></li><li data-type='method'><a href="ChatListItem.html#beforeUnmount">beforeUnmount</a></li><li data-type='method'><a href="ChatListItem.html#selectChat">selectChat</a></li></ul></li><li><a href="ChatListWrapper.html">ChatListWrapper</a><ul class='methods'><li data-type='method'><a href="ChatListWrapper.html#afterMount">afterMount</a></li></ul></li><li><a href="ChatService.html">ChatService</a><ul class='methods'><li data-type='method'><a href="ChatService.html#getChats">getChats</a></li></ul></li><li><a href="ChatsPage.html">ChatsPage</a><ul class='methods'><li data-type='method'><a href="ChatsPage.html#afterMount">afterMount</a></li><li data-type='method'><a href="ChatsPage.html#beforeUnmount">beforeUnmount</a></li><li data-type='method'><a href="ChatsPage.html#render">render</a></li><li data-type='method'><a href="ChatsPage.html#toggleSettings">toggleSettings</a></li></ul></li><li><a href="Checkbox.html">Checkbox</a><ul class='methods'><li data-type='method'><a href="Checkbox.html#afterMount">afterMount</a></li><li data-type='method'><a href="Checkbox.html#beforeUnmount">beforeUnmount</a></li></ul></li><li><a href="Input.html">Input</a><ul class='methods'><li data-type='method'><a href="Input.html#afterMount">afterMount</a></li><li data-type='method'><a href="Input.html#beforeUnmount">beforeUnmount</a></li><li data-type='method'><a href="Input.html#clearError">clearError</a></li><li data-type='method'><a href="Input.html#setError">setError</a></li></ul></li><li><a href="Layout.html">Layout</a><ul class='methods'><li data-type='method'><a href="Layout.html#render">render</a></li></ul></li><li><a href="LoginPage.html">LoginPage</a><ul class='methods'><li data-type='method'><a href="LoginPage.html#afterMount">afterMount</a></li><li data-type='method'><a href="LoginPage.html#beforeUnmount">beforeUnmount</a></li></ul></li><li><a href="MenuBar.html">MenuBar</a><ul class='methods'><li data-type='method'><a href="MenuBar.html#afterMount">afterMount</a></li></ul></li><li><a href="MetaChatInfo.html">MetaChatInfo</a><ul class='methods'><li data-type='method'><a href="MetaChatInfo.html#afterMount">afterMount</a></li><li data-type='method'><a href="MetaChatInfo.html#beforeUnmount">beforeUnmount</a></li></ul></li><li><a href="PageManager.html">PageManager</a><ul class='methods'><li data-type='method'><a href="PageManager.html#open">open</a></li></ul></li><li><a href="RegisterForm.html">RegisterForm</a><ul class='methods'><li data-type='method'><a href="RegisterForm.html#afterMount">afterMount</a></li><li data-type='method'><a href="RegisterForm.html#beforeUnmount">beforeUnmount</a></li><li data-type='method'><a href="RegisterForm.html#onSubmit">onSubmit</a></li></ul></li><li><a href="RegisterPage.html">RegisterPage</a><ul class='methods'><li data-type='method'><a href="RegisterPage.html#afterMount">afterMount</a></li><li data-type='method'><a href="RegisterPage.html#beforeUnmount">beforeUnmount</a></li></ul></li><li><a href="Router.html">Router</a><ul class='methods'><li data-type='method'><a href="Router.html#handleRoute">handleRoute</a></li><li data-type='method'><a href="Router.html#init">init</a></li><li data-type='method'><a href="Router.html#navigate">navigate</a></li></ul></li><li><a href="SearchForm.html">SearchForm</a><ul class='methods'><li data-type='method'><a href="SearchForm.html#afterMount">afterMount</a></li></ul></li><li><a href="ValidationService.html">ValidationService</a><ul class='methods'><li data-type='method'><a href="ValidationService.html#validateEmail">validateEmail</a></li><li data-type='method'><a href="ValidationService.html#validateLogin">validateLogin</a></li><li data-type='method'><a href="ValidationService.html#validatePassword">validatePassword</a></li><li data-type='method'><a href="ValidationService.html#validateRequired">validateRequired</a></li></ul></li></ul>
+    
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">services/validationService.js</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>
+/**
+ * Сервис валидации пользовательского ввода: email, пароль, логин, обязательные поля.
+ */
+class ValidationService {
+    /**
+     * Валидирует email-адрес.
+     * @param {string} email - Адрес электронной почты.
+     * @returns {{isValid: boolean, message: string}} Результат валидации.
+     */
+    validateEmail(email) {
+        if (!email) {
+            return { isValid: false, message: 'Почта не может быть пустой.' };
+        }
+
+        // Регулярка для почты допускает:
+        // В имени: латинские буквы, цифры, . _ % + -
+        // В домене: латинские буквы, цифры, - и .
+        // Не менее 2 символов в доменной зоне (например, .com, .ru)
+        // Запрещает IP в доменной части
+        // Запрещает разные последовательности и спец символы
+        // Запрещает точки в начале и в конце или дефисы в домене
+
+        const emailRegex = new RegExp(
+            /^((([A-Za-z0-9._%+-]+)(\.[A-Za-z0-9._%+-]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([A-Za-z0-9-]+\.)+[A-Za-z]{2,}))$/        );
+        
+        const ipAddressRegex = new RegExp(
+            /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
+        );
+
+        if (!emailRegex.test(email)) {
+            return { isValid: false, message: 'Неверный формат почты.' };
+        }
+        
+        const domain = email.split('@')[1];
+        if (ipAddressRegex.test(domain)) {
+             return { isValid: false, message: 'IP-адреса в домене не допускаются.' };
+        }
+
+        return { isValid: true, message: '' };
+    }
+
+    /**
+     * Валидирует пароль по набору требований (длина, регистр, цифры, спецсимволы).
+     * @param {string} password - Пароль.
+     * @returns {{isValid: boolean, message: string, missing?: string[]}} Результат с списком невыполненных требований.
+     */
+    validatePassword(password) {
+        const requirements = [
+            { regex: /.{8,}/, message: 'Минимум 8 символов' },
+            { regex: /[A-Z]/, message: 'Хотя бы одна заглавная буква' },
+            { regex: /[a-z]/, message: 'Хотя бы одна строчная буква' },
+            { regex: /[0-9]/, message: 'Хотя бы одна цифра' },
+            { regex: /[[\]!@#$%^&amp;*()_+=}{';:"\\|,.&lt;>/?]/, message: 'Хотя бы один спецсимвол' },];
+
+        const missing = [];
+        let isValid = true;
+
+        if (!password) {
+            return { 
+                isValid: false, 
+                message: 'Пароль не может быть пустым', 
+                missing: requirements.map(req => req.message) 
+            };
+        }
+
+        for (const req of requirements) {
+            if (!req.regex.test(password)) {
+                isValid = false;
+                missing.push(req.message);
+            }
+        }
+
+        return { isValid, message: isValid ? '' : 'Пароль не соответствует требованиям', missing };
+    }
+
+    /**
+     * Валидирует логин (3–20 символов, латиница, цифры, `_`).
+     * @param {string} login - Логин.
+     * @returns {{isValid: boolean, message: string}}
+     */
+    validateLogin(login) {
+        if (!login) {
+            return { isValid: false, message: 'Логин не может быть пустым.' };
+        }
+        if (login.length &lt; 3) {
+            return { isValid: false, message: 'Логин должен быть не менее 3 символов.' };
+        }
+        if (login.length > 20) {
+            return { isValid: false, message: 'Логин должен быть не более 20 символов.' };
+        }
+        if (!/^[a-zA-Z0-9_]+$/.test(login)) {
+            return { isValid: false, message: 'Логин может содержать только латинские буквы, цифры и _.' };
+        }
+
+        return { isValid: true, message: '' };
+    }
+    
+    /**
+     * Проверяет, что поле не пустое.
+     * @param {string} value - Значение поля.
+     * @param {string} [fieldName='Поле'] - Название поля для сообщения об ошибке.
+     * @returns {{isValid: boolean, message: string}}
+     */
+    validateRequired(value, fieldName = 'Поле') {
+        if (!value || value.trim() === '') {
+            return { isValid: false, message: `${fieldName} не может быть пустым.` };
+        }
+
+        return { isValid: true, message: '' };
+    }
+}
+
+export const validationService = new ValidationService();</code></pre>
+        </article>
+    </section>
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.5</a> on Thu Mar 12 2026 19:50:09 GMT+0300 (Moscow Standard Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+
+
+</body>
+</html>

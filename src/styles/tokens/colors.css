@@ -1,0 +1,36 @@
+:root {
+
+    --color-background: #0f102f;
+
+    --color-primary: #455DBA;
+
+    --color-text: rgba(242, 240, 240, 1);
+
+    --color-text-hover: rgba(242, 240, 240, 0.5);
+
+    --color-neutral: rgba(19, 19, 19, 1);
+
+    --color-backgroundBlur: #5A8A6E;
+
+    --color-background: #0F102F;
+
+    --color-border: rgba(255,255,255,0.1);
+
+    --color-chat-sidebar: rgba(6, 5, 5, 0.31);
+
+    --color-border-sidebar: rgba(45, 50, 53, 1);
+
+    --color-border-chats: rgba(112, 112, 112, 0.3);
+
+    --color-scroll: rgba(112, 112, 112, 1);
+
+    --color-empty: rgba(242, 240, 240, 0);
+
+    --color-bubble: rgba(69, 83, 186, 1);
+
+    --color-borderDefault: #2A2A2A 75%;
+    
+    --color-error: #FF0000;
+
+    --color-error-border: #D80000;
+}

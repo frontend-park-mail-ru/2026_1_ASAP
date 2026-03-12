@@ -1,0 +1,146 @@
+import { BaseForm } from '../../../core/base/baseForm.js';
+import { Button } from '../../ui/button/button.js';
+import { authService } from '../../../services/authService.js';
+import { Input } from '../../ui/input/input.js'; 
+import { validationService } from '../../../services/validationService.js';
+
+/**
+ * Форма регистрации (логин + email + пароль). Валидирует ввод
+ * и отправляет данные через AuthService.
+ */
+export class RegisterForm extends BaseForm {
+    /**
+     * @param {object} [props={}] - Свойства.
+     * @param {Function} [props.onNavigateToLogin] - Колбэк перехода на страницу входа.
+     * @param {import Router} [props.router] - Роутер.
+     */
+    constructor(props = {}) {
+        super(props);
+        this.tempName = "components/composite/registerForm/registerForm";
+    }
+
+    /**
+     * Монтирует дочерние компоненты и находит элемент ошибки формы.
+     */
+    afterMount() {
+        super.afterMount();
+
+        const backArrow = this.element.querySelector('.auth__backArrow');
+        if (backArrow) {
+            backArrow.addEventListener('click', this.props.onNavigateToLogin);
+        }   
+        
+        /** @type {Input} Поле пароля */
+        this.loginInput = new Input({
+            class: 'ui-input',
+            name: 'login',
+            placeholder: 'Логин',
+            required: true,
+            showErrorText : true,
+        });
+        this.loginInput.mount(
+            this.element.querySelector('[data-component="login-input"]')
+        );
+
+        /** @type {Input} Поле пароля */
+        this.emailInput = new Input({
+            class: 'ui-input',
+            name: 'email',
+            type: 'email',
+            placeholder: 'Почта',
+            required: true,
+            showErrorText : true,
+        });
+        this.emailInput.mount(
+            this.element.querySelector('[data-component="email-input"]')
+        );
+
+        /** @type {Input} Поле пароля */
+        this.passwordInput = new Input({
+            class: 'ui-input',
+            name: 'password',
+            type: 'password',
+            placeholder: 'Пароль',
+            required: true,
+            togglePassword: true,
+            showErrorText : true,
+        });
+        this.passwordInput.mount(
+            this.element.querySelector('[data-component="password-input"]')
+        );
+
+        /** @type {Button} Кнопка регистрации */
+        this.registerButton = new Button({
+            label: 'Зарегистрироваться',
+            class: 'ui-button ui-button__primary',
+            type: "submit",
+        });
+        this.registerButton.mount(
+            this.element.querySelector('.auth__register')
+        );
+    }
+
+    /**
+     * Размонтирует все дочерние компоненты.
+     */
+    beforeUnmount() {
+        super.beforeUnmount();
+        const backArrow = this.element.querySelector('.auth__backArrow');
+        if (backArrow) {
+            backArrow.removeEventListener('click', this.props.onNavigateToLogin);
+        }
+        this.loginInput.unmount();
+        this.emailInput.unmount();
+        this.passwordInput.unmount();
+        this.registerButton.unmount();
+    }
+    
+    /**
+     * Валидирует данные и отправляет запрос на регистрацию.
+     * @param {{login: string, email: string, password: string}} data - Данные формы.
+     * @returns {Promise<void>}
+     */
+    async onSubmit(data) {
+        this.loginInput.clearError();
+        this.emailInput.clearError();
+        this.passwordInput.clearError();
+
+        const loginResult = validationService.validateLogin(data.login);
+        const emailResult = validationService.validateEmail(data.email);
+        const passwordResult = validationService.validatePassword(data.password);
+
+        let isFormValid = true;
+
+        if (!loginResult.isValid) {
+            this.loginInput.setError(loginResult.message);
+            isFormValid = false;
+        }
+        if (!emailResult.isValid) {
+            this.emailInput.setError(emailResult.message);
+            isFormValid = false;
+        }
+        if (!passwordResult.isValid) {
+            this.passwordInput.setError(`Не хватает: ${passwordResult.missing.join(', ')}`);
+            isFormValid = false;
+        }
+
+        if (!isFormValid) {
+            console.log('Форма невалидна, отправка отменена.');
+            return;
+        }
+
+        console.log('Форма регистрации валидна. Отправка данных:', data);
+        const result = await authService.register(data.email, data.login, data.password);
+
+        if (result.success) {
+            console.log('Успешная регистрация:', result.data);
+            this.props.router.navigate('/chats');
+        } else {
+            console.log('Ошибка регистрации:', result);
+            if (result.error.includes("409")) {
+                this.emailInput.setError('Пользователь с такой почтой или логином уже существует');
+                this.loginInput.setError('Пользователь с таким логином уже существует');
+            }
+        }
+    }
+}

@@ -1,0 +1,112 @@
+.auth__form {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    max-width: 360px;
+    gap: 10px;
+    padding: 25px;
+
+}
+
+.auth__label {
+    font: var(--font-secondary);
+    background: var(--gradient-msg);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0px;
+    width: fit-content;
+}
+
+.auth__title {
+    text-align: center;
+    font: var(--text-heading1);
+    letter-spacing: var(--text-heading1-letter-spacing);
+    background: var(--gradient-msg);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0px;
+    padding: 10px 0px 10px 0px;
+}
+
+.auth__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.auth__inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.auth__login {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    max-height: 42px;
+    min-height: 42px;
+    border: none;
+    cursor: pointer;
+}
+
+.auth__register {
+    height: 100%;
+    width: 100%;
+    border: none;
+    cursor: pointer;
+    max-height: 42px;
+    min-height: 42px;
+
+}
+
+.auth__divider-text {
+    font: "Inter", sans-serif;
+    opacity: 0.21;
+    color: #1E1E1E;
+    font-size: 12px;
+}
+
+.auth__divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    color: #9aa0a6;
+    font-size: 14px;
+}
+
+.auth__divider::before,
+.auth__divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #d0d0d0;
+}
+
+.auth__form-error-message {
+    font: var(--text-tertiary);
+    letter-spacing: var(--text-tertiary-letter-spacing);
+    color: var(--color-error);
+    font-size: 12px;
+    text-align: center;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    min-height: 14px; 
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.auth__form-error-message[style*="opacity: 1"] {
+    margin: 0;
+    opacity: 1;
+}
+
+.buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}

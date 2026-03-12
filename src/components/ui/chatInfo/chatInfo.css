@@ -1,0 +1,71 @@
+.message-personal {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+    color: var(--color-text);
+    gap: 10px;
+    box-sizing: border-box;
+    margin: 0px;
+    padding: 0px;
+}
+
+.message-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+    color: var(--color-text);
+    gap: 10px;
+    box-sizing: border-box;
+    margin: 0px;
+    padding: 0px;
+}
+
+.message-chanel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+    color: var(--color-text);
+    gap: 10px;
+    box-sizing: border-box;
+    margin: 0px;
+    padding: 0px;
+}
+
+p {
+    margin: 0px;
+    padding: 0px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+};
+
+.user-name {
+    font-size: 18px;
+    width: 100%;
+    user-select: none;
+}
+
+.sender-group {
+    color: var(--color-text-hover);
+    user-select: none;
+}
+
+.group-name {
+    font-size: 18px;
+    user-select: none;
+}
+
+.chanel-name {
+    font-size: 18px;
+    user-select: none;
+}
+
+.msg-text {
+    font-size: 13px;
+    width: 100%;
+    box-sizing: border-box;
+    user-select: none;
+}
