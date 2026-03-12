@@ -3,12 +3,11 @@ import { ChatItem } from "../chatItem/chatItem.js";
 import { ChatService } from "../../../services/chatService.js";
 
 export class ChatListItem extends BaseForm {
-    render() {
-        const ChatListItem = document.createElement('div');
-        ChatListItem.className = "chat-list";
-        return ChatListItem;
+    constructor(props={}) {
+        super(props);
+        this.tempName = "components/composite/chatListItem/chatListItem";
     };
-
+    
     selectChat(selectedItem) {
         this.chatItems.forEach(item => {
             item.element.className = "chat-item--default";

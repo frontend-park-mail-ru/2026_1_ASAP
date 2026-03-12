@@ -2,13 +2,9 @@ import { BaseForm } from '../../../core/base/baseForm.js';
 import { Button } from '../../ui/button/button.js';
 
 export class MenuBar extends BaseForm {
-    render() {
-        const menuBar = document.createElement('div');
-        menuBar.className = "menu-bar";
-        menuBar.innerHTML = `
-            <div class="menu-buttons"></div>
-        `;
-        return menuBar;
+    constructor(props={}) {
+        super(props);
+        this.tempName = "components/composite/menuBar/menuBar";
     }
 
     afterMount() {

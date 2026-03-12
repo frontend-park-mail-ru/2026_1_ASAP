@@ -4,15 +4,10 @@ import { Button } from '../../ui/button/button.js';
 import { Avatar } from '../../ui/avatar/avatar.js';
 
 export class SearchForm extends BaseForm {
-    render() {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'search';
-        wrapper.innerHTML = `
-            <div class="search-panel"></div>
-            <div class="add-button-cont"></div>
-        `;
-        return wrapper;
-    }
+    constructor(props={}) {
+        super(props);
+        this.tempName = "components/composite/searchForm/searchForm";
+    };
 
     afterMount() {
         this.searchImg = new Avatar({

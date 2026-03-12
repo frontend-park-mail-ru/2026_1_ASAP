@@ -8,6 +8,7 @@ import { Button } from "../../components/ui/button/button.js";
 export class ChatsPage extends BasePage {
     constructor(props={}) {
         super(props);
+        this.tempName = "pages/chats/chats";
     };
 
     toggleSettings() {
@@ -15,7 +16,6 @@ export class ChatsPage extends BasePage {
         if (!this.isSettings) {
             this.searchForm.unmount();
             this.chatWrapper.unmount();
-            this.menuBar.unmount();
             this.logoutButton = new Button({
                 class: 'logout-button',
                 label: 'Выйти из аккаунта',

@@ -3,7 +3,6 @@ import { BaseComponent } from "../../../core/base/baseComponent.js";
 export class MetaChatInfo extends BaseComponent {
     constructor(props={}) {
         super(props);
-        this.class = props.class;
         this.tempName = 'components/ui/metaChatInfo/metaChatInfo';
     };
 
