@@ -6,16 +6,8 @@ import { authService } from "../../services/authService.js";
 import { Button } from "../../components/ui/button/button.js";
 
 export class ChatsPage extends BasePage {
-    render() {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'chat-page';
-        wrapper.innerHTML = `
-        <div class="chat-page__sidebar"></div>
-        <div class=chat-page__mainfield>
-            <p class="empty-field">У вас пока не выбран чат.<br>Скорее напишите кому-нибудь!</p>
-        </div>
-        `;
-        return wrapper;
+    constructor(props={}) {
+        super(props);
     };
 
     toggleSettings() {

@@ -1,16 +1,10 @@
 import { BaseComponent } from "../../../core/base/baseComponent.js";
 
 export class MetaChatInfo extends BaseComponent {
-    render() {
-        const wrapper = document.createElement('div');
-        wrapper.className = "meta-chat-info";
-        wrapper.innerHTML = `
-            <p class="time">22:20</p>
-            <div class="msg-bubble">
-                <p class="msg-count">99+</p>
-            </div>
-        `;
-        return wrapper;
+    constructor(props={}) {
+        super(props);
+        this.class = props.class;
+        this.tempName = 'components/ui/metaChatInfo/metaChatInfo';
     };
 
     afterMount() {
