@@ -1,6 +1,6 @@
-import { LoginPage } from "../pages/login/login.js";
-import { ChatsPage } from "../pages/chats/chats.js";
-import { RegisterPage } from "../pages/register/register.js";
+import { LoginPage } from "../../pages/login/login.js";
+import { ChatsPage } from "../../pages/chats/chats.js";
+import { RegisterPage } from "../../pages/register/register.js";
 import { Layout } from "./layout/layout.js";
 import { PageManager } from "./pageManager.js";
 import { Router } from "./router.js";
