@@ -6,16 +6,7 @@ import { MetaChatInfo } from "../../ui/metaChatInfo/metaChatInfo.js";
 export class ChatItem extends BaseForm {
     constructor(props={}) {
         super(props);
-
-        this.class = props.class;
-        this.name = props.name;
-        this.lastMessage = props.lastMessage;
-    }
-    render() {
-        const chatItem = document.createElement('div');
-        chatItem.className = this.class;
-        chatItem.id = this.props.id;
-        return chatItem;
+        this.tempName = "components/composite/chatItem/chatItem";
     };
 
     typeToClass() {
