@@ -1,20 +1,24 @@
 export class Router {
-    constructor(routes, pageManager) {
+    constructor(routes) {
         this.routes = routes
-        this.pageManager = pageManager
+        this.pageManager = null;
     }
 
     init() {
         window.addEventListener('popstate', () => this.handleRoute());
-
         this.handleRoute();
     }
 
-    handleRoute() {
+    async handleRoute() {
+        if (!this.pageManager) {
+            throw new Error("PageManager не установлен в Router");
+        }
+
         const path = window.location.pathname;
-        const PageClass = this.routes[path] || this.routes['404'];
+        const PageClass = this.routes[path] || this.routes['/'];
+
         if (PageClass) {
-            this.pageManager.open(PageClass);
+            await this.pageManager.open(PageClass);
         }
     }
 

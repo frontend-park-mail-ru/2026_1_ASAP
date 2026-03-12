@@ -4,9 +4,10 @@ export class PageManager {
         this.router = router;
         this.currentPage = null;
     }
-    open(PageClass, props = {}) {
+    
+    async open(PageClass, props = {}) {
         if (this.currentPage) {
-            this.currentPage.unmount();
+            await this.currentPage.unmount();
         }
         const pageProps = {
             ...props,
@@ -17,7 +18,7 @@ export class PageManager {
 
         this.currentPage = page;
 
-        this.layout.render(page.root);
-        page.mount();
+        await this.layout.render(page.root);
+        await page.mount();
     }
 }

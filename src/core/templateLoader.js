@@ -1,15 +1,21 @@
 const tempCahce = new Map();
 
-export async function loadTemplate(path) {
-    if (tempCahce.has(path)) {
-        return tempCahce.get(path);
+export async function loadTemplate(modulePath) {
+    if (tempCahce.has(modulePath)) {
+        return tempCahce.get(modulePath);
     }
-    const resp = await fetch(path);
-    if (!resp.ok) {
-        throw new Error(`Шаблон не найден ${path}`);
-    }
-    const temp = Handlebars.compile(await resp.text());
-    tempCahce.set(path, temp);
 
-    return temp;
+    try {
+        const module = await import(modulePath);
+        const temp = module.default;
+
+        if (typeof temp !== 'function') {
+            throw new Error(`Модуль ${modulePath} не экспортирует шаблон по умолчанию`);
+        }
+        tempCahce.set(modulePath, temp);
+        return temp;
+    } catch (error) {
+        console.error(`Ошибка при загрузке шаблона ${modulePath}:`, error); 
+        throw error;
+    }
 }
