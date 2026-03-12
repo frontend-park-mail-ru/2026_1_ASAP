@@ -2,16 +2,9 @@ import { BasePage } from '../../core/base/basePage.js';
 import { RegisterForm } from '../../components/composite/registerForm/registerForm.js';
 
 export class RegisterPage extends BasePage {
-    render() {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'login-page'; 
-
-        wrapper.innerHTML = `
-            <img class="auth__logo" src="/assets/images/icons/Logo.svg" alt="Логотип" />
-            <div class="login-page__glow"></div>
-            <div class="ui-card register-card"></div>
-        `;
-        return wrapper;
+    constructor(props = {}) {
+        super(props);
+        this.tempName = "pages/register/register";
     }
 
     afterMount() {

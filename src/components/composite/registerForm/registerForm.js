@@ -5,36 +5,9 @@ import { Input } from '../../ui/input/input.js';
 import { validationService } from '../../../services/validationService.js';
 
 export class RegisterForm extends BaseForm {
-    render() {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'auth';
-        wrapper.innerHTML = `
-            <form class="auth__form__register" novalidate>
-                <div class="auth__header">
-                    <div class="auth__backArrow">
-                        <img class = "auth__backArrow" src="/assets/images/icons/backArrow.svg" alt="Назад" />
-                    </div>
-                    <h1 class="auth__title">Регистрация</h1>
-                </div>
-                <div class="auth__inputs">
-                    <div class="auth__field">
-                        <p class="auth__label">Введите логин:</p>
-                        <div data-component="login-input"></div>
-                    </div>
-                    <div class="auth__field">
-                        <p class="auth__label">Введите почту:</p>
-                        <div data-component="email-input"></div>
-                    </div>
-                    <div class="auth__field">
-                        <p class="auth__label">Пароль:</p>
-                        <div data-component="password-input"></div>
-                    </div>
-                </div>
-                <div class="auth__register"></div>
-            </form>
-        `;
-
-        return wrapper;
+    constructor(props = {}) {
+        super(props);
+        this.tempName = "components/composite/registerForm/registerForm";
     }
 
     afterMount() {
@@ -49,7 +22,8 @@ export class RegisterForm extends BaseForm {
             class: 'ui-input',
             name: 'login',
             placeholder: 'Логин',
-            required: true
+            required: true,
+            showErrorText : true,
         });
         this.loginInput.mount(
             this.element.querySelector('[data-component="login-input"]')
@@ -60,7 +34,8 @@ export class RegisterForm extends BaseForm {
             name: 'email',
             type: 'email',
             placeholder: 'Почта',
-            required: true
+            required: true,
+            showErrorText : true,
         });
         this.emailInput.mount(
             this.element.querySelector('[data-component="email-input"]')
@@ -72,7 +47,8 @@ export class RegisterForm extends BaseForm {
             type: 'password',
             placeholder: 'Пароль',
             required: true,
-            togglePassword: true 
+            togglePassword: true,
+            showErrorText : true,
         });
         this.passwordInput.mount(
             this.element.querySelector('[data-component="password-input"]')

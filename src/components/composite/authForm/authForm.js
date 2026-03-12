@@ -20,6 +20,7 @@ export class AuthForm extends BaseForm {
             placeholder: 'Логин',
             required: true,
             class: 'ui-input',
+            showErrorText : true,
         });
 
         this.loginInput.mount(
@@ -37,7 +38,8 @@ export class AuthForm extends BaseForm {
             name: 'password',
             placeholder: 'Пароль',
             required: true,
-            togglePassword: true 
+            togglePassword: true,
+            showErrorText : true,
         });
 
         this.passwordInput.mount(

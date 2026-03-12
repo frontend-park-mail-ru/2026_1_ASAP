@@ -1,19 +1,11 @@
-.auth {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    gap: 15px;
-    padding: 25px;
-    max-width: 360px;
-    width: 100%;
-}
-
 .auth__form__register {
-    padding-top: 10px;
     display: flex;
     flex-direction: column;
     height: 100%;
+    width: 100%;
+    max-width: 360px;
     gap: 15px;
+    padding: 35px 25px 25px 25px;
 }
 
 .auth__header {
