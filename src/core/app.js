@@ -30,6 +30,6 @@ export class App {
             this.router.navigate('/login');
         }
 
-        window.addEventListener('popstate', () => this.router.handleRoute());
+        this.router.init();
     }
 }

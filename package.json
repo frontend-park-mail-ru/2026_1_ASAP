@@ -6,10 +6,11 @@
   "main": "server/server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "srart": "node server/server.js",
+    "start": "npm run precompile && node server/server.js",
     "dev": "nodemon server/server.js",
     "lint": "eslint .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "precompile" : "node compileTemp.js && node patchCompiled.js"
   },
   "repository": {
     "type": "git",
@@ -29,6 +30,7 @@
     "@eslint/js": "^10.0.1",
     "eslint": "^10.0.2",
     "globals": "^17.4.0",
+    "handlebars": "^4.7.8",
     "husky": "^9.1.7",
     "lint-staged": "^16.3.2",
     "nodemon": "^3.1.14"
