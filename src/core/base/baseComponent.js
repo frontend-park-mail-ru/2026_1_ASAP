@@ -1,4 +1,4 @@
-import { loadTemplate } from "../tempLoader.js";
+import { loadTemplate } from "../templateLoader.js";
 
 export class BaseComponent {
     constructor(props = {}) {
@@ -15,7 +15,7 @@ export class BaseComponent {
 
         if (!this.temp) {
             const modulePath = this.tempPath.replace('.hbs', '.precompiled.js');
-            this.temp = await loadTemp(modulePath);
+            this.temp = await loadTemplate(modulePath);
         }
 
         return this.temp(this.props);
@@ -29,14 +29,14 @@ export class BaseComponent {
         const htmlString = await this.render();
         const tempDiv = document.createElement("div");
         tempDiv.innerHTML = htmlString.trim();
-        container.innerHTML = htmlString;
 
         this.element= tempDiv.firstElementChild;
 
         if (!this.element) {
             throw new Error("Ошибка при рендеринге компонента: не удалось создать элемент из шаблона");
         }
-        
+        container.appendChild(this.element);
+
         await this.afterMount();
     }
 

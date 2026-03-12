@@ -6,42 +6,14 @@ import { Input } from '../../ui/input/input.js';
 import { validationService } from '../../../services/validationService.js';
 
 export class AuthForm extends BaseForm {
-    render() {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'auth';
-
-        wrapper.innerHTML = `
-            <form class="auth__form" novalidate>
-                <h1 class="auth__title">Вход</h1>
-                <div class="auth__inputs">
-                    <div class="auth__field">
-                        <p class="auth__label"> Введите логин:</p>
-                        <div data-component="loginInput"></div>
-                    </div>
-
-                    <div class="auth__field">
-                        <p class="auth__label"> Введите пароль:</p>
-                        <div data-component="passwordInput"></div>
-                    </div>
-                </div>
-                <div class="auth__remember"></div>
-
-                <div class="auth__login"></div>
-                <div data-component="form-error-message"></div>
-                <div class="auth__divider">
-                    <span class="auth__divider-text">Нет аккаунта?</span>
-                </div>
-                <div class="auth__register"></div>
-
-
-            </form>
-        `;
-
-        return wrapper;
+    constructor(props = {}) {
+        super(props);
+        this.tempPath = "/components/composite/authForm/authForm.hbs";
     }
+    
+    async afterMount() {
+        await super.afterMount();
 
-    afterMount() {
-        super.afterMount();
         this.loginInput = new Input({
             type: 'login',
             name: 'login',
@@ -49,7 +21,8 @@ export class AuthForm extends BaseForm {
             required: true,
             class: 'ui-input',
         });
-        this.loginInput.mount(
+
+        await this.loginInput.mount(
             this.element.querySelector("[data-component='loginInput']")
         );
 
@@ -66,7 +39,8 @@ export class AuthForm extends BaseForm {
             required: true,
             togglePassword: true 
         });
-        this.passwordInput.mount(
+
+        await this.passwordInput.mount(
             this.element.querySelector("[data-component='passwordInput']")
         );
 
@@ -75,7 +49,7 @@ export class AuthForm extends BaseForm {
             name: 'remember'
         });
 
-        this.remember.mount(
+        await this.remember.mount(
             this.element.querySelector(".auth__remember")
         );
 
@@ -85,7 +59,7 @@ export class AuthForm extends BaseForm {
             type: "submit",
         });
 
-        this.loginButton.mount(
+        await this.loginButton.mount(
             this.element.querySelector('.auth__login')
         );
 
@@ -96,14 +70,14 @@ export class AuthForm extends BaseForm {
             onClick: this.props.onNavigateToRegister, 
         });
 
-        this.registerButton.mount(
+        await this.registerButton.mount(
             this.element.querySelector('.auth__register')
         );
     };
 
 
-    beforeUnmount() {
-        super.beforeUnmount();
+    async beforeUnmount() {
+        await super.beforeUnmount();
 
         this.loginInput.unmount();
         this.passwordInput.unmount();

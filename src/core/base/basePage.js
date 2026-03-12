@@ -1,4 +1,4 @@
-import { loadTemplate } from "../tempLoader.js";
+import { loadTemplate } from "../templateLoader.js";
 
 export class BasePage {
     constructor(props = {}) {
@@ -16,7 +16,7 @@ export class BasePage {
 
         if (!this.temp) {
             const modulePath = this.tempPath.replace('.hbs', '.precompiled.js');
-            this.temp = await loadTemp(modulePath);
+            this.temp = await loadTemplate(modulePath);
         }
 
         return this.temp(this.props);
@@ -24,16 +24,15 @@ export class BasePage {
 
     async mount() {
         const htmlString = await this.render();
-        const tempDiv = document.createElement("div");
-        tempDiv.innerHTML = htmlString.trim();
-        this.element = tempDiv.firstElementChild;
+
+        this.root.innerHTML = htmlString.trim();
+
+        this.element = this.root.firstElementChild || this.root;
 
         if (!this.element) {
             throw new Error("Ошибка при рендеринге страницы: не удалось создать элемент из шаблона");
         }
 
-        this.root.innerHTML = "";
-        this.root.appendChild(this.element);
         await this.afterMount();
     }
 
