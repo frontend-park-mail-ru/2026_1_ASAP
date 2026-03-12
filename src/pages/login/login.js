@@ -5,11 +5,11 @@ import { AuthForm } from '../../components/composite/authForm/authForm.js';
 export class LoginPage extends BasePage {
     constructor (props = {}) {
         super(props);
-        this.tempPath = "/pages/login/login.hbs";
+        this.tempName = "pages/login/login";
     }
 
-    async afterMount() {
-        await super.afterMount();
+    afterMount() {
+        super.afterMount();
         
         this.form = new AuthForm({
             onNavigateToRegister: () => {
@@ -18,12 +18,12 @@ export class LoginPage extends BasePage {
             router: this.props.router
         });
 
-        await this.form.mount(
+        this.form.mount(
             this.element.querySelector('.login-card')
         );
     };
 
-    async beforeUnmount() {
-        await this.form.unmount();
+    beforeUnmount() {
+        this.form?.unmount();
     };
 };

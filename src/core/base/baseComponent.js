@@ -1,51 +1,38 @@
-import { loadTemplate } from "../templateLoader.js";
-
 export class BaseComponent {
     constructor(props = {}) {
         this.props = props;
         this.element = null;
-        this.tempPath = "";
-        this.temp = null;
+        this.tempName = "";
     }
 
-    async render() {
-        if (!this.tempPath) {
-            throw new Error(`tempPath не указан для компонента ${this.constructor.name}`);
+    render() {
+        if (!this.tempName) {
+            throw new Error(`tempName не указан для компонента ${this.constructor.name}`);
         }
-
-        if (!this.temp) {
-            const modulePath = this.tempPath.replace('.hbs', '.precompiled.js');
-            this.temp = await loadTemplate(modulePath);
+        const template = Handlebars.templates[this.tempName];
+        if (!template) {
+            throw new Error(`Шаблон ${this.tempName} не найден`);
         }
-
-        return this.temp(this.props);
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = template(this.props).trim();
+        return wrapper.firstElementChild;
     }
 
-    async mount(container) {
+    mount(container) {
         if (!container) {
-            throw new Error("Койнтейнер для монтирования не указан");
+            throw new Error("Контейнер для монтирования не указан");
         }
-
-        const htmlString = await this.render();
-        const tempDiv = document.createElement("div");
-        tempDiv.innerHTML = htmlString.trim();
-
-        this.element= tempDiv.firstElementChild;
-
-        if (!this.element) {
-            throw new Error("Ошибка при рендеринге компонента: не удалось создать элемент из шаблона");
-        }
+        this.element = this.render();
         container.appendChild(this.element);
-
-        await this.afterMount();
+        this.afterMount();
     }
 
-    async afterMount() {}
+    afterMount() {}
 
-    async beforeUnmount() {};
+    beforeUnmount() {}
 
-    async unmount() {
-        await this.beforeUnmount();
+    unmount() {
+        this.beforeUnmount();
         this.element?.remove();
     }
 }

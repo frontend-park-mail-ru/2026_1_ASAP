@@ -11,10 +11,10 @@ export class Input extends BaseComponent {
         this.togglePassword = props.togglePassword || false; 
         this._error =  "";
         this.showErrorText = props.showErrorText !== false;
-        this.tempPath = "/components/ui/input/input.hbs";
+        this.tempName = "components/ui/input/input";
     }
 
-    async afterMount() {
+    afterMount() {
         this.inputElement = this.element.querySelector('input');
         if (this.showErrorText) {
             this.errorElement = this.element.querySelector('.ui-input__error-message');
@@ -43,7 +43,7 @@ export class Input extends BaseComponent {
         }
     }
 
-    async beforeUnmount() {
+    beforeUnmount() {
         if (this.type === 'password' && this.togglePassword && this.toggleIconElement) {
             this.toggleIconElement.parentNode.removeEventListener('click', this.togglePasswordHandler);
         }

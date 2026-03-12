@@ -1,7 +1,7 @@
 import { BaseComponent } from "./baseComponent.js";
 
 export class BaseForm extends BaseComponent {
-    async afterMount() {
+    afterMount() {
         if (this.element && this.element.tagName === "FORM") {
             this.form = this.element;
         } else if (this.element) {
@@ -17,20 +17,20 @@ export class BaseForm extends BaseComponent {
         this.form.addEventListener("submit", this.submitHandler);
     }
 
-    async handleSubmit(event) {
+    handleSubmit(event) {
         event.preventDefault();
 
         const formData = new FormData(this.form);
         const data = Object.fromEntries(formData.entries());
 
-        awaitthis.onSubmit(data);
+        this.onSubmit(data);
     }
 
-    async onSubmit() {
+    onSubmit() {
         throw new Error("Метод onSubmit должен быть реализован в наследнике");
     }
 
-    asyncbeforeUnmount() {
+    beforeUnmount() {
         this.form?.removeEventListener("submit", this.submitHandler);
     }
 }
