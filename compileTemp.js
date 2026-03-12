@@ -12,7 +12,7 @@ function compileTemplate(hbsFilePath) {
     console.log(`Compiling: ${path.relative(__dirname, hbsFilePath)} -> ${path.relative(__dirname, jsFilePath)}`);
 
     try {
-        execSync(`handlebars "${hbsFilePath}" -f "${jsFilePath}" -m`, { stdio: 'inherit' });
+        execSync(`handlebars "${hbsFilePath}" -f "${jsFilePath}" -r "${srcDir}"`, { stdio: 'inherit' }); 
     } catch (error) {
         console.error(`Error compiling ${hbsFilePath}:`, error.message);
         process.exit(1);

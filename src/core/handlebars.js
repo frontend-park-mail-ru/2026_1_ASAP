@@ -1,15 +1,25 @@
-import Handlebars from 'handlebars/runtime.js';
 
-// Регистрируем все необходимые хелперы здесь
-Handlebars.registerHelper('eq', function (v1, v2) {
-    return v1 === v2;
-});
+import { getHandlebars } from './handlebars-wrapper.js';
 
-Handlebars.registerHelper('and', function (...args) {
-    // Убираем последний аргумент (объект options от Handlebars)
-    const options = args.pop();
-    return args.every(Boolean);
-});
+let HandlebarsInstance = null;
 
-// Экспортируем настроенный экземпляр
-export default Handlebars;
+export const initHandlebars = (async () => {
+    HandlebarsInstance = await getHandlebars;
+    
+    if (!HandlebarsInstance) {
+        throw new Error("Handlebars instance not available after loading wrapper.");
+    }
+
+    HandlebarsInstance.registerHelper('eq', function (v1, v2) {
+        return v1 === v2;
+    });
+
+    HandlebarsInstance.registerHelper('and', function (...args) {
+        const options = args.pop(); 
+        return args.every(Boolean);
+    });
+
+    return HandlebarsInstance;
+})();
+
+export default initHandlebars;

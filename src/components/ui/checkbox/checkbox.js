@@ -8,30 +8,13 @@ export class Checkbox extends BaseComponent {
         this.label = props.label || "";
         this.name = props.name || "";
         this.checked = props.checked || false;
+        this.tempPath = "/components/ui/checkbox/checkbox.hbs";
+    }
+    async afterMount() {
+        this.inputElement = this.element.querySelector('.ui-checkbox__input');
     }
 
-    render() {
-
-        const wrapper = document.createElement("label");
-        wrapper.className = "ui-checkbox";
-
-        wrapper.innerHTML = `
-            <input 
-                type="checkbox"
-                class="ui-checkbox__input"
-                name="${this.name}"
-                ${this.checked ? "checked" : ""}
-            />
-
-            <span class="ui-checkbox__box"></span>
-
-            <span class="ui-checkbox__label">
-                ${this.label}
-            </span>
-        `;
-
-        return wrapper;
-    }
+    async beforeUnmount() {}
 
     get value() {
         return this.element

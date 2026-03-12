@@ -1,9 +1,9 @@
-import { loadTemplate } from "../tempLoader.js";
+import { loadTemplate } from "../templateLoader.js";
 
 export class Layout {
     constructor() {
         this.root = document.getElementById('app');
-        this.tempPath = "";
+        this.tempPath = '/core/layout/layout.hbs';
         this.temp = null;
     }
     async render(content) {
@@ -13,12 +13,12 @@ export class Layout {
 
         if (!this.temp) {
             const modulePath = this.tempPath.replace('.hbs', '.precompiled.js');
-            this.temp = await loadTemp(modulePath);
+            this.temp = await loadTemplate(modulePath);
         }
 
-        const htmlString = await this.temp(this.props);
+        const htmlString = await this.temp({});
         this.root.innerHTML = htmlString;
-    
+        
         this.root.querySelector('.layout__content').appendChild(content);
     }
 }

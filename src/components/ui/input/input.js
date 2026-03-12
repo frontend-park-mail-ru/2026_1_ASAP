@@ -11,47 +11,17 @@ export class Input extends BaseComponent {
         this.togglePassword = props.togglePassword || false; 
         this._error =  "";
         this.showErrorText = props.showErrorText !== false;
+        this.tempPath = "/components/ui/input/input.hbs";
     }
 
-    render() {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'ui-input-wrapper';
-
-        const input = document.createElement('input');
-        input.className = this.class;
-        input.name = this.name;
-        input.placeholder = this.placeholder;
-        input.type = this.type;
-        input.required = this.required;
-        wrapper.appendChild(input);
-
-        if (this.type === 'password' && this.togglePassword) {
-            const toggleIcon = document.createElement('span');
-            toggleIcon.className = 'ui-input__toggle-password';
-            toggleIcon.innerHTML = `
-                <img src="../../assets/images/icons/closeEye.svg" alt="Показать пароль" />
-            `;
-            wrapper.appendChild(toggleIcon);
-        }
-        if (this.showErrorText) {
-            const errorElement = document.createElement('p');
-            errorElement.className = 'ui-input__error-message';
-            errorElement.textContent = this._error;
-            wrapper.appendChild(errorElement);
-        }
-        return wrapper;
-
-    }
-
-    afterMount() {
+    async afterMount() {
         this.inputElement = this.element.querySelector('input');
         if (this.showErrorText) {
             this.errorElement = this.element.querySelector('.ui-input__error-message');
         }
+
         if (this.type === 'password' && this.togglePassword) {
             this.toggleIconElement = this.element.querySelector('.ui-input__toggle-password img'); 
-        
-
 
             this.togglePasswordHandler = () => {
                 const isPassword = this.inputElement.type === 'password';
@@ -73,7 +43,7 @@ export class Input extends BaseComponent {
         }
     }
 
-    beforeUnmount() {
+    async beforeUnmount() {
         if (this.type === 'password' && this.togglePassword && this.toggleIconElement) {
             this.toggleIconElement.parentNode.removeEventListener('click', this.togglePasswordHandler);
         }
