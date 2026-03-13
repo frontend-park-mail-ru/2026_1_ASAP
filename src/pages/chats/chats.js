@@ -33,6 +33,7 @@ export class ChatsPage extends BasePage {
         this.searchForm.element.style.visibility = 'hidden';
         this.chatWrapper.element.style.visibility = 'hidden';
         this.logoutButton.element.style.display = 'block';
+        this.logoutButton.element.style.visibility = 'visible';
         this.isSettings = true;
     };
 
@@ -74,7 +75,7 @@ export class ChatsPage extends BasePage {
                 this.props.router.navigate('/login');
             }
         });
-        this.logoutButton.mount(this.element.querySelector('.chat-page__sidebar'));
+        this.logoutButton.mount(this.chatWrapper.element);
         this.logoutButton.element.style.display = 'none';
         
         this.menuBar = new MenuBar({

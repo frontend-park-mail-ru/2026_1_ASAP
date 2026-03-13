@@ -35,6 +35,7 @@ export class ChatListItem extends BaseForm {
         
         service.getChats().then(chats => {
             if (chats.length === 0) {
+                this.element.classList.add('chat-list--empty');
                 const p = document.createElement('p');
                 p.className = "no-chats";
                 p.innerHTML = "У вас пока нет чатов,<br> скорее напишите кому нибудь!";

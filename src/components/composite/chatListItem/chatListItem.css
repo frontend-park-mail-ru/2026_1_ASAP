@@ -5,6 +5,13 @@
     width: 100%;
 }
 
+.chat-list--empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
 .no-chats {
     font: var(--text-heading1);
     text-align: center;
