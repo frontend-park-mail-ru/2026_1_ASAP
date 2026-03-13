@@ -27,18 +27,24 @@ export class ChatsPage extends BasePage {
      * При закрытии — убирает кнопку и восстанавливает список чатов с поиском.
      */
     toggleSettings() {
-        if (!this.isSettings) {
-            this.searchForm.element.style.visibility = 'hidden';
-            this.chatWrapper.element.style.visibility = 'hidden';
-            this.logoutButton.element.style.display = 'block';
-            this.isSettings = true;
-        } else {
-            this.searchForm.element.style.visibility = '';
-            this.chatWrapper.element.style.visibility = '';
-            this.logoutButton.element.style.display = 'none';
-            this.isSettings = false;
-        }
+        if (this.isSettings)
+            return;
+        this.menuBar.setActiveButton('settings');
+        this.searchForm.element.style.visibility = 'hidden';
+        this.chatWrapper.element.style.visibility = 'hidden';
+        this.logoutButton.element.style.display = 'block';
+        this.isSettings = true;
     };
+
+    toggleMessages() {
+        if (!this.isSettings)
+            return;
+        this.menuBar.setActiveButton('messages');
+        this.searchForm.element.style.visibility = '';
+        this.chatWrapper.element.style.visibility = '';
+        this.logoutButton.element.style.display = 'none';
+        this.isSettings = false;
+    }
 
     /**
      * Проверяет авторизацию и монтирует компоненты боковой панели.
@@ -72,7 +78,8 @@ export class ChatsPage extends BasePage {
         this.logoutButton.element.style.display = 'none';
         
         this.menuBar = new MenuBar({
-            onSettingsClick: () => this.toggleSettings()
+            onSettingsClick: () => this.toggleSettings(),
+            onMessagesClick: () => this.toggleMessages()
         });
         this.menuBar.mount(this.element.querySelector('.chat-page__sidebar'));
     };
