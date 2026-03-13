@@ -97,8 +97,6 @@ export class Input extends BaseComponent {
             this.errorElement.textContent = message;
             this.element.classList.add('ui-input-wrapper--error');
             this.errorElement.style.opacity = '1'; 
-
-
         }
     }
     

@@ -41,7 +41,6 @@ class AuthService {
                 body: JSON.stringify(data)
             });
             
-            console.log(`Ответ от ${endpoint}:`, response);
             if (!response.ok) {
                 let errorMessage = `Ошибка сервера: ${response.status}`;
 
@@ -49,19 +48,16 @@ class AuthService {
                     const errorData = await response.json();
                     errorMessage = errorData.message || errorMessage;
                 } catch (jsonError) {
-                    console.warn(`Сервер вернул ошибку ${response.status}, но тело ответа не JSON.`);
-                    console.log('Ответ сервера:', jsonError);
+                    throw new Error(`Сервер вернул ошибку ${response.status}, данные не в JSON`);
                 }
 
                 throw new Error(errorMessage);
             }
 
             const result = await response.json();
-            console.log(`Данные от ${endpoint}:`, result);
             return { success: true, data: result };
 
         } catch (error) {
-            console.error(`Ошибка при запросе к ${endpoint}:`, error);
             return { success: false, error: error.message || 'Неизвестная ошибка сети' };
         }
     }

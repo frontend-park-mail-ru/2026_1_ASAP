@@ -10,7 +10,7 @@ class ValidationService {
      */
     validateEmail(email) {
         if (!email) {
-            return { isValid: false, message: 'Почта не может быть пустой.' };
+            return { isValid: false, message: 'Почта не может быть пустой' };
         }
 
         // Регулярка для почты допускает:
@@ -29,12 +29,12 @@ class ValidationService {
         );
 
         if (!emailRegex.test(email)) {
-            return { isValid: false, message: 'Неверный формат почты.' };
+            return { isValid: false, message: 'Неверный формат почты' };
         }
         
         const domain = email.split('@')[1];
         if (ipAddressRegex.test(domain)) {
-             return { isValid: false, message: 'IP-адреса в домене не допускаются.' };
+             return { isValid: false, message: 'IP-адреса в домене не допускаются' };
         }
 
         return { isValid: true, message: '' };
@@ -81,16 +81,16 @@ class ValidationService {
      */
     validateLogin(login) {
         if (!login) {
-            return { isValid: false, message: 'Логин не может быть пустым.' };
+            return { isValid: false, message: 'Логин не может быть пустым' };
         }
         if (login.length < 3) {
-            return { isValid: false, message: 'Логин должен быть не менее 3 символов.' };
+            return { isValid: false, message: 'Логин должен быть не менее 3 символов' };
         }
         if (login.length > 20) {
-            return { isValid: false, message: 'Логин должен быть не более 20 символов.' };
+            return { isValid: false, message: 'Логин должен быть не более 20 символов' };
         }
         if (!/^[a-zA-Z0-9_]+$/.test(login)) {
-            return { isValid: false, message: 'Логин может содержать только латинские буквы, цифры и _.' };
+            return { isValid: false, message: 'Логин может содержать только латинские буквы, цифры и _' };
         }
 
         return { isValid: true, message: '' };
@@ -104,7 +104,7 @@ class ValidationService {
      */
     validateRequired(value, fieldName = 'Поле') {
         if (!value || value.trim() === '') {
-            return { isValid: false, message: `${fieldName} не может быть пустым.` };
+            return { isValid: false, message: `${fieldName} не может быть пустым` };
         }
 
         return { isValid: true, message: '' };
