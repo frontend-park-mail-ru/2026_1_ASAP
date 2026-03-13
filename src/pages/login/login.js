@@ -17,7 +17,6 @@ export class LoginPage extends BasePage {
         this.tempName = "pages/login/login";
     }
 
-
     /**
      * Создаёт и монтирует {@link AuthForm} в `.login-card`.
      * При переходе на регистрацию вызывает навигацию на `/register`.
