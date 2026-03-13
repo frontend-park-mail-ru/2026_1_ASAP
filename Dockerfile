@@ -8,5 +8,7 @@ COPY . .
 
 RUN npm run precompile
 
+RUN npm run test
+
 EXPOSE 3000
 CMD ["node", "server/server.js"]

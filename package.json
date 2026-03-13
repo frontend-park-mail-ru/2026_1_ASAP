@@ -5,7 +5,7 @@
   "description": "https://github.com/go-park-mail-ru/2026_1_ASAP ## Команда * [Клименков Артем](https://github.com/amklimenkov752) * [Виндман Александр](https://github.com/5trlk3) * [Ладыгин Павел](https://github.com/pavel-ladygin) * [Фатеев Сергей](https://github.com/pricolmen) ## Менторы  * [Костин Глеб](https://github.com/glebkos) – фронтенд  * [Ильяс Нежибицкий](https://github.com/nezhibitskiy) – бэкенд",
   "main": "server/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest",
     "start": "npm run precompile && node server/server.js",
     "dev": "nodemon server/server.js",
     "lint": "eslint .",
@@ -36,7 +36,8 @@
     "husky": "^9.1.7",
     "jsdoc": "^4.0.5",
     "lint-staged": "^16.3.2",
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.14",
+    "vitest": "^4.1.0"
   },
   "dependencies": {
     "express": "^4.22.1"
