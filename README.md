@@ -1,5 +1,6 @@
 # Телеграм 
 ## Деплой
+http://pulseapp.space/
 ## Ссылка на бэкенд  
 https://github.com/go-park-mail-ru/2026_1_ASAP
 ## Команда
