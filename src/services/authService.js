@@ -58,7 +58,6 @@ class AuthService {
             return { success: true, data: result };
 
         } catch (error) {
-            console.error(`Ошибка при запросе к ${endpoint}:`, error);
             return { success: false, error: error.message || 'Неизвестная ошибка сети' };
         }
     }
