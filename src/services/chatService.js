@@ -20,6 +20,6 @@ export class ChatService {
         if (!response.ok)
             throw new Error(`Ошибка ${response.status}`);
         const data = await response.json();
-        return data.body;
+        return data.body || [];
     };
 }

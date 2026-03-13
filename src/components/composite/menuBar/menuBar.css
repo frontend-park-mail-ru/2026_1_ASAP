@@ -5,4 +5,5 @@
     height: 60px;
     box-sizing: border-box;
     background-color: var(--color-neutral);
+    margin-top: auto;
 }

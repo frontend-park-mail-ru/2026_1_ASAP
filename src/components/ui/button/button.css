@@ -113,6 +113,8 @@ button > span {
 .logout-button {
     width: 100px;
     height: 50px;
+    border-radius: 10px;
+    border: 1px;
     text-align: center;
     color: var(--color-text);
     background-color: var(--color-empty);
