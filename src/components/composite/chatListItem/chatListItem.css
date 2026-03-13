@@ -4,3 +4,9 @@
     height: 100%;
     width: 100%;
 }
+
+.no-chats {
+    font: var(--text-heading1);
+    text-align: center;
+    user-select: none;
+}

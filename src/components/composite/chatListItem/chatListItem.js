@@ -34,6 +34,13 @@ export class ChatListItem extends BaseForm {
         const service = new ChatService();
         
         service.getChats().then(chats => {
+            if (chats.length === 0) {
+                const p = document.createElement('p');
+                p.className = "no-chats";
+                p.innerHTML = "У вас пока нет чатов,<br> скорее напишите кому нибудь!";
+                this.element.appendChild(p);
+                return;
+            }
             chats.forEach(chat => {
                 const item = new ChatItem({
                     class: 'chat-item--default',
