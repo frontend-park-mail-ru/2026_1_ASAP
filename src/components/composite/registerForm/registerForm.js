@@ -124,20 +124,17 @@ export class RegisterForm extends BaseForm {
             isFormValid = false;
         }
 
-        if (!isFormValid) {
-            throw new Error("Ошибка в форме, отправка данных отменена");
-        }
+        if (isFormValid) {
+            const result = await authService.register(data.email, data.login, data.password);
 
-        const result = await authService.register(data.email, data.login, data.password);
-
-        if (result.success) {
-            this.props.router.navigate('/chats');
-        } else {
-            if (result.error.includes("409")) {
-                this.emailInput.setError('Пользователь с такой почтой или логином уже существует');
-                this.loginInput.setError('Пользователь с таким логином уже существует');
+            if (result.success) {
+                this.props.router.navigate('/chats');
+                
+            } else if (result.error == "Login already register") {
+                this.loginInput.setError("Пользователь с таким логином уже существует");
+            } else if (result.error == "Email already register") {
+                this.emailInput.setError("Пользователь с такой почтой уже существует");
             }
-            throw new Error(result.error || "Ошибка регистрации");
         }
     }
 }

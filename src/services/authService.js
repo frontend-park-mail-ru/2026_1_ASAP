@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://pulseapp.space:8080/api/v1/auth";
+const BASE_URL = "http://pulseapp.space:8080/api/v1/auth";
 
 /**
  * Сервис авторизации. Обеспечивает логин, регистрацию, логаут
@@ -11,7 +11,7 @@ class AuthService {
      */
     async checkAuth() {
         try {
-            const response = await fetch('http://pulseapp.space:8080/api/v1/chats',
+            const response = await fetch(`${BASE_URL}/api/v1/chats`,
                 {
                     method: 'GET',
                     credentials: 'include'
@@ -32,7 +32,7 @@ class AuthService {
      */
     async sendRequest(endpoint, data) {
         try {
-            const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
+            const response = await fetch(`${BASE_URL}/api/v1/auth/${endpoint}`, {
                 method: 'POST',
                 credentials: 'include',
                 headers: {
@@ -40,18 +40,24 @@ class AuthService {
                 },
                 body: JSON.stringify(data)
             });
-            
+
             if (!response.ok) {
                 let errorMessage = `Ошибка сервера: ${response.status}`;
 
                 try {
                     const errorData = await response.json();
-                    errorMessage = errorData.message || errorMessage;
+
+                    if (errorData.errors && Array.isArray(errorData.errors)) {
+                        errorMessage = errorData.errors.map(e => e.message).join('; ');
+
+                    } else if (errorData.message){
+                        errorMessage = errorData.message;
+                    }
                 } catch (jsonError) {
-                    throw new Error(`Сервер вернул ошибку ${response.status}, данные не в JSON`);
+                    return {success: false, error : `Сервер вернул ошибку ${response.status}, данные не в JSON`};
                 }
 
-                throw new Error(errorMessage);
+                return { success: false, error: errorMessage};
             }
 
             const result = await response.json();
