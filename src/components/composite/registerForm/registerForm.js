@@ -42,11 +42,11 @@ export class RegisterForm extends BaseForm {
             this.element.querySelector('[data-component="login-input"]')
         );
 
-        /** @type {Input} Поле пароля */
+        /** @type {Input} Поле почты */
         this.emailInput = new Input({
             class: 'ui-input',
             name: 'email',
-            type: 'email',
+            type: 'text',
             placeholder: 'Почта',
             required: true,
             showErrorText : true,
