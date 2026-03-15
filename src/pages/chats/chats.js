@@ -16,6 +16,10 @@ export class ChatsPage extends BasePage {
      */
     constructor(props={}) {
         super(props);
+        this.searchForm = null;
+        this.chatWrapper = null;
+        this.menuBar = null;
+        this.logoutButton = null;
         this.tempName = "pages/chats/chats";
     };
 
@@ -98,8 +102,9 @@ export class ChatsPage extends BasePage {
      */
     beforeUnmount() {
         this.logoutWrapper?.remove();
-        this.searchForm.unmount();
-        this.chatWrapper.unmount();
-        this.menuBar.unmount();
+        this.searchForm?.unmount();
+        this.chatWrapper?.unmount();
+        this.menuBar?.unmount();
+        this.logoutButton?.unmount();
     };
 }
