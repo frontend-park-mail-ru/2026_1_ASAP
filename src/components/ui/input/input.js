@@ -38,6 +38,14 @@ export class Input extends BaseComponent {
             this.errorElement = this.element.querySelector('.ui-input__error-message');
         }
 
+        this.inputHandler = () => {
+            // Если у поля есть ошибка, очищаем ее
+            if (this._error) {
+                this.clearError();
+            }
+        };
+        this.inputElement.addEventListener('input', this.inputHandler);
+
         if (this.type === 'password' && this.togglePassword) {
             this.toggleIconElement = this.element.querySelector('.ui-input__toggle-password img'); 
 
@@ -65,6 +73,10 @@ export class Input extends BaseComponent {
      * Размонтирует дочерние компоненты и удаляет обработчик клика.
      */
     beforeUnmount() {
+        if (this.inputElement && this.inputHandler) {
+            this.inputElement.removeEventListener('input', this.inputHandler);
+        }
+
         if (this.type === 'password' && this.togglePassword && this.toggleIconElement) {
             this.toggleIconElement.parentNode.removeEventListener('click', this.togglePasswordHandler);
         }
