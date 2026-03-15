@@ -1,4 +1,4 @@
-const BASE_URL = "http://pulseapp.space:8080/api/v1/auth";
+const BASE_URL = "http://pulseapp.space:8080";
 
 /**
  * Сервис авторизации. Обеспечивает логин, регистрацию, логаут
