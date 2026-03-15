@@ -23,7 +23,7 @@ describe("ValidationService", () => {
 
         it('Должен возвращать isValid: false и сообщение для email с невалидными символами', () => {
             expect(validationService.validateEmail('%test@examp!e.com')).toEqual({ isValid: false, message: 'Неверный формат почты'});
-            expect(validationService.validateEmail('№test@.example.com')).toEqual({ isValid: false, message: 'Неверный формат почты'});
+            expect(validationService.validateEmail('№test@.example.com')).toEqual({ isValid: false, message: 'Почта может содержать только латинские буквы, цифры и спецсимволы'});
             expect(validationService.validateEmail('&test@example.com')).toEqual({ isValid: false, message: 'Неверный формат почты'});
         });
     });

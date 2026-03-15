@@ -1,5 +1,7 @@
 const BASE_URL = 'http://pulseapp.space:8080';
 
+
+
 /**
  * Сервис для работы с чатами. Загружает список чатов с сервера
  * или возвращает мок-данные в зависимости от флага `USE_MOCK`.
@@ -20,6 +22,6 @@ export class ChatService {
         if (!response.ok)
             throw new Error(`Ошибка ${response.status}`);
         const data = await response.json();
-        return data.body;
+        return data.body || [];
     };
 }

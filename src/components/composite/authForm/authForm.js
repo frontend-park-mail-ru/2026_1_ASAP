@@ -161,20 +161,17 @@ export class AuthForm extends BaseForm {
             isFormValid = false;
         }
 
-        if (!isFormValid) {
-            throw new Error("Ошибка в форме, отправка данных отменена");
-        }
-
-        const result = await authService.login(data.login, data.password);
-
-        if (result.success) {
-            this.props.router.navigate('/chats');
-        } else {
-            this.loginInput.setError(' '); 
-            this.passwordInput.setError(' '); 
-            this.showFormError('Неверный логин или пароль');
-            this.loginButton.disabled = true; 
-            throw new Error(result.error || "Ошибка входа");
+        if (isFormValid) {
+            const result = await authService.login(data.login, data.password);
+            
+            if (result.success) {
+                this.props.router.navigate('/chats');
+            } else {
+                this.loginInput.setError(' '); 
+                this.passwordInput.setError(' '); 
+                this.showFormError('Неверный логин или пароль');
+                this.loginButton.disabled = true; 
+            }
         }
     }
 }
