@@ -19,15 +19,21 @@
 }
 
 .chat-page__mainfield {
+    flex-grow: 1;
     display: flex;
-    flex-direction: row;
+    background-color: var(--color-background-default);
     justify-content: center;
     align-items: center;
-    width: 100%;
 }
 
 .empty-field {
     font: var(--text-heading1);
     text-align: center;
     user-select: none;
+}
+
+.chat-page__placeholder {
+    color: var(--color-text-tertiary);
+    font-size: var(--font-size-lg);
+    text-align: center;
 }
