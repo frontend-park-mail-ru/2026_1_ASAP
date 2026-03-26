@@ -1,84 +1,92 @@
-import { ChatDetail, Message as MessageType, User, DialogChat, GroupChat, ChannelChat } from '../types/chat.js';
+import { ChatDetail, FrontendMessage, User, DialogChat, GroupChat, ChannelChat, BackendChat, BackendMessage } from '../types/chat.js';
 
-const BASE_URL = 'http://pulseapp.space:8080';
-// const BASE_URL = 'http://0.0.0.0:8080';
+// const BASE_URL = 'http://pulseapp.space:8080';
+const BASE_URL = 'http://0.0.0.0:8080';
 
-const MOCK_USERS: { [key: number]: User } = {
-    1: { id: 1, login: 'currentuser', avatarUrl: '/assets/images/avatars/myAvatar.svg' },
-    2: { id: 2, login: 'user2', avatarUrl: '/assets/images/avatars/chatAvatar.svg' },
-    3: { id: 3, login: 'user3', avatarUrl: '/assets/images/avatars/chatAvatar.svg' },
-    4: { id: 4, login: 'admin', avatarUrl: '/assets/images/avatars/chatAvatar.svg' },
+
+const CURRENT_USER_LOGIN = 'alice'; 
+const USE_MOCK_GET_CHATS = false;
+const USE_MOCK_DETAIL_AND_MESSAGES = true;
+
+// Моковые данные для деталей чатов
+const MOCK_USERS: { [key: string]: User } = {
+    'currentuser': { login: CURRENT_USER_LOGIN, avatarUrl: '/assets/images/avatars/myAvatar.svg' },
+    'bob': { login: 'bob', avatarUrl: '/assets/images/avatars/chatAvatar.svg' },
+    'alice': { login: 'alice', avatarUrl: '/assets/images/avatars/chatAvatar.svg' },
+    'charlie': { login: 'charlie', avatarUrl: '/assets/images/avatars/chatAvatar.svg' },
+    'diana': { login: 'diana', avatarUrl: '/assets/images/avatars/chatAvatar.svg' },
 };
 
-const MOCK_CHATS: ChatDetail[] = [
-    {
-        id: 1,
-        title: 'Личный чат с User2',
+// Моковые детали чатов
+const MOCK_CHAT_DETAILS: { [id: string]: ChatDetail } = {
+    "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa": { 
+        id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+        title: "Dialog 1",
         type: 'dialog',
         avatarUrl: '/assets/images/avatars/chatAvatar.svg',
-        lastMessage: {
-            id: 1, sender: MOCK_USERS[2], text: 'Привет!', timestamp: new Date(), isOwn: false
-        },
-        interlocutor: MOCK_USERS[2],
+        interlocutor: MOCK_USERS['bob'], 
         status: 'online',
-        unreadCount: 2
+        unreadCount: 0
     } as DialogChat,
-    {
-        id: 2,
-        title: 'Рабочая группа',
+    "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb": {
+        id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+        title: "Backend Team",
         type: 'group',
         avatarUrl: '/assets/images/avatars/groupAvatar.svg',
-        lastMessage: {
-            id: 2, sender: MOCK_USERS[4], text: 'Всем привет!', timestamp: new Date(), isOwn: false
-        },
-        members: [MOCK_USERS[1], MOCK_USERS[2], MOCK_USERS[3], MOCK_USERS[4]],
-        owner: MOCK_USERS[4],
-        unreadCount: 5
+        members: [MOCK_USERS['currentuser'], MOCK_USERS['bob'], MOCK_USERS['alice'], MOCK_USERS['charlie']],
+        owner: MOCK_USERS['bob'],
+        unreadCount: 3
     } as GroupChat,
-    {
-        id: 3,
-        title: 'Новости IT',
-        type: 'channel',
-        avatarUrl: '/assets/images/avatars/channelAvatar.svg',
-        lastMessage: {
-            id: 3, sender: MOCK_USERS[4], text: 'Новая статья...', timestamp: new Date(), isOwn: false
-        },
-        subscribersCount: 1500,
-        unreadCount: 0
-    } as ChannelChat,
-];
+};
 
-const MOCK_MESSAGES: { [chatId: number]: MessageType[] } = {
-    1: [
-        { id: 1, sender: MOCK_USERS[2], text: 'Привет!', timestamp: new Date(Date.now() - 120000), isOwn: false, status: 'read' },
-        { id: 2, sender: MOCK_USERS[1], text: 'Как дела?', timestamp: new Date(Date.now() - 90000), isOwn: true, status: 'read' },
-        { id: 3, sender: MOCK_USERS[2], text: 'Все хорошо, а у тебя?', timestamp: new Date(Date.now() - 60000), isOwn: false, status: 'delivered' },
-        { id: 4, sender: MOCK_USERS[1], text: 'Тоже отлично, работаю над проектом.', timestamp: new Date(Date.now() - 30000), isOwn: true, status: 'sent' },
+// Моковые сообщения для каждого чата
+const MOCK_MESSAGES: { [chatId: string]: FrontendMessage[] } = {
+    "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa": [ // диалог1 (alice - bob)
+        { id: "msg1", sender: MOCK_USERS['bob'], text: 'Привет!', timestamp: new Date(Date.now() - 120000), isOwn: false},
+        // <= ИЗМЕНЕНИЕ: Alice отправляет сообщение
+        { id: "msg2", sender: MOCK_USERS['currentuser'], text: 'Как дела?', timestamp: new Date(Date.now() - 90000), isOwn: true },
+        { id: "msg3", sender: MOCK_USERS['bob'], text: 'Все хорошо, а у тебя?', timestamp: new Date(Date.now() - 60000), isOwn: false},
+        // <= ИЗМЕНЕНИЕ: Alice отправляет сообщение
+        { id: "msg4", sender: MOCK_USERS['currentuser'], text: 'Тоже отлично, работаю над проектом.', timestamp: new Date(Date.now() - 30000), isOwn: true },
     ],
-    2: [
-        { id: 5, sender: MOCK_USERS[4], text: 'Всем привет, коллеги!', timestamp: new Date(Date.now() - 180000), isOwn: false, status: 'read' },
-        { id: 6, sender: MOCK_USERS[3], text: 'Привет, админ!', timestamp: new Date(Date.now() - 150000), isOwn: false, status: 'read' },
-        { id: 7, sender: MOCK_USERS[1], text: 'Что-то интересное?', timestamp: new Date(Date.now() - 120000), isOwn: true, status: 'read' },
+    "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb": [ // Группа1 (alice, bob, charlie, currentuser)
+        { id: "msg5", sender: MOCK_USERS['bob'], text: 'Всем привет, коллеги!', timestamp: new Date(Date.now() - 180000), isOwn: false},
+        { id: "msg6", sender: MOCK_USERS['charlie'], text: 'Привет, босс!', timestamp: new Date(Date.now() - 150000), isOwn: false},
+        { id: "msg7", sender: MOCK_USERS['currentuser'], text: 'Что-то интересное?', timestamp: new Date(Date.now() - 120000), isOwn: true},
     ],
-    3: [
-        { id: 8, sender: MOCK_USERS[4], text: 'Новая статья по фронтенду уже на канале!', timestamp: new Date(Date.now() - 240000), isOwn: false, status: 'read' },
-    ]
 };
 
 
 /**
- * Сервис для работы с чатами. Загружает список чатов с сервера
- * или возвращает мок-данные в зависимости от флага `USE_MOCK`.
+ * Сервис для работы с чатами. Загружает список чатов с сервера,
+ * но мокает детали чатов и сообщения.
  */
 export class ChatService {
-    private USE_MOCK_DETAIL_AND_MESSAGES = true;
+    /**
+     * Преобразует BackendMessage в FrontendMessage.
+     * @param {BackendMessage} backendMessage - Сообщение с бэкенда.
+     * @returns {FrontendMessage} Преобразованное сообщение.
+     * @private
+     */
+    private convertToFrontendMessage(backendMessage: BackendMessage, currentUserId?: string): FrontendMessage {
+        return {
+            id: 'mock-msg-' + Math.random().toString(36).substring(2, 9), // Генерируем временный ID, если его нет
+            sender: backendMessage.sender,
+            text: backendMessage.text,
+            timestamp: new Date(backendMessage.created_at),
+            isOwn: backendMessage.sender.login === currentUserId, // Нужно передавать логин текущего пользователя
+        };
+    }
 
     /**
      * Получает список чатов пользователя.
      * @returns {Promise<ChatDetail[]>}
      * @throws {Error} При ошибке HTTP-запроса.
      */
-    async getChats(): Promise<ChatDetail[]> {
+    public async getChats(currentUserId?: string): Promise<ChatDetail[]> {
+        if (USE_MOCK_GET_CHATS) {
+            return new Promise(resolve => setTimeout(() => resolve(Object.values(MOCK_CHAT_DETAILS)), 300));
+        }
         try {
             const response = await fetch(`${BASE_URL}/api/v1/chats`, {
                 headers: {
@@ -92,24 +100,64 @@ export class ChatService {
                 throw new Error(`Ошибка ${response.status}`);
             }
 
-            const data = await response.json();
-            return data.body || [];
+            const data: { status: string, body: BackendChat[] } = await response.json();
+            const frontendChats: ChatDetail[] = data.body.map(chat => {
+                let frontendChat: ChatDetail;
+
+                const commonProps = {
+                    id: chat.id,
+                    title: chat.title,
+                    type: chat.chat_type,
+                    avatarUrl: chat.chat_type === 'dialog' ? '/assets/images/avatars/chatAvatar.svg' : '/assets/images/avatars/groupAvatar.svg',
+                    unreadCount: Math.floor(Math.random() * 5), // Случайное кол-во непрочитанных
+                };
+
+                switch (chat.chat_type) {
+                    case 'dialog':
+                        frontendChat = {
+                            ...commonProps,
+                            interlocutor: MOCK_USERS['bob'], // Временный собеседник, нужно будет заменить на реального
+                            status: 'online'
+                        } as DialogChat;
+                        break;
+                    case 'group':
+                        frontendChat = {
+                            ...commonProps,
+                            members: [MOCK_USERS['currentuser'], MOCK_USERS['bob']], // Временные члены, нужно заменить
+                            owner: MOCK_USERS['bob'],
+                        } as GroupChat;
+                        break;
+                    case 'channel':
+                        frontendChat = {
+                            ...commonProps,
+                            subscribersCount: 1000 // Временное значение, нужно будет заменить на реальное
+                        } as ChannelChat;
+                        break;
+                }
+
+                if (chat.last_message) {
+                    frontendChat.lastMessage = this.convertToFrontendMessage(chat.last_message, currentUserId);
+                }
+                return frontendChat;
+            });
+            return frontendChats;
         } catch (error) {
             console.error("Ошибка сети или сервера при получении чатов:", error);
-            return MOCK_CHATS;
+            // Возвращаем мок-данные при ошибке сети, чтобы приложение не падало
+            return Object.values(MOCK_CHAT_DETAILS);
         }
     }
 
     /**
      * Получает детальную информацию о конкретном чате.
-     * @param {number} chatId - ID чата.
+     * @param {string} chatId - ID чата (UUID).
      * @returns {Promise<ChatDetail | undefined>} Детальная информация о чате или undefined, если не найден.
      */
-    async getChatDetail(chatId: number): Promise<ChatDetail | undefined> {
-        if (this.USE_MOCK_DETAIL_AND_MESSAGES) {
+    public async getChatDetail(chatId: string): Promise<ChatDetail | undefined> {
+        if (USE_MOCK_DETAIL_AND_MESSAGES) {         
             return new Promise(resolve => {
                 setTimeout(() => {
-                    resolve(MOCK_CHATS.find(chat => chat.id === chatId));
+                    resolve(MOCK_CHAT_DETAILS[chatId]);
                 }, 300);
             });
         }
@@ -119,15 +167,23 @@ export class ChatService {
 
     /**
      * Получает список сообщений для конкретного чата.
-     * @param {number} chatId - ID чата.
-     * @returns {Promise<MessageType[]>} Список сообщений.
+     * @param {string} chatId - ID чата (UUID).
+     * @param {string} currentUserId - Логин текущего пользователя для пометки isOwn.
+     * @returns {Promise<FrontendMessage[]>} Список сообщений.
      */
-    async getMessages(chatId: number): Promise<MessageType[]> {
-        if (this.USE_MOCK_DETAIL_AND_MESSAGES) {
+    public async getMessages(chatId: string, currentUserId: string): Promise<FrontendMessage[]> {
+        if (USE_MOCK_DETAIL_AND_MESSAGES) {
+            console.log(`[MOCK MESSAGES] Returning mock messages for chat ID: ${chatId}`);
             return new Promise(resolve => {
                 setTimeout(() => {
-                    resolve(MOCK_MESSAGES[chatId] || []);
-                }, 500); // Имитация задержки сети
+                    const messages = MOCK_MESSAGES[chatId] || [];
+                    // Обновляем isOwn на основе currentUserId
+                    const updatedMessages = messages.map(msg => ({
+                        ...msg,
+                        isOwn: msg.sender.login === currentUserId
+                    }));
+                    resolve(updatedMessages);
+                }, 500);
             });
         }
         // TODO: Реализовать запрос к реальному API для получения сообщений

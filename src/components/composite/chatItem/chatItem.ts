@@ -7,7 +7,7 @@ import { Chat as ChatType } from '../../../types/chat.js';
 interface ChatItemProps extends IBaseFormProps {
     class?: string;
     chat: ChatType;
-    onClick?: (chatId: number) => void;
+    onClick?: (chatId: string) => void;
 }
 
 export class ChatItem extends BaseForm<ChatItemProps> {
@@ -24,9 +24,12 @@ export class ChatItem extends BaseForm<ChatItemProps> {
 
     private typeToClass(chatType: string): string {
         switch (chatType) {
-            case 'group':   return 'message-group';
-            case 'channel': return 'message-chanel';
-            default:        return 'message-personal';
+            case 'group':
+                return 'message-group';
+            case 'channel':
+                return 'message-channel';
+            default:
+                return 'message-personal';
         }
     }
 
@@ -63,13 +66,13 @@ export class ChatItem extends BaseForm<ChatItemProps> {
         }
 
         if (this.props.onClick) {
-            this.element.addEventListener('click', this.handleClick);
+            this.element?.addEventListener('click', this.handleClick);
         }
     }
 
     private handleClick = () => {
         if (this.props.onClick) {
-            this.props.onClick(this.props.chat.id);
+            this.props.onClick(this.props.chat.id as string);
         }
     }
 

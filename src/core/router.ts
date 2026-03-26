@@ -23,7 +23,7 @@ export class Router {
     /**
      * Инициализирует роутер: подписывается на popstate и обрабатывает текущий маршрут.
      */
-    init() {
+    public init() {
         window.addEventListener('popstate', () => this.handleRoute());
         this.handleRoute();
     }
@@ -33,22 +33,19 @@ export class Router {
      * @returns {Promise<void>}
      * @throws {Error} Если PageManager не установлен.
      */
-    async handleRoute() {
+    public async handleRoute(): Promise<void> {
         if (!this.pageManager) {
             throw new Error("PageManager не установлен в Router");
         }
 
         const path = window.location.pathname;
-        let PageClass = null;
-        let routePath = path;
+        let PageClass: typeof BasePage | null = null;
 
-        if (path.startsWith('/chats/')) {
+        if (path.startsWith('/chats/') || path === '/chats') {
             PageClass = this.routes['/chats'];
-            routePath = '/chats';
         } else {
             PageClass = this.routes[path] || this.routes['/'];
         }
-
 
         if (PageClass) {
             await this.pageManager.open(PageClass, { currentPath: path });
@@ -59,7 +56,7 @@ export class Router {
      * Выполняет навигацию на указанный путь.
      * @param {string} path - URL-путь (например, '/chats').
      */
-    navigate(path: string) {
+    public navigate(path: string): void {
         if (window.location.pathname === path) {
             this.handleRoute();
             return;

@@ -4,6 +4,9 @@ import { chatService } from "../../../services/chatService.js";
 import { Chat as ChatType } from '../../../types/chat.js';
 import { Router } from '../../../core/router.js';
 
+const CURRENT_USER_LOGIN = 'bob'; // Заглушка для теста, потом убрать
+
+
 /**
  * @interface ChatListItemProps - Свойства компонента списка чатов.
  * @property {Router} router - Экземпляр роутера.
@@ -43,8 +46,8 @@ export class ChatListItem extends BaseForm {
             selectedItem.element.classList.remove("chat-item--default");
             selectedItem.element.classList.add("chat-item--selected");
         }
-        this.activeItem = selectedItem;
 
+        this.activeItem = selectedItem;
         this.props.router.navigate(`/chats/${selectedItem.props.chat.id}`);
     }
 
@@ -55,7 +58,7 @@ export class ChatListItem extends BaseForm {
         this.chatItems = [];
         this.activeItem = null;
 
-        chatService.getChats().then(chats => {
+        chatService.getChats(CURRENT_USER_LOGIN).then(chats => { // Заменить на реальный логин пользователя
             if (!this.element) {
                 console.error("ChatListItem: компонент не имеет элемента при afterMount.");
                 return;
@@ -74,8 +77,9 @@ export class ChatListItem extends BaseForm {
                 const item = new ChatItem({
                     class: 'chat-item--default',
                     chat: chat,
-                    onClick: () => this.selectChat(item)
+                    onClick: ( chatId: string) => this.selectChat(item)
                 });
+                
                 item.mount(this.element!); 
                 this.chatItems.push(item);
             });

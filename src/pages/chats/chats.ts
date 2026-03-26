@@ -1,4 +1,4 @@
-import { BasePage } from "../../core/base/basePage.js";
+import { BasePage, IBasePageProps } from "../../core/base/basePage.js";
 import { SearchForm } from "../../components/composite/searchForm/searchForm.js";
 import { MenuBar } from "../../components/composite/menuBar/menuBar.js";
 import { ChatListWrapper } from "../../components/composite/chatListWrapper/chatListWrapper.js";
@@ -9,12 +9,18 @@ import { ChatWindow } from "../../components/composite/chatWindow/chatWindow.js"
 import { DialogHeader } from "../../components/composite/dialogHeader/dialogHeader.js";
 import { MessageList } from "../../components/composite/messageList/messageList.js";
 import { MessageInput } from "../../components/ui/messageInput/messageInput.js";
-import { Chat, Message as MessageType, User } from '../../types/chat.js';
+import { Chat, FrontendMessage, User, DialogChat, GroupChat, ChannelChat } from '../../types/chat.js';
 import { chatService } from "../../services/chatService.js";
-import { DialogChat, GroupChat, ChannelChat } from '../../types/chat.js'; 
 import { GroupHeader } from "../../components/composite/groupHeader/groupHeader.js";
 import { ChannelHeader } from "../../components/composite/channelHeader/channelHeader.js";
-const CURRENT_USER: User = { id: 1, login: 'currentuser', avatarUrl: '/assets/images/avatars/myAvatar.svg' };
+
+const CURRENT_USER_LOGIN = 'alice'; // Заглушка для теста, убрать после интеграции с реальными чатами
+const CURRENT_USER: User = { login: CURRENT_USER_LOGIN, avatarUrl: '/assets/images/avatars/myAvatar.svg' };
+
+
+interface ChatsPageProps extends IBasePageProps {
+    currentPath?: string; 
+}
 
 /**
  * Страница чатов. Содержит боковую панель со списком чатов,
@@ -27,12 +33,12 @@ export class ChatsPage extends BasePage {
     private logoutButton: Button | null = null;
     private logoutWrapper: HTMLDivElement | null = null;
     private isSettings: boolean = false;
-
     private chatWindow: ChatWindow | null = null;
-    private activeChatId: number | null = null;
+    private activeChatId: string | null = null;
     private mainContentArea: HTMLElement | null = null;
+    private placeholderElement: HTMLElement | null = null; 
 
-    constructor(props: any = {}) {
+    constructor(props: ChatsPageProps = {}) {
         super(props);
         this.tempName = "pages/chats/chats";
     }
@@ -42,19 +48,21 @@ export class ChatsPage extends BasePage {
      */
     async afterMount() {
         const isAuth = await authService.checkAuth();
+
         if (!isAuth) {
             this.props.router.navigate('/login');
             return;
         }
-        if (!this.element) {return;}
-        this.isSettings = false;
+        if (!this.element) {
+            console.error("ChatsPage: элемент не найден.");
+            return;
+        }
 
+        this.isSettings = false;
         this.searchForm = new SearchForm();
         this.searchForm.mount(this.element.querySelector('.chat-page__sidebar')!);
-
         this.chatWrapper = new ChatListWrapper( { router: this.props.router });
         this.chatWrapper.mount(this.element.querySelector('.chat-page__sidebar')!);
-
         this.logoutWrapper = document.createElement('div');
         this.logoutWrapper.style.flex = '1';
         this.logoutWrapper.style.display = 'none';
@@ -78,37 +86,75 @@ export class ChatsPage extends BasePage {
         });
         this.logoutButton.mount(this.logoutWrapper);
 
-        this.mainContentArea = this.element.querySelector('.chat-page__main-view');
+        this.mainContentArea = this.element.querySelector('.chat-page__mainfield') || null;
+        if (!this.mainContentArea) {
+            console.error("ChatsPage: Main content area (.chat-page__mainfield) not found.");
+            return;
+        }
 
-        this.handleChatRoute();
+        this.placeholderElement = this.mainContentArea.querySelector('.empty-field') || null;
+        if (!this.activeChatId && this.placeholderElement) {
+            this.placeholderElement.style.display = 'block';
+        }
+        
+        await this.handleChatRoute();
     }
+
+    /**
+     * Метод для обновления свойств страницы (например, при смене ID чата в URL).
+     * @param {ChatsPageProps} newProps - Новые свойства.
+     */
+    public async updateProps(newProps: ChatsPageProps): Promise<void> {
+        this.props = { ...this.props, ...newProps };
+        await this.handleChatRoute();
+    }
+
 
     /**
      * Обрабатывает изменение маршрута для отображения нужного чата.
      */
     private async handleChatRoute(): Promise<void> {
-        const pathParts = window.location.pathname.split('/');
+        const path = this.props.currentPath || window.location.pathname;
+        const pathParts = path.split('/');
         const chatIdParam = pathParts[pathParts.length - 1];
 
-        const newChatId = parseInt(chatIdParam, 10);
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(chatIdParam);
 
-        if (!isNaN(newChatId) && newChatId !== this.activeChatId) {
-            this.activeChatId = newChatId;
-            await this.openChat(newChatId);
-        } else if (isNaN(newChatId) && this.chatWindow) {
-            this.chatWindow.unmount();
+        if (isUUID && chatIdParam !== this.activeChatId) {
+            this.activeChatId = chatIdParam;
+            await this.openChat(chatIdParam);
+
+        } else if (!isUUID && this.activeChatId) {
+            this.chatWindow?.unmount();
             this.chatWindow = null;
             this.activeChatId = null;
-        }
+
+            if (path !== '/chats') {
+                this.props.router?.navigate('/chats');
+            }
+
+        } else if (path === '/chats' && !this.activeChatId && this.chatWindow) {
+            this.chatWindow.unmount();
+            this.chatWindow = null;
+        } else if (path === '/chats' && !this.activeChatId && !this.chatWindow && this.placeholderElement) {
+            this.placeholderElement.style.display = 'block';        }
     }
 
 
     /**
      * Открывает конкретный чат в основной области.
-     * @param {number} chatId - ID чата для открытия.
+     * @param {string} chatId - ID чата для открытия.
      */
-    private async openChat(chatId: number): Promise<void> {
-        if (!this.mainContentArea) return;
+    
+    private async openChat(chatId: string): Promise<void> {
+        if (!this.mainContentArea) {
+            console.error("ChatsPage: mainContentArea не найден.");
+            return;
+        }
+
+        if (this.placeholderElement) {
+            this.placeholderElement.style.display = 'none';
+        }
 
         if (this.chatWindow) {
             this.chatWindow.unmount();
@@ -116,16 +162,20 @@ export class ChatsPage extends BasePage {
         }
 
         const chatDetail = await chatService.getChatDetail(chatId);
-        const messages = await chatService.getMessages(chatId);
+        const messages = await chatService.getMessages(chatId, CURRENT_USER_LOGIN);
 
         if (!chatDetail) {
             console.error(`Чат с ID ${chatId} не найден.`);
             this.props.router.navigate('/chats');
+
+            if (this.placeholderElement) {
+                this.placeholderElement.style.display = 'block';
+            }
             return;
         }
 
         let headerComponent: BaseComponent;
-switch (chatDetail.type) {
+        switch (chatDetail.type) {
         case 'dialog':
             headerComponent = new DialogHeader({ chat: chatDetail as DialogChat });
             break;
@@ -145,24 +195,10 @@ switch (chatDetail.type) {
                 return el;
             };
             headerComponent = fallbackHeader;
-    }
+        }
 
-        const messageListComponent = new MessageList({ messages: messages, currentUser: CURRENT_USER });
-        const messageInputComponent = new MessageInput({
-            onSubmit: (text: string) => {
-                console.log(`Отправка сообщения в чат ${chatId}: ${text}`);
-                // TODO: Здесь будет вызов WebSocketService
-                const newMessage: MessageType = {
-                    id: messages.length + 1, // Временный ID
-                    sender: CURRENT_USER,
-                    text: text,
-                    timestamp: new Date(),
-                    isOwn: true,
-                    status: 'sent'
-                };
-                messageListComponent.addMessage(newMessage);
-            }
-        });
+        const messageListComponent = new MessageList({ messages: messages, currentUser: CURRENT_USER });  //Убрать заглушку CURRENT_USER после интеграции с реальными чатами
+        const messageInputComponent = new MessageInput({ onSubmit: (text: string) => { } });
 
         this.chatWindow = new ChatWindow({
             headerComponent: headerComponent,
@@ -209,5 +245,6 @@ switch (chatDetail.type) {
         this.logoutButton?.unmount();
         this.chatWindow?.unmount();
         this.activeChatId = null;
+        this.placeholderElement = null; 
     }
 }

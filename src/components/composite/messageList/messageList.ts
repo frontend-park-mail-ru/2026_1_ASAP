@@ -1,5 +1,5 @@
 import { BaseComponent } from '../../../core/base/baseComponent.js';
-import { Message as MessageType, User } from '../../../types/chat.js';
+import { FrontendMessage, User} from '../../../types/chat.js';
 import { Message } from '../../ui/message/message.js';
 
 /**
@@ -8,7 +8,7 @@ import { Message } from '../../ui/message/message.js';
  * @property {User} currentUser - Текущий пользователь (для определения isOwn).
  */
 interface MessageListProps {
-    messages: MessageType[];
+    messages: FrontendMessage[];
     currentUser: User;
 }
 
@@ -44,15 +44,18 @@ export class MessageList extends BaseComponent {
      * Рендерит сообщения в список.
      * @param {MessageType[]} messages - Массив сообщений для отображения.
      */
-    private renderMessages(messages: MessageType[]): void {
+    private renderMessages(messages: FrontendMessage[]): void {
         this.childMessages.forEach(msg => msg.unmount());
         this.childMessages = [];
 
         const container = this.scrollContainer;
-        if (!container) return;
+        if (!container) {
+            console.error("MessageList: контейнер для сообщений не найден.");
+            return;
+        }
 
         messages.forEach(msgData => {
-            const isOwn = msgData.sender.id === this.props.currentUser.id;
+            const isOwn = msgData.sender.login == this.props.currentUser.login;
             const messageComponent = new Message({ message: msgData, isOwn: isOwn });
             messageComponent.mount(container);
             this.childMessages.push(messageComponent);
@@ -63,10 +66,11 @@ export class MessageList extends BaseComponent {
      * Добавляет новое сообщение в список и прокручивает вниз.
      * @param {MessageType} newMessage - Новое сообщение.
      */
-    addMessage(newMessage: MessageType): void {
-        const isOwn = newMessage.sender.id === this.props.currentUser.id;
+    addMessage(newMessage: FrontendMessage): void {
+        const isOwn = newMessage.sender.login === this.props.currentUser.login;
         const messageComponent = new Message({ message: newMessage, isOwn: isOwn });
         const container = this.scrollContainer;
+        
         if (container) {
             messageComponent.mount(container);
             this.childMessages.push(messageComponent);

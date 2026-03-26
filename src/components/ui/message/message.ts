@@ -1,13 +1,13 @@
 import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent.js";
-import { Message as MessageType } from '../../../types/chat.js';
+import { FrontendMessage } from '../../../types/chat.js';
 
 /**
  * @interface MessageProps - Свойства компонента сообщения.
- * @property {MessageType} message - Объект сообщения.
+ * @property {FrontendMessage} message - Объект сообщения.
  * @property {boolean} isOwn - Флаг, является ли сообщение текущего пользователя.
  */
 interface MessageProps extends IBaseComponentProps {
-    message: MessageType;
+    message: FrontendMessage;
     isOwn: boolean;
 }
 

@@ -29,14 +29,32 @@ export class ChatWindow extends BaseComponent {
     /**
      * @override
      */
-    afterMount() {
+    protected afterMount(): void {
         if (!this.element) {
-            console.error("ChatWindow: компонент не имеет элемента при afterMount.");
+            console.error("ChatWindow: элемент не найден для монтирования.");
             return;
         }
-        this.props.headerComponent.mount(this.element.querySelector('[data-component="chat-header-slot"]'));
-        this.props.messageListComponent.mount(this.element.querySelector('[data-component="message-list-slot"]'));
-        this.props.inputComponent.mount(this.element.querySelector('[data-component="message-input-slot"]'));
+
+        const headerSlot = this.element.querySelector('[data-component="chat-header-slot"]');
+        if (headerSlot) {
+            this.props.headerComponent.mount(headerSlot as HTMLElement);
+        } else {
+            console.error("ChatWindow: хедер чата не найдена.");
+        }
+
+        const messageListSlot = this.element.querySelector('[data-component="message-list-slot"]');
+        if (messageListSlot) {
+            this.props.messageListComponent.mount(messageListSlot as HTMLElement);
+        } else {
+            console.error("ChatWindow: слот для списка сообщений не найден.");
+        }
+
+        const messageInputSlot = this.element.querySelector('[data-component="message-input-slot"]');
+        if (messageInputSlot) {
+            this.props.inputComponent.mount(messageInputSlot as HTMLElement);
+        } else {
+            console.error("ChatWindow: слот для формы ввода сообщения не найден.");
+        }
     }
 
     /**
