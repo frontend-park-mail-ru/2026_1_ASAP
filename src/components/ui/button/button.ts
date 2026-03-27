@@ -1,4 +1,4 @@
-import { BaseComponent } from '../../../core/base/baseComponent.js';
+import { BaseComponent } from '../../../core/base/baseComponent';
 import template from './button.hbs';
 
 /**

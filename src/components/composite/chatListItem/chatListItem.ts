@@ -1,6 +1,6 @@
-import { BaseForm } from "../../../core/base/baseForm.js";
-import { ChatItem } from "../chatItem/chatItem.js";
-import { ChatService } from "../../../services/chatService.js";
+import { BaseForm } from "../../../core/base/baseForm";
+import { ChatItem } from "../chatItem/chatItem";
+import { ChatService } from "../../../services/chatService";
 import template from "./chatListItem.hbs";
 
 /**

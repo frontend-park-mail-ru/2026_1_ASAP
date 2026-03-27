@@ -1,4 +1,4 @@
-import Handlebars from "handlebars/runtime.js";
+import Handlebars from "handlebars/runtime";
 
 /**
  * Хелпер Handlebars для сравнения двух значений.

@@ -1,6 +1,6 @@
-import { App } from "./core/app.js";
+import { App } from "./core/app";
 import "./styles/main.css";
-import "./core/handlebars.js";
+import "./core/handlebars";
 
 /**
  * Точка входа: создаёт и запускает приложение после загрузки DOM.

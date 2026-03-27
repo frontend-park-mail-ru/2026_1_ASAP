@@ -1,5 +1,5 @@
-import { BaseForm } from '../../../core/base/baseForm.js';
-import { Button } from '../../ui/button/button.js';
+import { BaseForm } from '../../../core/base/baseForm';
+import { Button } from '../../ui/button/button';
 import template from "./menuBar.hbs";
 
 /**

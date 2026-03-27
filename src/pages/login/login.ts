@@ -1,5 +1,5 @@
-import { BasePage } from '../../core/base/basePage.js';
-import { AuthForm } from '../../components/composite/authForm/authForm.js';
+import { BasePage } from '../../core/base/basePage';
+import { AuthForm } from '../../components/composite/authForm/authForm';
 import template from "./login.hbs";
 
 

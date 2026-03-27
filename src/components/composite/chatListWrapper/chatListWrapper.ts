@@ -1,5 +1,5 @@
-import { BaseForm } from "../../../core/base/baseForm.js";
-import { ChatListItem } from "../chatListItem/chatListItem.js";
+import { BaseForm } from "../../../core/base/baseForm";
+import { ChatListItem } from "../chatListItem/chatListItem";
 import template from "./chatListWrapper.hbs";
 
 /**

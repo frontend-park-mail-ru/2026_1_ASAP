@@ -8,7 +8,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default {
     mode: 'development',
-    entry: './src/index.js',
+    entry: './src/index.ts',
     output: {
         path: resolve(__dirname, 'dist'),
         filename: 'bundle.[contenthash].js',
@@ -23,6 +23,16 @@ export default {
             {
                 test: /\.hbs$/,
                 use: 'handlebars-loader',
+            },
+            {
+                test: /\.ts$/,
+                use: {
+                    loader: "ts-loader",
+                    options: {
+                        transpileOnly: true,
+                    }
+                },
+                exclude:  /node_modules/
             }
         ]
     },
@@ -40,4 +50,8 @@ export default {
             template: './src/index.html',
         })
     ],
+
+    resolve: {
+        extensions: ['.ts', '.js'],
+    },
 }

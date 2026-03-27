@@ -1,4 +1,4 @@
-import { BaseComponent } from "./baseComponent.js";
+import { BaseComponent } from "./baseComponent";
 
 /**
  * Базовый компонент формы. Автоматически находит form в разметке,

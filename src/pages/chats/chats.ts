@@ -1,9 +1,9 @@
-import { BasePage } from "../../core/base/basePage.js";
-import { SearchForm } from "../../components/composite/searchForm/searchForm.js";
-import { MenuBar } from "../../components/composite/menuBar/menuBar.js";
-import { ChatListWrapper } from "../../components/composite/chatListWrapper/chatListWrapper.js";
-import { authService } from "../../services/authService.js";
-import { Button } from "../../components/ui/button/button.js";
+import { BasePage } from "../../core/base/basePage";
+import { SearchForm } from "../../components/composite/searchForm/searchForm";
+import { MenuBar } from "../../components/composite/menuBar/menuBar";
+import { ChatListWrapper } from "../../components/composite/chatListWrapper/chatListWrapper";
+import { authService } from "../../services/authService";
+import { Button } from "../../components/ui/button/button";
 import template from "./chats.hbs";
 
 /**

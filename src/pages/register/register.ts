@@ -1,5 +1,5 @@
-import { BasePage } from '../../core/base/basePage.js';
-import { RegisterForm } from '../../components/composite/registerForm/registerForm.js';
+import { BasePage } from '../../core/base/basePage';
+import { RegisterForm } from '../../components/composite/registerForm/registerForm';
 import template from "./register.hbs";
 
 /**

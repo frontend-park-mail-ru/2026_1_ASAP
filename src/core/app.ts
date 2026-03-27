@@ -1,10 +1,10 @@
-import { LoginPage } from "../pages/login/login.js";
-import { ChatsPage } from "../pages/chats/chats.js";
-import { RegisterPage } from "../pages/register/register.js";
-import { Layout } from "./layout/layout.js";
-import { PageManager } from "./pageManager.js";
-import { Router } from "./router.js";
-import { authService } from "../services/authService.js";
+import { LoginPage } from "../pages/login/login";
+import { ChatsPage } from "../pages/chats/chats";
+import { RegisterPage } from "../pages/register/register";
+import { Layout } from "./layout/layout";
+import { PageManager } from "./pageManager";
+import { Router } from "./router";
+import { authService } from "../services/authService";
 
 const routes = {
     '/': LoginPage,

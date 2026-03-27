@@ -1,7 +1,7 @@
-import { BaseForm } from "../../../core/base/baseForm.js";
-import { Avatar } from "../../ui/avatar/avatar.js";
-import { ChatInfo } from "../../ui/chatInfo/chatInfo.js";
-import { MetaChatInfo } from "../../ui/metaChatInfo/metaChatInfo.js";
+import { BaseForm } from "../../../core/base/baseForm";
+import { Avatar } from "../../ui/avatar/avatar";
+import { ChatInfo } from "../../ui/chatInfo/chatInfo";
+import { MetaChatInfo } from "../../ui/metaChatInfo/metaChatInfo";
 import template from "./chatItem.hbs";
 
 /**

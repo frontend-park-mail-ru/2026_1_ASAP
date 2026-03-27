@@ -1,5 +1,5 @@
 import template from "./avatar.hbs";
-import { BaseComponent } from "../../../core/base/baseComponent.js";
+import { BaseComponent } from "../../../core/base/baseComponent";
 
 /**
  * Компонент аватара (изображение).

@@ -1,7 +1,7 @@
-import { BaseForm } from '../../../core/base/baseForm.js';
-import { Input } from '../../ui/input/input.js';
-import { Button } from '../../ui/button/button.js';
-import { Avatar } from '../../ui/avatar/avatar.js';
+import { BaseForm } from '../../../core/base/baseForm';
+import { Input } from '../../ui/input/input';
+import { Button } from '../../ui/button/button';
+import { Avatar } from '../../ui/avatar/avatar';
 import template from "./searchForm.hbs";
 
 /**
