@@ -25,7 +25,6 @@ const MOCK_CHAT_DETAILS: { [id: string]: ChatDetail } = {
         type: 'dialog',
         avatarUrl: '/assets/images/avatars/chatAvatar.svg',
         interlocutor: MOCK_USERS['bob'], 
-        status: 'online',
         unreadCount: 0
     } as DialogChat,
     "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb": {
@@ -43,11 +42,11 @@ const MOCK_CHAT_DETAILS: { [id: string]: ChatDetail } = {
 const MOCK_MESSAGES: { [chatId: string]: FrontendMessage[] } = {
     "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa": [ // диалог1 (alice - bob)
         { id: "msg1", sender: MOCK_USERS['bob'], text: 'Привет!', timestamp: new Date(Date.now() - 120000), isOwn: false},
-        // <= ИЗМЕНЕНИЕ: Alice отправляет сообщение
         { id: "msg2", sender: MOCK_USERS['currentuser'], text: 'Как дела?', timestamp: new Date(Date.now() - 90000), isOwn: true },
-        { id: "msg3", sender: MOCK_USERS['bob'], text: 'Все хорошо, а у тебя?', timestamp: new Date(Date.now() - 60000), isOwn: false},
-        // <= ИЗМЕНЕНИЕ: Alice отправляет сообщение
-        { id: "msg4", sender: MOCK_USERS['currentuser'], text: 'Тоже отлично, работаю над проектом.', timestamp: new Date(Date.now() - 30000), isOwn: true },
+        { id: "msg3", sender: MOCK_USERS['bob'], text: 'Иран начал стремительно укреплять остров Харк. Значительно усилен гарнизон, территория плотно заминирована противопехотными минами, а расчеты обороны массово оснащены ПЗРК и другими современными средствами ПВО и ПЛО. Окружение Трампа уже указывает на эти меры как на фактор, повышающий стоимость операции (прежде всего из-за потенциально высоких потерь в людях). Но главная интрига текущего момента в том, рискнёт ли Вашингтон высаживать морпехов на подготовленный к обороне Харк, или же остров намеренно политизируют и обсуждают в СМИ, чтобы создать придать ему важности и отвлечь внимание от реального направления удара.', 
+            timestamp: new Date(Date.now() - 60000), isOwn: false},
+        { id: "msg4", sender: MOCK_USERS['currentuser'], text: 'Сформировалась интересная гипотеза относительно динамики иранских ракетных пусков. Пока зарубежные аналитики наперебой заявляют об истощении запасов ракет, использование разного количества средств поражения в каждом залпе преследует иную цель. Такая тактика намеренно искажает реальную картину объёма иранских арсеналов. Это делает невозможной точную оценку оставшихся ресурсов и мешает противнику планировать эффективные контрмеры. Хаотичное число пусков не даёт разведке США вычислить средний темп расхода ракет и дату их исчерпания, что в результате мешает нормальному планированию ракетно-бомбовых ударов по объектам в Иране.', 
+            timestamp: new Date(Date.now() - 30000), isOwn: true },
     ],
     "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb": [ // Группа1 (alice, bob, charlie, currentuser)
         { id: "msg5", sender: MOCK_USERS['bob'], text: 'Всем привет, коллеги!', timestamp: new Date(Date.now() - 180000), isOwn: false},
@@ -85,7 +84,7 @@ export class ChatService {
      */
     public async getChats(currentUserId?: string): Promise<ChatDetail[]> {
         if (USE_MOCK_GET_CHATS) {
-            return new Promise(resolve => setTimeout(() => resolve(Object.values(MOCK_CHAT_DETAILS)), 300));
+            return new Promise(resolve => setTimeout(() => resolve(Object.values(MOCK_CHAT_DETAILS))));
         }
         try {
             const response = await fetch(`${BASE_URL}/api/v1/chats`, {
@@ -117,7 +116,6 @@ export class ChatService {
                         frontendChat = {
                             ...commonProps,
                             interlocutor: MOCK_USERS['bob'], // Временный собеседник, нужно будет заменить на реального
-                            status: 'online'
                         } as DialogChat;
                         break;
                     case 'group':
@@ -158,7 +156,7 @@ export class ChatService {
             return new Promise(resolve => {
                 setTimeout(() => {
                     resolve(MOCK_CHAT_DETAILS[chatId]);
-                }, 300);
+                });
             });
         }
         // TODO: Реализовать запрос к реальному API для получения деталей чата
@@ -173,7 +171,6 @@ export class ChatService {
      */
     public async getMessages(chatId: string, currentUserId: string): Promise<FrontendMessage[]> {
         if (USE_MOCK_DETAIL_AND_MESSAGES) {
-            console.log(`[MOCK MESSAGES] Returning mock messages for chat ID: ${chatId}`);
             return new Promise(resolve => {
                 setTimeout(() => {
                     const messages = MOCK_MESSAGES[chatId] || [];
@@ -183,7 +180,7 @@ export class ChatService {
                         isOwn: msg.sender.login === currentUserId
                     }));
                     resolve(updatedMessages);
-                }, 500);
+                });
             });
         }
         // TODO: Реализовать запрос к реальному API для получения сообщений

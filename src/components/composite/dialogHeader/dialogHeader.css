@@ -2,6 +2,9 @@
     display: flex;
     align-items: center;
     width: 100%;
+    padding: 10px 15px 10px 15px;
+    gap: 15px;
+
 }
 
 .dialog-header__avatar-container {
