@@ -4,10 +4,10 @@
     height: 100%;
     width: 100%;
     background-color: var(--color-background-default);
-    min-height: 0;
-    gap: 10px;
     padding: 10px;
-    padding-top: 0px;
+    gap: 10px;
+    box-sizing: border-box;
+    min-height: 0;
 }
 
 .chat-window__header {
@@ -18,16 +18,14 @@
     min-height: 60px;
     display: flex;
     align-items: center;
-    width: 100%;
 }
 
 .chat-window__main {
     flex-grow: 1;
+    min-height: 0;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    min-height: 0;
-    /* height: 100%; */
 }
 
 .chat-window__footer {

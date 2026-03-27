@@ -17,7 +17,7 @@ interface MessageListProps {
  */
 export class MessageList extends BaseComponent {
     private childMessages: Message[] = [];
-    private scrollContainer: HTMLElement | null = null;
+    private flexContainer: HTMLElement | null = null;
 
     /**
      * @param {MessageListProps} props - Свойства компонента.
@@ -35,7 +35,13 @@ export class MessageList extends BaseComponent {
             console.error("MessageList: компонент не имеет элемента при afterMount.");
             return;
         }
-        this.scrollContainer = this.element.querySelector('.message-list__container');
+
+        this.flexContainer = this.element.querySelector('.message-list__flex-container'); 
+        if (!this.flexContainer) {
+            console.error("MessageList: flex-container не найден.");
+            return;
+        }
+
         this.renderMessages(this.props.messages);
         this.scrollToBottom();
     }
@@ -48,16 +54,11 @@ export class MessageList extends BaseComponent {
         this.childMessages.forEach(msg => msg.unmount());
         this.childMessages = [];
 
-        const container = this.scrollContainer;
-        if (!container) {
-            console.error("MessageList: контейнер для сообщений не найден.");
-            return;
-        }
 
         messages.forEach(msgData => {
             const isOwn = msgData.sender.login == this.props.currentUser.login;
             const messageComponent = new Message({ message: msgData, isOwn: isOwn });
-            messageComponent.mount(container);
+            messageComponent.mount(this.flexContainer!);
             this.childMessages.push(messageComponent);
         });
     }
@@ -66,25 +67,25 @@ export class MessageList extends BaseComponent {
      * Добавляет новое сообщение в список и прокручивает вниз.
      * @param {MessageType} newMessage - Новое сообщение.
      */
-    addMessage(newMessage: FrontendMessage): void {
+    public addMessage(newMessage: FrontendMessage): void {
+        if (!this.element) {
+            console.error("MessageList: контейнер для сообщений не найден при добавлении сообщения.");
+            return;
+        }
+
         const isOwn = newMessage.sender.login === this.props.currentUser.login;
         const messageComponent = new Message({ message: newMessage, isOwn: isOwn });
-        const container = this.scrollContainer;
         
-        if (container) {
-            messageComponent.mount(container);
-            this.childMessages.push(messageComponent);
-            this.scrollToBottom();
-        }
+        messageComponent.mount(this.flexContainer!);
+        this.childMessages.push(messageComponent);
+        this.scrollToBottom();
     }
 
     /**
      * Прокручивает список сообщений до конца.
      */
     private scrollToBottom(): void {
-        if (this.scrollContainer) {
-            this.scrollContainer.scrollTop = this.scrollContainer.scrollHeight;
-        }
+        this.element?.scrollTo({ top: this.element.scrollHeight, behavior: 'smooth' });
     }
 
     /**
