@@ -3,6 +3,7 @@ import { Button } from '../../ui/button/button.js';
 import { authService } from '../../../services/authService.js';
 import { Input } from '../../ui/input/input.js'; 
 import { validationService } from '../../../services/validationService.js';
+import template from "./registerForm.hbs";
 
 /**
  * Форма регистрации (логин + email + пароль). Валидирует ввод
@@ -16,9 +17,12 @@ export class RegisterForm extends BaseForm {
      */
     constructor(props = {}) {
         super(props);
-        this.tempName = "components/composite/registerForm/registerForm";
-    }
+    };
 
+    getTemplate() {
+        return template;
+    };
+    
     /**
      * Монтирует дочерние компоненты и находит элемент ошибки формы.
      */

@@ -1,6 +1,7 @@
 import { BaseForm } from "../../../core/base/baseForm.js";
 import { ChatItem } from "../chatItem/chatItem.js";
 import { ChatService } from "../../../services/chatService.js";
+import template from "./chatListItem.hbs";
 
 /**
  * Список чатов. Загружает чаты через ChatService и рендерит ChatItem для каждого.
@@ -8,7 +9,10 @@ import { ChatService } from "../../../services/chatService.js";
 export class ChatListItem extends BaseForm {
     constructor(props={}) {
         super(props);
-        this.tempName = "components/composite/chatListItem/chatListItem";
+    };
+
+    getTemplate() {
+        return template;
     };
 
     /**

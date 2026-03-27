@@ -4,6 +4,7 @@ import { MenuBar } from "../../components/composite/menuBar/menuBar.js";
 import { ChatListWrapper } from "../../components/composite/chatListWrapper/chatListWrapper.js";
 import { authService } from "../../services/authService.js";
 import { Button } from "../../components/ui/button/button.js";
+import template from "./chats.hbs";
 
 /**
  * Страница чатов. Содержит боковую панель со списком чатов,
@@ -20,7 +21,10 @@ export class ChatsPage extends BasePage {
         this.chatWrapper = null;
         this.menuBar = null;
         this.logoutButton = null;
-        this.tempName = "pages/chats/chats";
+    };
+
+    getTemplate() {
+        return template;
     };
 
     /**

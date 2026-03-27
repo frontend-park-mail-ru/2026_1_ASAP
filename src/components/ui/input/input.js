@@ -1,4 +1,5 @@
 import { BaseComponent } from "../../../core/base/baseComponent.js";
+import template from './input.hbs';
 
 /**
  * Компонент текстового поля ввода с поддержкой ошибок валидации
@@ -26,7 +27,10 @@ export class Input extends BaseComponent {
         this.togglePassword = props.togglePassword || false; 
         this._error =  "";
         this.showErrorText = props.showErrorText !== false;
-        this.tempName = "components/ui/input/input";
+    }
+
+    getTemplate() {
+        return template;
     }
 
     /**

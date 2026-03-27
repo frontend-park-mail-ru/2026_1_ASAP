@@ -14,12 +14,10 @@ export class BaseComponent {
 
         /** @type {HTMLElement|null} */
         this.element = null;
+    }
 
-        /**
-         * Имя Handlebars-шаблона в глобальном реестре `Handlebars.templates`.
-         * @type {string}
-         */
-        this.tempName = "";
+    getTemplate() {
+        throw new Error(`getTemplate должен быть реализован в ${this.constructor.name}`);
     }
 
     /**
@@ -28,13 +26,7 @@ export class BaseComponent {
      * @throws {Error} Если tempName не задан или шаблон не найден.
      */
     render() {
-        if (!this.tempName) {
-            throw new Error(`tempName не указан для компонента ${this.constructor.name}`);
-        }
-        const template = Handlebars.templates[this.tempName];
-        if (!template) {
-            throw new Error(`Шаблон ${this.tempName} не найден`);
-        }
+        const template = this.getTemplate();
         const wrapper = document.createElement('div');
         wrapper.innerHTML = template(this.props).trim();
         return wrapper.firstElementChild;

@@ -1,5 +1,6 @@
 import { BaseForm } from '../../../core/base/baseForm.js';
 import { Button } from '../../ui/button/button.js';
+import template from "./menuBar.hbs";
 
 /**
  * Нижнее меню с кнопками навигации: контакты, сообщения, настройки.
@@ -7,8 +8,11 @@ import { Button } from '../../ui/button/button.js';
 export class MenuBar extends BaseForm {
     constructor(props={}) {
         super(props);
-        this.tempName = "components/composite/menuBar/menuBar";
-    }
+    };
+
+    getTemplate() {
+        return template;
+    };
 
     setActiveButton(active) {
         const messageImg = this.messagesButton.element.querySelector('img');

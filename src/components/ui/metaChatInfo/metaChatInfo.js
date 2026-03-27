@@ -1,4 +1,5 @@
 import { BaseComponent } from "../../../core/base/baseComponent.js";
+import template from "./metaChatInfo.hbs";
 
 /**
  * Компонент метаинформации чата (время, счётчик непрочитанных).
@@ -6,8 +7,11 @@ import { BaseComponent } from "../../../core/base/baseComponent.js";
 export class MetaChatInfo extends BaseComponent {
     constructor(props={}) {
         super(props);
-        this.tempName = 'components/ui/metaChatInfo/metaChatInfo';
     };
+
+    getTemplate() {
+        return template;
+    }
     
     /**
      * Монтирует дочерние компоненты и находит элемент ошибки формы.

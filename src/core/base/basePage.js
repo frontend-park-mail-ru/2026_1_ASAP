@@ -15,9 +15,10 @@ export class BasePage {
         /** @type {HTMLDivElement} Корневой DOM-контейнер страницы. */
         this.root = document.createElement("div");
         this.root.className = "page";
+    }
 
-        /** @type {string} Имя (путь)Handlebars-шаблона. */
-        this.tempName = "";
+    getTemplate() {
+        throw new Error(`getTemplate должен быть реализован в ${this.constructor.name}`);
     }
 
     /**
@@ -26,14 +27,7 @@ export class BasePage {
      * @throws {Error} Если tempName не задан или шаблон не найден.
      */
     render() {
-        if (!this.tempName) {
-            throw new Error(`tempName не указан для страницы ${this.constructor.name}`);
-        }
-        
-        const template = Handlebars.templates[this.tempName];
-        if (!template) {
-            throw new Error(`Шаблон ${this.tempName} не найден`);
-        }
+        const template = this.getTemplate();
 
         this.root.innerHTML = template(this.props).trim();
         this.element = this.root.firstElementChild || this.root;

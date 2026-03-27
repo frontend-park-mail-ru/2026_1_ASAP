@@ -1,4 +1,5 @@
 import { BaseComponent } from "../../../core/base/baseComponent.js";
+import template from "./chatInfo.hbs";
 
 /**
  * Компонент информации о чате (имя, последнее сообщение).
@@ -15,9 +16,11 @@ export class ChatInfo extends BaseComponent {
      */
     constructor(props={}) {
         super(props);
-        this.tempName = "components/ui/chatInfo/chatInfo";
     };
 
+    getTemplate() {
+        return template;
+    }
 
     /**
      * Монтирует дочерние компоненты и находит элемент ошибки формы.

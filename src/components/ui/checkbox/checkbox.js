@@ -1,4 +1,5 @@
 import { BaseComponent } from "../../../core/base/baseComponent.js";
+import template from "./checkbox.hbs";
 
 /**
  * Компонент чекбокса.
@@ -17,7 +18,10 @@ export class Checkbox extends BaseComponent {
         this.label = props.label || "";
         this.name = props.name || "";
         this.checked = props.checked || false;
-        this.tempName = "components/ui/checkbox/checkbox";
+    }
+
+    getTemplate() {
+        return template;
     }
 
     /**

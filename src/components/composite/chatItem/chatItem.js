@@ -2,6 +2,7 @@ import { BaseForm } from "../../../core/base/baseForm.js";
 import { Avatar } from "../../ui/avatar/avatar.js";
 import { ChatInfo } from "../../ui/chatInfo/chatInfo.js";
 import { MetaChatInfo } from "../../ui/metaChatInfo/metaChatInfo.js";
+import template from "./chatItem.hbs";
 
 /**
  * Элемент списка чатов. Содержит аватар, информацию о чате и метаданные.
@@ -18,8 +19,11 @@ export class ChatItem extends BaseForm {
      */
     constructor(props={}) {
         super(props);
-        this.tempName = "components/composite/chatItem/chatItem";
     };
+
+    getTemplate() {
+        return template;
+    }
 
     /**
      * Преобразует тип диалога в CSS-класс для ChatInfo.
@@ -46,7 +50,7 @@ export class ChatItem extends BaseForm {
     afterMount() {
         this.avatar = new Avatar({
             class: "chat-avatar",
-            src: "../../../assets/images/avatars/chatAvatar.svg",
+            src: "/assets/images/avatars/chatAvatar.svg",
         });
         this.avatar.mount(this.element);
 

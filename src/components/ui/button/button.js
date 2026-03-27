@@ -1,4 +1,5 @@
 import { BaseComponent } from '../../../core/base/baseComponent.js';
+import template from './button.hbs';
 
 /**
  * Компонент кнопки. Поддерживает текстовую метку, иконку и обработчик клика.
@@ -18,7 +19,10 @@ export class Button extends BaseComponent {
         this.label = props.label || "";
         this.icon = props.icon || "";
         this.type = props.type || "button";
-        this.tempName = "components/ui/button/button";
+    }
+
+    getTemplate() {
+        return template;
     }
 
     /**
