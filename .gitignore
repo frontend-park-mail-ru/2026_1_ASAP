@@ -2,3 +2,5 @@ node_modules
 .DS_Store
 *.precompiled.js
 src/templates.js
+src/**/*.js
+src/**/*.js.map
