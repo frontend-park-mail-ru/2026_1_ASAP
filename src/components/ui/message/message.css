@@ -50,6 +50,7 @@
 }
 
 .message__text {
+    padding-top: 5px;
     font: var(--font-text-main);
     letter-spacing: var(--text-main-letter-spacing);
     font-size: 14px;

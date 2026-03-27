@@ -16,6 +16,8 @@
 @import "../components/composite/messageList/messageList.css";
 @import "../components/composite/chatWindow/chatWindow.css";
 @import "../components/composite/dialogHeader/dialogHeader.css";
+@import "../components/composite/groupHeader/groupHeader.css";
+
 
 @import "../components/ui/button/button.css";
 @import "../components/ui/input/input.css";
