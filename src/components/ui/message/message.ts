@@ -1,6 +1,7 @@
 import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent";
 import { FrontendMessage } from '../../../types/chat';
 import template from './message.hbs';
+import { Avatar } from '../../ui/avatar/avatar.js';
 
 /**
  * @interface MessageProps - Свойства компонента сообщения.
@@ -10,6 +11,7 @@ import template from './message.hbs';
 interface MessageProps extends IBaseComponentProps {
     message: FrontendMessage;
     isOwn: boolean;
+    
 }
 
 /**
@@ -30,10 +32,24 @@ export class Message extends BaseComponent<MessageProps> {
         return template;
     }
 
+    private avatarComponent: Avatar | null = null;
+
     /**
      * @override
      */
-    protected afterMount(): void { 
+    protected afterMount(): void {
+        if (!this.element) {
+            console.error("message: нет эллемента для монтирования");
+            return;
+        }
+        const avatarSlot = this.element.querySelector('[data-component="message-avatar-slot"]');
+        if (avatarSlot) {
+            this.avatarComponent = new Avatar({
+                src: this.props.message.sender.avatarUrl || '/assets/images/avatars/defaultAvatar.svg',
+                class: 'message__avatar',
+            });
+            this.avatarComponent.mount(avatarSlot as HTMLElement);
+        }
     }
 
     /**

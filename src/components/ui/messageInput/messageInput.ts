@@ -16,6 +16,8 @@ interface MessageInputProps extends IBaseFormProps {
  */
 export class MessageInput extends BaseForm<MessageInputProps> { 
     private messageInput: Input | null = null;
+    private uplodadButton: Button | null = null;
+    private stikerButton: Button | null = null;
     private sendButton: Button | null = null;
 
     /**
@@ -36,15 +38,21 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         super.afterMount();
 
         if (!this.element) {
-            console.error("MessageInput: Component element is null during afterMount.");
+            console.error("MessageInput: елемент не найден при монтировании.");
             return;
         }
-        const messageInputContainer = this.element.querySelector('[data-component="message-text-input"]');
 
-        if (!messageInputContainer) {
-            console.error("MessageInput: Could not find message-text-input container.");
-            return;
-        }
+        const stikerButtonContainer = this.element.querySelector('[data-component="message-text-input"]');
+        this.stikerButton = new Button({
+            label: '',
+            icon: '/assets/images/icons/sticker.svg',
+            class: 'message-input__sticker-button',
+            type: 'button',
+        });
+        this.stikerButton.mount(stikerButtonContainer as HTMLElement);
+
+        
+        const messageInputContainer = this.element.querySelector('[data-component="message-text-input"]');
         this.messageInput = new Input({
             name: 'messageText',
             placeholder: 'Введите сообщение...',
@@ -54,15 +62,22 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         });
         this.messageInput.mount(messageInputContainer as HTMLElement);
 
+
+        const uploadButtonContainer = this.element.querySelector('[data-component="message-text-input"]');
+        this.uplodadButton = new Button({
+            label: '',
+            icon: '/assets/images/icons/upload.svg',
+            class: 'message-input__upload-button-container',
+            type: 'button',
+        });
+        this.uplodadButton.mount(uploadButtonContainer as HTMLElement);
+
+        
         const sendButtonContainer = this.element.querySelector('[data-component="send-button-container"]');
-        if (!sendButtonContainer) {
-            console.error("MessageInput: Could not find send-button-container.");
-            return;
-        }
         this.sendButton = new Button({
             label: '',
             icon: '/assets/images/icons/sendIcon.svg',
-            class: 'message-input__send-button ui-button ui-button__primary',
+            class: 'message-input__send-button',
             type: 'submit',
         });
         this.sendButton.mount(sendButtonContainer as HTMLElement);

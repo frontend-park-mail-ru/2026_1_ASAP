@@ -1,4 +1,5 @@
 <div class="message {{#if isOwn}}message--own{{/if}}">
+    <div class="message__avatar-container" data-component="message-avatar-slot"></div>
     <div class="message__content-wrapper">
         <div class="message__author">{{message.sender.login}}</div>
         <div class="message__text">{{message.text}}</div>

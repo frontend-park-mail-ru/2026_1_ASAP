@@ -34,8 +34,10 @@ export class DialogHeader extends BaseComponent {
      * @override
      */
     protected afterMount() {
-        if (!this.element) return;
-
+        if (!this.element) {
+            console.error("dialogHeader: нет эллемента для монтирования");
+            return;
+        }
         const avatarSlot = this.element.querySelector('[data-component="dialog-avatar-slot"]');
         if (avatarSlot) {
             this.avatarComponent = new Avatar({

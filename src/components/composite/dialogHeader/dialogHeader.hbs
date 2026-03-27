@@ -2,14 +2,6 @@
     <div class="dialog-header__avatar-container" data-component="dialog-avatar-slot"></div>
     <div class="dialog-header__info">
         <div class="dialog-header__name">{{chat.title}}</div>
-        <div class="dialog-header__status dialog-header__status--{{chat.status}}">
-            {{#if (eq chat.status "online")}}
-                Онлайн
-            {{else if (eq chat.status "typing...")}}
-                Печатает...
-            {{else}}
-                Оффлайн
-            {{/if}}
         </div>
     </div>
 </div>
