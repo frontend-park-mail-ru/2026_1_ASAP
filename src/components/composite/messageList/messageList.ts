@@ -1,15 +1,17 @@
 import { BaseComponent } from '../../../core/base/baseComponent.js';
-import { FrontendMessage, User} from '../../../types/chat.js';
+import { FrontendMessage, User, Chat} from '../../../types/chat.js';
 import { Message } from '../../ui/message/message.js';
 
 /**
  * @interface MessageListProps - Свойства компонента списка сообщений.
  * @property {MessageType[]} messages - Массив сообщений.
  * @property {User} currentUser - Текущий пользователь (для определения isOwn).
- */
+ * @property {'dialog' | 'group' | 'channel'} chatType - Тип текущего чата. 
+*/
 interface MessageListProps {
     messages: FrontendMessage[];
     currentUser: User;
+    chatType: Chat['type'];
 }
 
 /**
@@ -54,10 +56,15 @@ export class MessageList extends BaseComponent {
         this.childMessages.forEach(msg => msg.unmount());
         this.childMessages = [];
 
+        const showAuthor = this.props.chatType === 'group';
 
         messages.forEach(msgData => {
             const isOwn = msgData.sender.login == this.props.currentUser.login;
-            const messageComponent = new Message({ message: msgData, isOwn: isOwn });
+            const messageComponent = new Message({
+                message: msgData, 
+                isOwn: isOwn,
+                showAuthor: showAuthor
+            });
             messageComponent.mount(this.flexContainer!);
             this.childMessages.push(messageComponent);
         });
@@ -72,9 +79,13 @@ export class MessageList extends BaseComponent {
             console.error("MessageList: контейнер для сообщений не найден при добавлении сообщения.");
             return;
         }
-
+        const showAuthor = this.props.chatType === 'group';
         const isOwn = newMessage.sender.login === this.props.currentUser.login;
-        const messageComponent = new Message({ message: newMessage, isOwn: isOwn });
+        const messageComponent = new Message({
+            message: newMessage, 
+            isOwn: isOwn,
+            showAuthor: showAuthor
+        });
         
         messageComponent.mount(this.flexContainer!);
         this.childMessages.push(messageComponent);

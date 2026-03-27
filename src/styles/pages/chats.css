@@ -22,6 +22,7 @@
     min-width: 400px;
     flex-direction: column;
     background-color: var(--color-background-default);
+    justify-content: center;
 }
 
 .empty-field {

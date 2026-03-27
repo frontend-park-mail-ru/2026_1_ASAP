@@ -197,8 +197,15 @@ export class ChatsPage extends BasePage {
             headerComponent = fallbackHeader;
         }
 
-        const messageListComponent = new MessageList({ messages: messages, currentUser: CURRENT_USER });  //Убрать заглушку CURRENT_USER после интеграции с реальными чатами
-        const messageInputComponent = new MessageInput({ onSubmit: (text: string) => { } });
+        const messageListComponent = new MessageList({ 
+            messages: messages, 
+            currentUser: CURRENT_USER,
+            chatType: chatDetail.type
+        });  //Убрать заглушку CURRENT_USER после интеграции с реальными чатами
+        const messageInputComponent = new MessageInput({
+            onSubmit: (text: string) => {
+                // todo логика отправки сообщения
+             } });
 
         this.chatWindow = new ChatWindow({
             headerComponent: headerComponent,

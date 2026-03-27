@@ -31,7 +31,7 @@ const MOCK_CHAT_DETAILS: { [id: string]: ChatDetail } = {
         id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
         title: "Backend Team",
         type: 'group',
-        avatarUrl: '/assets/images/avatars/groupAvatar.svg',
+        avatarUrl: '/assets/images/avatars/chatAvatar.svg',
         members: [MOCK_USERS['currentuser'], MOCK_USERS['bob'], MOCK_USERS['alice'], MOCK_USERS['charlie']],
         owner: MOCK_USERS['bob'],
         unreadCount: 3
@@ -107,7 +107,7 @@ export class ChatService {
                     id: chat.id,
                     title: chat.title,
                     type: chat.chat_type,
-                    avatarUrl: chat.chat_type === 'dialog' ? '/assets/images/avatars/chatAvatar.svg' : '/assets/images/avatars/groupAvatar.svg',
+                    avatarUrl: chat.chat_type === 'dialog' ? '/assets/images/avatars/chatAvatar.svg' : '/assets/images/avatars/chatAvatar.svg',
                     unreadCount: Math.floor(Math.random() * 5), // Случайное кол-во непрочитанных
                 };
 

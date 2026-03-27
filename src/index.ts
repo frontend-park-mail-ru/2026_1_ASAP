@@ -17,6 +17,10 @@ Handlebars.registerHelper('and', function(...args: any[]) {
     return args.every(Boolean);
 });
 
+Handlebars.registerHelper('not', function(value: any) {
+    return !value;
+});
+
 /**
  * Точка входа: создаёт и запускает приложение после загрузки DOM.
  */

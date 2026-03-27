@@ -21,6 +21,10 @@
 .dialog-header__info {
     display: flex;
     flex-direction: column;
+    width: 100%;
+    font-size: 18px;
+    font: var(--font-secondary);
+    letter-spacing: var(--text-secondary-letter-spacing);
 }
 
 .dialog-header__name {
@@ -28,12 +32,8 @@
     font-size: var(--font-size-lg);
     color: var(--color-text-primary);
 }
-
-.dialog-header__status {
-    font-size: var(--font-size-sm);
-    color: var(--color-text-secondary);
-}
-
-.dialog-header__status--online {
-    color: var(--color-status-online);
+.dialog-header__settings {
+    background: none;
+    border: none;
+    cursor: pointer;
 }
