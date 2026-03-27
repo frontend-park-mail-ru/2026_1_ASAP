@@ -7,11 +7,12 @@ import { Avatar } from '../../ui/avatar/avatar.js';
  * @interface MessageProps - Свойства компонента сообщения.
  * @property {FrontendMessage} message - Объект сообщения.
  * @property {boolean} isOwn - Флаг, является ли сообщение текущего пользователя.
+ * @property {boolean} showAuthor - Флаг, нужно ли показывать имя автора.
  */
 interface MessageProps extends IBaseComponentProps {
     message: FrontendMessage;
     isOwn: boolean;
-    
+    showAuthor: boolean   
 }
 
 /**
@@ -25,6 +26,7 @@ export class Message extends BaseComponent<MessageProps> {
         super(props);
 
         this.props.isOwn = props.isOwn;
+        this.props.showAuthor = props.showAuthor;
         this.props.formattedTime = props.message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 

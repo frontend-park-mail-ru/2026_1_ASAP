@@ -13,14 +13,17 @@
     flex-direction: column;
     background-color: var(--color-bubble);
     border-radius: 10px;
-    padding: 10px;
-    max-width: 500px;
+    max-width: 700px;
     min-width: 40px;
+    height: 100%;
+    padding: 10px 20px 10px 20px;
+
 }
 
 .message--own .message__content-wrapper {
     background-color: var(--color-backgroundBlur);
     color: var(--color-text-inverted);
+    max-width: 675px;
 }
 
 .message__avatar-container {
@@ -36,9 +39,10 @@
 }
 
 .message__author {
-    font-size: var(--font-size-sm);
-    color: var(--color-text-secondary);
-    margin-bottom: var(--spacing-xxs);
+    color: var(--color-text);
+    font: var(--font-text-main);
+    letter-spacing: var(--text-main-letter-spacing);
+    font-size: 12px;
 }
 
 .message--own .message__author {
@@ -46,16 +50,19 @@
 }
 
 .message__text {
-    font-size: var(--font-size-base);
+    font: var(--font-text-main);
+    letter-spacing: var(--text-main-letter-spacing);
+    font-size: 14px;
     line-height: 1.4;
     word-wrap: break-word;
 }
 
 .message__meta {
-    font-size: var(--font-size-xs);
-    color: var(--color-text-tertiary);
+    color: var(--color-text);
+    font: var(--font-text-main);
+    letter-spacing: var(--text-main-letter-spacing);
+    font-size: 12px;
     text-align: right;
-    margin-top: var(--spacing-xxs);
 }
 
 .message--own .message__meta {

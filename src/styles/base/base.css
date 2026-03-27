@@ -5,8 +5,3 @@ body {
     overflow: hidden;
     color: var(--color-text);
 }
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
