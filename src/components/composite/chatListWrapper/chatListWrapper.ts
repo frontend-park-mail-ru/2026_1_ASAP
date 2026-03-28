@@ -1,6 +1,6 @@
-import { BaseForm } from "../../../core/base/baseForm.js";
-import { ChatListItem } from "../chatListItem/chatListItem.js";
-import { Router } from '../../../core/router.js';
+import { BaseForm } from "../../../core/base/baseForm";
+import { ChatListItem } from "../chatListItem/chatListItem";
+import { Router } from '../../../core/router';
 import template from "./chatListWrapper.hbs";
 
 /**

@@ -1,6 +1,6 @@
-import { BasePage } from './base/basePage.js';
-import { Layout } from './layout/layout.js';
-import { Router } from './router.js';
+import { BasePage } from './base/basePage';
+import { Layout } from './layout/layout';
+import { Router } from './router';
 
 /**
  * Управляет переключением страниц: размонтирует текущую,

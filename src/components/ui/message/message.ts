@@ -1,5 +1,6 @@
-import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent.js";
-import { FrontendMessage } from '../../../types/chat.js';
+import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent";
+import { FrontendMessage } from '../../../types/chat';
+import template from './message.hbs';
 
 /**
  * @interface MessageProps - Свойства компонента сообщения.
@@ -20,10 +21,13 @@ export class Message extends BaseComponent<MessageProps> {
      */
     constructor(props: MessageProps) {
         super(props);
-        this.tempName = 'components/ui/message/message';
 
         this.props.isOwn = props.isOwn;
         this.props.formattedTime = props.message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    getTemplate() {
+        return template;
     }
 
     /**

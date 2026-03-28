@@ -7,11 +7,10 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "outDir": "./dist",
-    "rootDir": "./src",
     "declaration": false,
     "sourceMap": true,
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
+    "ignoreDeprecations": "6.0"
     },
     "include": ["src/**/*.ts", "src/**/*.js", "src/types/**/*.d.ts"],
     "exclude": ["node_modules"]

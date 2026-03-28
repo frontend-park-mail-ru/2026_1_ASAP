@@ -1,8 +1,8 @@
-import { BaseForm, IBaseFormProps } from "../../../core/base/baseForm.js";
-import { Avatar } from "../../ui/avatar/avatar.js";
-import { ChatInfo } from "../../ui/chatInfo/chatInfo.js";
-import { MetaChatInfo } from "../../ui/metaChatInfo/metaChatInfo.js";
-import { Chat as ChatType } from '../../../types/chat.js';
+import { BaseForm, IBaseFormProps } from "../../../core/base/baseForm";
+import { Avatar } from "../../ui/avatar/avatar";
+import { ChatInfo } from "../../ui/chatInfo/chatInfo";
+import { MetaChatInfo } from "../../ui/metaChatInfo/metaChatInfo";
+import { Chat as ChatType } from '../../../types/chat';
 import template from "./chatItem.hbs";
 
 interface ChatItemProps extends IBaseFormProps {

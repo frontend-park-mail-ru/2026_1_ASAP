@@ -13,5 +13,3 @@ declare global {
     }
     const Handlebars: Window['Handlebars'];
 }
-
-export {};

@@ -1,5 +1,6 @@
-import { BaseComponent, IBaseComponentProps } from '../../../core/base/baseComponent.js';
-import { GroupChat } from '../../../types/chat.js';
+import { BaseComponent, IBaseComponentProps } from '../../../core/base/baseComponent';
+import { GroupChat } from '../../../types/chat';
+import template from './groupHeader.hbs'
 
 interface GroupHeaderProps extends IBaseComponentProps {
     chat: GroupChat;
@@ -11,6 +12,9 @@ interface GroupHeaderProps extends IBaseComponentProps {
 export class GroupHeader extends BaseComponent<GroupHeaderProps> {
     constructor(props: GroupHeaderProps) {
         super(props);
-        this.tempName = 'components/composite/groupHeader/groupHeader';
+    }
+
+    getTemplate() {
+        return template;
     }
 }

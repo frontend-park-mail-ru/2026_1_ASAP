@@ -1,5 +1,5 @@
-import { BasePage } from "./base/basePage.js";
-import { PageManager } from "./pageManager.js";
+import { BasePage } from "./base/basePage";
+import { PageManager } from "./pageManager";
 /**
  * Клиентский роутер. Обрабатывает навигацию через History API
  * и делегирует открытие страниц в PageManager.

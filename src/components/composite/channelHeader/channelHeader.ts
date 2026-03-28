@@ -1,5 +1,6 @@
-import { BaseComponent, IBaseComponentProps } from '../../../core/base/baseComponent.js';
-import { ChannelChat } from '../../../types/chat.js';
+import { BaseComponent, IBaseComponentProps } from '../../../core/base/baseComponent';
+import { ChannelChat } from '../../../types/chat';
+import template from './channelHeader.hbs';
 
 interface ChannelHeaderProps extends IBaseComponentProps {
     chat: ChannelChat;
@@ -11,6 +12,9 @@ interface ChannelHeaderProps extends IBaseComponentProps {
 export class ChannelHeader extends BaseComponent<ChannelHeaderProps> {
     constructor(props: ChannelHeaderProps) {
         super(props);
-        this.tempName = 'components/composite/channelHeader/channelHeader';
+    }
+
+    getTemplate() {
+        return template;
     }
 }

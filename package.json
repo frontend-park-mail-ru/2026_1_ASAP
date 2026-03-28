@@ -7,8 +7,8 @@
   "scripts": {
     "test": "vitest",
     "start": "npm run start:dev",
-    "start:dev": "concurrently \"npm run watch:ts\" \"npm run precompile\" \"nodemon server/server.js\"",
-    "start:prod": "npm run build:ts && npm run precompile && node server/server.js",
+    "start:dev": "concurrently \"npm run watch\" \"nodemon server/server.js\"",
+    "start:prod": "npm run build && node server/server.js",
     "lint": "eslint .",
     "prepare": "husky",
     "build": "webpack",
@@ -34,10 +34,10 @@
   "homepage": "https://github.com/frontend-park-mail-ru/2026_1_ASAP#readme",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "copy-webpack-plugin": "^14.0.0",
-    "css-loader": "^7.1.4",
     "concurrently": "^9.2.1",
+    "copy-webpack-plugin": "^14.0.0",
     "cross-env": "^10.1.0",
+    "css-loader": "^7.1.4",
     "docdash": "^2.0.2",
     "eslint": "^10.0.2",
     "globals": "^17.4.0",

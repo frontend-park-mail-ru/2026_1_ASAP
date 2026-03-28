@@ -1,5 +1,5 @@
 import template from "./avatar.hbs";
-import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent.js";
+import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent";
 
 /**
  * @interface AvatarProps - Свойства компонента аватара.

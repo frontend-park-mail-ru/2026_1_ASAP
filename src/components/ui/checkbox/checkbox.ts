@@ -1,4 +1,4 @@
-import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent.js";
+import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent";
 import template from "./checkbox.hbs";
 
 export interface CheckboxProps extends IBaseComponentProps {

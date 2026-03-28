@@ -38,7 +38,7 @@ export class BaseComponent<P extends IBaseComponentProps = IBaseComponentProps> 
         this._props = props;
     }
   
-    getTemplate() {
+    getTemplate(): (context?: object) => string {
         throw new Error(`getTemplate должен быть реализован в ${this.constructor.name}`);
     }
 
