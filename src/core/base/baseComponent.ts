@@ -1,23 +1,53 @@
 /**
+ * @interface IBaseComponentProps - Базовый интерфейс для свойств любого компонента.
+ *                                  Позволяет принимать любые свойства.
+ */
+export interface IBaseComponentProps {
+    [key: string]: any;
+}
+
+/**
  * Базовый компонент, от которого наследуются все UI-компоненты.
  * Предоставляет жизненный цикл (render, mount, unmount) и работу с Handlebars-шаблонами.
  * @abstract
  */
-export class BaseComponent {
+export class BaseComponent<P extends IBaseComponentProps = IBaseComponentProps> {
+    /**
+     * Свойства компонента, передаваемые в шаблон.
+     * @type {P}
+     */
+    public _props: P;
+
+    /**
+     * Корневой DOM-элемент компонента.
+     * @type {HTMLElement|null}
+     */
+    public _element: HTMLElement | null = null;
+
+    /**
+     * Имя Handlebars-шаблона в глобальном реестре `Handlebars.templates`.
+     * @type {string}
+     */
+    protected tempName: string = "";
+
     /**
      * Создаёт экземпляр BaseComponent.
-     * @param {object} [props={}] - Свойства компонента, передаваемые в шаблон.
+     * @param {P} [props={}] - Свойства компонента, передаваемые в шаблон.
      */
-    constructor(props = {}) {
-        /** @type {object} */
-        this.props = props;
-
-        /** @type {HTMLElement|null} */
-        this.element = null;
+    constructor(props: P = {} as P) {
+        this._props = props;
     }
-
+  
     getTemplate() {
         throw new Error(`getTemplate должен быть реализован в ${this.constructor.name}`);
+    }
+
+    public get element(): HTMLElement | null {
+        return this._element;
+    }
+
+    public get props(): P {
+        return this._props;
     }
 
     /**
@@ -25,11 +55,11 @@ export class BaseComponent {
      * @returns {HTMLElement} Корневой DOM-элемент компонента.
      * @throws {Error} Если tempName не задан или шаблон не найден.
      */
-    render() {
+    public render(): HTMLElement {
         const template = this.getTemplate();
         const wrapper = document.createElement('div');
         wrapper.innerHTML = template(this.props).trim();
-        return wrapper.firstElementChild;
+        return wrapper.firstElementChild as HTMLElement;
     }
 
     /**
@@ -37,12 +67,12 @@ export class BaseComponent {
      * @param {HTMLElement} container - Контейнер для монтирования.
      * @throws {Error} Если контейнер не указан.
      */
-    mount(container) {
+    public mount(container: HTMLElement): void {
         if (!container) {
             throw new Error("Контейнер для монтирования не указан");
         }
-        this.element = this.render();
-        container.appendChild(this.element);
+        this._element = this.render();
+        container.appendChild(this._element);
         this.afterMount();
     }
 
@@ -50,19 +80,19 @@ export class BaseComponent {
      * Хук, вызываемый после монтирования. Переопределяется в наследниках.
      * @protected
      */
-    afterMount() {}
+    protected afterMount(): void {}
 
     /**
      * Хук, вызываемый перед размонтированием. Переопределяется в наследниках.
      * @protected
      */
-    beforeUnmount() {}
+    protected beforeUnmount(): void {}
 
     /**
      * Размонтирует компонент: вызывает beforeUnmount() и удаляет элемент из DOM.
      */
-    unmount() {
+    public unmount(): void {
         this.beforeUnmount();
-        this.element?.remove();
+        this._element?.remove();
     }
 }

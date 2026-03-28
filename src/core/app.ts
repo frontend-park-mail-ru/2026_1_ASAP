@@ -1,10 +1,10 @@
-import { LoginPage } from "../pages/login/login";
-import { ChatsPage } from "../pages/chats/chats";
-import { RegisterPage } from "../pages/register/register";
-import { Layout } from "./layout/layout";
-import { PageManager } from "./pageManager";
-import { Router } from "./router";
-import { authService } from "../services/authService";
+import { LoginPage } from "../pages/login/login.js";
+import { ChatsPage } from "../pages/chats/chats.js"; 
+import { RegisterPage } from "../pages/register/register.js";
+import { Layout } from "./layout/layout.js";
+import { PageManager } from "./pageManager.js";
+import { Router } from "./router.js";
+import { authService } from "../services/authService.js";
 
 const routes = {
     '/': LoginPage,
@@ -18,23 +18,22 @@ const routes = {
  * проверяет авторизацию и запускает роутинг.
  */
 export class App {
-    constructor() {
-        /** @type {Layout} */
-        this.layout = new Layout();
+    private layout: Layout;
+    private router: Router;
+    private pageManager: PageManager;
 
-        /** @type {Router} */
-        this.router = new Router(routes); 
-        
-        /** @type {PageManager} */
+    constructor() {
+        this.layout = new Layout();
+        this.router = new Router(routes);
         this.pageManager = new PageManager(this.layout, this.router);
         this.router.pageManager = this.pageManager;
     }
-    
+
     /**
      * Запускает приложение: проверяет авторизацию и выполняет начальную навигацию.
      * @returns {Promise<void>}
      */
-    async start() {
+    async start(): Promise<void> {
         const isAuth = await authService.checkAuth();
 
         if (isAuth) {

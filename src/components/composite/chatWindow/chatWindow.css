@@ -1,0 +1,27 @@
+.chat-window {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: var(--color-background-default);
+    border-left: 1px solid var(--color-border-default);
+}
+
+.chat-window__header {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-bottom: 1px solid var(--color-border-light);
+    background-color: var(--color-background-secondary);
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+}
+
+.chat-window__main {
+    flex-grow: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-window__footer {
+    min-height: 60px;
+}

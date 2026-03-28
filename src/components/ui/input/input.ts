@@ -1,130 +1,166 @@
-import { BaseComponent } from "../../../core/base/baseComponent";
+import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent.js";
 import template from './input.hbs';
+
+/**
+ * @interface InputProps - Свойства компонента.
+ * @property {string} [class=''] - CSS-класс.
+ * @property {string} [placeholder=''] - Плейсхолдер.
+ * @property {string} [name=''] - Имя поля для FormData.
+ * @property {string} [type=''] - Тип инпута ('text', 'password', 'email' и др.).
+ * @property {boolean} [required=false] - Обязательность поля.
+ * @property {boolean} [togglePassword=false] - Показывать ли кнопку показа/скрытия пароля.
+ * @property {boolean} [showErrorText=true] - Показывать ли текст ошибки.
+ * @property {Function} [onClick] - Обработчик клика по инпуту.
+ */
+export interface InputProps extends IBaseComponentProps {
+    class?: string;
+    placeholder?: string;
+    name?: string;
+    type?: string;
+    required?: boolean;
+    togglePassword?: boolean;
+    showErrorText?: boolean;
+    onClick?: (event: MouseEvent) => void;
+}
 
 /**
  * Компонент текстового поля ввода с поддержкой ошибок валидации
  * и переключения видимости пароля.
  */
-export class Input extends BaseComponent {
-    /**
-     * @param {object} [props={}] - Свойства компонента.
-     * @param {string} [props.class=''] - CSS-класс.
-     * @param {string} [props.placeholder=''] - Плейсхолдер.
-     * @param {string} [props.name=''] - Имя поля для FormData.
-     * @param {string} [props.type=''] - Тип инпута ('text', 'password', 'email' и др.).
-     * @param {boolean} [props.required=false] - Обязательность поля.
-     * @param {boolean} [props.togglePassword=false] - Показывать ли кнопку показа/скрытия пароля.
-     * @param {boolean} [props.showErrorText=true] - Показывать ли текст ошибки.
-     * @param {Function} [props.onClick] - Обработчик клика по инпуту.
-     */
-    constructor(props={}) {
-        super(props);
-        this.class = props.class || "";
-        this.placeholder = props.placeholder || "";
-        this.name = props.name || "";
-        this.type = props.type || "";
-        this.required = props.required || false;
-        this.togglePassword = props.togglePassword || false; 
-        this._error =  "";
-        this.showErrorText = props.showErrorText !== false;
-    }
+export class Input extends BaseComponent<InputProps> {
+    private _error: string = "";
+    private inputElement: HTMLInputElement | null = null;
+    private errorElement: HTMLElement | null = null;
+    private toggleIconElement: HTMLImageElement | null = null;
+    private inputHandler: (() => void) | null = null;
+    private togglePasswordHandler: (() => void) | null = null;
 
+    /**
+     * @param {InputProps} [props={}] - Свойства компонента.
+     */
+    constructor(props: InputProps = {}) {
+        super(props);
+        this.props.class = props.class || "";
+        this.props.placeholder = props.placeholder || "";
+        this.props.name = props.name || "";
+        this.props.type = props.type || "";
+        this.props.required = props.required || false;
+        this.props.togglePassword = props.togglePassword || false;
+        this.props.showErrorText = props.showErrorText !== false;
+    }
+  
     getTemplate() {
         return template;
     }
 
     /**
-     * Монтирует дочерние компоненты и находит элемент ошибки формы.
+     * @override
      */
-    afterMount() {
-        this.inputElement = this.element.querySelector('input');
-        if (this.showErrorText) {
-            this.errorElement = this.element.querySelector('.ui-input__error-message');
+    protected afterMount(): void {
+        this.inputElement = this.element?.querySelector('input') || null;
+        if (!this.inputElement) {
+            console.warn(`Input component ${this.constructor.name} did not find its input element.`);
+            return;
+        }
+
+        if (this.props.showErrorText) {
+            this.errorElement = this.element?.querySelector('.ui-input__error-message') || null;
         }
 
         this.inputHandler = () => {
-            // Если у поля есть ошибка, очищаем ее
             if (this._error) {
                 this.clearError();
             }
         };
         this.inputElement.addEventListener('input', this.inputHandler);
 
-        if (this.type === 'password' && this.togglePassword) {
-            this.toggleIconElement = this.element.querySelector('.ui-input__toggle-password img'); 
+        if (this.props.type === 'password' && this.props.togglePassword) {
+            this.toggleIconElement = this.element?.querySelector('.ui-input__toggle-password img') || null;
 
-            this.togglePasswordHandler = () => {
-                const isPassword = this.inputElement.type === 'password';
-                this.inputElement.type = isPassword ? 'text' : 'password';
+            if (this.toggleIconElement) {
+                this.togglePasswordHandler = () => {
+                    if (!this.inputElement) return;
+                    const isPassword = this.inputElement.type === 'password';
+                    this.inputElement.type = isPassword ? 'text' : 'password';
 
-                this.toggleIconElement.src = isPassword 
-                    ? '/assets/images/icons/openEye.svg' 
-                    : '/assets/images/icons/closeEye.svg';
-                this.toggleIconElement.alt = isPassword 
-                    ? 'Скрыть пароль' 
-                    : 'Показать пароль';
-            };
-
-            this.toggleIconElement.parentNode.addEventListener('click', this.togglePasswordHandler);
+                    this.toggleIconElement!.src = isPassword
+                        ? '/assets/images/icons/openEye.svg'
+                        : '/assets/images/icons/closeEye.svg';
+                    this.toggleIconElement!.alt = isPassword
+                        ? 'Скрыть пароль'
+                        : 'Показать пароль';
+                };
+                this.toggleIconElement.parentNode?.addEventListener('click', this.togglePasswordHandler);
+            }
         }
-    
+
         if (this.props.onClick && this.inputElement) {
-            this.inputElement.addEventListener("click", this.props.onClick);
+            this.inputElement.addEventListener("click", this.props.onClick as EventListener);
         }
     }
 
     /**
-     * Размонтирует дочерние компоненты и удаляет обработчик клика.
+     * @override
      */
-    beforeUnmount() {
+    protected beforeUnmount(): void {
         if (this.inputElement && this.inputHandler) {
             this.inputElement.removeEventListener('input', this.inputHandler);
         }
 
-        if (this.type === 'password' && this.togglePassword && this.toggleIconElement) {
-            this.toggleIconElement.parentNode.removeEventListener('click', this.togglePasswordHandler);
+        if (this.props.type === 'password' && this.props.togglePassword && this.toggleIconElement && this.togglePasswordHandler) {
+            this.toggleIconElement.parentNode?.removeEventListener('click', this.togglePasswordHandler);
         }
 
         if (this.props.onClick && this.inputElement) {
-            this.inputElement.removeEventListener("click", this.props.onClick);
+            this.inputElement.removeEventListener("click", this.props.onClick as EventListener);
         }
+        this.inputElement = null;
+        this.errorElement = null;
+        this.toggleIconElement = null;
+        this.inputHandler = null;
+        this.togglePasswordHandler = null;
     }
 
     /**
      * Текущее значение поля ввода.
      * @type {string}
      */
-    get value() {
-        return this.element.querySelector('input').value;
+    public get value(): string {
+        return this.inputElement?.value || '';
     }
-    
-    /** @param {string} val */
-    set value(val) {
-        this.element.querySelector('input').value = val;
+
+    /**
+     * Устанавливает значение поля ввода.
+     * @param {string} val
+     */
+    public set value(val: string) {
+        if (this.inputElement) {
+            this.inputElement.value = val;
+        }
     }
 
     /**
      * Устанавливает сообщение об ошибке и добавляет CSS-класс ошибки.
      * @param {string} message - Текст ошибки.
      */
-    setError(message) {
+    public setError(message: string): void {
         this._error = message;
         if (this.errorElement) {
             this.errorElement.textContent = message;
-            this.element.classList.add('ui-input-wrapper--error');
-            this.errorElement.style.opacity = '1'; 
+            this.element?.classList.add('ui-input-wrapper--error');
+            this.errorElement.style.opacity = '1';
         }
     }
-    
+
     /**
      * Очищает сообщение об ошибке и убирает CSS-класс ошибки.
      */
-    clearError() {
-            this._error = ''; 
-            if (this.errorElement) {
-                this.errorElement.textContent = '';
-                this.element.classList.remove('ui-input-wrapper--error');
-                this.errorElement.style.opacity = '0';
-            }  
-        }  
+    public clearError(): void {
+        this._error = '';
+        if (this.errorElement) {
+            this.errorElement.textContent = '';
+            this.element?.classList.remove('ui-input-wrapper--error');
+            this.errorElement.style.opacity = '0';
+        }
+    }
 }

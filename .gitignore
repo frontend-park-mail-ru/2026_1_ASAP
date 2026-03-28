@@ -3,3 +3,5 @@ node_modules
 dist
 *.precompiled.js
 src/templates.js
+src/**/*.js
+src/**/*.js.map

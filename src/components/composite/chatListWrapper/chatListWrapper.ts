@@ -1,21 +1,51 @@
-import { BaseForm } from "../../../core/base/baseForm";
-import { ChatListItem } from "../chatListItem/chatListItem";
+import { BaseForm } from "../../../core/base/baseForm.js";
+import { ChatListItem } from "../chatListItem/chatListItem.js";
+import { Router } from '../../../core/router.js';
 import template from "./chatListWrapper.hbs";
+
+/**
+ * @interface ChatListWrapperProps - Свойства компонента обертки списка чатов.
+ * @property {Router} router - Экземпляр роутера.
+ */
+interface ChatListWrapperProps {
+    router: Router;
+}
 
 /**
  * Обёртка для списка чатов (ChatListItem).
  */
 export class ChatListWrapper extends BaseForm {
-    constructor(props={}) {
+    private chatList: ChatListItem | null = null;
+
+    /**
+     * @param {ChatListWrapperProps} props - Свойства компонента.
+     */
+    constructor(props: ChatListWrapperProps) {
         super(props);
-    };
+    }
 
     getTemplate() {
         return template;
     };
 
+    /**
+     * @override
+     */
     afterMount() {
-        this.chatList = new ChatListItem();
-        this.chatList.mount(this.element);
-    };
+        if (!this.element) {
+            console.error("ChatListWrapper: компонент не имеет элемента при afterMount.");
+            return;
+        }
+
+        this.chatList = new ChatListItem({ router: this.props.router });
+        this.chatList.mount(this.element!);
+    }
+
+    /**
+     * @override
+     */
+    beforeUnmount() {
+        this.chatList?.unmount();
+        this.chatList = null;
+    }
 }

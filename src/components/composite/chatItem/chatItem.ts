@@ -1,84 +1,92 @@
-import { BaseForm } from "../../../core/base/baseForm";
-import { Avatar } from "../../ui/avatar/avatar";
-import { ChatInfo } from "../../ui/chatInfo/chatInfo";
-import { MetaChatInfo } from "../../ui/metaChatInfo/metaChatInfo";
+import { BaseForm, IBaseFormProps } from "../../../core/base/baseForm.js";
+import { Avatar } from "../../ui/avatar/avatar.js";
+import { ChatInfo } from "../../ui/chatInfo/chatInfo.js";
+import { MetaChatInfo } from "../../ui/metaChatInfo/metaChatInfo.js";
+import { Chat as ChatType } from '../../../types/chat.js';
 import template from "./chatItem.hbs";
 
-/**
- * Элемент списка чатов. Содержит аватар, информацию о чате и метаданные.
- */
-export class ChatItem extends BaseForm {
-    /**
-     * @param {object} [props={}] - Свойства.
-     * @param {string} [props.class] - CSS-класс.
-     * @param {string} [props.name] - Имя чата.
-     * @param {string} [props.lastMessage] - Последнее сообщение.
-     * @param {string} [props.dialogClass] - Тип диалога ('group' | 'channel' | 'dialog').
-     * @param {string} [props.sender] - Логин отправителя.
-     * @param {Function} [props.onClick] - Обработчик клика.
-     */
-    constructor(props={}) {
-        super(props);
-    };
+interface ChatItemProps extends IBaseFormProps {
+    class?: string;
+    chat: ChatType;
+    onClick?: (chatId: string) => void;
+}
 
+export class ChatItem extends BaseForm<ChatItemProps> {
+    private avatar: Avatar | null = null;
+    private chatInfo: ChatInfo | null = null;
+    private metaChatInfo: MetaChatInfo | null = null;
+
+    constructor(props: ChatItemProps) {
+        super(props);
+        this.props.chat = props.chat;
+        this.props.formattedLastMessageTime = props.chat.lastMessage?.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+  
     getTemplate() {
         return template;
     }
 
-    /**
-     * Преобразует тип диалога в CSS-класс для ChatInfo.
-     * @returns {string}
-     */
-    typeToClass() {
-        switch (this.props.dialogClass) {
-            case 'group':   return 'message-group';
-            case 'channel': return 'message-chanel';
-            default:        return 'message-personal';
+    private typeToClass(chatType: string): string {
+        switch (chatType) {
+            case 'group':
+                return 'message-group';
+            case 'channel':
+                return 'message-channel';
+            default:
+                return 'message-personal';
         }
     }
 
-    /**
-     * Хук жизненного цикла, вызываемый после монтирования компонента в DOM.
-     *
-     * Создаёт и монтирует дочерние компоненты:
-     * - {@link Avatar} — аватар чата;
-     * - {@link ChatInfo} — имя и последнее сообщение;
-     * - {@link MetaChatInfo} — время и счётчик непрочитанных.
-     *
-     * Если передан `props.onClick`, навешивает обработчик `click` на корневой элемент.
-     */
-    afterMount() {
-        this.avatar = new Avatar({
-            class: "chat-avatar",
-            src: "/assets/images/avatars/chatAvatar.svg",
-        });
-        this.avatar.mount(this.element);
+    protected afterMount() {
+        if (!this.element) return;
 
-        this.chatInfo = new ChatInfo({
-            class: this.typeToClass(),
-            name: this.props.name,
-            lastMessage: this.props.lastMessage,
-            sender: this.props.sender
-        });
-        this.chatInfo.mount(this.element);
+        const avatarSlot = this.element.querySelector('[data-component="chat-item-avatar-slot"]');
+        if (avatarSlot) {
+            this.avatar = new Avatar({
+                class: "chat-avatar",
+                src: this.props.chat.avatarUrl || "../../../assets/images/avatars/chatAvatar.svg",
+            });
+            this.avatar.mount(avatarSlot as HTMLElement);
+        }
 
-        this.metaChatInfo = new MetaChatInfo();
-        this.metaChatInfo.mount(this.element);
+        const infoSlot = this.element.querySelector('[data-component="chat-item-info-slot"]');
+        if (infoSlot) {
+            this.chatInfo = new ChatInfo({
+                class: this.typeToClass(this.props.chat.type),
+                name: this.props.chat.title,
+                lastMessage: this.props.chat.lastMessage?.text,
+                sender: this.props.chat.lastMessage?.sender?.login,
+            });
+            this.chatInfo.mount(infoSlot as HTMLElement);
+        }
+
+        const metaSlot = this.element.querySelector('[data-component="chat-item-meta-slot"]');
+        if (metaSlot) {
+            this.metaChatInfo = new MetaChatInfo({
+                lastMessageTime: this.props.formattedLastMessageTime,
+                unreadCount: this.props.chat.unreadCount
+            });
+            this.metaChatInfo.mount(metaSlot as HTMLElement);
+        }
 
         if (this.props.onClick) {
-            this.element.addEventListener('click', this.props.onClick);
+            this.element?.addEventListener('click', this.handleClick);
         }
-    };
+    }
 
-    /**
-     * Хук жизненного цикла, вызываемый перед размонтированием компонента.
-     *
-     * Снимает обработчик `click`, если он был установлен в {@link afterMount}.
-     *
-     */
-    beforeUnmount() {
+    private handleClick = () => {
         if (this.props.onClick) {
-            this.element.removeEventListener('click', this.props.onClick);
+            this.props.onClick(this.props.chat.id as string);
         }
-    };
+    }
+
+    protected beforeUnmount() {
+        if (this.props.onClick) {
+            this.element?.removeEventListener('click', this.handleClick);
+        }
+
+        this.avatar?.unmount();
+        this.chatInfo?.unmount();
+        this.metaChatInfo?.unmount();
+    }
 }

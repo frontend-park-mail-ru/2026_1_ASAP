@@ -1,0 +1,12 @@
+<div class="message {{#if isOwn}}message--own{{/if}}">
+    <div class="message__content-wrapper">
+        <div class="message__author">{{message.sender.login}}</div>
+        <div class="message__text">{{message.text}}</div>
+        <div class="message__meta">
+            <span class="message__time">{{formattedTime}}</span>
+            {{#if isOwn}}
+                <span class="message__status">{{message.status}}</span>
+            {{/if}}
+        </div>
+    </div>
+</div>

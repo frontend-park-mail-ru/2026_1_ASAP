@@ -1,15 +1,21 @@
+import { BasePage } from "./base/basePage.js";
+import { PageManager } from "./pageManager.js";
 /**
  * Клиентский роутер. Обрабатывает навигацию через History API
  * и делегирует открытие страниц в PageManager.
  */
 export class Router {
+    
+    private routes: { [key: string]: typeof BasePage };
+    public pageManager: PageManager | null = null;
+
     /**
      * @param {Object<string, typeof BasePage>} routes - Маршруты.
      */
-    constructor(routes) {
+    constructor(routes: { [key: string]: any }) { 
         /** @type {Object<string, typeof BasePage>} */
         this.routes = routes;
-        
+
         /** @type {import PageManager|null} */
         this.pageManager = null;
     }
@@ -17,7 +23,7 @@ export class Router {
     /**
      * Инициализирует роутер: подписывается на popstate и обрабатывает текущий маршрут.
      */
-    init() {
+    public init() {
         window.addEventListener('popstate', () => this.handleRoute());
         this.handleRoute();
     }
@@ -27,16 +33,22 @@ export class Router {
      * @returns {Promise<void>}
      * @throws {Error} Если PageManager не установлен.
      */
-    async handleRoute() {
+    public async handleRoute(): Promise<void> {
         if (!this.pageManager) {
             throw new Error("PageManager не установлен в Router");
         }
 
         const path = window.location.pathname;
-        const PageClass = this.routes[path] || this.routes['/'];
+        let PageClass: typeof BasePage | null = null;
+
+        if (path.startsWith('/chats/') || path === '/chats') {
+            PageClass = this.routes['/chats'];
+        } else {
+            PageClass = this.routes[path] || this.routes['/'];
+        }
 
         if (PageClass) {
-            await this.pageManager.open(PageClass);
+            await this.pageManager.open(PageClass, { currentPath: path });
         }
     }
 
@@ -44,7 +56,11 @@ export class Router {
      * Выполняет навигацию на указанный путь.
      * @param {string} path - URL-путь (например, '/chats').
      */
-    navigate(path) {
+    public navigate(path: string): void {
+        if (window.location.pathname === path) {
+            this.handleRoute();
+            return;
+        }
         history.pushState({}, '', path);
         this.handleRoute();
     }

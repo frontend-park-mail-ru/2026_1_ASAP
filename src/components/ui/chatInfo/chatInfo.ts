@@ -1,43 +1,57 @@
-import { BaseComponent } from "../../../core/base/baseComponent";
 import template from "./chatInfo.hbs";
+import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent.js";
+
+/**
+ * @interface ChatInfoProps - Свойства компонента информации о чате.
+ * @property {string} class - Тип чата ('message-personal' | 'message-group' | 'message-chanel').
+ * @property {string} [name] - Имя чата/собеседника.
+ * @property {string} [lastMessage] - Последнее сообщение.
+ * @property {string} [sender] - Отправитель (для групповых чатов).
+ * @property {Function} [onClick] - Обработчик клика.
+ */
+export interface ChatInfoProps extends IBaseComponentProps {
+    class: string;
+    name?: string;
+    lastMessage?: string;
+    sender?: string;
+    onClick?: (event: MouseEvent) => void;
+}
 
 /**
  * Компонент информации о чате (имя, последнее сообщение).
  * Отображается по-разному для личных чатов, групп и каналов.
  */
-export class ChatInfo extends BaseComponent {
+export class ChatInfo extends BaseComponent<ChatInfoProps> {
     /**
-     * @param {object} [props={}] - Свойства.
-     * @param {string} props.class - Тип чата ('message-personal' | 'message-group' | 'message-chanel').
-     * @param {string} [props.name] - Имя чата/собеседника.
-     * @param {string} [props.lastMessage] - Последнее сообщение.
-     * @param {string} [props.sender] - Отправитель (для групповых чатов).
-     * @param {Function} [props.onClick] - Обработчик клика.
+     * @param {ChatInfoProps} [props={}] - Свойства.
      */
-    constructor(props={}) {
+    constructor(props: ChatInfoProps) {
         super(props);
-    };
-
+        this.props.class = props.class;
+        this.props.name = props.name;
+        this.props.lastMessage = props.lastMessage;
+        this.props.sender = props.sender;
+    }
+  
     getTemplate() {
         return template;
     }
 
     /**
-     * Монтирует дочерние компоненты и находит элемент ошибки формы.
+     * @override
      */
-    afterMount() {
+    protected afterMount(): void {
         if (this.props.onClick) {
-            this.element.addEventListener("click", this.props.onClick);
+            this.element?.addEventListener("click", this.props.onClick as EventListener);
         }
-    };
-
+    }
 
     /**
-     * Размонтирует дочерние компоненты и удаляет обработчик клика.
+     * @override
      */
-    beforeUnmount() {
+    protected beforeUnmount(): void {
         if (this.props.onClick) {
-            this.element.removeEventListener("click", this.props.onClick);
+            this.element?.removeEventListener("click", this.props.onClick as EventListener);
         }
-    };
+    }
 }
