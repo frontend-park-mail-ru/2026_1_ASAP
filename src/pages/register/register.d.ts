@@ -1,2 +1,2 @@
-import { BasePage } from "../../core/base/basePage.js";
+import { BasePage } from "../../core/base/basePage";
 export class RegisterPage extends BasePage {}

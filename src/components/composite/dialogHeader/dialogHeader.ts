@@ -1,6 +1,7 @@
-import { BaseComponent } from '../../../core/base/baseComponent.js';
-import { User, DialogChat } from '../../../types/chat.js';
-import { Avatar } from '../../ui/avatar/avatar.js';
+import { BaseComponent } from '../../../core/base/baseComponent';
+import { User, DialogChat } from '../../../types/chat';
+import { Avatar } from '../../ui/avatar/avatar';
+import template from './dialogHeader.hbs';
 
 /**
  * @interface DialogHeaderProps - Свойства компонента шапки диалога.
@@ -22,8 +23,11 @@ export class DialogHeader extends BaseComponent {
      */
     constructor(props: DialogHeaderProps) {
         super(props);
-        this.tempName = 'components/composite/dialogHeader/dialogHeader';
         this.props.chat = props.chat;
+    }
+
+    getTemplate() {
+        return template;
     }
 
     /**

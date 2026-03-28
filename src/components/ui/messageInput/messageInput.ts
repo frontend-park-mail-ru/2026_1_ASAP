@@ -1,6 +1,7 @@
-import { BaseForm, IBaseFormProps } from '../../../core/base/baseForm.js'; 
-import { Button } from '../button/button.js';
-import { Input } from '../input/input.js';
+import { BaseForm, IBaseFormProps } from '../../../core/base/baseForm'; 
+import { Button } from '../button/button';
+import { Input } from '../input/input';
+import template from './messageInput.hbs';
 
 /**
  * @interface MessageInputProps - Свойства компонента формы ввода сообщения.
@@ -22,7 +23,10 @@ export class MessageInput extends BaseForm<MessageInputProps> {
      */
     constructor(props: MessageInputProps) {
         super(props);
-        this.tempName = 'components/ui/messageInput/messageInput';
+    }
+
+    getTemplate() {
+        return template;
     }
 
     /**

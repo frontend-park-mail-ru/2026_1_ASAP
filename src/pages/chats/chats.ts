@@ -1,19 +1,19 @@
 import template from "./chats.hbs";
-import { BasePage, IBasePageProps } from "../../core/base/basePage.js";
-import { SearchForm } from "../../components/composite/searchForm/searchForm.js";
-import { MenuBar } from "../../components/composite/menuBar/menuBar.js";
-import { ChatListWrapper } from "../../components/composite/chatListWrapper/chatListWrapper.js";
-import { authService } from "../../services/authService.js";
-import { Button } from "../../components/ui/button/button.js";
-import { BaseComponent } from "../../core/base/baseComponent.js";
-import { ChatWindow } from "../../components/composite/chatWindow/chatWindow.js";
-import { DialogHeader } from "../../components/composite/dialogHeader/dialogHeader.js";
-import { MessageList } from "../../components/composite/messageList/messageList.js";
-import { MessageInput } from "../../components/ui/messageInput/messageInput.js";
-import { Chat, FrontendMessage, User, DialogChat, GroupChat, ChannelChat } from '../../types/chat.js';
-import { chatService } from "../../services/chatService.js";
-import { GroupHeader } from "../../components/composite/groupHeader/groupHeader.js";
-import { ChannelHeader } from "../../components/composite/channelHeader/channelHeader.js";
+import { BasePage, IBasePageProps } from "../../core/base/basePage";
+import { SearchForm } from "../../components/composite/searchForm/searchForm";
+import { MenuBar } from "../../components/composite/menuBar/menuBar";
+import { ChatListWrapper } from "../../components/composite/chatListWrapper/chatListWrapper";
+import { authService } from "../../services/authService";
+import { Button } from "../../components/ui/button/button";
+import { BaseComponent } from "../../core/base/baseComponent";
+import { ChatWindow } from "../../components/composite/chatWindow/chatWindow";
+import { DialogHeader } from "../../components/composite/dialogHeader/dialogHeader";
+import { MessageList } from "../../components/composite/messageList/messageList";
+import { MessageInput } from "../../components/ui/messageInput/messageInput";
+import { Chat, FrontendMessage, User, DialogChat, GroupChat, ChannelChat } from '../../types/chat';
+import { chatService } from "../../services/chatService";
+import { GroupHeader } from "../../components/composite/groupHeader/groupHeader";
+import { ChannelHeader } from "../../components/composite/channelHeader/channelHeader";
 
 const CURRENT_USER_LOGIN = 'alice'; // Заглушка для теста, убрать после интеграции с реальными чатами
 const CURRENT_USER: User = { login: CURRENT_USER_LOGIN, avatarUrl: '/assets/images/avatars/myAvatar.svg' };

@@ -1,4 +1,4 @@
-import { BaseComponent, IBaseComponentProps } from "./baseComponent.js";
+import { BaseComponent, IBaseComponentProps } from "./baseComponent";
 
 /**
  * @interface IBaseFormProps - Базовый интерфейс для свойств формы.

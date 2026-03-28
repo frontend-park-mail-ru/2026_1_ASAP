@@ -1,5 +1,6 @@
-import { BaseComponent } from '../../../core/base/baseComponent.js';
-import { BaseComponent as AnyComponent } from '../../../core/base/baseComponent.js';
+import { BaseComponent } from '../../../core/base/baseComponent';
+import { BaseComponent as AnyComponent } from '../../../core/base/baseComponent';
+import template from './chatWindow.hbs';
 
 /**
  * @interface ChatWindowProps - Свойства компонента окна чата.
@@ -23,7 +24,10 @@ export class ChatWindow extends BaseComponent {
      */
     constructor(props: ChatWindowProps) {
         super(props);
-        this.tempName = 'components/composite/chatWindow/chatWindow';
+    }
+
+    getTemplate() {
+        return template;
     }
 
     /**

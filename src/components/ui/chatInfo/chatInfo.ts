@@ -1,5 +1,5 @@
 import template from "./chatInfo.hbs";
-import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent.js";
+import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent";
 
 /**
  * @interface ChatInfoProps - Свойства компонента информации о чате.

@@ -1,6 +1,7 @@
-import { BaseComponent } from '../../../core/base/baseComponent.js';
-import { FrontendMessage, User} from '../../../types/chat.js';
-import { Message } from '../../ui/message/message.js';
+import { BaseComponent } from '../../../core/base/baseComponent';
+import { FrontendMessage, User} from '../../../types/chat';
+import { Message } from '../../ui/message/message';
+import template from './messageList.hbs';
 
 /**
  * @interface MessageListProps - Свойства компонента списка сообщений.
@@ -24,7 +25,10 @@ export class MessageList extends BaseComponent {
      */
     constructor(props: MessageListProps) {
         super(props);
-        this.tempName = 'components/composite/messageList/messageList';
+    }
+
+    getTemplate() {
+        return template;
     }
 
     /**

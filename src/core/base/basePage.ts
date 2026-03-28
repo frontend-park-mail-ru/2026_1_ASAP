@@ -1,4 +1,4 @@
-import { IBaseComponentProps } from "./baseComponent.js";
+import { IBaseComponentProps } from "./baseComponent";
 
 /**
  * @interface IBasePageProps - Базовый интерфейс для свойств страницы.
@@ -33,11 +33,6 @@ export class BasePage<P extends IBasePageProps = IBasePageProps> {
      */
     protected element: HTMLElement | null = null;
 
-    /**
-     * Имя (путь) Handlebars-шаблона.
-     * @type {string}
-     */
-    protected tempName: string = "";
 
     /**
      * Создаёт экземпляр BasePage.
@@ -50,7 +45,7 @@ export class BasePage<P extends IBasePageProps = IBasePageProps> {
         this.root.className = "page";
     }
 
-    getTemplate() {
+    getTemplate(): (context?: object) => string {
         throw new Error(`getTemplate должен быть реализован в ${this.constructor.name}`);
     }
 

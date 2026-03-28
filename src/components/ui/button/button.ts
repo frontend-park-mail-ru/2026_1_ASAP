@@ -1,5 +1,5 @@
 import template from './button.hbs';
-import { BaseComponent, IBaseComponentProps } from '../../../core/base/baseComponent.js';
+import { BaseComponent, IBaseComponentProps } from '../../../core/base/baseComponent';
 
 /**
  * @interface ButtonProps - Свойства кнопки.

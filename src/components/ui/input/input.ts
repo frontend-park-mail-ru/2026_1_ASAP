@@ -1,4 +1,4 @@
-import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent.js";
+import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent";
 import template from './input.hbs';
 
 /**

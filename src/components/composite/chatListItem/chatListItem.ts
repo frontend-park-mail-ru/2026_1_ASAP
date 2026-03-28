@@ -1,8 +1,8 @@
-import { BaseForm } from "../../../core/base/baseForm.js";
-import { ChatItem } from "../chatItem/chatItem.js";
-import { chatService } from "../../../services/chatService.js";
-import { Chat as ChatType } from '../../../types/chat.js';
-import { Router } from '../../../core/router.js';
+import { BaseForm } from "../../../core/base/baseForm";
+import { ChatItem } from "../chatItem/chatItem";
+import { chatService } from "../../../services/chatService";
+import { Chat as ChatType } from '../../../types/chat';
+import { Router } from '../../../core/router';
 import template from "./chatListItem.hbs";
 
 const CURRENT_USER_LOGIN = 'bob'; // Заглушка для теста, потом убрать
