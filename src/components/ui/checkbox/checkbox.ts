@@ -1,4 +1,5 @@
 import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent.js";
+import template from "./checkbox.hbs";
 
 export interface CheckboxProps extends IBaseComponentProps {
     label?: string;
@@ -22,7 +23,10 @@ export class Checkbox extends BaseComponent<CheckboxProps> {
         this.props.label = props.label || "";
         this.props.name = props.name || "";
         this.props.checked = props.checked || false;
-        this.tempName = "components/ui/checkbox/checkbox";
+    }
+      
+    getTemplate() {
+        return template;
     }
 
     private inputElement: HTMLInputElement | null = null;

@@ -50,20 +50,17 @@ export class BasePage<P extends IBasePageProps = IBasePageProps> {
         this.root.className = "page";
     }
 
+    getTemplate() {
+        throw new Error(`getTemplate должен быть реализован в ${this.constructor.name}`);
+    }
+
     /**
      * Рендерит шаблон страницы в root.
      * @returns {HTMLElement} Корневой элемент страницы.
      * @throws {Error} Если tempName не задан или шаблон не найден.
      */
     public render(): HTMLElement | null {
-        if (!this.tempName) {
-            throw new Error(`tempName не указан для страницы ${this.constructor.name}`);
-        }
-
-        const template = Handlebars.templates[this.tempName];
-        if (!template) {
-            throw new Error(`Шаблон ${this.tempName} не найден`);
-        }
+        const template = this.getTemplate();
 
         this.root.innerHTML = template(this.props).trim();
         this.element = (this.root.firstElementChild || this.root) as HTMLElement;

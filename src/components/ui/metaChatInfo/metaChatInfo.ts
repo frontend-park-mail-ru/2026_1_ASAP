@@ -1,4 +1,5 @@
 import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent.js";
+import template from "./metaChatInfo.hbs";
 
 /**
  * @interface MetaChatInfoProps - Свойства компонента метаинформации чата.
@@ -19,10 +20,13 @@ export class MetaChatInfo extends BaseComponent<MetaChatInfoProps> {
      */
     constructor(props: MetaChatInfoProps = {}) {
         super(props);
-        this.tempName = 'components/ui/metaChatInfo/metaChatInfo';
         // Присваиваем свойства в this.props для Handlebars
         this.props.lastMessageTime = props.lastMessageTime;
         this.props.unreadCount = props.unreadCount;
+    }
+
+    getTemplate() {
+        return template;
     }
 
     /**

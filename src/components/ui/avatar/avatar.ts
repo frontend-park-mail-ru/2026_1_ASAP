@@ -1,3 +1,4 @@
+import template from "./avatar.hbs";
 import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent.js";
 
 /**
@@ -19,8 +20,11 @@ export class Avatar extends BaseComponent<AvatarProps> {
      */
     constructor(props: AvatarProps = {}) {
         super(props);
-        this.tempName = "components/ui/avatar/avatar";
         this.props.class = props.class;
         this.props.src = props.src;
+    }
+
+    getTemplate() {
+        return template;
     }
 }

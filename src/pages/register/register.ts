@@ -1,5 +1,6 @@
-import { BasePage } from '../../core/base/basePage.js';
-import { RegisterForm } from '../../components/composite/registerForm/registerForm.js';
+import { BasePage } from '../../core/base/basePage';
+import { RegisterForm } from '../../components/composite/registerForm/registerForm';
+import template from "./register.hbs";
 
 /**
  * Страница регистрации. Отображает форму регистрации (RegisterForm). 
@@ -12,8 +13,11 @@ export class RegisterPage extends BasePage {
     constructor(props = {}) {
         super(props);
         /** @type {string} Имя Handlebars-шаблона */
-        this.tempName = "pages/register/register";
     }
+
+    getTemplate() {
+        return template;
+    };
 
     /**
      * Создаёт и монтирует {@link RegisterForm} в `.register-card`.

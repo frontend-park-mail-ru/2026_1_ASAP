@@ -1,3 +1,4 @@
+import template from "./layout.hbs";
 /**
  * Корневой лейаут приложения. Рендерит общую HTML-обёртку
  * и вставляет контент страницы в .layout__content.
@@ -33,11 +34,6 @@ export class Layout {
      * @throws {Error} Если шаблон лейаута не найден или не удалось найти .layout__content.
      */
     public render(content: HTMLElement): void {
-        const template = Handlebars.templates[this.tempName];
-        if (!template) {
-            throw new Error(`Шаблон ${this.tempName} не найден`);
-        }
-
         this.root.innerHTML = template({});
 
         const contentContainer = this.root.querySelector('.layout__content');

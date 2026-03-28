@@ -1,3 +1,4 @@
+import template from "./chats.hbs";
 import { BasePage, IBasePageProps } from "../../core/base/basePage.js";
 import { SearchForm } from "../../components/composite/searchForm/searchForm.js";
 import { MenuBar } from "../../components/composite/menuBar/menuBar.js";
@@ -40,8 +41,11 @@ export class ChatsPage extends BasePage {
 
     constructor(props: ChatsPageProps = {}) {
         super(props);
-        this.tempName = "pages/chats/chats";
     }
+
+    getTemplate() {
+        return template;
+    };
 
     /**
      * @override

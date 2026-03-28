@@ -3,6 +3,7 @@ import { Avatar } from "../../ui/avatar/avatar.js";
 import { ChatInfo } from "../../ui/chatInfo/chatInfo.js";
 import { MetaChatInfo } from "../../ui/metaChatInfo/metaChatInfo.js";
 import { Chat as ChatType } from '../../../types/chat.js';
+import template from "./chatItem.hbs";
 
 interface ChatItemProps extends IBaseFormProps {
     class?: string;
@@ -17,9 +18,12 @@ export class ChatItem extends BaseForm<ChatItemProps> {
 
     constructor(props: ChatItemProps) {
         super(props);
-        this.tempName = "components/composite/chatItem/chatItem";
         this.props.chat = props.chat;
         this.props.formattedLastMessageTime = props.chat.lastMessage?.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+  
+    getTemplate() {
+        return template;
     }
 
     private typeToClass(chatType: string): string {

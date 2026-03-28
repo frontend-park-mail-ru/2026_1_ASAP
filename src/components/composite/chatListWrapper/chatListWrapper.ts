@@ -1,6 +1,7 @@
 import { BaseForm } from "../../../core/base/baseForm.js";
 import { ChatListItem } from "../chatListItem/chatListItem.js";
 import { Router } from '../../../core/router.js';
+import template from "./chatListWrapper.hbs";
 
 /**
  * @interface ChatListWrapperProps - Свойства компонента обертки списка чатов.
@@ -21,8 +22,11 @@ export class ChatListWrapper extends BaseForm {
      */
     constructor(props: ChatListWrapperProps) {
         super(props);
-        this.tempName = "components/composite/chatListWrapper/chatListWrapper";
     }
+
+    getTemplate() {
+        return template;
+    };
 
     /**
      * @override

@@ -1,4 +1,5 @@
 import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent.js";
+import template from './input.hbs';
 
 /**
  * @interface InputProps - Свойства компонента.
@@ -39,7 +40,6 @@ export class Input extends BaseComponent<InputProps> {
      */
     constructor(props: InputProps = {}) {
         super(props);
-        this.tempName = "components/ui/input/input";
         this.props.class = props.class || "";
         this.props.placeholder = props.placeholder || "";
         this.props.name = props.name || "";
@@ -47,6 +47,10 @@ export class Input extends BaseComponent<InputProps> {
         this.props.required = props.required || false;
         this.props.togglePassword = props.togglePassword || false;
         this.props.showErrorText = props.showErrorText !== false;
+    }
+  
+    getTemplate() {
+        return template;
     }
 
     /**

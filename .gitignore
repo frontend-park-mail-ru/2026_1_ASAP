@@ -1,5 +1,6 @@
 node_modules
 .DS_Store
+dist
 *.precompiled.js
 src/templates.js
 src/**/*.js

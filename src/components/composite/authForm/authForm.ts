@@ -1,9 +1,10 @@
-import { BaseForm } from '../../../core/base/baseForm.js';
-import { Button } from '../../ui/button/button.js';
-import { Checkbox } from "../../ui/checkbox/checkbox.js";
-import { authService } from '../../../services/authService.js';
-import { Input } from '../../ui/input/input.js'; 
-import { validationService } from '../../../services/validationService.js';
+import { BaseForm } from '../../../core/base/baseForm';
+import { Button } from '../../ui/button/button';
+import { Checkbox } from "../../ui/checkbox/checkbox";
+import { authService } from '../../../services/authService';
+import { Input } from '../../ui/input/input'; 
+import { validationService } from '../../../services/validationService';
+import template from './authForm.hbs';
 
 /**
  * Форма авторизации (логин + пароль). Валидирует ввод
@@ -18,7 +19,10 @@ export class AuthForm extends BaseForm {
     constructor(props = {}) {
         super(props);
         /** @type {string} Имя Handlebars-шаблона */
-        this.tempName = "components/composite/authForm/authForm";
+    }
+
+    getTemplate() {
+        return template;
     }
     
     /**

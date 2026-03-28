@@ -37,6 +37,10 @@ export class BaseComponent<P extends IBaseComponentProps = IBaseComponentProps> 
     constructor(props: P = {} as P) {
         this._props = props;
     }
+  
+    getTemplate() {
+        throw new Error(`getTemplate должен быть реализован в ${this.constructor.name}`);
+    }
 
     public get element(): HTMLElement | null {
         return this._element;
@@ -52,17 +56,9 @@ export class BaseComponent<P extends IBaseComponentProps = IBaseComponentProps> 
      * @throws {Error} Если tempName не задан или шаблон не найден.
      */
     public render(): HTMLElement {
-        if (!this.tempName) {
-            throw new Error(`tempName не указан для компонента ${this.constructor.name}`);
-        }
-
-        const template = Handlebars.templates[this.tempName];
-        if (!template) {
-            throw new Error(`Шаблон ${this.tempName} не найден`);
-        }
-
+        const template = this.getTemplate();
         const wrapper = document.createElement('div');
-        wrapper.innerHTML = template(this._props).trim();
+        wrapper.innerHTML = template(this.props).trim();
         return wrapper.firstElementChild as HTMLElement;
     }
 

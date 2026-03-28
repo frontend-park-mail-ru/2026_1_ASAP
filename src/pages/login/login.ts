@@ -1,5 +1,6 @@
-import { BasePage } from '../../core/base/basePage.js';
-import { AuthForm } from '../../components/composite/authForm/authForm.js';
+import { BasePage } from '../../core/base/basePage';
+import { AuthForm } from '../../components/composite/authForm/authForm';
+import template from "./login.hbs";
 
 
 /**
@@ -14,8 +15,11 @@ export class LoginPage extends BasePage {
         super(props);
 
         /** @type {string} Имя Handlebars-шаблона */
-        this.tempName = "pages/login/login";
     }
+
+    getTemplate() {
+        return template;
+    };
 
     /**
      * Создаёт и монтирует {@link AuthForm} в `.login-card`.

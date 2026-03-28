@@ -1,3 +1,4 @@
+import template from './button.hbs';
 import { BaseComponent, IBaseComponentProps } from '../../../core/base/baseComponent.js';
 
 /**
@@ -29,7 +30,6 @@ export class Button extends BaseComponent<ButtonProps> {
      */
     constructor(props: ButtonProps = {}) {
         super(props);
-        this.tempName = "components/ui/button/button";
 
         this.props.class = props.class || "";
         this.props.label = props.label || "";
@@ -37,6 +37,10 @@ export class Button extends BaseComponent<ButtonProps> {
         this.props.type = props.type || "button";
         this.props.daughterClass = props.daughterClass;
         this.props.disabled = props.disabled || false;
+    }
+  
+    getTemplate() {
+        return template;
     }
 
     /**

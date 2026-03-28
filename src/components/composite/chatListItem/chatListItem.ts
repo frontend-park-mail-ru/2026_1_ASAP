@@ -3,6 +3,7 @@ import { ChatItem } from "../chatItem/chatItem.js";
 import { chatService } from "../../../services/chatService.js";
 import { Chat as ChatType } from '../../../types/chat.js';
 import { Router } from '../../../core/router.js';
+import template from "./chatListItem.hbs";
 
 const CURRENT_USER_LOGIN = 'bob'; // Заглушка для теста, потом убрать
 
@@ -28,8 +29,11 @@ export class ChatListItem extends BaseForm {
      */
     constructor(props: ChatListItemProps) {
         super(props);
-        this.tempName = "components/composite/chatListItem/chatListItem";
     }
+      
+    getTemplate() {
+        return template;
+    };
 
     /**
      * Выделяет указанный чат, сбрасывая выделение остальных.

@@ -1,3 +1,4 @@
+import template from "./chatInfo.hbs";
 import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent.js";
 
 /**
@@ -26,11 +27,14 @@ export class ChatInfo extends BaseComponent<ChatInfoProps> {
      */
     constructor(props: ChatInfoProps) {
         super(props);
-        this.tempName = "components/ui/chatInfo/chatInfo";
         this.props.class = props.class;
         this.props.name = props.name;
         this.props.lastMessage = props.lastMessage;
         this.props.sender = props.sender;
+    }
+  
+    getTemplate() {
+        return template;
     }
 
     /**
