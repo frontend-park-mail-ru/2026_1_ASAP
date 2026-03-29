@@ -12,6 +12,8 @@ export default {
     output: {
         path: resolve(__dirname, 'dist'),
         filename: 'bundle.[contenthash].js',
+        clean: true,
+        publicPath: '/',
     },
 
     module: {
@@ -53,5 +55,6 @@ export default {
 
     resolve: {
         extensions: ['.ts', '.js'],
+        fullySpecified: false,
     },
 }

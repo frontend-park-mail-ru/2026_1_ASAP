@@ -27,7 +27,7 @@ interface ChatsPageProps extends IBasePageProps {
  * Страница чатов. Содержит боковую панель со списком чатов,
  * поиском, меню и основное поле для сообщений.
  */
-export class ChatsPage extends BasePage {
+export class ChatsPage extends BasePage<ChatsPageProps> {
     private searchForm: SearchForm | null = null;
     private chatWrapper: ChatListWrapper | null = null;
     private menuBar: MenuBar | null = null;
@@ -35,7 +35,7 @@ export class ChatsPage extends BasePage {
     private logoutWrapper: HTMLDivElement | null = null;
     private activeMenuButton: string | null = null;
     private chatWindow: ChatWindow | null = null;
-    private activeChatId: string | null = null;
+    public activeChatId: string | null = null;
     private mainContentArea: HTMLElement | null = null;
     private placeholderElement: HTMLElement | null = null; 
 
@@ -63,10 +63,25 @@ export class ChatsPage extends BasePage {
         }
 
         this.activeMenuButton = "messages";
+        const path = this.props.currentPath || window.location.pathname;
+        const pathParts = path.split('/');
+        const chatIdParam = pathParts[pathParts.length - 1];
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(chatIdParam);
+        if (isUUID) {
+            this.activeChatId = chatIdParam;
+        } else {
+            this.activeChatId = null;
+        }
+
         this.searchForm = new SearchForm();
         this.searchForm.mount(this.element.querySelector('.chat-page__sidebar')!);
-        this.chatWrapper = new ChatListWrapper( { router: this.props.router });
+
+        this.chatWrapper = new ChatListWrapper( { 
+            router: this.props.router,
+            activeChatId: this.activeChatId,
+        });
         this.chatWrapper.mount(this.element.querySelector('.chat-page__sidebar')!);
+
         this.logoutWrapper = document.createElement('div');
         this.logoutWrapper.style.flex = '1';
         this.logoutWrapper.style.display = 'none';
@@ -125,24 +140,34 @@ export class ChatsPage extends BasePage {
 
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(chatIdParam);
 
-        if (isUUID && chatIdParam !== this.activeChatId) {
-            this.activeChatId = chatIdParam;
-            await this.openChat(chatIdParam);
-
+        if (isUUID) {
+            if (chatIdParam !== this.activeChatId || !this.chatWindow) {
+                this.activeChatId = chatIdParam;
+                this.chatWrapper?.setActiveChat(chatIdParam);
+                await this.openChat(chatIdParam);
+            }
         } else if (!isUUID && this.activeChatId) {
+            this.activeChatId = null;
+            this.chatWrapper?.setActiveChat(null);
             this.chatWindow?.unmount();
             this.chatWindow = null;
-            this.activeChatId = null;
 
             if (path !== '/chats') {
                 this.props.router?.navigate('/chats');
             }
-
+            if (this.placeholderElement) {
+                this.placeholderElement.style.display = 'block';
+            }
         } else if (path === '/chats' && !this.activeChatId && this.chatWindow) {
             this.chatWindow.unmount();
             this.chatWindow = null;
+
+            if (this.placeholderElement) {
+                this.placeholderElement.style.display = 'block';
+            }
         } else if (path === '/chats' && !this.activeChatId && !this.chatWindow && this.placeholderElement) {
-            this.placeholderElement.style.display = 'block';        }
+            this.placeholderElement.style.display = 'block';
+        }
     }
 
 
@@ -202,8 +227,15 @@ export class ChatsPage extends BasePage {
             headerComponent = fallbackHeader;
         }
 
-        const messageListComponent = new MessageList({ messages: messages, currentUser: CURRENT_USER });  //Убрать заглушку CURRENT_USER после интеграции с реальными чатами
-        const messageInputComponent = new MessageInput({ onSubmit: (text: string) => { } });
+        const messageListComponent = new MessageList({ 
+            messages: messages, 
+            currentUser: CURRENT_USER,
+            chatType: chatDetail.type
+        });  //Убрать заглушку CURRENT_USER после интеграции с реальными чатами
+        const messageInputComponent = new MessageInput({
+            onSubmit: (text: string) => {
+                // todo логика отправки сообщения
+             } });
 
         this.chatWindow = new ChatWindow({
             headerComponent: headerComponent,

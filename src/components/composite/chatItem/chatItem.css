@@ -23,3 +23,34 @@
     padding: 10px;
     box-sizing: border-box;
 }
+
+.chat-item__content {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    width: 100%;
+    flex-grow: 1;
+
+}
+
+.chat-item__info-wrapper {
+    width: 100%;
+}
+
+.chat-item__meta-wrapper {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+}
+
+.meta-chat-info__unread-count {
+    background-color: var(--color-primary);
+    color: var(--color-text-inverted);
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-xs);
+}

@@ -43,10 +43,7 @@ export class BaseForm<P extends IBaseFormProps = IBaseFormProps> extends BaseCom
             this.form = this.element.querySelector("form");
         }
 
-        if (!this.form) {
-            console.warn(`Компонент ${this.constructor.name} не содержит форму для обработки submit`);
-            return;
-        }
+        if (!this.form) { return }
 
         this.submitHandler = this.handleSubmit.bind(this);
         this.form.addEventListener("submit", this.submitHandler);

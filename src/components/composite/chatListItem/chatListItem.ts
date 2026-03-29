@@ -1,7 +1,6 @@
 import { BaseForm } from "../../../core/base/baseForm";
 import { ChatItem } from "../chatItem/chatItem";
 import { chatService } from "../../../services/chatService";
-import { Chat as ChatType } from '../../../types/chat';
 import { Router } from '../../../core/router';
 import template from "./chatListItem.hbs";
 
@@ -14,59 +13,55 @@ const CURRENT_USER_LOGIN = 'bob'; // Заглушка для теста, пот�
  */
 interface ChatListItemProps {
     router: Router;
+    activeChatId: string | null;
 }
 
 /**
  * Список чатов. Загружает чаты через ChatService и рендерит ChatItem для каждого.
  */
-export class ChatListItem extends BaseForm {
+export class ChatListItem extends BaseForm<ChatListItemProps> {
     private chatItems: ChatItem[] = [];
-    private activeItem: ChatItem | null = null;
+    private activeChatId: string | null = null;
     private noChatsElement: HTMLElement | null = null;
 
-    /**
-     * @param {ChatListItemProps} props - Свойства компонента.
-     */
     constructor(props: ChatListItemProps) {
         super(props);
+        this.tempName = "components/composite/chatListItem/chatListItem";
+        this.activeChatId = props.activeChatId;
     }
-      
+
     getTemplate() {
         return template;
-    };
-
-    /**
-     * Выделяет указанный чат, сбрасывая выделение остальных.
-     * Также обновляет URL через роутер.
-     * @param {ChatItem} selectedItem - Выбранный элемент.
-     */
-    private selectChat = (selectedItem: ChatItem) => {
-        if (this.activeItem?.element) {
-            this.activeItem.element.classList.remove("chat-item--selected");
-            this.activeItem.element.classList.add("chat-item--default");
-        }
-
-        if (selectedItem.element) {
-            selectedItem.element.classList.remove("chat-item--default");
-            selectedItem.element.classList.add("chat-item--selected");
-        }
-
-        this.activeItem = selectedItem;
-        this.props.router.navigate(`/chats/${selectedItem.props.chat.id}`);
     }
 
-    /**
-     * @override
-     */
+    private handleChatClick = (clickedItem: ChatItem) => {
+        const chatId = clickedItem.props.chat.id as string;
+        this.props.router.navigate(`/chats/${chatId}`);
+    }
+
+    public setActiveChat(chatId: string | null): void {
+        this.activeChatId = chatId;
+        this.chatItems.forEach(item => {
+            if (item.element) {
+                if ((item.props.chat.id as string) === chatId) {
+                    item.element.classList.remove("chat-item--default");
+                    item.element.classList.add("chat-item--selected");
+                } else {
+                    item.element.classList.remove("chat-item--selected");
+                    item.element.classList.add("chat-item--default");
+                }
+            }
+        });
+    }
+
     protected afterMount() {
         this.chatItems = [];
-        this.activeItem = null;
 
-        chatService.getChats(CURRENT_USER_LOGIN).then(chats => { // Заменить на реальный логин пользователя
+        chatService.getChats(CURRENT_USER_LOGIN).then(chats => {
             if (!this.element) {
                 console.error("ChatListItem: компонент не имеет элемента при afterMount.");
                 return;
-            };
+            }
 
             if (chats.length === 0) {
                 this.element.classList.add('chat-list--empty');
@@ -79,24 +74,21 @@ export class ChatListItem extends BaseForm {
 
             chats.forEach(chat => {
                 const item = new ChatItem({
-                    class: 'chat-item--default',
+                    class: (chat.id === this.activeChatId) ? 'chat-item--selected' : 'chat-item--default',
                     chat: chat,
-                    onClick: ( chatId: string) => this.selectChat(item)
+                    onClick: (clickedItem: ChatItem) => this.handleChatClick(clickedItem)
                 });
-                
-                item.mount(this.element!); 
+
+                item.mount(this.element!);
                 this.chatItems.push(item);
             });
         });
     }
 
-    /**
-     * @override
-     */
     beforeUnmount() {
         this.chatItems.forEach(item => item.unmount());
         this.chatItems = [];
-        this.activeItem = null;
+        this.activeChatId = null;
         this.noChatsElement?.remove();
     }
 }

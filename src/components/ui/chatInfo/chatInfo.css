@@ -46,6 +46,9 @@ p {
     font-size: 18px;
     width: 100%;
     user-select: none;
+    font: var(--font-secondary);
+    letter-spacing: var(--text-secondary-letter-spacing);
+    color: var(--color-text);
 }
 
 .sender-group {
@@ -64,8 +67,10 @@ p {
 }
 
 .msg-text {
-    font-size: 13px;
     width: 100%;
     box-sizing: border-box;
     user-select: none;
+    font: var(--font-text-main);
+    font-size: 14px;
+    letter-spacing: var(--font-text-main-letter-spacing);
 }

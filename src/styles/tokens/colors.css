@@ -26,11 +26,16 @@
 
     --color-empty: rgba(242, 240, 240, 0);
 
-    --color-bubble: rgba(69, 83, 186, 1);
+    --color-bubble: rgba(69, 93, 186, 1);
 
     --color-borderDefault: #2A2A2A 75%;
     
     --color-error: #FF0000;
 
     --color-error-border: #D80000;
+
+    --color-stroke: rgba(122, 122, 122, 0.37);
+
+    --color-stroke2: rgba(122, 122, 122, 0.30);
+
 }

@@ -8,7 +8,7 @@ import template from "./chatItem.hbs";
 interface ChatItemProps extends IBaseFormProps {
     class?: string;
     chat: ChatType;
-    onClick?: (chatId: string) => void;
+    onClick?: (item: ChatItem) => void;
 }
 
 export class ChatItem extends BaseForm<ChatItemProps> {
@@ -76,7 +76,7 @@ export class ChatItem extends BaseForm<ChatItemProps> {
 
     private handleClick = () => {
         if (this.props.onClick) {
-            this.props.onClick(this.props.chat.id as string);
+            this.props.onClick(this);
         }
     }
 

@@ -1,50 +1,43 @@
-import { BasePage } from '../../core/base/basePage';
+import { BasePage, IBasePageProps } from '../../core/base/basePage';
 import { AuthForm } from '../../components/composite/authForm/authForm';
 import template from "./login.hbs";
 
+/**
+ * @interface LoginPageProps - Свойства для страницы входа.
+ */
+interface LoginPageProps extends IBasePageProps {}
 
 /**
- * Страница входа. Отображает форму авторизации (AuthFor m).
+ * Страница входа. Отображает форму авторизации.
  */
-export class LoginPage extends BasePage {
-    /**
-     * @param {object} [props={}] - Свойства страницы.
-     * @param {import Router} props.router - Роутер приложения.
-     */
-    constructor (props = {}) {
-        super(props);
+export class LoginPage extends BasePage<LoginPageProps> {
+    private form: AuthForm | null = null;
 
-        /** @type {string} Имя Handlebars-шаблона */
+    constructor(props: LoginPageProps = {}) {
+        super(props);
     }
 
-    getTemplate() {
+    public getTemplate(): (context?: any) => string {
         return template;
-    };
+    }
 
-    /**
-     * Создаёт и монтирует {@link AuthForm} в `.login-card`.
-     * При переходе на регистрацию вызывает навигацию на `/register`.
-     */
-    afterMount() {
-        super.afterMount();
-        
-        /** @type {AuthForm} Форма авторизации */
+    protected async afterMount(): Promise<void> {
+        const loginCard = this.element?.querySelector('.login-card');
+        if (!loginCard) {
+            console.error("LoginPage: .login-card container not found.");
+            return;
+        }
+
         this.form = new AuthForm({
             onNavigateToRegister: () => {
-                this.props.router.navigate('/register');
+                this.props.router?.navigate('/register');
             },
             router: this.props.router
         });
+        this.form.mount(loginCard as HTMLElement);
+    }
 
-        this.form.mount(
-            this.element.querySelector('.login-card')
-        );
-    };
-
-    /**
-     * Размонтирует форму авторизации.
-     */
-    beforeUnmount() {
+    public beforeUnmount(): void {
         this.form?.unmount();
-    };
-};
+    }
+}
