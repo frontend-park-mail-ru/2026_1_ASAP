@@ -1,19 +1,24 @@
-.dialog-header {
+.group-header {
     display: flex;
+    flex-direction: row;
     align-items: center;
     width: 100%;
     padding: 10px 15px 10px 15px;
     gap: 15px;
 }
 
-.dialog-header__avatar {
+.group-header__avatar {
     width: 40px;
     height: 40px;
     border-radius: 50%;
     object-fit: cover;
 }
 
-.dialog-header__info {
+.group-header__name {
+    
+}
+
+.group-header__info {
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -22,7 +27,11 @@
     letter-spacing: var(--text-secondary-letter-spacing);
 }
 
-.dialog-header__settings {
+.group-header__members {
+    font-size: 12px;
+}
+
+.group-header__settings {
     background: none;
     border: none;
     cursor: pointer;

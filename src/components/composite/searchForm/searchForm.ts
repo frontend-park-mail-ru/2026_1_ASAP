@@ -1,54 +1,81 @@
-import { BaseForm } from '../../../core/base/baseForm';
+import { BaseForm, IBaseFormProps } from '../../../core/base/baseForm';
 import { Input } from '../../ui/input/input';
 import { Button } from '../../ui/button/button';
 import { Avatar } from '../../ui/avatar/avatar';
 import template from "./searchForm.hbs";
 
 /**
+ * @interface SearchFormProps - Свойства для SearchForm.
+ */
+interface SearchFormProps extends IBaseFormProps {}
+
+/**
  * Панель поиска с полем ввода, иконкой поиска и кнопкой добавления.
  */
-export class SearchForm extends BaseForm {
-    constructor(props={}) {
+export class SearchForm extends BaseForm<SearchFormProps> {
+    private searchImg: Avatar | null = null;
+    private input: Input | null = null;
+    private deleteButton: Button | null = null;
+    private addButton: Button | null = null;
+
+    constructor(props: SearchFormProps = {}) {
         super(props);
-    };
+    }
 
-    getTemplate() {
+    public getTemplate(): (context?: any) => string {
         return template;
-    };
+    }
 
-    /**
-     * Монтирует дочерние компоненты и находит элемент ошибки формы.
-     */
-    afterMount() {
-        this.searchImg = new Avatar({
-            src: "/assets/images/icons/searchIcon.svg",
-            class: "search-icon",
+    protected afterMount(): void {
+        super.afterMount();
+        if (!this.element) return;
+
+        const searchPanel = this.element.querySelector('.search-panel');
+        if (!searchPanel) {
+            console.error("SearchForm: .search-panel not found.");
+            return;
+        }
+
+        this.searchImg = new Avatar({ 
+            src: "/assets/images/icons/searchIcon.svg", 
+            class: "search-icon" 
         });
+        this.searchImg.mount(searchPanel as HTMLElement);
 
-        this.searchImg.mount(this.element.querySelector('.search-panel'));
-        this.input = new Input({
+        this.input = new Input({ 
             type: "text", 
             placeholder: "Поиск", 
             name: "search", 
-            class: "search-line",
-            showErrorText: false,
-        });
-        
-        this.input.mount(this.element.querySelector('.search-panel'));
+            class: "search-line", 
+            showErrorText: false });
+        this.input.mount(searchPanel as HTMLElement);
 
-        this.deleteButton = new Button({
-            class: "delete-button",
-            icon: "/assets/images/icons/deleteIcon.svg",
+        this.deleteButton = new Button({ 
+            class: "delete-button", 
+            icon: "/assets/images/icons/deleteIcon.svg" 
         });
+        this.deleteButton.mount(searchPanel as HTMLElement);
 
-        this.deleteButton.mount(this.element.querySelector('.search-panel'));
+        const addButtonContainer = this.element.querySelector('.add-button-cont');
+        if (addButtonContainer) {
+            this.addButton = new Button({ 
+                class: "add-button", 
+                icon: "/assets/images/icons/deleteIcon.svg", 
+                daughterClass: "add-icon"
+            });
+            this.addButton.mount(addButtonContainer as HTMLElement);
+        }
+    }
 
-        this.addButton = new Button({
-            class: "add-button",
-            icon: "/assets/images/icons/deleteIcon.svg",
-            daughterClass: "add-icon",
-        });
-        
-        this.addButton.mount(this.element.querySelector('.add-button-cont'));
+    protected beforeUnmount(): void {
+        super.beforeUnmount();
+        this.searchImg?.unmount();
+        this.input?.unmount();
+        this.deleteButton?.unmount();
+        this.addButton?.unmount();
+    }
+    
+    protected async onSubmit(data: { [key: string]: string | File; }): Promise<void> {
+        console.log("Search form submitted with data:", data);
     }
 }
