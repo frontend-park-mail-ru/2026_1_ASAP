@@ -1,9 +1,14 @@
 import { BasePage } from "./base/basePage";
 import { PageManager } from "./pageManager";
+import { authService } from "../services/authService";
+
 /**
  * Клиентский роутер. Обрабатывает навигацию через History API
  * и делегирует открытие страниц в PageManager.
  */
+
+const protectedRoutes = ['/chats'];
+
 export class Router {
     
     private routes: { [key: string]: typeof BasePage };
@@ -39,7 +44,23 @@ export class Router {
         }
 
         const path = window.location.pathname;
+        
+        const isAuth = await authService.checkAuth();
+        const isProtectedRoute = protectedRoutes.some(route => path.startsWith(route));
+
+        if (isProtectedRoute && !isAuth) {
+            this.navigate('/login');
+            return;
+        }
+
+        if (!isProtectedRoute && isAuth && (path === '/login' || path === '/register' || path === '/')) {
+            this.navigate('/chats');
+            return;
+        }
+        
         let PageClass: typeof BasePage | null = null;
+
+
 
         if (path.startsWith('/chats/') || path === '/chats') {
             PageClass = this.routes['/chats'];

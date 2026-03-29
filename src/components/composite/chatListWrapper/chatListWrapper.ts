@@ -9,12 +9,13 @@ import template from "./chatListWrapper.hbs";
  */
 interface ChatListWrapperProps {
     router: Router;
+    activeChatId: string | null;
 }
 
 /**
  * Обёртка для списка чатов (ChatListItem).
  */
-export class ChatListWrapper extends BaseForm {
+export class ChatListWrapper extends BaseForm<ChatListWrapperProps> {
     private chatList: ChatListItem | null = null;
 
     /**
@@ -37,10 +38,18 @@ export class ChatListWrapper extends BaseForm {
             return;
         }
 
-        this.chatList = new ChatListItem({ router: this.props.router });
+        this.chatList = new ChatListItem({ 
+            router: this.props.router,
+            activeChatId: this.props.activeChatId
+        });
         this.chatList.mount(this.element!);
     }
 
+    public setActiveChat(chatId: string | null): void {
+        if (this.chatList) {
+            this.chatList.setActiveChat(chatId);
+        }
+    }
     /**
      * @override
      */

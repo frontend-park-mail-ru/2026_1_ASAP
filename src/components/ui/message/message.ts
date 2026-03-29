@@ -1,7 +1,7 @@
 import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent";
 import { FrontendMessage } from '../../../types/chat';
 import template from './message.hbs';
-import { Avatar } from '../../ui/avatar/avatar.js';
+import { Avatar } from '../../ui/avatar/avatar';
 
 /**
  * @interface MessageProps - Свойства компонента сообщения.

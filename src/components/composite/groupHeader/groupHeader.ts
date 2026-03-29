@@ -1,7 +1,7 @@
 import { BaseComponent, IBaseComponentProps } from '../../../core/base/baseComponent';
 import { GroupChat } from '../../../types/chat';
-import { Avatar } from '../../ui/avatar/avatar.js';
-import { Button } from '../../ui/button/button.js';
+import { Avatar } from '../../ui/avatar/avatar';
+import { Button } from '../../ui/button/button';
 import template from './groupHeader.hbs'
 
 interface GroupHeaderProps extends IBaseComponentProps {

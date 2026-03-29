@@ -2,7 +2,7 @@ import { BaseComponent } from '../../../core/base/baseComponent';
 import { User, DialogChat } from '../../../types/chat';
 import { Avatar } from '../../ui/avatar/avatar';
 import template from './dialogHeader.hbs';
-import { Button } from '../../ui/button/button.js';
+import { Button } from '../../ui/button/button';
 /**
  * @interface DialogHeaderProps - Свойства компонента шапки диалога.
  * @property {DialogChat} chat - Объект диалогового чата.
