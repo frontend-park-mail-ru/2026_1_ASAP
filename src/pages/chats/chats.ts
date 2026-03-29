@@ -33,7 +33,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private menuBar: MenuBar | null = null;
     private logoutButton: Button | null = null;
     private logoutWrapper: HTMLDivElement | null = null;
-    private isSettings: boolean = false;
+    private activeMenuButton: string | null = null;
     private chatWindow: ChatWindow | null = null;
     public activeChatId: string | null = null;
     private mainContentArea: HTMLElement | null = null;
@@ -51,18 +51,18 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * @override
      */
     async afterMount() {
-        const isAuth = await authService.checkAuth();
+        // const isAuth = await authService.checkAuth();
 
-        if (!isAuth) {
-            this.props.router.navigate('/login');
-            return;
-        }
+        // if (!isAuth) {
+        //     this.props.router.navigate('/login');
+        //     return;
+        // }
         if (!this.element) {
             console.error("ChatsPage: элемент не найден.");
             return;
         }
 
-        this.isSettings = false;
+        this.activeMenuButton = "messages";
         const path = this.props.currentPath || window.location.pathname;
         const pathParts = path.split('/');
         const chatIdParam = pathParts[pathParts.length - 1];
@@ -91,7 +91,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
         this.menuBar = new MenuBar({
             onSettingsClick: () => this.toggleSettings(),
-            onMessagesClick: () => this.toggleMessages()
+            onMessagesClick: () => this.toggleMessages(),
+            onContactsClick: () => this.toggleContacts(),
         });
         this.menuBar.mount(this.element.querySelector('.chat-page__sidebar')!);
 
@@ -247,7 +248,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     toggleSettings() {
         if (!this.element) {return;}
 
-        if (this.isSettings) return;
+        if (this.activeMenuButton === "settings") return;
         this.menuBar?.setActiveButton('settings');
         if (this.searchForm?.element) this.searchForm.element.style.visibility = 'hidden';
         if (this.logoutWrapper) {
@@ -258,17 +259,21 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             if (this.chatWrapper?.element) this.chatWrapper.element.style.display = 'none';
             this.logoutWrapper.style.display = 'flex';
         }
-        this.isSettings = true;
+        this.activeMenuButton = "settings";
     }
 
     toggleMessages() {
-        if (!this.isSettings) return;
+        if (this.activeMenuButton === "messages") return;
         this.menuBar?.setActiveButton('messages');
         if (this.searchForm?.element) this.searchForm.element.style.visibility = '';
         if (this.chatWrapper?.element) this.chatWrapper.element.style.display = '';
         if (this.logoutWrapper) this.logoutWrapper.style.display = 'none';
-        this.isSettings = false;
+        this.activeMenuButton = "messages";
     }
+
+    toggleContacts() {
+        this.props.router.navigate('/contacts');
+    };
 
     /**
      * @override

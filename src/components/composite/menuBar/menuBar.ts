@@ -10,6 +10,7 @@ import template from "./menuBar.hbs";
 interface MenuBarProps extends IBaseComponentProps {
     onMessagesClick?: () => void;
     onSettingsClick?: () => void;
+    onContactsClick?: () => void;
 }
 
 /**
@@ -28,18 +29,25 @@ export class MenuBar extends BaseComponent<MenuBarProps> {
         return template;
     }
 
-    public setActiveButton(active: 'settings' | 'messages'): void {
+    public setActiveButton(active: 'settings' | 'messages' | 'contacts'): void {
         const messageImg = this.messagesButton?.element?.querySelector('img');
         const settingsImg = this.settingsButton?.element?.querySelector('img');
+        const contactsImg = this.contactsButton?.element?.querySelector('img');
 
-        if (!messageImg || !settingsImg) return;
+        if (!messageImg || !settingsImg || !contactsImg) return;
 
         if (active === 'settings') {
             messageImg.src = '/assets/images/icons/primaryMenuMsgs.svg';
             settingsImg.src = '/assets/images/icons/clickedMenuSettings.svg';
-        } else {
+            contactsImg.src = '/assets/images/icons/primaryMenuContacts.svg';
+        } else if (active === 'messages') {
             messageImg.src = '/assets/images/icons/clickedMenuMsgs.svg';
             settingsImg.src = '/assets/images/icons/primaryMenuSettings.svg';
+            contactsImg.src = '/assets/images/icons/primaryMenuContacts.svg';
+        } else {
+            messageImg.src = '/assets/images/icons/primaryMenuMsgs.svg';
+            settingsImg.src = '/assets/images/icons/primaryMenuSettings.svg';
+            contactsImg.src = '/assets/images/icons/clickedMenuContacts.svg';
         }
     }
 
@@ -48,7 +56,8 @@ export class MenuBar extends BaseComponent<MenuBarProps> {
 
         this.contactsButton = new Button({ 
             class: "menu-button", 
-            icon: "/assets/images/icons/primaryMenuContacts.svg" 
+            icon: "/assets/images/icons/primaryMenuContacts.svg",
+            onClick: this.props.onContactsClick 
         });
         this.contactsButton.mount(this.element);
 
