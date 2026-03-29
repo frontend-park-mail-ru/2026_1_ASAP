@@ -5,12 +5,14 @@ import { Layout } from "./layout/layout";
 import { PageManager } from "./pageManager";
 import { Router } from "./router";
 import { authService } from "../services/authService";
+import { ContactsPage } from "../pages/contacts/contacts";
 
 const routes = {
     '/': LoginPage,
     '/login': LoginPage,
     '/register': RegisterPage,
     '/chats': ChatsPage,
+    '/contacts': ContactsPage,
 };
 
 /**
@@ -34,13 +36,13 @@ export class App {
      * @returns {Promise<void>}
      */
     async start(): Promise<void> {
-        const isAuth = await authService.checkAuth();
+        // const isAuth = await authService.checkAuth();
 
-        if (isAuth) {
-            this.router.navigate('/chats');
-        } else {
-            this.router.navigate('/login');
-        }
+        // if (isAuth) {
+        //     this.router.navigate('/chats');
+        // } else {
+        //     this.router.navigate('/login');
+        // }
 
         this.router.init();
     }
