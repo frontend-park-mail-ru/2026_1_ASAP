@@ -3,6 +3,7 @@ import { SearchForm } from "../../components/composite/searchForm/searchForm";
 import { authService } from "../../services/authService";
 import { BasePage, IBasePageProps } from "../../core/base/basePage"
 import { MenuBar } from "../../components/composite/menuBar/menuBar";
+import { ContactListWrapper } from "../../components/composite/contactListWrapper/contactListWrapper";
 
 interface ContactsPageProps extends IBasePageProps {
     currentPath?: string;
@@ -10,7 +11,7 @@ interface ContactsPageProps extends IBasePageProps {
 
 export class ContactsPage extends BasePage<ContactsPageProps> {
     private searchForm: SearchForm | null = null;
-    // private contactsListWrapper: ContactsListWrapper | null = null;
+    private contactListWrapper: ContactListWrapper | null = null;
     private menuBar: MenuBar | null = null;
 
     constructor(props: ContactsPageProps = {}) {
@@ -33,13 +34,15 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
 
         this.searchForm = new SearchForm();
         this.searchForm.mount(this.element.querySelector('.contacts-page__sidebar')!);
-        // this.contactsListWrapper = new contactsListWrapper();
-        // this.contactsListWrapper.mount(this.element.querySelector('contacts-page__sidebar'));
+        this.contactListWrapper = new ContactListWrapper({
+            router: this.props.router,
+        });
+        this.contactListWrapper.mount(this.element.querySelector('.contacts-page__sidebar')!);
         this.menuBar = new MenuBar({
             onSettingsClick: () => this.props.router.navigate('/settings'),
             onContactsClick: () => this.props.router.navigate('/contacts'),
             onMessagesClick: () => this.props.router.navigate('/chats'),
-    });
+        });
         this.menuBar.mount(this.element.querySelector('.contacts-page__sidebar')!);
         this.menuBar.setActiveButton('contacts');
     };
