@@ -1,6 +1,6 @@
 import { BaseForm, IBaseFormProps } from "../../../core/base/baseForm";
 import { Router } from "../../../core/router";
-import { ContactListItem } from "../contactListIem/contactListItem";
+import { ContactListItem } from "../contactListItem/contactListItem";
 import template from "./contactListWrapper.hbs";
 
 interface ContactListWrapperProps extends IBaseFormProps {
@@ -27,7 +27,7 @@ export class ContactListWrapper extends BaseForm<ContactListWrapperProps> {
         this.contactListItem.mount(this.element!);
     };
 
-    public setActiveContact = (contactId: string | null) => {
+    public setActiveContact = (contactId: number | null) => {
         if (this.contactListItem) {
             this.contactListItem.setActiveContact(contactId);
         }

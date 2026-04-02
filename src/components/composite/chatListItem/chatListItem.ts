@@ -26,7 +26,6 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
 
     constructor(props: ChatListItemProps) {
         super(props);
-        this.tempName = "components/composite/chatListItem/chatListItem";
         this.activeChatId = props.activeChatId;
     }
 

@@ -16,8 +16,11 @@
 @import "../components/composite/chatWindow/chatWindow.css";
 @import "../components/composite/dialogHeader/dialogHeader.css";
 @import "../components/composite/groupHeader/groupHeader.css";
-/* @import "../components/composite/groupHeader/contactItem.css"; */
 @import "../components/composite/contactListWrapper/contactListWrapper.css";
+@import "../components/composite/contactListItem/contactListItem.css";
+@import "../components/composite/contactItem/contactItem.css";
+@import "../components/composite/profileWindow/profileWindow.css";
+@import "../components/composite/profileHeader/profileHeader.css";
 
 
 @import "../components/ui/button/button.css";

@@ -1,0 +1,11 @@
+.profile-window {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    background-color: var(--color-background-default);
+    padding: 10px;
+    box-sizing: border-box;
+    min-height: 0;
+    min-width: 200px;
+}
