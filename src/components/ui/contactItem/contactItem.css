@@ -1,0 +1,22 @@
+.contact-item {
+    display: flex;
+    padding: 10px;
+    gap: 10px;
+    flex-direction: row;
+}
+
+.contact-item__icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+.contact-item__name {
+    color: var(--color-text);
+}
+
+.contact-item__add-button {
+    padding: auto;
+    /* что то */
+}

@@ -21,6 +21,7 @@
 @import "../components/composite/contactItem/contactItem.css";
 @import "../components/composite/profileWindow/profileWindow.css";
 @import "../components/composite/profileHeader/profileHeader.css";
+@import "../components/composite/createChatMenu/createChatMenu.css";
 
 
 @import "../components/ui/button/button.css";
@@ -30,7 +31,6 @@
 @import "../components/ui/metaChatInfo/metaChatInfo.css";
 @import "../components/ui/message/message.css";
 @import "../components/ui/messageInput/messageInput.css";
-@import "../components/ui/createChatMenu/createChatMenu.css";
 
 @import "./pages/login.css";
 @import "../components/ui/checkbox/checkbox.css";

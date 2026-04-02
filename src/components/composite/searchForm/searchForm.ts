@@ -3,12 +3,15 @@ import { Input } from '../../ui/input/input';
 import { Button } from '../../ui/button/button';
 import { Avatar } from '../../ui/avatar/avatar';
 import template from "./searchForm.hbs";
-import { CreateChatMenu } from '../../ui/createChatMenu/createChatMenu';    
+import { CreateChatMenu } from '../createChatMenu/createChatMenu';    
+import { Router } from '../../../core/router';
 
 /**
  * @interface SearchFormProps - Свойства для SearchForm.
  */
-interface SearchFormProps extends IBaseFormProps {}
+interface SearchFormProps extends IBaseFormProps {
+    router: Router;
+}
 
 /**
  * Панель поиска с полем ввода, иконкой поиска и кнопкой добавления.
@@ -21,7 +24,7 @@ export class SearchForm extends BaseForm<SearchFormProps> {
     private createChatMenu: CreateChatMenu | null = null;
     private isMenuOpen: boolean = false;
 
-    constructor(props: SearchFormProps = {}) {
+    constructor(props: SearchFormProps) {
         super(props);
     }
 
@@ -71,13 +74,13 @@ export class SearchForm extends BaseForm<SearchFormProps> {
                         const menuContainer = this.element.querySelector(".add-button-cont");
                         this.createChatMenu = new CreateChatMenu({
                             onCreateDialog: () => {
-                                console.log("Создать диалог");
+                                this.props.router.navigate("/chats/create/dialog");
                             },
                             onCreateGroup: () => {
-                                console.log("Создать группу");
+                                this.props.router.navigate("/chats/create/group");
                             },
                             onCreateChannel: () => {
-                                console.log("Создать канал");
+                                this.props.router.navigate("/chats/create/channel");
                             },
                             onClose: () => {
                                 this.createChatMenu?.unmount();

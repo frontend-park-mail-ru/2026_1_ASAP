@@ -1,6 +1,6 @@
 import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent";
 import template from './createChatMenu.hbs';
-import { Button } from "../button/button";
+import { Button } from "../../ui/button/button";
 
 
 interface createChatMenuProps extends IBaseComponentProps {

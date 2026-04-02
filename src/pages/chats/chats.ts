@@ -167,15 +167,27 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             }
         } else if (path === '/chats' && !this.activeChatId && !this.chatWindow && this.placeholderElement) {
             this.placeholderElement.style.display = 'block';
+        } else if (path === '/chats/create/dialog' || path === '/chats/create/group' || path === '/chats/create/channel') {
+            this.chatWindow?.unmount();
+            this.chatWindow = null;
+            this.createChat();
         }
     }
 
+
+    private createChat() {
+        if (!this.mainContentArea) {
+            console.error("ChatsPage: mainContentArea не найден.");
+            return;
+        }
+        // todo вызывать окно создания чата, не забыть размонтировать
+        
+    }
 
     /**
      * Открывает конкретный чат в основной области.
      * @param {string} chatId - ID чата для открытия.
      */
-    
     private async openChat(chatId: string): Promise<void> {
         if (!this.mainContentArea) {
             console.error("ChatsPage: mainContentArea не найден.");
