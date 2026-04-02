@@ -48,10 +48,10 @@ export class Router {
         const isAuth = await authService.checkAuth();
         const isProtectedRoute = protectedRoutes.some(route => path.startsWith(route));
 
-        if (isProtectedRoute && !isAuth) {
-            this.navigate('/login');
-            return;
-        }
+        // if (isProtectedRoute && !isAuth) {
+        //     this.navigate('/login');
+        //     return;
+        // }
 
         if (!isProtectedRoute && isAuth && (path === '/login' || path === '/register' || path === '/')) {
             this.navigate('/chats');
@@ -64,6 +64,8 @@ export class Router {
 
         if (path.startsWith('/chats/') || path === '/chats') {
             PageClass = this.routes['/chats'];
+        } else if (path.startsWith('/contacts/') || path === '/contacts') {
+            PageClass = this.routes['/contacts'];
         } else {
             PageClass = this.routes[path] || this.routes['/'];
         }
