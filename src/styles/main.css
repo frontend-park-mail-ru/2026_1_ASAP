@@ -30,6 +30,7 @@
 @import "../components/ui/metaChatInfo/metaChatInfo.css";
 @import "../components/ui/message/message.css";
 @import "../components/ui/messageInput/messageInput.css";
+@import "../components/ui/createChatMenu/createChatMenu.css";
 
 @import "./pages/login.css";
 @import "../components/ui/checkbox/checkbox.css";

@@ -1,7 +1,7 @@
 import { ChatDetail, FrontendMessage, User, DialogChat, GroupChat, ChannelChat, BackendChat, BackendMessage } from '../types/chat';
 
-const BASE_URL = 'http://pulseapp.space:8080';
-// const BASE_URL = 'http://0.0.0.0:8080';
+// const BASE_URL = 'http://pulseapp.space:8080';
+const BASE_URL = 'http://0.0.0.0:8080';
 
 
 const CURRENT_USER_LOGIN = 'alice'; 

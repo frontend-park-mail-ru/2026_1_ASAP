@@ -3,6 +3,7 @@ import { Input } from '../../ui/input/input';
 import { Button } from '../../ui/button/button';
 import { Avatar } from '../../ui/avatar/avatar';
 import template from "./searchForm.hbs";
+import { CreateChatMenu } from '../../ui/createChatMenu/createChatMenu';    
 
 /**
  * @interface SearchFormProps - Свойства для SearchForm.
@@ -17,6 +18,8 @@ export class SearchForm extends BaseForm<SearchFormProps> {
     private input: Input | null = null;
     private deleteButton: Button | null = null;
     private addButton: Button | null = null;
+    private createChatMenu: CreateChatMenu | null = null;
+    private isMenuOpen: boolean = false;
 
     constructor(props: SearchFormProps = {}) {
         super(props);
@@ -52,7 +55,7 @@ export class SearchForm extends BaseForm<SearchFormProps> {
 
         this.deleteButton = new Button({ 
             class: "delete-button", 
-            icon: "/assets/images/icons/deleteIcon.svg" 
+            icon: "/assets/images/icons/deleteIcon.svg",
         });
         this.deleteButton.mount(searchPanel as HTMLElement);
 
@@ -61,7 +64,34 @@ export class SearchForm extends BaseForm<SearchFormProps> {
             this.addButton = new Button({ 
                 class: "add-button", 
                 icon: "/assets/images/icons/deleteIcon.svg", 
-                daughterClass: "add-icon"
+                daughterClass: "add-icon",
+                onClick: () => {
+                    if (!this.isMenuOpen) {
+                        this.isMenuOpen = true;
+                        const menuContainer = this.element.querySelector(".add-button-cont");
+                        this.createChatMenu = new CreateChatMenu({
+                            onCreateDialog: () => {
+                                console.log("Создать диалог");
+                            },
+                            onCreateGroup: () => {
+                                console.log("Создать группу");
+                            },
+                            onCreateChannel: () => {
+                                console.log("Создать канал");
+                            },
+                            onClose: () => {
+                                this.createChatMenu?.unmount();
+                                this.createChatMenu = null;
+                                this.isMenuOpen = false;
+                            },    
+                        })
+                        this.createChatMenu.mount(menuContainer as HTMLElement);
+                    } else {
+                        this.createChatMenu?.unmount();
+                        this.createChatMenu = null;
+                        this.isMenuOpen = false;
+                    }
+                }
             });
             this.addButton.mount(addButtonContainer as HTMLElement);
         }
@@ -77,5 +107,11 @@ export class SearchForm extends BaseForm<SearchFormProps> {
     
     protected async onSubmit(data: { [key: string]: string | File; }): Promise<void> {
         console.log("Search form submitted with data:", data);
+    }
+
+    protected OutsideClickHandler = (event: MouseEvent) => {
+        if (this.isMenuOpen) {
+             this.createChatMenu.unmount();
+        }
     }
 }
