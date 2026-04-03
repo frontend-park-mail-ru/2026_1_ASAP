@@ -8,6 +8,8 @@
 
     --color-text-hover: rgba(242, 240, 240, 0.5);
 
+    --color-text-hover2: rgba(242, 240, 240, 0.1);
+
     --color-neutral: rgba(19, 19, 19, 1);
 
     --color-backgroundBlur: #5A8A6E;
@@ -37,5 +39,7 @@
     --color-stroke: rgba(122, 122, 122, 0.37);
 
     --color-stroke2: rgba(122, 122, 122, 0.30);
+    
+    --color-baseBackground: rgba(6, 5, 5, 0.5);
 
 }
