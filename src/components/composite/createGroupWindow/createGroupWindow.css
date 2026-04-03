@@ -1,0 +1,62 @@
+.create-group-window {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.create-group-window__layout-slot {
+    flex: 1;
+    overflow: hidden;
+}
+
+.create-group-window__footer {
+    display: flex;
+    justify-content: center;
+    height: 60px;
+    gap: 10px;
+}
+
+.create-group-window__back-button {
+    padding: 10px;
+    width: 100%;
+    align-items: center;
+    font: var(--font-text-main);
+    letter-spacing: var(--text-main-letter-spacing);
+    background: none;
+    border: none;
+    color: var(--color-text);
+}
+
+.create-group-window__back-button:hover {
+    cursor: pointer;
+}
+
+.create-group-submit-btn {
+    width: 35%;
+    border-radius: 10px;
+    margin: 10px;
+    gap: 10px;
+    background: var(--gradiend-button);
+    color: var(--color-text);
+    border: none;
+    font: var(--font-secondary);
+    letter-spacing: var(--text-secondary-letter-spacing);
+}
+
+/* стиль для чекбокса */
+.contact-item__control-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.create-group-window__search {
+    padding: 10px 10px 10px 10px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}

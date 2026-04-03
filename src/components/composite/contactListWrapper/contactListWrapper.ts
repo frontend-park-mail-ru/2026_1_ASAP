@@ -5,6 +5,8 @@ import template from "./contactListWrapper.hbs";
 
 interface ContactListWrapperProps extends IBaseFormProps {
     router: Router,
+    listMode?: 'default' | 'createDialog' | 'createGroup';
+    onAction?: (contactId: number, isSelected?: boolean) => void;
 };
 
 export class ContactListWrapper extends BaseForm<ContactListWrapperProps> {
@@ -23,6 +25,8 @@ export class ContactListWrapper extends BaseForm<ContactListWrapperProps> {
 
         this.contactListItem = new ContactListItem({
             router: this.props.router,
+            listMode: this.props.listMode,
+            onAction: this.props.onAction,
         });
         this.contactListItem.mount(this.element!);
     };

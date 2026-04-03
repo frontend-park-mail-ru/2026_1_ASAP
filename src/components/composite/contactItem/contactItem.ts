@@ -1,3 +1,4 @@
+import { BaseComponent } from "../../../core/base/baseComponent";
 import { BaseForm, IBaseFormProps } from "../../../core/base/baseForm";
 import { Avatar } from "../../ui/avatar/avatar";
 import template from "./contactItem.hbs";
@@ -7,6 +8,7 @@ interface ContactItemProps extends IBaseFormProps {
     name: string;
     id: number;
     onClick?: (item: ContactItem) => void;
+    rightSlot?: BaseComponent<any>;
 };
 
 export class ContactItem extends BaseForm<ContactItemProps> {
@@ -30,6 +32,13 @@ export class ContactItem extends BaseForm<ContactItemProps> {
 
         if (this.props.onClick) {
             this.element?.addEventListener('click', this.handleClick);
+        }
+
+        if (this.props.rightSlot) {
+            const controlSlot = this.element.querySelector('[data-component="contact-item-control-slot"]');
+            if (controlSlot) {
+                this.props.rightSlot.mount(controlSlot as HTMLElement);
+            }
         }
     };
 

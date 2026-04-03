@@ -10,7 +10,9 @@ import { Router } from '../../../core/router';
  * @interface SearchFormProps - Свойства для SearchForm.
  */
 interface SearchFormProps extends IBaseFormProps {
-    router: Router;
+    router?: Router;
+    hideAddButton?: boolean;
+    class?: string;
 }
 
 /**
@@ -24,7 +26,8 @@ export class SearchForm extends BaseForm<SearchFormProps> {
     private createChatMenu: CreateChatMenu | null = null;
     private isMenuOpen: boolean = false;
 
-    constructor(props: SearchFormProps) {
+    constructor(props: SearchFormProps = {}) {
+        props.class = props.class || 'search';
         super(props);
     }
 
@@ -63,7 +66,7 @@ export class SearchForm extends BaseForm<SearchFormProps> {
         this.deleteButton.mount(searchPanel as HTMLElement);
 
         const addButtonContainer = this.element.querySelector('.add-button-cont');
-        if (addButtonContainer) {
+        if (addButtonContainer && !this.props.hideAddButton) {
             this.addButton = new Button({ 
                 class: "add-button", 
                 icon: "/assets/images/icons/deleteIcon.svg", 
@@ -74,13 +77,19 @@ export class SearchForm extends BaseForm<SearchFormProps> {
                         const menuContainer = this.element.querySelector(".add-button-cont");
                         this.createChatMenu = new CreateChatMenu({
                             onCreateDialog: () => {
-                                this.props.router.navigate("/chats/create/dialog");
+                                this.props.router.navigate("/chats/create-dialog");
+                                this.createChatMenu?.unmount();
+                                this.isMenuOpen = false;
                             },
                             onCreateGroup: () => {
-                                this.props.router.navigate("/chats/create/group");
+                                this.props.router.navigate("/chats/create-group");
+                                this.createChatMenu?.unmount();
+                                this.isMenuOpen = false;
                             },
                             onCreateChannel: () => {
-                                this.props.router.navigate("/chats/create/channel");
+                                this.props.router.navigate("/chats/create-channel");
+                                this.createChatMenu?.unmount();
+                                this.isMenuOpen = false;
                             },
                             onClose: () => {
                                 this.createChatMenu?.unmount();

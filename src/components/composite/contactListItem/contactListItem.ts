@@ -1,6 +1,9 @@
+import { BaseComponent } from "../../../core/base/baseComponent";
 import { BaseForm, IBaseFormProps } from "../../../core/base/baseForm";
 import { Router } from "../../../core/router";
 import { contactService } from "../../../services/contactService";
+import { Button } from "../../ui/button/button";
+import { Checkbox } from "../../ui/checkbox/checkbox";
 import { ContactItem } from "../contactItem/contactItem";
 import template from "./contactListItem.hbs";
 
@@ -8,6 +11,8 @@ const CURRENT_USER = 'bob';
 
 interface ContactListItemProps extends IBaseFormProps {
     router: Router,
+    listMode?: 'default' | 'createDialog' | 'createGroup';
+    onAction?: (contactId: number, isSelected: boolean) => void;
 };
 
 export class ContactListItem extends BaseForm<ContactListItemProps> {
@@ -59,13 +64,49 @@ export class ContactListItem extends BaseForm<ContactListItemProps> {
             }
 
             contacts.forEach(contact => {
+                let rightControl: BaseComponent<any> | undefined = undefined;
+                let onRowClick: ((item: ContactItem) => void) | undefined = undefined;
+                const mode = this.props.listMode || 'default';
+                
+                switch (mode) {
+                    case 'createDialog':
+                        rightControl = new Button({
+                            class: "create-dialog-btn",
+                            icon: "/assets/images/icons/createChatMenuIcons/createNewChat.svg",
+                            onClick: () => {
+                                if (this.props.onAction) { 
+                                    this.props.onAction(contact.contact_user_id, true)};
+                            }
+                        });
+                        break;
+                    case 'createGroup':
+                        rightControl = new Checkbox({
+                            name: `user_${contact.contact_user_id}`,
+                            onChange: (isChecked: boolean) => {
+                                if (this.props.onAction) this.props.onAction(contact.contact_user_id, isChecked);
+                            }
+                        });
+                        break;
+                    default:
+                    onRowClick = () => {
+                        this.props.router.navigate(`/contacts/${contact.contact_user_id}`);
+                    };
+                    break;
+                }
+
+
                 const contactItem = new ContactItem({
                     avatarUrl: contact.avatarURL,
                     name: contact.contact_name,
                     id: contact.contact_user_id,
-                    onClick: this.handleClick,
+                    onClick: onRowClick,
+                    rightSlot: rightControl,
                 });
                 contactItem.mount(this.element!);
+                if (!onRowClick && contactItem.element) {
+                    contactItem.element.style.borderBottom = "none";
+                    contactItem.element.style.cursor = "default";
+                }
                 this.contactItems.push(contactItem);
             });
         });
@@ -76,4 +117,8 @@ export class ContactListItem extends BaseForm<ContactListItemProps> {
         this.contactItems.forEach(contactItem => contactItem.unmount());
         this.contactItems = null;
     };
+
+    protected async onSubmit(data: { [key: string]: string | File; }): Promise<void> {
+
+    }
 };
