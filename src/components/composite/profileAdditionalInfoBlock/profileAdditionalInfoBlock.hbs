@@ -1,0 +1,31 @@
+<div class="profile-additional-info-block">
+    <div class="additional-info-paragraph-default">
+        <span class="additional-title">Логин:</span><p>{{profileAdditionalInfo.login}}</p>
+    </div>
+    <div class="additional-info-paragraph-default">
+        <span class="additional-title">Почта:</span>
+        {{#if profileAdditionalInfo.email}}
+            <p>{{profileAdditionalInfo.email}}</p>
+        {{else}}
+            <p class="empty-additional-info">Не указано</p>
+        {{/if}}
+    </div>
+    <div class="additional-info-paragraph-default">
+        <span class="additional-title">День рождения:</span>
+        {{#if profileAdditionalInfo.birthDate}}
+            <p>{{profileAdditionalInfo.birthDate}}</p>
+        {{else}}
+            <p class="empty-additional-info">Не указано</p>
+        {{/if}}
+    </div>
+    <div class="bio-info">
+        <span class="additional-title">О себе:</span>
+        {{#if profileAdditionalInfo.bio}}
+            <div class="bio-container">
+                <span class="bio-text"></span>
+            </div>
+        {{else}}
+            <p class="empty-additional-info">Не указано</p>
+        {{/if}}
+    </div>
+</div>

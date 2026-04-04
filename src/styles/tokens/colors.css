@@ -28,6 +28,8 @@
 
     --color-empty: rgba(242, 240, 240, 0);
 
+    --color-half-empty: rgba(242, 240, 240, 0.5);
+
     --color-bubble: rgba(69, 93, 186, 1);
 
     --color-borderDefault: #2A2A2A 75%;

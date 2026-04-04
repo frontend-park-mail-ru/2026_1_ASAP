@@ -36,14 +36,18 @@ export class App {
      * @returns {Promise<void>}
      */
     async start(): Promise<void> {
-        // const isAuth = await authService.checkAuth();
+        const isAuth = await authService.checkAuth();
+        const currentPath = window.location.pathname;
 
-        // if (isAuth) {
-        //     this.router.navigate('/chats');
-        // } else {
-        //     this.router.navigate('/login');
-        // }
-        this.router.navigate('/chats');
+        if (isAuth) {
+            const protectedPaths = ['/', '/login', '/register'];
+            const targetPath = protectedPaths.includes(currentPath) ? '/chats' : currentPath;
+            this.router.navigate(targetPath);
+        } else {
+            this.router.navigate('/login');
+        }
+        // const currentPath = window.location.pathname;
+        // this.router.navigate(currentPath);
 
         this.router.init();
     }

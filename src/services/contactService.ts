@@ -15,6 +15,34 @@ const MOCK_CONTACTS: FrontendContact[] = [
         avatarURL: '/assets/images/avatars/chatAvatar.svg',
     },
 ];
+
+const MOCK_PROFILES: { [id: number]: FrontendProfile } = {
+    1: {
+        mainInfo: {
+            firstName: 'Алиса',
+            lastName: 'Иванова',
+            avatarUrl: '/assets/images/avatars/profileAvatar.svg',
+        },
+        additionalInfo: {
+            login: 'alice',
+            email: 'alice@example.com',
+            bio: 'Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код Люблю кофе и код'
+        }
+    },
+    2: {
+        mainInfo: {
+            firstName: 'Боб',
+            lastName: 'Петров',
+            avatarUrl: '/assets/images/avatars/profileAvatar.svg',
+        },
+        additionalInfo: {
+            login: 'bob',
+            email: 'bob@example.com',
+            birthDate: new Date('1998-05-14').toLocaleDateString('ru-RU'),
+            bio: 'Просто Боб'
+        }
+    }
+};
 export class ContactService {
     private convertToFrontendContact(backendContact: BackendContact): FrontendContact {
         return {
@@ -29,13 +57,13 @@ export class ContactService {
             mainInfo: {
                 firstName: backendProfile.first_name,
                 lastName: backendProfile.last_name || "",
-                avatarUrl: backendProfile.avatar || "",
-                lastSeen: backendProfile.last_seen ? new Date(backendProfile.last_seen) : undefined,
+                avatarUrl: backendProfile.avatar || "/assets/images/avatars/profileAvatar.svg",
+                lastSeen: backendProfile.last_seen ? new Date(backendProfile.last_seen).toLocaleDateString('ru-RU') : undefined,
             },
             additionalInfo: {
                 login: backendProfile.login,
                 email: backendProfile.email || "",
-                birthDate: backendProfile.birth_date ? new Date(backendProfile.birth_date) : undefined,
+                birthDate: backendProfile.birth_date ? new Date(backendProfile.birth_date).toLocaleDateString('ru-RU') : undefined,
                 bio: backendProfile.bio || ""
             }
         };
@@ -43,7 +71,7 @@ export class ContactService {
 
     async getContacts(): Promise<FrontendContact[]> {
         if (USE_MOCK) {
-            return new Promise(resolve => setTimeout(() => resolve(MOCK_CONTACTS), 300));
+            return MOCK_CONTACTS;
         }
         try {
             const response = await fetch(`${BASE_URL}/api/v1/contacts`, {
@@ -70,6 +98,9 @@ export class ContactService {
     };
 
     async getProfileInfo(profileId: number | null): Promise<FrontendProfile> {
+        if (USE_MOCK) {
+            return MOCK_PROFILES[profileId] || MOCK_PROFILES[1];
+        }
         try {
             const response = await fetch(`${BASE_URL}/api/v1/profile/${profileId}`, {
                 headers: {

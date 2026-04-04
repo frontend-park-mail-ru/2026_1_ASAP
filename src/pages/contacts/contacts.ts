@@ -100,10 +100,20 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
 
         this.profileWindow = new ProfileWindow({
             profileMainInfo: profileInfo.mainInfo,
-            profileAdditionalInfo: profileInfo.additionalInfo
+            profileAdditionalInfo: profileInfo.additionalInfo,
+            closeWindow: this.closeContact
         });
 
         this.profileWindow.mount(this.mainContentArea);
+    };
+
+    private closeContact = (): void => {
+        if (!this.profileWindow) return;
+        this.profileWindow!.unmount();
+        if (this.placeHolder)
+            this.placeHolder.style.display = "block";
+        this.activeContactId = null;
+        this.contactListWrapper?.setActiveContact(this.activeContactId);
     };
 
     beforeUnmount() {
