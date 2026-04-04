@@ -43,6 +43,13 @@ const MOCK_PROFILES: { [id: number]: FrontendProfile } = {
         }
     }
 };
+
+function formatLastSeen(date: Date): string {
+    const time = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    const dateStr = date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+    return `был(а) в сети в ${time} ${dateStr}`;
+}
+
 export class ContactService {
     private convertToFrontendContact(backendContact: BackendContact): FrontendContact {
         return {
@@ -58,7 +65,7 @@ export class ContactService {
                 firstName: backendProfile.first_name,
                 lastName: backendProfile.last_name || "",
                 avatarUrl: backendProfile.avatar || "/assets/images/avatars/profileAvatar.svg",
-                lastSeen: backendProfile.last_seen ? new Date(backendProfile.last_seen).toLocaleDateString('ru-RU') : undefined,
+                lastSeen: backendProfile.last_seen ? formatLastSeen(new Date(backendProfile.last_seen)) : undefined,
             },
             additionalInfo: {
                 login: backendProfile.login,
@@ -102,7 +109,7 @@ export class ContactService {
             return MOCK_PROFILES[profileId] || MOCK_PROFILES[1];
         }
         try {
-            const response = await fetch(`${BASE_URL}/api/v1/profile/${profileId}`, {
+            const response = await fetch(`${BASE_URL}/api/v1/profiles/${profileId}`, {
                 headers: {
                     'Content-Type': 'application/json'
                 },
@@ -128,6 +135,34 @@ export class ContactService {
                 }
             };
         }
+    };
+
+    async getMyProfile(): Promise<FrontendProfile> {
+        try {
+            const response = await fetch(`${BASE_URL}/api/v1/profiles/me`, {
+                headers: {
+                    'Content-Type': 'application.json'
+                },
+                credentials: 'include'
+            });
+            if (!response.ok) {
+                console.error("Ошибка при получении профиля");
+                throw new Error(`Ошибка ${response.status}`);
+            }
+            const data: {status: string, body: BackendProfile} = await response.json();
+            const frontendProfile: FrontendProfile = this.convertToFrontendProfile(data.body);
+            return frontendProfile;
+        } catch(error) {
+            console.error(error);
+            return {
+                mainInfo: {
+                    firstName: "User"
+                },
+                additionalInfo: {
+                    login: "User"
+                }
+            };
+        };
     };
 };
 

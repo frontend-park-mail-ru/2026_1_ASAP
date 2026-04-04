@@ -96,6 +96,6 @@ export class ProfileAdditionalInfoBlock extends BaseComponent<ProfileAdditionalI
     };
 
     protected beforeUnmount(): void {
-        this.resizeObserver.disconnect();
+        this.resizeObserver?.disconnect();
     };
 };
