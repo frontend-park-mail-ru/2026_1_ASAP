@@ -70,21 +70,11 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         this.element.querySelector('.chat-page__sidebar')!.appendChild(this.logoutWrapper);
 
         this.menuBar = new MenuBar({
-            onSettingsClick: () => this.toggleSettings(),
-            onMessagesClick: () => this.toggleMessages(),
-            onContactsClick: () => this.toggleContacts(),
+            onSettingsClick: () => this.props.router.navigate('/settings'),
+            onMessagesClick: () => this.props.router.navigate('/chats'),
+            onContactsClick: () => this.props.router.navigate('/contacts'),
         });
         this.menuBar.mount(this.element.querySelector('.chat-page__sidebar')!);
-
-        this.logoutButton = new Button({
-            class: 'logout-button',
-            label: 'Выйти из аккаунта',
-            onClick: async () => {
-                await authService.logout();
-                this.props.router.navigate('/login');
-            }
-        });
-        this.logoutButton.mount(this.logoutWrapper);
 
         this.mainContentArea = this.element.querySelector('.chat-page__mainfield') || null;
         this.placeholderElement = this.mainContentArea?.querySelector('.empty-field') || null;
@@ -236,36 +226,6 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         
         this.chatWindow.mount(this.mainContentArea);
     }
-
-    toggleSettings() {
-        if (!this.element) {return;}
-
-        if (this.activeMenuButton === "settings") return;
-        this.menuBar?.setActiveButton('settings');
-        if (this.searchForm?.element) this.searchForm.element.style.visibility = 'hidden';
-        if (this.logoutWrapper) {
-            const sidebar = this.element.querySelector('.chat-page__sidebar');
-            if (sidebar && this.chatWrapper?.element) {
-                sidebar.insertBefore(this.logoutWrapper, this.chatWrapper.element);
-            }
-            if (this.chatWrapper?.element) this.chatWrapper.element.style.display = 'none';
-            this.logoutWrapper.style.display = 'flex';
-        }
-        this.activeMenuButton = "settings";
-    }
-
-    toggleMessages() {
-        if (this.activeMenuButton === "messages") return;
-        this.menuBar?.setActiveButton('messages');
-        if (this.searchForm?.element) this.searchForm.element.style.visibility = '';
-        if (this.chatWrapper?.element) this.chatWrapper.element.style.display = '';
-        if (this.logoutWrapper) this.logoutWrapper.style.display = 'none';
-        this.activeMenuButton = "messages";
-    }
-
-    toggleContacts() {
-        this.props.router.navigate('/contacts');
-    };
 
     beforeUnmount() {
         this.cleanupMainContent();

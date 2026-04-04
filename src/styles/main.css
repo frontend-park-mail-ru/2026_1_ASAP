@@ -26,6 +26,10 @@
 @import "../components/composite/createChatMenu/createChatMenu.css";
 @import "../components/composite/createDialogWindow/createDialogWindow.css";
 @import "../components/composite/createGroupWindow/createGroupWindow.css";
+@import "../components/composite/settingsListWrapper/settingsListWrapper.css";
+@import "../components/composite/settingsListItem/settingsListItem.css";
+@import "../components/composite/settingsItem/settingsItem.css";
+@import "../components/composite/settingsProfileWindow/settingsProfileWindow.css";
 
 
 @import "../components/ui/button/button.css";
@@ -45,3 +49,4 @@
 @import "./pages/chats.css";
 @import "./pages/register.css";
 @import "./pages/contacts.css";
+@import "./pages/settings.css";

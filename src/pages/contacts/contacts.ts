@@ -54,7 +54,7 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
             return;
         }
 
-        this.searchForm = new SearchForm();
+        this.searchForm = new SearchForm({ router: this.props.router });
         this.searchForm.mount(this.element.querySelector('.contacts-page__sidebar')!);
         this.contactListWrapper = new ContactListWrapper({
             router: this.props.router,

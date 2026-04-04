@@ -6,6 +6,7 @@ import { PageManager } from "./pageManager";
 import { Router } from "./router";
 import { authService } from "../services/authService";
 import { ContactsPage } from "../pages/contacts/contacts";
+import { SettingsPage } from "../pages/settings/settings";
 
 const routes = {
     '/': LoginPage,
@@ -13,6 +14,7 @@ const routes = {
     '/register': RegisterPage,
     '/chats': ChatsPage,
     '/contacts': ContactsPage,
+    '/settings': SettingsPage,
 };
 
 /**
@@ -36,18 +38,18 @@ export class App {
      * @returns {Promise<void>}
      */
     async start(): Promise<void> {
-        const isAuth = await authService.checkAuth();
-        const currentPath = window.location.pathname;
-
-        if (isAuth) {
-            const protectedPaths = ['/', '/login', '/register'];
-            const targetPath = protectedPaths.includes(currentPath) ? '/chats' : currentPath;
-            this.router.navigate(targetPath);
-        } else {
-            this.router.navigate('/login');
-        }
+        // const isAuth = await authService.checkAuth();
         // const currentPath = window.location.pathname;
-        // this.router.navigate(currentPath);
+
+        // if (isAuth) {
+        //     const protectedPaths = ['/', '/login', '/register'];
+        //     const targetPath = protectedPaths.includes(currentPath) ? '/chats' : currentPath;
+        //     this.router.navigate(targetPath);
+        // } else {
+        //     this.router.navigate('/login');
+        // }
+        const currentPath = window.location.pathname;
+        this.router.navigate(currentPath);
 
         this.router.init();
     }
