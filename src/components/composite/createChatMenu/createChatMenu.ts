@@ -15,15 +15,13 @@ export class CreateChatMenu extends BaseComponent<createChatMenuProps> {
     private groupButton: Button | null = null
     private channelButton: Button | null = null;
     private overlay: HTMLElement | null = null;
+    
     private handleOverlayClick = () => {
         this.props.onClose();
     }
 
     constructor (props: createChatMenuProps) {
         super(props);
-        this.props.onCreateDialog = props.onCreateDialog;
-        this.props.onCreateGroup = props.onCreateGroup;
-        this.props.onCreateChannel = props.onCreateChannel;
     }
 
     getTemplate() {

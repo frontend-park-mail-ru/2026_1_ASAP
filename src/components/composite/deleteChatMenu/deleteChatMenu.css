@@ -1,8 +1,8 @@
-.create-chat-menu {
+.delete-chat-menu {
     position: absolute;
 }
 
-.create-chat-menu__overlay {
+.delete-chat-menu__overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -12,21 +12,21 @@
     z-index: 999; /* поверх остальных элементов */
 }
 
-.create-chat-menu__button-container {
+.delete-chat-menu__button-container {
     position: absolute;
-    top: 30px;
-    left: 35px;
+    top: 22px;
+    right: -50px;
     display: flex;
     flex-direction: column;
     z-index: 1000; /* поверх оверлея */
     border: none;
     border-radius: 10px;
     width: 220px;
-    height: 150px;
+    height: 100px;
     background-color: var(--color-neutral);
 }
 
-.create-chat-menu__add-button {
+.delete-chat-menu__button {
     display: flex;
     flex-direction: row;
     width: 100%;
@@ -39,7 +39,7 @@
     align-items: center;
 }
 
-.create-chat-menu__add-button:hover {
+.delete-chat-menu__button:hover {
     background-color: var(--color-text-hover2);
     cursor: pointer;
     border-radius: 10px;
