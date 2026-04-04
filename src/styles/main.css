@@ -21,6 +21,8 @@
 @import "../components/composite/contactItem/contactItem.css";
 @import "../components/composite/profileWindow/profileWindow.css";
 @import "../components/composite/profileHeader/profileHeader.css";
+@import "../components/composite/profileMainInfoBlock/profileMainInfoBlock.css";
+@import "../components/composite/profileAdditionalInfoBlock/profileAdditionalInfoBlock.css";
 
 
 @import "../components/ui/button/button.css";

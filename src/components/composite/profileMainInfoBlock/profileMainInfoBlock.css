@@ -1,0 +1,12 @@
+.profile-main-info-block {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 0px 5px 0px 5px;
+    align-items: center;
+    width: 100%;
+}
+
+.user-full-name {
+    font: 400 24px/30px var(--font-primary);
+}
