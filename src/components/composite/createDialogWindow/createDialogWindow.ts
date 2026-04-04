@@ -9,6 +9,7 @@ import { SearchForm } from "../searchForm/searchForm";
 
 interface CreateDialogWindowProps extends IBaseComponentProps {
     router: Router;
+    onSubmit: (contactId: number, contactName: string) => void;
 }
 
 export class CreateDialogWindow extends BaseComponent<CreateDialogWindowProps> {
@@ -57,10 +58,8 @@ export class CreateDialogWindow extends BaseComponent<CreateDialogWindowProps> {
         this.contactList = new ContactListWrapper({
             router: this.props.router,
             listMode: 'createDialog',
-            onAction: (contactId: number) => {
-                console.log(`Клик по контакту ${contactId}. Здесь будет API запрос на создание диалога.`);
-                // TODO: Вызвать chatService.createDialog(contactId)
-                // TODO: Перенаправить роутер в созданный чат: this.props.router.navigate(`/chats/${newChatId}`)
+            onAction: (contactId: number, isSelected?: boolean, contactName?: string) => {
+                this.props.onSubmit(contactId, contactName || "Неизвестный пользователь");
             }
         });
 

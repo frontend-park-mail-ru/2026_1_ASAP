@@ -16,6 +16,7 @@ import { GroupHeader } from "../../components/composite/groupHeader/groupHeader"
 import { ChannelHeader } from "../../components/composite/channelHeader/channelHeader";
 import { CreateDialogWindow } from "../../components/composite/createDialogWindow/createDialogWindow"; 
 import { CreateGroupWindow } from "../../components/composite/createGroupWindow/createGroupWindow";
+import { contactService } from "../../services/contactService";
 
 const CURRENT_USER_LOGIN = 'alice'; 
 const CURRENT_USER: User = { login: CURRENT_USER_LOGIN, avatarUrl: '/assets/images/avatars/myAvatar.svg' };
@@ -170,13 +171,33 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
         switch (type) {
             case 'dialog':
-                this.createChatWindow = new CreateDialogWindow({ router: this.props.router });
+                this.createChatWindow = new CreateDialogWindow({ 
+                    router: this.props.router,
+                    onSubmit: async (contactId: number, contactName: string) => {
+                        const myId = 12; // ОБЯЗАТЕЛЬНО ПОМЕНЯТЬ НА ПОЛУЧЕНИЯ РЕАЛЬНОГО ID ТЕКУЩЕГО ЮЗЕРА
+
+                        const newChat = await chatService.createChat(myId, contactName, [contactId], "dialog");
+                        if (newChat && newChat.id) {
+                            this.props.router.navigate(`/chats/${newChat.id}`);
+                        }
+                    }
+                });
                 break;
             case 'group':
-                this.createChatWindow = new CreateGroupWindow({ router: this.props.router });
+                this.createChatWindow = new CreateGroupWindow({ 
+                    router: this.props.router,
+                    onSubmit: async (userIds: number[], groupName: string) => {
+                        const myId = 12; // ОБЯЗАТЕЛЬНО ПОМЕНЯТЬ НА ПОЛУЧЕНИЯ РЕАЛЬНОГО ID ТЕКУЩЕГО ЮЗЕРА
+
+                        const newChat = await chatService.createChat(myId, groupName, userIds, "group");
+                        if (newChat && newChat.id) {
+                            this.props.router.navigate(`/chats/${newChat.id}`);
+                        }
+                    }
+                });
                 break;
             case 'channel':
-                // TODO: Реализовать CreateChannelWindow и раскомментировать эту строку
+                // todo: Реализовать CreateChannelWindow и раскомментировать эту строку
                 // this.createChatWindow = new CreateChannelWindow({ router: this.props.router });
                 console.log("Рендерим компонент создания канала");
                 return;
@@ -204,13 +225,33 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         let headerComponent: BaseComponent;
         switch (chatDetail.type) {
             case 'dialog':
-                headerComponent = new DialogHeader({ chat: chatDetail as DialogChat });
+                headerComponent = new DialogHeader({ 
+                    chat: chatDetail as DialogChat,
+                    onDeleteChat: () => {
+                        // todo дернуть ручку сервиса
+                        this.props.router.navigate('/chats');
+                    }
+                });
                 break;
+
             case 'group':
-                headerComponent = new GroupHeader({ chat: chatDetail as GroupChat });
+                headerComponent = new GroupHeader({ 
+                    chat: chatDetail as GroupChat,
+                    onDeleteChat: () => {
+                        // todo дернуть ручку сервиса
+                        this.props.router.navigate('/chats');
+                    }
+                });
                 break;
+
             case 'channel':
-                headerComponent = new ChannelHeader({ chat: chatDetail as ChannelChat });
+                headerComponent = new ChannelHeader({ 
+                    chat: chatDetail as ChannelChat,
+                    onDeleteChat: () => {
+                        // todo дернуть ручку сервиса
+                        this.props.router.navigate('/chats');
+                    }
+                });
                 break;
             default:
                 headerComponent = new BaseComponent({ title: (chatDetail as Chat).title });

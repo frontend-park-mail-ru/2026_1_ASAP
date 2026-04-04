@@ -6,7 +6,7 @@ import template from "./contactListWrapper.hbs";
 interface ContactListWrapperProps extends IBaseFormProps {
     router: Router,
     listMode?: 'default' | 'createDialog' | 'createGroup';
-    onAction?: (contactId: number, isSelected?: boolean) => void;
+    onAction?: (contactId: number, isSelected?: boolean, contactName?: string) => void;
 };
 
 export class ContactListWrapper extends BaseForm<ContactListWrapperProps> {

@@ -12,6 +12,7 @@ import { DeleteMenu } from '../deleteMenu/deleteMenu';
  */
 interface DialogHeaderProps {
     chat: DialogChat;
+    onDeleteChat?: () => void;
 }
 
 /**
@@ -106,8 +107,12 @@ export class DialogHeader extends BaseComponent {
                     this.deleteMenu = null;
                 },
                 onSubmitDelete: () => {
-                    console.log("Подтверждение удаления диалога");
-                    // todo реализовать удаление диалога
+                    if (this.props.onDeleteChat) {
+                        this.props.onDeleteChat(); 
+                    }
+                    this.isDeleteConfirmationOpen = false;
+                    this.deleteMenu?.unmount();
+                    this.deleteMenu = null;
                 }
             });
             this.deleteMenu.mount(deleteMenuContainer as HTMLElement);
