@@ -18,7 +18,17 @@ interface AuthFormProps extends IBaseFormProps {
 }
 
 /**
- * Форма авторизации. Валидирует ввод и отправляет данные через AuthService.
+ * @class AuthForm
+ * @extends BaseForm
+ * @description Компонент формы авторизации. Управляет вводом данных,
+ * валидацией и процессом входа пользователя в систему.
+ *
+ * @property {Input | null} loginInput - Поле ввода логина.
+ * @property {Input | null} passwordInput - Поле ввода пароля.
+ * @property {Checkbox | null} remember - Чекбокс "Запомнить меня".
+ * @property {Button | null} loginButton - Кнопка для отправки формы и входа.
+ * @property {Button | null} registerButton - Кнопка для перехода на страницу регистрации.
+ * @property {HTMLElement | null} formErrorElement - Элемент для отображения общих ошибок формы.
  */
 export class AuthForm extends BaseForm<AuthFormProps> {
     private loginInput: Input | null = null;
@@ -28,6 +38,10 @@ export class AuthForm extends BaseForm<AuthFormProps> {
     private registerButton: Button | null = null;
     private formErrorElement: HTMLElement | null = null;
 
+    /**
+     * @constructor
+     * @param {AuthFormProps} props - Свойства для компонента формы авторизации.
+     */
     constructor(props: AuthFormProps) {
         super(props);
     }
@@ -36,6 +50,10 @@ export class AuthForm extends BaseForm<AuthFormProps> {
         return template;
     }
 
+    /**
+     * Выполняется после монтирования компонента в DOM.
+     * Инициализирует дочерние компоненты (поля ввода, кнопки) и находит элемент для ошибок.
+     */
     protected afterMount(): void {
         super.afterMount();
         if (!this.element) return;
@@ -86,6 +104,10 @@ export class AuthForm extends BaseForm<AuthFormProps> {
         this.registerButton.mount(this.element.querySelector('.auth__register') as HTMLElement);
     }
 
+    /**
+     * Выполняется перед размонтированием компонента.
+     * Очищает ресурсы, удаляя дочерние компоненты.
+     */
     protected beforeUnmount(): void {
         super.beforeUnmount();
         this.loginInput?.unmount();
@@ -95,6 +117,10 @@ export class AuthForm extends BaseForm<AuthFormProps> {
         this.registerButton?.unmount();
     }
 
+    /**
+     * Отображает сообщение об ошибке для всей формы.
+     * @param {string} message - Текст ошибки для отображения.
+     */
     public showFormError(message: string): void {
         if (this.formErrorElement) {
             this.formErrorElement.textContent = message;
@@ -102,6 +128,9 @@ export class AuthForm extends BaseForm<AuthFormProps> {
         }
     }
 
+    /**
+     * Скрывает и очищает сообщение об ошибке формы.
+     */
     public clearFormError(): void {
         if (this.formErrorElement) {
             this.formErrorElement.textContent = '';
@@ -109,6 +138,17 @@ export class AuthForm extends BaseForm<AuthFormProps> {
         }
     }
 
+    /**
+     * Обрабатывает отправку формы.
+     * Выполняет валидацию полей, и в случае успеха,
+     * вызывает сервис авторизации для входа пользователя.
+     * В случае неудачи - отображает соответствующие ошибки.
+     * @param {object} data - Данные формы, собранные автоматически.
+     * @param {string} [data.login] - Значение из поля "логин".
+     * @param {string} [data.password] - Значение из поля "пароль".
+     * @returns {Promise<void>}
+     * @protected
+     */
     protected async onSubmit(data: { login?: string; password?: string; }): Promise<void> {
         if (!this.loginInput || !this.passwordInput || !this.loginButton) return;
 

@@ -5,8 +5,8 @@ const BASE_URL = 'http://0.0.0.0:8080';
 
 
 const CURRENT_USER_LOGIN = 'alice'; 
-const USE_MOCK_GET_CHATS = true;
-const USE_MOCK_DETAIL_AND_MESSAGES = true;
+const USE_MOCK_GET_CHATS = false;
+const USE_MOCK_DETAIL_AND_MESSAGES = false;
 
 // Моковые данные для деталей чатов
 const MOCK_USERS: { [key: string]: User } = {
@@ -57,8 +57,14 @@ const MOCK_MESSAGES: { [chatId: string]: FrontendMessage[] } = {
 
 
 /**
- * Сервис для работы с чатами. Загружает список чатов с сервера,
- * но мокает детали чатов и сообщения.
+ * @class ChatService
+ * @description Сервис для управления чатами. Предоставляет методы для получения списка чатов,
+ * детальной информации о чате, сообщений, а также для создания и удаления чатов.
+ * Содержит логику для работы как с реальным API, так и с моковыми данными для разработки.
+ *
+ * @property {string} BASE_URL - Базовый URL API сервера.
+ * @property {boolean} USE_MOCK_GET_CHATS - Флаг для использования моковых данных при получении списка чатов.
+ * @property {boolean} USE_MOCK_DETAIL_AND_MESSAGES - Флаг для использования моковых данных при получении деталей и сообщений чата.
  */
 export class ChatService {
     /**

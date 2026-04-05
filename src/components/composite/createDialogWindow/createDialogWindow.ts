@@ -9,12 +9,32 @@ import { SearchForm } from "../searchForm/searchForm";
 import { contactService } from "../../../services/contactService";
 import { FindUserContainer } from "../findUserContainer/findUserContainer";
 
+/**
+ * @interface CreateDialogWindowProps
+ * @description Свойства для компонента окна создания диалога.
+ * @extends IBaseComponentProps
+ * @property {Router} router - Экземпляр роутера.
+ * @property {Function} onSubmit - Колбэк, вызываемый при выборе контакта для создания диалога.
+ * @property {Function} onSubmitSearch - Колбэк, вызываемый при поиске нового пользователя.
+ */
 interface CreateDialogWindowProps extends IBaseComponentProps {
     router: Router;
     onSubmit: (contactId: number, contactName: string) => void;
     onSubmitSearch: (login: string) => void;
 }
 
+/**
+ * @class CreateDialogWindow
+ * @extends BaseComponent
+ * @description Компонент, представляющий собой интерфейс для создания нового диалога.
+ * Позволяет выбрать существующий контакт или найти нового пользователя для начала общения.
+ *
+ * @property {ActionLayout | null} actionLayout - Основной макет окна.
+ * @property {ActionHeader | null} actionHeader - Шапка окна с кнопкой "Назад" и заголовком.
+ * @property {ContactListWrapper | null} contactList - Список контактов для выбора.
+ * @property {SearchForm | null} SearchField - Поле для поиска по контактам.
+ * @property {BaseComponent | null} layoutContent - Контентная часть, которая может быть либо списком контактов, либо формой поиска.
+ */
 export class CreateDialogWindow extends BaseComponent<CreateDialogWindowProps> {
     private actionLayout: ActionLayout | null = null;
     private actionHeader: ActionHeader | null = null;
@@ -30,6 +50,14 @@ export class CreateDialogWindow extends BaseComponent<CreateDialogWindowProps> {
         return template;
     }
 
+    /**
+     * Выполняется после монтирования компонента.
+     * Асинхронно загружает контакты и в зависимости от их наличия
+     * отображает либо список контактов (`ContactListWrapper`), либо
+     * форму для поиска нового пользователя (`FindUserContainer`).
+     * Инициализирует шапку, поле поиска и основной макет.
+     * @protected
+     */
     protected async afterMount(): Promise<void> {
         if (!this.element) {
             console.error("CreateDialogWindow: нет элемента для монтирования");
@@ -86,6 +114,11 @@ export class CreateDialogWindow extends BaseComponent<CreateDialogWindowProps> {
         this.actionLayout.mount(this.element);
     }
 
+    /**
+     * Выполняется перед размонтированием компонента.
+     * Размонтирует все дочерние компоненты для очистки ресурсов.
+     * @protected
+     */
     protected beforeUnmount(): void {
         super.beforeUnmount();
         this.actionLayout?.unmount();

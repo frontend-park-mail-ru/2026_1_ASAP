@@ -9,10 +9,29 @@ import { contactService } from "../../services/contactService";
 import { AddContactWindow } from "../../components/composite/addContactWindow/addContactWindow";
 
 
+/**
+ * @interface ContactsPageProps
+ * @description Свойства для компонента страницы контактов.
+ * @extends IBasePageProps
+ * @property {string} [currentPath] - Текущий URL-путь для внутреннего роутинга.
+ */
 interface ContactsPageProps extends IBasePageProps {
     currentPath?: string;
 };
 
+/**
+ * @class ContactsPage
+ * @extends BasePage
+ * @description Страница для управления контактами. Отображает список контактов,
+ * позволяет просматривать профили, а также добавлять новые контакты.
+ *
+ * @property {SearchForm | null} searchForm - Форма поиска.
+ * @property {ContactListWrapper | null} contactListWrapper - Обертка списка контактов.
+ * @property {MenuBar | null} menuBar - Нижнее меню навигации.
+ * @property {ProfileWindow | null} profileWindow - Окно с профилем выбранного контакта.
+ * @property {AddContactWindow | null} addContactWindow - Окно добавления нового контакта.
+ * @property {number | null} activeContactId - ID активного (выбранного) контакта.
+ */
 export class ContactsPage extends BasePage<ContactsPageProps> {
     private searchForm: SearchForm | null = null;
     private contactListWrapper: ContactListWrapper | null = null;
@@ -31,6 +50,11 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
         return template;
     };
 
+    /**
+     * Обрабатывает внутренний роутинг на странице контактов.
+     * Извлекает ID контакта из URL и открывает его профиль.
+     * @private
+     */
     private async handleContactsRoute(): Promise<void> {
         const path = this.props.currentPath || window.location.pathname;
         const pathParts = path.split('/');
@@ -42,11 +66,21 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
         this.openContact(this.activeContactId);
     };
 
+    /**
+     * Обновляет свойства компонента и перезапускает внутренний роутер.
+     * @param {ContactsPageProps} newProps - Новые свойства.
+     */
     public async updateProps(newProps: ContactsPageProps): Promise<void> {
         this.props = {...this.props, ...newProps};
         await this.handleContactsRoute();
     }
 
+    /**
+     * Выполняется после монтирования страницы.
+     * Инициализирует все компоненты (поиск, список контактов, меню)
+     * и запускает обработку текущего URL.
+     * @protected
+     */
     async afterMount() {
         if (!this.element) {
             return;
@@ -85,6 +119,11 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
         await this.handleContactsRoute();
     };
 
+    /**
+     * Открывает окно с профилем пользователя.
+     * @param {number | null} activeId - ID пользователя для отображения.
+     * @private
+     */
     private async openContact(activeId: number | null): Promise<void> {
         if (!this.mainContentArea) {
             console.error("Отсутствует элемент mainContentArea");
@@ -111,6 +150,10 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
         this.profileWindow.mount(this.mainContentArea);
     };
 
+    /**
+     * Закрывает окно профиля и возвращает плейсхолдер.
+     * @private
+     */
     private closeContact = (): void => {
         if (!this.profileWindow) return;
 
@@ -121,6 +164,10 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
         this.contactListWrapper?.setActiveContact(this.activeContactId);
     };
 
+    /**
+     * Отображает окно для добавления нового контакта.
+     * @private
+     */
     private showAddContactWindow(): void {
         if (!this.mainContentArea) return;
 
@@ -156,6 +203,10 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
         this.addContactWindow.mount(this.mainContentArea);
     }
 
+    /**
+     * Закрывает окно добавления контакта и возвращает плейсхолдер.
+     * @private
+     */
     private closeAddContactWindow(): void {
         if (!this.addContactWindow) return;
         

@@ -21,10 +21,31 @@ import { contactService } from "../../services/contactService";
 const CURRENT_USER_LOGIN = 'alice'; 
 const CURRENT_USER: User = { login: CURRENT_USER_LOGIN, avatarUrl: '/assets/images/avatars/myAvatar.svg' };
 
+/**
+ * @interface ChatsPageProps
+ * @description Свойства для компонента страницы чатов.
+ * @extends IBasePageProps
+ * @property {string} [currentPath] - Текущий путь URL для внутреннего роутинга.
+ */
 interface ChatsPageProps extends IBasePageProps {
     currentPath?: string; 
 }
 
+/**
+ * @class ChatsPage
+ * @extends BasePage
+ * @description Основная страница приложения, отображающая интерфейс чатов.
+ * Управляет левой панелью (список чатов, поиск, меню) и правой панелью
+ * (окно чата, плейсхолдер или окна создания чатов).
+ * Реализует внутреннюю логику навигации по чатам.
+ *
+ * @property {SearchForm | null} searchForm - Компонент поиска.
+ * @property {ChatListWrapper | null} chatWrapper - Обертка для списка чатов.
+ * @property {MenuBar | null} menuBar - Нижнее меню навигации.
+ * @property {ChatWindow | null} chatWindow - Окно активного чата.
+ * @property {BaseComponent | null} createChatWindow - Окно создания нового чата.
+ * @property {string | null} activeChatId - ID текущего открытого чата.
+ */
 export class ChatsPage extends BasePage<ChatsPageProps> {
     private searchForm: SearchForm | null = null;
     private chatWrapper: ChatListWrapper | null = null;
@@ -48,6 +69,12 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         return template;
     };
 
+    /**
+     * Выполняется после монтирования страницы.
+     * Инициализирует все компоненты сайдбара и основную контентную область.
+     * Запускает внутренний роутер для отображения нужного контента.
+     * @protected
+     */
     async afterMount() {
         if (!this.element) return;
 
@@ -83,14 +110,21 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         await this.handleChatRoute();
     }
 
+    /**
+     * Обновляет свойства компонента и перезапускает внутренний роутер
+     * для отображения изменений.
+     * @param {ChatsPageProps} newProps - Новые свойства.
+     */
     public async updateProps(newProps: ChatsPageProps): Promise<void> {
         this.props = { ...this.props, ...newProps };
         await this.handleChatRoute();
     }
 
     /**
-     * Универсальный метод очистки правой панели. 
-     * Гарантирует, что у нас не будет утечек памяти и наложений интерфейса.
+     * Очищает основную контентную область (правую панель).
+     * Размонтирует активное окно чата или окно создания чата,
+     * чтобы избежать наложения интерфейсов и утечек памяти.
+     * @private
      */
     private cleanupMainContent(): void {
         if (this.chatWindow) {
@@ -107,7 +141,10 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     }
 
     /**
-     * Логика роутинга внутри страницы чатов.
+     * Обрабатывает внутреннюю навигацию на странице чатов.
+     * Анализирует URL и решает, что отобразить: плейсхолдер,
+     * существующий чат или окно создания нового чата.
+     * @private
      */
     private async handleChatRoute(): Promise<void> {
         const path = this.props.currentPath || window.location.pathname;
@@ -154,7 +191,9 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     }
 
     /**
-     * Рендерит нужное окно создания чата.
+     * Создает и отображает окно для создания нового чата определенного типа.
+     * @param {"dialog" | "group" | "channel"} type - Тип создаваемого чата.
+     * @private
      */
     private async createChat(type: string) {
         if (!this.mainContentArea) return;
@@ -226,6 +265,13 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         }
     }
 
+    /**
+     * Открывает и отображает окно существующего чата по его ID.
+     * Загружает детали чата и его сообщения, затем инициализирует
+     * `ChatWindow` с соответствующими компонентами (шапка, список сообщений, поле ввода).
+     * @param {string} chatId - ID чата для открытия.
+     * @private
+     */
     private async openChat(chatId: string): Promise<void> {
         if (!this.mainContentArea) return;
 
@@ -283,8 +329,6 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     }
                 });
                 break;
-            default:
-                headerComponent = new BaseComponent({ title: (chatDetail as Chat).title });
         }
 
         const messageListComponent = new MessageList({ 
@@ -308,6 +352,11 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         this.chatWindow.mount(this.mainContentArea);
     }
 
+    /**
+     * Выполняется перед размонтированием страницы.
+     * Очищает все дочерние компоненты и сбрасывает состояние.
+     * @protected
+     */
     beforeUnmount() {
         this.cleanupMainContent();
         this.logoutWrapper?.remove();

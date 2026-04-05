@@ -1,0 +1,24 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/index.ts"],
+  "entryPointStrategy": "expand",
+  "out": "./docs-generated",
+  "exclude": [
+    "**/node_modules/**",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "**/__tests__/**"
+  ],
+  "excludePrivate": true,
+  "excludeProtected": false,
+  "excludeInternal": true,
+  "name": "Ваш проект",
+  "readme": "README.md",
+  "plugin": [],
+  "sort": ["source-order"],
+  "kindSortOrder": ["Project", "Module", "Class", "Interface", "TypeAlias", "Function", "Variable"],
+  "navigation": {
+    "includeCategories": true,
+    "includeGroups": true
+  }
+}

@@ -15,13 +15,15 @@ interface ChatWindowProps {
 }
 
 /**
- * Гибкий компонент-контейнер для отображения окна чата,
- * состоящий из шапки, списка сообщений и формы ввода.
+ * @class ChatWindow
+ * @extends BaseComponent
+ * @description Гибкий компонент-контейнер для отображения полноценного окна чата.
+ * Он состоит из трех основных частей: шапки, списка сообщений и поля для ввода.
+ * Конкретные реализации этих частей передаются через свойства (props),
+ * что позволяет использовать этот компонент для разных типов чатов (диалоги, группы, каналы).
  */
 export class ChatWindow extends BaseComponent {
-    /**
-     * @param {ChatWindowProps} props - Свойства компонента.
-     */
+
     constructor(props: ChatWindowProps) {
         super(props);
     }
@@ -31,7 +33,10 @@ export class ChatWindow extends BaseComponent {
     }
 
     /**
-     * @override
+     * Выполняется после монтирования компонента.
+     * Находит в шаблоне слоты для шапки, списка сообщений и поля ввода,
+     * а затем монтирует в них соответствующие компоненты, переданные в `props`.
+     * @protected
      */
     protected afterMount(): void {
         if (!this.element) {
@@ -62,7 +67,10 @@ export class ChatWindow extends BaseComponent {
     }
 
     /**
-     * @override
+     * Выполняется перед размонтированием компонента.
+     * Размонтирует все дочерние компоненты (шапку, список сообщений, поле ввода)
+     * для очистки ресурсов и предотвращения утечек памяти.
+     * @protected
      */
     beforeUnmount() {
         this.props.headerComponent.unmount();

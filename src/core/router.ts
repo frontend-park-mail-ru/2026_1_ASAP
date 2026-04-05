@@ -36,7 +36,7 @@ export class Router {
     /**
      * Определяет текущий маршрут и открывает соответствующую страницу.
      * @returns {Promise<void>}
-     * @throws {Error} Если PageManager не установлен.
+     * @throws {Error} Если `pageManager` не был установлен.
      */
     public async handleRoute(): Promise<void> {
         if (!this.pageManager) {
@@ -78,8 +78,10 @@ export class Router {
     }
 
     /**
-     * Выполняет навигацию на указанный путь.
-     * @param {string} path - URL-путь (например, '/chats').
+     * Осуществляет программную навигацию на новый URL.
+     * Обновляет URL в адресной строке с помощью `history.pushState` и вызывает `handleRoute`
+     * для отображения новой страницы.
+     * @param {string} path - Путь для навигации (например, '/chats').
      */
     public navigate(path: string): void {
         if (window.location.pathname === path) {
