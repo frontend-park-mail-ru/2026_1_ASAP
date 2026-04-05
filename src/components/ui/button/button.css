@@ -95,6 +95,38 @@ button > span {
 }
 
 
+.ui-button__secondary3 {
+    color: var(--color-primary);
+    position: relative;
+    font: var(--font-secondary);
+    letter-spacing: var(--text-secondary-letter-spacing);
+    overflow: hidden;
+    border: none;
+}
+
+.ui-button__secondary3:after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gradiend-button-hover);
+    border: 0;
+    opacity: 0;
+    z-index: 0;
+    color: var(--color-text);
+    transition: all 0.5s;
+}
+
+.ui-button__secondary3:hover:after {
+    opacity: 1;
+}
+
+.ui-button__secondary3:hover {
+    border: none;
+    color: var(--color-text);
+}
+
+
+
 .ui-button:disabled {
     opacity: 0.5;
     cursor: not-allowed;

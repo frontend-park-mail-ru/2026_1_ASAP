@@ -1,0 +1,19 @@
+/* Контейнер: центрируем контент */
+.find-user-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    height: 100%;
+    width: 100%;
+    gap: 30px;
+}
+
+.find-user-container__message {
+    color: var(--color-text);
+    font: var(--text-heading1);
+    text-align: center;
+    margin: 0;
+    padding-top: 90px;
+    padding-bottom: 10px;
+}

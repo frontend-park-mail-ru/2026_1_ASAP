@@ -169,16 +169,38 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private createChat(type: string) {
         if (!this.mainContentArea) return;
 
+        const myId = 12; // ОБЯЗАТЕЛЬНО ПОМЕНЯТЬ НА ПОЛУЧЕНИЯ РЕАЛЬНОГО ID ТЕКУЩЕГО ЮЗЕРА
+
         switch (type) {
             case 'dialog':
                 this.createChatWindow = new CreateDialogWindow({ 
                     router: this.props.router,
                     onSubmit: async (contactId: number, contactName: string) => {
-                        const myId = 12; // ОБЯЗАТЕЛЬНО ПОМЕНЯТЬ НА ПОЛУЧЕНИЯ РЕАЛЬНОГО ID ТЕКУЩЕГО ЮЗЕРА
-
-                        const newChat = await chatService.createChat(myId, contactName, [contactId], "dialog");
+                        const newChat = await chatService.createChat(
+                            contactName, 
+                            [myId, contactId], 
+                            "dialog"
+                        );
                         if (newChat && newChat.id) {
                             this.props.router.navigate(`/chats/${newChat.id}`);
+                        }
+                    },
+                    onSubmitSearch: async (login: string) => {
+                        console.log("Ищем пользователя по логину:", login);
+                        const targetUser = await contactService.getUserByLogin(login);
+                        
+                        if (targetUser && targetUser.id) {
+                            const newChat = await chatService.createChat(
+                                "Диалог с " + targetUser.login,
+                                [myId, targetUser.id], 
+                                "dialog"
+                            );
+                            
+                            if (newChat && newChat.id) {
+                                this.props.router.navigate(`/chats/${newChat.id}`);
+                            }
+                        } else {
+                            alert(`Пользователь с логином "${login}" не найден!`);
                         }
                     }
                 });
@@ -187,9 +209,11 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 this.createChatWindow = new CreateGroupWindow({ 
                     router: this.props.router,
                     onSubmit: async (userIds: number[], groupName: string) => {
-                        const myId = 12; // ОБЯЗАТЕЛЬНО ПОМЕНЯТЬ НА ПОЛУЧЕНИЯ РЕАЛЬНОГО ID ТЕКУЩЕГО ЮЗЕРА
-
-                        const newChat = await chatService.createChat(myId, groupName, userIds, "group");
+                        const newChat = await chatService.createChat(
+                            groupName, 
+                            [myId, ...userIds], 
+                            "group"
+                        );
                         if (newChat && newChat.id) {
                             this.props.router.navigate(`/chats/${newChat.id}`);
                         }

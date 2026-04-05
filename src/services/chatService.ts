@@ -1,7 +1,7 @@
 import { ChatDetail, FrontendMessage, User, DialogChat, GroupChat, ChannelChat, BackendChat, BackendMessage } from '../types/chat';
 
-// const BASE_URL = 'http://pulseapp.space:8080';
-const BASE_URL = 'http://0.0.0.0:8080';
+const BASE_URL = 'http://pulseapp.space:8080';
+// const BASE_URL = 'http://0.0.0.0:8080';
 
 
 const CURRENT_USER_LOGIN = 'alice'; 
@@ -193,7 +193,7 @@ export class ChatService {
      * @param members_id Массив ID участников
      * @param type Тип чата ("dialog" или "group" или "channel")
      */
-    public async createChat(id: number, title: string, members_id: number[], type: "dialog" | "group" | "channel"): Promise<any | null> {
+    public async createChat(title: string, members_id: number[], type: "dialog" | "group" | "channel"): Promise<any | null> {
         try {
             const response = await fetch(`${BASE_URL}/api/v1/chats`, {
                 method: 'POST',
@@ -202,7 +202,6 @@ export class ChatService {
                 },
                 credentials: 'include',
                 body: JSON.stringify({
-                    id: id,
                     members_id: members_id,
                     title: title,
                     type: type

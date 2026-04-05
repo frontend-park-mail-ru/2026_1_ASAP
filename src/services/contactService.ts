@@ -2,7 +2,8 @@ import { BackendContact, FrontendContact } from "../types/contact";
 import { BackendProfile, FrontendProfile } from "../types/profile";
 
 const BASE_URL = 'http://pulseapp.space:8080';
-const USE_MOCK = true;
+// const BASE_URL = 'http://0.0.0.0:8080';
+const USE_MOCK = false;
 const MOCK_CONTACTS: FrontendContact[] = [
     {
         contact_user_id: 1,
@@ -98,6 +99,27 @@ export class ContactService {
             };
         }
     };
+
+
+    public async getUserByLogin(login: string): Promise<{id: number, login: string} | null> {
+        try {
+            // TODO: ЗАМЕНИТЬ НА РЕАЛЬНУЮ РУЧКУ
+            const response = await fetch(`${BASE_URL}/api/v1/profile/search?login=${login}`, {
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include'
+            });
+
+            if (!response.ok) return null;
+
+            const data = await response.json();
+            return { id: data.body.id, login: data.body.login }; 
+            
+        } catch(error) {
+            console.error("Ошибка при поиске пользователя:", error);
+            return null;
+        }
+    }
+
 };
 
 export const contactService = new ContactService();

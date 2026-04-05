@@ -26,6 +26,8 @@
 @import "../components/composite/createGroupWindow/createGroupWindow.css";
 @import "../components/composite/deleteChatMenu/deleteChatMenu.css";
 @import "../components/composite/deleteMenu/deleteMenu.css";
+@import "../components/composite/findUserContainer/findUserContainer.css";
+@import "../components/composite/findUserForm/findUserForm.css";
 
 
 
