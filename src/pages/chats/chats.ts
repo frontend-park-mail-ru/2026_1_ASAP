@@ -156,10 +156,10 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     /**
      * Рендерит нужное окно создания чата.
      */
-    private createChat(type: string) {
+    private async createChat(type: string) {
         if (!this.mainContentArea) return;
 
-        const myId = 12; // ОБЯЗАТЕЛЬНО ПОМЕНЯТЬ НА ПОЛУЧЕНИЯ РЕАЛЬНОГО ID ТЕКУЩЕГО ЮЗЕРА
+        const myId = await contactService.getMyId();
 
         switch (type) {
             case 'dialog':
@@ -177,8 +177,9 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     },
                     onSubmitSearch: async (login: string) => {
                         console.log("Ищем пользователя по логину:", login);
-                        const targetUser = await contactService.getUserByLogin(login);
-                        
+                        // const targetUser = await contactService.getUserByLogin(login); 
+                        const targetUser = {"id": 1, "login": login};    // нужно написать реальный сервис когда будет на беке
+
                         if (targetUser && targetUser.id) {
                             const newChat = await chatService.createChat(
                                 "Диалог с " + targetUser.login,
@@ -241,9 +242,14 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             case 'dialog':
                 headerComponent = new DialogHeader({ 
                     chat: chatDetail as DialogChat,
-                    onDeleteChat: () => {
-                        // todo дернуть ручку сервиса
-                        this.props.router.navigate('/chats');
+                    onDeleteChat: async() => {
+                        const success = await chatService.deleteChat(chatId);
+                        if (success) {
+                            this.activeChatId = null;
+                            this.props.router.navigate('/chats');
+                        } else {
+                            alert("Не удалось удалить диалог");
+                        }
                     }
                 });
                 break;
@@ -251,9 +257,14 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             case 'group':
                 headerComponent = new GroupHeader({ 
                     chat: chatDetail as GroupChat,
-                    onDeleteChat: () => {
-                        // todo дернуть ручку сервиса
-                        this.props.router.navigate('/chats');
+                    onDeleteChat: async () => {
+                        const success = await chatService.deleteChat(chatId);
+                        if (success) {
+                            this.activeChatId = null;
+                            this.props.router.navigate('/chats');
+                        } else {
+                            alert("Не удалось удалить группу");
+                        }
                     }
                 });
                 break;
@@ -261,9 +272,14 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             case 'channel':
                 headerComponent = new ChannelHeader({ 
                     chat: chatDetail as ChannelChat,
-                    onDeleteChat: () => {
-                        // todo дернуть ручку сервиса
-                        this.props.router.navigate('/chats');
+                    onDeleteChat: async () => {
+                        const success = await chatService.deleteChat(chatId);
+                        if (success) {
+                            this.activeChatId = null;
+                            this.props.router.navigate('/chats');
+                        } else {
+                            alert("Не удалось удалить канал");
+                        }
                     }
                 });
                 break;

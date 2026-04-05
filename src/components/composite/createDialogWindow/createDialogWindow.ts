@@ -63,7 +63,10 @@ export class CreateDialogWindow extends BaseComponent<CreateDialogWindowProps> {
                 showEmptyMessage: true,
                 onSubmitSearch: (login: string) => {
                     this.props.onSubmitSearch(login);
-                }
+                },
+                labelButton: "Написать",
+                labelInput: "Введите логин:",
+                labelTitle: "У вас пока нет контактов, найдите кого-нибудь!"
             });
         } else {   
             this.layoutContent = new ContactListWrapper({

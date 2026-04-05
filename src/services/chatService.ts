@@ -1,11 +1,11 @@
 import { ChatDetail, FrontendMessage, User, DialogChat, GroupChat, ChannelChat, BackendChat, BackendMessage } from '../types/chat';
 
-const BASE_URL = 'http://pulseapp.space:8080';
-// const BASE_URL = 'http://0.0.0.0:8080';
+// const BASE_URL = 'http://pulseapp.space:8080';
+const BASE_URL = 'http://0.0.0.0:8080';
 
 
 const CURRENT_USER_LOGIN = 'alice'; 
-const USE_MOCK_GET_CHATS = false;
+const USE_MOCK_GET_CHATS = true;
 const USE_MOCK_DETAIL_AND_MESSAGES = true;
 
 // Моковые данные для деталей чатов
@@ -225,8 +225,30 @@ export class ChatService {
         }
     }
 
+    /**
+     * Удаляет чат.
+     * @param {string} chatId - ID чата для удаления.
+     * @returns {Promise<boolean>} true, если удаление прошло успешно.
+     */
+    public async deleteChat(chatId: string): Promise<boolean> {
+        try {
+            const response = await fetch(`${BASE_URL}/api/v1/chats/${chatId}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
 
+            if (!response.ok) {
+                console.error(`Ошибка при удалении чата: ${response.status}`);
+                return false;
+            }
 
+            const data = await response.json();
+            return data.status === 'success';
+        } catch (error) {
+            console.error("Ошибка сети при удалении чата:", error);
+            return false;
+        }
+    }
 
 
 

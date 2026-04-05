@@ -5,6 +5,9 @@ import template from "./findUserContainer.hbs";
 interface FindUserContainerProps extends IBaseComponentProps {
     onSubmitSearch: (login: string) => void;
     showEmptyMessage: boolean;
+    labelButton?: string;
+    labelInput?: string;
+    labelTitle?: string;
 }
 
 export class FindUserContainer extends BaseComponent<FindUserContainerProps> {
@@ -31,7 +34,10 @@ export class FindUserContainer extends BaseComponent<FindUserContainerProps> {
         this.form = new FindUserForm({
             onSubmitForm: (login: string) => {
                 this.props.onSubmitSearch(login);
-            }
+            },
+            labelButton: this.props.labelButton,
+            labelInput: this.props.labelInput,
+            labelTitle: this.props.labelTitle
         });
 
         this.form.mount(formSlot as HTMLElement);

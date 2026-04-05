@@ -1,8 +1,8 @@
 import { BackendContact, FrontendContact } from "../types/contact";
 import { BackendProfile, FrontendProfile } from "../types/profile";
 
-const BASE_URL = 'http://pulseapp.space:8080';
-// const BASE_URL = 'http://0.0.0.0:8080';
+// const BASE_URL = 'http://pulseapp.space:8080';
+const BASE_URL = 'http://0.0.0.0:8080';
 const USE_MOCK = false;
 const MOCK_CONTACTS: FrontendContact[] = [
     {
@@ -165,6 +165,56 @@ export class ContactService {
             };
         };
     };
+
+    async getMyId(): Promise<number> {
+        try {
+            const response = await fetch(`${BASE_URL}/api/v1/profiles/me`, {
+                headers: {
+                    'Content-Type': 'application.json'
+                },
+                credentials: 'include'
+            });
+            if (!response.ok) {
+                console.error("Ошибка при получении профиля");
+                throw new Error(`Ошибка ${response.status}`);
+            }
+            const data: {status: string, body: BackendProfile} = await response.json();
+            return data.body.user_id;
+        } catch(error) {
+            console.error(error);
+            return;
+        };
+    };
+
+    /**
+     * Добавляет пользователя в контакты по логину.
+     * @param {string} login - Логин пользователя для добавления.
+     * @returns {Promise<boolean>} true, если контакт успешно добавлен.
+     */
+    public async addContact(login: string, id: number): Promise<boolean> {
+        try {
+            const response = await fetch(`${BASE_URL}/api/v1/contacts`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({ 
+                    login: login, 
+                    id: id 
+                })
+            });
+
+            if (!response.ok) {
+                console.error(`Ошибка при добавлении контакта: ${response.status}`);
+                return false;
+            }
+            return true;
+        } catch (error) {
+            console.error("Ошибка сети при добавлении контакта:", error);
+            return false;
+        }
+    }
 };
 
 export const contactService = new ContactService();
