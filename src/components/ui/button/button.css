@@ -188,9 +188,13 @@ button > span {
     background-color: rgba(0, 0, 0, 0);
     cursor: pointer;
     width: 30px;
-    height: 50px;
+    height: 30px;
     color: var(--color-text);
     border: none;
+    box-sizing: border-box;
+    display: flex;
+    justify-content:center;
+    align-items: center;
 }
 
 .back-button > img {

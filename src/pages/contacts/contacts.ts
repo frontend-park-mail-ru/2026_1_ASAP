@@ -54,7 +54,7 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
             return;
         }
 
-        this.searchForm = new SearchForm();
+        this.searchForm = new SearchForm({ router: this.props.router });
         this.searchForm.mount(this.element.querySelector('.contacts-page__sidebar')!);
         this.contactListWrapper = new ContactListWrapper({
             router: this.props.router,
@@ -100,10 +100,20 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
 
         this.profileWindow = new ProfileWindow({
             profileMainInfo: profileInfo.mainInfo,
-            profileAdditionalInfo: profileInfo.additionalInfo
+            profileAdditionalInfo: profileInfo.additionalInfo,
+            closeWindow: this.closeContact
         });
 
         this.profileWindow.mount(this.mainContentArea);
+    };
+
+    private closeContact = (): void => {
+        if (!this.profileWindow) return;
+        this.profileWindow!.unmount();
+        if (this.placeHolder)
+            this.placeHolder.style.display = "block";
+        this.activeContactId = null;
+        this.contactListWrapper?.setActiveContact(this.activeContactId);
     };
 
     beforeUnmount() {

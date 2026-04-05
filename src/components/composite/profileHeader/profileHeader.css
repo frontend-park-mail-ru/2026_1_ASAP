@@ -7,4 +7,23 @@
     background-color: rgba(6, 5, 5, 0.5);
     border-radius: 10px;
     box-sizing: border-box;
+    align-items: center;
+    position: relative;
+    min-width: 300px;
+}
+
+.profile-header__title {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    align-items: center;
+    gap: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    position: absolute;
+}
+
+.profile-header-title {
+    font-family: var(--font-secondary);
+    padding: 10px;
 }

@@ -19,12 +19,12 @@ export interface ProfileMainInfo {
     firstName: string;
     lastName?: string;
     avatarUrl?: string;
-    lastSeen?: Date;
+    lastSeen?: string;
 };
 
 export interface ProfileAdditionalInfo {
     login: string;
     email?: string;
-    birthDate?: Date;
+    birthDate?: string;
     bio?: string;
 };

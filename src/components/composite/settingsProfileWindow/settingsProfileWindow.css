@@ -1,4 +1,4 @@
-.profile-window {
+.settings-profile-window {
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -9,4 +9,5 @@
     min-height: 0;
     min-width: 200px;
     gap: 10px;
+    position: relative;
 }

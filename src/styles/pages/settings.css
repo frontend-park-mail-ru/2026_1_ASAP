@@ -1,11 +1,14 @@
-.chat-page {
+.settings-page {
+    min-height: 100vh;
+    width: 100vw;
     background: var(--gradient-background-chats);
-    height: 100vh;
+    background-attachment: fixed;
     display: flex;
-    overflow: hidden;
+    flex-direction: row;
+    margin: 0px;
 }
 
-.chat-page__sidebar {
+.settings-page__sidebar {
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
@@ -17,23 +20,12 @@
     border-right: 1px solid var(--color-border-sidebar);
 }
 
-.chat-page__mainfield {
+.settings-page__mainfield {
     flex-grow: 1;
     display: flex;
-    min-width: 400px;
-    flex-direction: column;
     background-color: var(--color-background-default);
     justify-content: center;
-}
-
-.empty-field {
-    font: var(--text-heading1);
-    text-align: center;
-    user-select: none;
-}
-
-.chat-page__placeholder {
-    color: var(--color-text-tertiary);
-    font-size: var(--font-size-lg);
-    text-align: center;
+    align-items: center;
+    min-width: 0;
+    overflow: hidden;
 }
