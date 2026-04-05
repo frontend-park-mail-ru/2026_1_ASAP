@@ -12,7 +12,7 @@ const CURRENT_USER = 'bob';
 interface ContactListItemProps extends IBaseFormProps {
     router: Router,
     listMode?: 'default' | 'createDialog' | 'createGroup';
-    onAction?: (contactId: number, isSelected: boolean) => void;
+    onAction?: (contactId: number, isSelected: boolean, contactName?: string) => void;
 };
 
 export class ContactListItem extends BaseForm<ContactListItemProps> {
@@ -75,7 +75,7 @@ export class ContactListItem extends BaseForm<ContactListItemProps> {
                             icon: "/assets/images/icons/createChatMenuIcons/createNewChat.svg",
                             onClick: () => {
                                 if (this.props.onAction) { 
-                                    this.props.onAction(contact.contact_user_id, true)};
+                                    this.props.onAction(contact.contact_user_id, true, contact.contact_name);};
                             }
                         });
                         break;
@@ -83,7 +83,7 @@ export class ContactListItem extends BaseForm<ContactListItemProps> {
                         rightControl = new Checkbox({
                             name: `user_${contact.contact_user_id}`,
                             onChange: (isChecked: boolean) => {
-                                if (this.props.onAction) this.props.onAction(contact.contact_user_id, isChecked);
+                                if (this.props.onAction) this.props.onAction(contact.contact_user_id, isChecked, contact.contact_name);
                             }
                         });
                         break;

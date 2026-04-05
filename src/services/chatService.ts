@@ -1,7 +1,7 @@
 import { ChatDetail, FrontendMessage, User, DialogChat, GroupChat, ChannelChat, BackendChat, BackendMessage } from '../types/chat';
 
-// const BASE_URL = 'http://pulseapp.space:8080';
-const BASE_URL = 'http://0.0.0.0:8080';
+const BASE_URL = 'http://pulseapp.space:8080';
+// const BASE_URL = 'http://0.0.0.0:8080';
 
 
 const CURRENT_USER_LOGIN = 'alice'; 
@@ -186,6 +186,56 @@ export class ChatService {
         // TODO: Реализовать запрос к реальному API для получения сообщений
         return [];
     }
+
+    /**
+     * Создает новый чат (Диалог или Группу)
+     * @param title Название чата
+     * @param members_id Массив ID участников
+     * @param type Тип чата ("dialog" или "group" или "channel")
+     */
+    public async createChat(title: string, members_id: number[], type: "dialog" | "group" | "channel"): Promise<any | null> {
+        try {
+            const response = await fetch(`${BASE_URL}/api/v1/chats`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    members_id: members_id,
+                    title: title,
+                    type: type
+                })
+            });
+
+            if (!response.ok) {
+                console.error(`Ошибка при создании чата: ${response.status}`);
+                return null;
+            }
+
+            const data = await response.json();
+            // Возвращаем данные созданного чата (там будет лежать новый id)
+            if (data.status === 'success') {
+                 return data.body; 
+            }
+            return null;
+        } catch (error) {
+            console.error("Ошибка сети при создании чата:", error);
+            return null;
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 }
 
 export const chatService = new ChatService();

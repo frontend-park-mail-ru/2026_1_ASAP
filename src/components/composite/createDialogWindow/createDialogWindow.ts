@@ -6,9 +6,13 @@ import { ContactListWrapper } from "../contactListWrapper/contactListWrapper";
 import { Button } from "../../ui/button/button";
 import { Router } from "../../../core/router";
 import { SearchForm } from "../searchForm/searchForm";
+import { contactService } from "../../../services/contactService";
+import { FindUserContainer } from "../findUserContainer/findUserContainer";
 
 interface CreateDialogWindowProps extends IBaseComponentProps {
     router: Router;
+    onSubmit: (contactId: number, contactName: string) => void;
+    onSubmitSearch: (login: string) => void;
 }
 
 export class CreateDialogWindow extends BaseComponent<CreateDialogWindowProps> {
@@ -16,6 +20,7 @@ export class CreateDialogWindow extends BaseComponent<CreateDialogWindowProps> {
     private actionHeader: ActionHeader | null = null;
     private contactList: ContactListWrapper | null = null;
     private SearchField: SearchForm | null = null;
+    private layoutContent: BaseComponent<any> | null = null;
 
     constructor(props: CreateDialogWindowProps) {
         super(props);
@@ -25,9 +30,7 @@ export class CreateDialogWindow extends BaseComponent<CreateDialogWindowProps> {
         return template;
     }
 
-    protected afterMount(): void {
-        super.afterMount();
-        
+    protected async afterMount(): Promise<void> {
         if (!this.element) {
             console.error("CreateDialogWindow: нет элемента для монтирования");
             return;
@@ -53,20 +56,28 @@ export class CreateDialogWindow extends BaseComponent<CreateDialogWindowProps> {
             }),
             content: "Выберите пользователя"
         });
-
-        this.contactList = new ContactListWrapper({
-            router: this.props.router,
-            listMode: 'createDialog',
-            onAction: (contactId: number) => {
-                console.log(`Клик по контакту ${contactId}. Здесь будет API запрос на создание диалога.`);
-                // TODO: Вызвать chatService.createDialog(contactId)
-                // TODO: Перенаправить роутер в созданный чат: this.props.router.navigate(`/chats/${newChatId}`)
-            }
-        });
-
+       
+        const contacts = await contactService.getContacts();
+        if (contacts.length === 0) {        
+            this.layoutContent = new FindUserContainer({
+                showEmptyMessage: true,
+                onSubmitSearch: (login: string) => {
+                    this.props.onSubmitSearch(login);
+                }
+            });
+        } else {   
+            this.layoutContent = new ContactListWrapper({
+                router: this.props.router,
+                listMode: 'createDialog',
+                onAction: (contactId: number, isSelected?: boolean, contactName?: string) => {
+                    this.props.onSubmit(contactId, contactName || "Новый диалог");
+                }
+            });
+        }
+1
         this.actionLayout = new ActionLayout({
             header: this.actionHeader,
-            content: [this.SearchField, this.contactList],
+            content: [this.SearchField, this.layoutContent],
         });
 
         this.actionLayout.mount(this.element);

@@ -9,6 +9,7 @@ import { SearchForm } from "../searchForm/searchForm";
 
 interface CreateGroupWindowProps extends IBaseComponentProps {
     router: Router;
+    onSubmit: (userIds: number[], contactNames: string) => void;
 }
 
 export class CreateGroupWindow extends BaseComponent<CreateGroupWindowProps> {
@@ -17,7 +18,7 @@ export class CreateGroupWindow extends BaseComponent<CreateGroupWindowProps> {
     private contactList: ContactListWrapper | null = null;
     private submitButton: Button | null = null;
     private SearchField: SearchForm | null = null;
-    private selectedUserIds: Set<number> = new Set(); 
+    private selectedUsers: Map<number, string> = new Map(); 
 
     constructor(props: CreateGroupWindowProps) {
         super(props);
@@ -56,13 +57,14 @@ export class CreateGroupWindow extends BaseComponent<CreateGroupWindowProps> {
         this.contactList = new ContactListWrapper({
             router: this.props.router,
             listMode: "createGroup",
-            onAction: (contactId: number, isSelected?: boolean) => {
-                if (isSelected) {
-                    this.selectedUserIds.add(contactId);
+            onAction: (contactId: number, isSelected?: boolean, contactName?: string) => {
+                if (isSelected && contactName) {
+                    this.selectedUsers.set(contactId, contactName);
                 } else {
-                    this.selectedUserIds.delete(contactId);
+                    this.selectedUsers.delete(contactId);
                 }
-                console.log("Выбранные пользователи:", Array.from(this.selectedUserIds));
+                console.log("Выбранные пользователи:", Array.from(this.selectedUsers));
+                // todo проверить чек боксы и юзеров в списке контактов
             }
         });
 
@@ -76,13 +78,16 @@ export class CreateGroupWindow extends BaseComponent<CreateGroupWindowProps> {
             label: "Создать группу",
             class: "create-group-submit-btn ui-button__primary",
             onClick: () => {
-                const idsArray = Array.from(this.selectedUserIds);
-                if (idsArray.length === 0) {
+                if (this.selectedUsers.size === 0) {
                     alert("Выберите хотя бы одного пользователя!");
                     return;
                 }
-                console.log("Отправляем запрос на создание группы с юзерами:", idsArray);
-                // TODO: chatService.createGroup("Название группы", idsArray)
+
+                const idsArray = Array.from(this.selectedUsers.keys());
+                // Склеиваем имена через запятую для названия группы
+                const groupName = Array.from(this.selectedUsers.values()).join(', ');
+                
+                this.props.onSubmit(idsArray, groupName);
             }
         });
         if (footerSlot) this.submitButton.mount(footerSlot as HTMLElement);
@@ -94,6 +99,6 @@ export class CreateGroupWindow extends BaseComponent<CreateGroupWindowProps> {
         this.actionHeader?.unmount();
         this.contactList?.unmount();
         this.submitButton?.unmount();
-        this.selectedUserIds.clear();
+        this.selectedUsers.clear();
     }
 }
