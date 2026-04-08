@@ -7,7 +7,7 @@ import template from './addContactWindow.hbs';
 
 interface AddContactWindowProps extends IBaseComponentProps {
     onBack: () => void;
-    onSubmitSearch: (login: string) => void;
+    onSubmitSearch: (login: string) => Promise<string | void> | void;
 }
 
 export class AddContactWindow extends BaseComponent<AddContactWindowProps> {
