@@ -3,6 +3,15 @@ import template from './createChatMenu.hbs';
 import { Button } from "../../ui/button/button";
 
 
+/**
+ * @interface createChatMenuProps
+ * @description Свойства для компонента меню создания чата.
+ * @extends IBaseComponentProps
+ * @property {Function} onCreateDialog - Колбэк, вызываемый при клике на "Создать диалог".
+ * @property {Function} onCreateGroup - Колбэк, вызываемый при клике на "Создать группу".
+ * @property {Function} onCreateChannel - Колбэк, вызываемый при клике на "Создать канал".
+ * @property {Function} onClose - Колбэк для закрытия меню.
+ */
 interface createChatMenuProps extends IBaseComponentProps {
     onCreateDialog: () => void;
     onCreateGroup: () => void;
@@ -10,12 +19,27 @@ interface createChatMenuProps extends IBaseComponentProps {
     onClose: () => void;
 }
 
+/**
+ * @class CreateChatMenu
+ * @extends BaseComponent
+ * @description Компонент, представляющий собой модальное меню для создания
+ * различных типов чатов: диалога, группы или канала.
+ *
+ * @property {Button | null} dialogButton - Кнопка "Создать диалог".
+ * @property {Button | null} groupButton - Кнопка "Создать группу".
+ * @property {Button | null} channelButton - Кнопка "Создать канал".
+ * @property {HTMLElement | null} overlay - Оверлей для закрытия меню по клику вне его.
+ */
 export class CreateChatMenu extends BaseComponent<createChatMenuProps> {
     private dialogButton: Button | null = null;
     private groupButton: Button | null = null
     private channelButton: Button | null = null;
     private overlay: HTMLElement | null = null;
     
+    /**
+     * Обработчик клика по оверлею, вызывает закрытие меню.
+     * @private
+     */
     private handleOverlayClick = () => {
         this.props.onClose();
     }
@@ -28,6 +52,12 @@ export class CreateChatMenu extends BaseComponent<createChatMenuProps> {
         return template;
     }
 
+    /**
+     * Выполняется после монтирования компонента.
+     * Инициализирует и монтирует кнопки для создания чатов
+     * и добавляет обработчик клика на оверлей для закрытия.
+     * @protected
+     */
     protected afterMount(): void {
         if (!this.element) {
             console.error("createChatMenu: нет эллемента для монтирования");
@@ -66,6 +96,11 @@ export class CreateChatMenu extends BaseComponent<createChatMenuProps> {
         this.overlay.addEventListener("click", this.handleOverlayClick);
     }
 
+    /**
+     * Выполняется перед размонтированием компонента.
+     * Размонтирует все дочерние кнопки и удаляет обработчик с оверлея.
+     * @protected
+     */
     protected beforeUnmount(): void { 
         super.beforeUnmount();
         if (!this.element) {

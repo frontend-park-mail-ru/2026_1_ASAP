@@ -5,3 +5,6 @@ dist
 src/templates.js
 src/**/*.js
 src/**/*.js.map
+/docs/
+/docs-generated/
+/docs-json/

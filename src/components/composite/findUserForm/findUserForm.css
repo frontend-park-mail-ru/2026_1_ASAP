@@ -33,7 +33,6 @@
     margin-top: 10px;
 }
 
-/* Специфичные правки для кнопок/инпутов внутри формы, если нужны */
 .find-user-input {
     width: 100%;
 }
@@ -41,6 +40,4 @@
 .find-user-submit-btn {
     width: 100%;
     height: 42px;
-    border-radius: 10px;
-    
 }

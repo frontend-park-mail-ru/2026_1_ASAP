@@ -5,6 +5,7 @@ export interface CheckboxProps extends IBaseComponentProps {
     label?: string;
     name?: string;
     checked?: boolean;
+    onChange?: (isChecked: boolean) => void;
 }
 
 /**
@@ -30,6 +31,7 @@ export class Checkbox extends BaseComponent<CheckboxProps> {
     }
 
     private inputElement: HTMLInputElement | null = null;
+    private onChangeHandler: ((e: Event) => void) | null = null;
 
     /**
      * Монтирует дочерние компоненты и находит элемент ошибки формы.
@@ -40,13 +42,24 @@ export class Checkbox extends BaseComponent<CheckboxProps> {
             return;
         }
         this.inputElement = this.element.querySelector('.ui-checkbox__input');
+        this.onChangeHandler = (e: Event) => {
+            const target = e.target as HTMLInputElement;
+            if (this.props.onChange) {
+                this.props.onChange(target.checked);
+            }
+        };
+        this.inputElement.addEventListener("change", this.onChangeHandler);
     }
 
 
     /**
      * Размонтирует дочерние компоненты и удаляет обработчик клика.
      */
-    protected beforeUnmount(): void {}
+    protected beforeUnmount(): void {
+        if (this.inputElement && this.onChangeHandler) {
+            this.inputElement.removeEventListener("change", this.onChangeHandler);
+        }
+    }
 
     /**
      * Текущее состояние чекбокса.

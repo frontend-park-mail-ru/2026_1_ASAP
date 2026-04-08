@@ -1,28 +1,35 @@
 /**
- * @interface IBaseComponentProps - Базовый интерфейс для свойств любого компонента.
- *                                  Позволяет принимать любые свойства.
+ * @interface IBaseComponentProps
+ * @description Базовый интерфейс для свойств любого компонента.
+ * Позволяет дочерним компонентам определять свои собственные свойства,
+ * расширяя этот интерфейс.
  */
 export interface IBaseComponentProps {
     [key: string]: any;
 }
 
 /**
- * Базовый компонент, от которого наследуются все UI-компоненты.
- * Предоставляет жизненный цикл (render, mount, unmount) и работу с Handlebars-шаблонами.
- * @abstract
+ * @class BaseComponent
+ * @template P - Тип объекта свойств, расширяющий `IBaseComponentProps`.
+ * @description Абстрактный базовый класс для всех UI-компонентов в приложении.
+ * Реализует основной жизненный цикл: рендеринг из Handlebars-шаблона,
+ * монтирование в DOM и размонтирование.
+ *
+ * @property {P} props - Свойства компонента.
+ * @property {HTMLElement | null} element - Корневой DOM-элемент компонента после рендеринга.
  */
-export class BaseComponent<P extends IBaseComponentProps = IBaseComponentProps> {
+export abstract class BaseComponent<P extends IBaseComponentProps = IBaseComponentProps> {
     /**
-     * Свойства компонента, передаваемые в шаблон.
-     * @type {P}
+     * Свойства компонента, доступные для чтения и записи.
+     * @protected
      */
-    public _props: P;
+    protected _props: P;
 
     /**
      * Корневой DOM-элемент компонента.
-     * @type {HTMLElement|null}
+     * @protected
      */
-    public _element: HTMLElement | null = null;
+    protected _element: HTMLElement | null = null;
 
     /**
      * Имя Handlebars-шаблона в глобальном реестре `Handlebars.templates`.
@@ -46,14 +53,17 @@ export class BaseComponent<P extends IBaseComponentProps = IBaseComponentProps> 
         return this._element;
     }
 
+    /**
+     * Геттер для доступа к свойствам компонента.
+     * @returns {P}
+     */
     public get props(): P {
         return this._props;
     }
 
     /**
-     * Генерирует DOM-элемент из Handlebars-шаблона и пропсов.
-     * @returns {HTMLElement} Корневой DOM-элемент компонента.
-     * @throws {Error} Если tempName не задан или шаблон не найден.
+     * Создает DOM-структуру компонента на основе его шаблона и свойств.
+     * @returns {HTMLElement} Корневой DOM-элемент, готовый к монтированию.
      */
     public render(): HTMLElement {
         const template = this.getTemplate();
@@ -64,8 +74,10 @@ export class BaseComponent<P extends IBaseComponentProps = IBaseComponentProps> 
 
     /**
      * Монтирует компонент в указанный DOM-контейнер.
-     * @param {HTMLElement} container - Контейнер для монтирования.
-     * @throws {Error} Если контейнер не указан.
+     * Вызывает `render()` для создания элемента, добавляет его в контейнер
+     * и затем вызывает хук `afterMount()`.
+     * @param {HTMLElement} container - DOM-элемент, в который будет вмонтирован компонент.
+     * @throws {Error} Если контейнер не предоставлен.
      */
     public mount(container: HTMLElement): void {
         if (!container) {
@@ -77,19 +89,24 @@ export class BaseComponent<P extends IBaseComponentProps = IBaseComponentProps> 
     }
 
     /**
-     * Хук, вызываемый после монтирования. Переопределяется в наследниках.
+     * Хук жизненного цикла, вызываемый сразу после монтирования компонента в DOM.
+     * Предназначен для переопределения в дочерних классах для выполнения
+     * пост-рендеринговых операций, таких как добавление обработчиков событий.
      * @protected
      */
     protected afterMount(): void {}
 
     /**
-     * Хук, вызываемый перед размонтированием. Переопределяется в наследниках.
+     * Хук жизненного цикла, вызываемый непосредственно перед удалением компонента из DOM.
+     * Предназначен для переопределения в дочерних классах для очистки ресурсов,
+     * например, удаления обработчиков событий.
      * @protected
      */
     protected beforeUnmount(): void {}
 
     /**
-     * Размонтирует компонент: вызывает beforeUnmount() и удаляет элемент из DOM.
+     * Размонтирует компонент.
+     * Вызывает хук `beforeUnmount()` и затем удаляет корневой элемент компонента из DOM.
      */
     public unmount(): void {
         this.beforeUnmount();

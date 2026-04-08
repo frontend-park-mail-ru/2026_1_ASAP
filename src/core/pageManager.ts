@@ -3,8 +3,15 @@ import { Layout } from './layout/layout';
 import { Router } from './router';
 
 /**
- * Управляет переключением страниц: размонтирует текущую,
- * создаёт новую и рендерит её через Layout.
+ * @class PageManager
+ * @description Управляет жизненным циклом страниц в приложении.
+ * Отвечает за смену страниц: корректно размонтирует старую страницу,
+ * создает экземпляр новой и монтирует ее в `Layout`.
+ * Также обрабатывает обновление свойств для уже открытой страницы.
+ *
+ * @property {Layout} layout - Экземпляр `Layout`, в который рендерятся страницы.
+ * @property {Router} router - Экземпляр `Router` для передачи в дочерние страницы.
+ * @property {BasePage | null} currentPage - Текущая активная страница.
  */
 export class PageManager {
     private layout: Layout;
@@ -27,7 +34,7 @@ export class PageManager {
      * @param {object} [props={}] - Дополнительные свойства для страницы.
      * @returns {Promise<void>}
      */
-public async open(PageClass: { new(props: any): BasePage<any> }, props: any = {}): Promise<void> {
+    public async open(PageClass: { new(props: any): BasePage<any> }, props: any = {}): Promise<void> {
         const pageProps = {
             ...props,
             pageManager: this,

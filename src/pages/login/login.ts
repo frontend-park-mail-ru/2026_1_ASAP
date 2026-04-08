@@ -3,12 +3,19 @@ import { AuthForm } from '../../components/composite/authForm/authForm';
 import template from "./login.hbs";
 
 /**
- * @interface LoginPageProps - Свойства для страницы входа.
+ * @interface LoginPageProps
+ * @description Свойства для компонента страницы входа.
+ * @extends IBasePageProps
  */
 interface LoginPageProps extends IBasePageProps {}
 
 /**
- * Страница входа. Отображает форму авторизации.
+ * @class LoginPage
+ * @extends BasePage
+ * @description Компонент, представляющий собой страницу входа в приложение.
+ * Основная задача - отобразить и управлять формой авторизации (`AuthForm`).
+ *
+ * @property {AuthForm | null} form - Экземпляр компонента формы авторизации.
  */
 export class LoginPage extends BasePage<LoginPageProps> {
     private form: AuthForm | null = null;
@@ -21,6 +28,12 @@ export class LoginPage extends BasePage<LoginPageProps> {
         return template;
     }
 
+    /**
+     * Выполняется после монтирования страницы в DOM.
+     * Находит контейнер для формы и монтирует в него компонент `AuthForm`,
+     * передавая ему необходимые колбэки и роутер.
+     * @protected
+     */
     protected async afterMount(): Promise<void> {
         const loginCard = this.element?.querySelector('.login-card');
         if (!loginCard) {
