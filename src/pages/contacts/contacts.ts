@@ -58,10 +58,25 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
     private async handleContactsRoute(): Promise<void> {
         const path = this.props.currentPath || window.location.pathname;
         const pathParts = path.split('/');
-        const id = pathParts[pathParts.length - 1];
-        this.activeContactId = Number(id);
-        if (isNaN(this.activeContactId)) return;
+        const lastParam = pathParts[pathParts.length - 1];
+        if (lastParam == 'add') {
+            this.showAddContactWindow();
+            return;
+        }
 
+        if (path == '/contacts' || !lastParam) {
+            this.cleanupMainContent();
+            this.activeContactId = null;
+            this.contactListWrapper?.setActiveContact(null);
+            if (this.placeHolder) {
+                this.placeHolder.style.display = 'block';
+            }
+            return;
+        }
+        const id: number = Number(lastParam);
+        if (isNaN(id)) return;
+
+        this.activeContactId = id;
         this.contactListWrapper?.setActiveContact(this.activeContactId);
         this.openContact(this.activeContactId);
     };
@@ -73,6 +88,25 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
     public async updateProps(newProps: ContactsPageProps): Promise<void> {
         this.props = {...this.props, ...newProps};
         await this.handleContactsRoute();
+    }
+
+
+/**
+     * Очищает правую контентную область (окно профиля или добавления контакта).
+     * @private
+     */
+    private cleanupMainContent(): void {
+        if (this.placeHolder) {
+            this.placeHolder.style.display = "none";
+        }
+        if (this.profileWindow) {
+            this.profileWindow.unmount();
+            this.profileWindow = null;
+        }
+        if (this.addContactWindow) {
+            this.addContactWindow.unmount();
+            this.addContactWindow = null;
+        }
     }
 
     /**
@@ -88,7 +122,7 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
 
         this.searchForm = new SearchForm({ 
             router: this.props.router,
-            onAddClick: () => this.showAddContactWindow()
+            onAddClick: () => this.props.router.navigate('/contacts/add')
         });
         this.searchForm.mount(this.element.querySelector('.contacts-page__sidebar')!);
 
@@ -141,6 +175,9 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
 
         const profileInfo = await contactService.getProfileInfo(this.activeContactId);
 
+        if (this.activeContactId !== activeId) return;
+        this.cleanupMainContent();
+
         this.profileWindow = new ProfileWindow({
             profileMainInfo: profileInfo.mainInfo,
             profileAdditionalInfo: profileInfo.additionalInfo,
@@ -171,29 +208,47 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
     private showAddContactWindow(): void {
         if (!this.mainContentArea) return;
 
-        if (this.placeHolder) this.placeHolder.style.display = 'none';
-        if (this.profileWindow) {
-            this.profileWindow.unmount();
-            this.profileWindow = null;
-        }
+        this.activeContactId = null;
+        this.contactListWrapper?.setActiveContact(null); 
+        this.cleanupMainContent();
 
         this.addContactWindow = new AddContactWindow({
             onBack: () => {
-                this.closeAddContactWindow();
+                this.props.router.navigate('/contacts');
             },
             onSubmitSearch: async (login: string) => {
                 const targetUserId = await contactService.getIdByLogin(login);
                 const success = await contactService.addContact(login, targetUserId);
                 
                 if (success) {
-                    alert(`Пользователь ${login} успешно добавлен в контакты!`);
                     this.closeAddContactWindow();
                     
-                    // Чтобы новый контакт появился слева, нужно обновить список.
-                    // Перемонтируем обертку списка:
+                    const sidebar = this.element!.querySelector('.contacts-page__sidebar');
+                    if (!sidebar) return;
+
+                    this.searchForm?.unmount();
                     this.contactListWrapper?.unmount();
+                    this.menuBar?.unmount();
+                    sidebar.innerHTML = '';
+
+                    this.searchForm = new SearchForm({ 
+                        router: this.props.router,
+                        onAddClick: () => this.props.router.navigate('/contacts/add')
+                    });
+                    this.searchForm.mount(sidebar as HTMLElement);
+
                     this.contactListWrapper = new ContactListWrapper({ router: this.props.router });
-                    this.contactListWrapper.mount(this.element!.querySelector('.contacts-page__sidebar')!);
+                    this.contactListWrapper.mount(sidebar as HTMLElement);
+
+                    this.menuBar = new MenuBar({
+                        onSettingsClick: () => this.props.router.navigate('/settings'),
+                        onContactsClick: () => this.props.router.navigate('/contacts'),
+                        onMessagesClick: () => this.props.router.navigate('/chats'),
+                    });
+                    this.menuBar.mount(sidebar as HTMLElement);
+                    this.menuBar.setActiveButton('contacts');
+                    
+                    this.props.router.navigate(`/contacts/${targetUserId}`);
                 } else {
                     alert(`Не удалось добавить пользователя "${login}".`);
                 }

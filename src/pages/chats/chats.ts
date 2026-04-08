@@ -1,7 +1,7 @@
 import template from "./chats.hbs";
 import { BasePage, IBasePageProps } from "../../core/base/basePage";
 import { SearchForm } from "../../components/composite/searchForm/searchForm";
-import { MenuBar } from "../../components/composite/menuBar/menuBar";
+import { MenuBar, MenuButtonType } from "../../components/composite/menuBar/menuBar";
 import { ChatListWrapper } from "../../components/composite/chatListWrapper/chatListWrapper";
 import { authService } from "../../services/authService";
 import { Button } from "../../components/ui/button/button";
@@ -52,7 +52,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private menuBar: MenuBar | null = null;
     private logoutButton: Button | null = null;
     private logoutWrapper: HTMLDivElement | null = null;
-    private activeMenuButton: string | null = null;
+    private activeMenuButton: MenuButtonType | null = null;
     
     private chatWindow: ChatWindow | null = null;
     private createChatWindow: BaseComponent | null = null;
@@ -79,30 +79,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         if (!this.element) return;
 
         this.activeMenuButton = "messages";
-        
-        // Инициализация сайдбара
-        this.searchForm = new SearchForm({ router: this.props.router });
-        this.searchForm.mount(this.element.querySelector('.chat-page__sidebar')!);
 
-        this.chatWrapper = new ChatListWrapper( { 
-            router: this.props.router,
-            activeChatId: this.activeChatId,
-        });
-        this.chatWrapper.mount(this.element.querySelector('.chat-page__sidebar')!);
-
-        this.logoutWrapper = document.createElement('div');
-        this.logoutWrapper.style.flex = '1';
-        this.logoutWrapper.style.display = 'none';
-        this.logoutWrapper.style.alignItems = 'center';
-        this.logoutWrapper.style.justifyContent = 'center';
-        this.element.querySelector('.chat-page__sidebar')!.appendChild(this.logoutWrapper);
-
-        this.menuBar = new MenuBar({
-            onSettingsClick: () => this.props.router.navigate('/settings'),
-            onMessagesClick: () => this.props.router.navigate('/chats'),
-            onContactsClick: () => this.props.router.navigate('/contacts'),
-        });
-        this.menuBar.mount(this.element.querySelector('.chat-page__sidebar')!);
+        this.rebuildSidebar();
 
         this.mainContentArea = this.element.querySelector('.chat-page__mainfield') || null;
         this.placeholderElement = this.mainContentArea?.querySelector('.empty-field') || null;
@@ -151,7 +129,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         const pathParts = path.split('/');
         const lastParam = pathParts[pathParts.length - 1];
 
-        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(lastParam);
+        const isValidId = /^\d+$/.test(lastParam);
 
         // Корень чатов (показываем плейсхолдер)
         if (path === '/chats') {
@@ -166,7 +144,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         }
 
         // Открытие существующего чата по UUID
-        if (isUUID) {
+        if (isValidId) {
             if (lastParam !== this.activeChatId || !this.chatWindow) {
                 this.cleanupMainContent();
                 
@@ -191,6 +169,54 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     }
 
     /**
+     * Полностью пересобирает левую панель (сайдбар).
+     * Жестко очищает DOM и монтирует компоненты в строгом порядке, 
+     * чтобы избежать поломки Flexbox-верстки.
+     * @private
+     */
+    private rebuildSidebar(): void {
+        const sidebar = this.element?.querySelector('.chat-page__sidebar');
+        if (!sidebar) return;
+
+        // 1. Корректно отписываемся от событий
+        this.searchForm?.unmount();
+        this.chatWrapper?.unmount();
+        this.menuBar?.unmount();
+        this.logoutWrapper?.remove();
+
+        // 2. Жестко очищаем контейнер
+        sidebar.innerHTML = '';
+
+        // 3. Собираем сайдбар в правильном порядке
+        this.searchForm = new SearchForm({ router: this.props.router });
+        this.searchForm.mount(sidebar as HTMLElement);
+
+        this.chatWrapper = new ChatListWrapper({ 
+            router: this.props.router,
+            activeChatId: this.activeChatId,
+        });
+        this.chatWrapper.mount(sidebar as HTMLElement);
+
+        this.logoutWrapper = document.createElement('div');
+        this.logoutWrapper.style.flex = '1';
+        this.logoutWrapper.style.display = 'none';
+        this.logoutWrapper.style.alignItems = 'center';
+        this.logoutWrapper.style.justifyContent = 'center';
+        sidebar.appendChild(this.logoutWrapper);
+
+        this.menuBar = new MenuBar({
+            onSettingsClick: () => this.props.router.navigate('/settings'),
+            onMessagesClick: () => this.props.router.navigate('/chats'),
+            onContactsClick: () => this.props.router.navigate('/contacts'),
+        });
+        this.menuBar.mount(sidebar as HTMLElement);
+        
+        if (this.activeMenuButton) {
+            this.menuBar.setActiveButton(this.activeMenuButton);
+        }
+    }
+
+    /**
      * Создает и отображает окно для создания нового чата определенного типа.
      * @param {"dialog" | "group" | "channel"} type - Тип создаваемого чата.
      * @private
@@ -199,6 +225,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         if (!this.mainContentArea) return;
 
         const myId = await contactService.getMyId();
+        this.cleanupMainContent();
+
         switch (type) {
             case 'dialog':
                 this.createChatWindow = new CreateDialogWindow({ 
@@ -209,7 +237,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                             [myId, contactId], 
                             "dialog",
                         );
-                        if (newChat && newChat.id) {    
+                        if (newChat && newChat.id) {   
+                            this.rebuildSidebar(); 
                             this.props.router.navigate(`/chats/${newChat.id}`);
                         }
                     },
@@ -222,7 +251,6 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                                 alert("Вы не можете создать диалог с самим собой!");
                                 return;
                             }
-                            console.log("Отправляем ID:", myId, targetUser.id);
                             const newChat = await chatService.createChat(
                                 "Диалог с " + targetUser.login,
                                 [myId, targetUser.id], 
@@ -230,6 +258,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                             );
                             
                             if (newChat && newChat.id) {
+                                this.rebuildSidebar(); 
                                 this.props.router.navigate(`/chats/${newChat.id}`);
                             }
                         } else {
@@ -248,6 +277,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                             "group"
                         );
                         if (newChat && newChat.id) {
+                            this.rebuildSidebar(); 
                             this.props.router.navigate(`/chats/${newChat.id}`);
                         }
                     }
@@ -281,10 +311,14 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         const chatDetail = await chatService.getChatDetail(chatId);
         const messages = await chatService.getMessages(chatId, CURRENT_USER_LOGIN);
 
+        if (this.activeChatId !== chatId) {
+            return;
+        }
         if (!chatDetail) {
             this.props.router.navigate('/chats');
             return;
         }
+        this.cleanupMainContent();
 
         let headerComponent: BaseComponent;
         switch (chatDetail.type) {
@@ -295,6 +329,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                         const success = await chatService.deleteChat(chatId);
                         if (success) {
                             this.activeChatId = null;
+                            this.rebuildSidebar();
                             this.props.router.navigate('/chats');
                         } else {
                             alert("Не удалось удалить диалог");

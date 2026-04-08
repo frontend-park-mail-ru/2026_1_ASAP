@@ -54,10 +54,14 @@ function formatLastSeen(date: Date): string {
 
 export class ContactService {
     private convertToFrontendContact(backendContact: BackendContact): FrontendContact {
+        const name = backendContact.first_name || backendContact.last_name
+            ? `${backendContact.first_name || ''} ${backendContact.last_name || ''}`.trim()
+            : `User#${backendContact.contact_user_id}`;
+
         return {
             contact_user_id: backendContact.contact_user_id,
-            contact_name: backendContact.contact_name || `User#${backendContact.contact_user_id}`,
-            avatarURL: backendContact.avatar || '/assets/images/avatars/chatAvatar.svg',
+            contact_name: name,
+            avatarURL: backendContact.contact_avatar_url || '/assets/images/avatars/chatAvatar.svg',
         };
     };
 
@@ -197,7 +201,7 @@ export class ContactService {
                 },
                 body: JSON.stringify({ 
                     contact_user_id: id,
-                    first_name: "",
+                    first_name: login,
                     last_name: ""
                 })
             });

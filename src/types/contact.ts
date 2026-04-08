@@ -18,8 +18,9 @@
 export interface BackendContact {
     user_id: number;
     contact_user_id: number;
-    contact_name: string;
-    avatar?: string;
+    first_name: string;
+    last_name?: string;
+    contact_avatar_url?: string;
     created_at: string;
 };
 

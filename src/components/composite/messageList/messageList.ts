@@ -21,6 +21,7 @@ interface MessageListProps {
 export class MessageList extends BaseComponent {
     private childMessages: Message[] = [];
     private flexContainer: HTMLElement | null = null;
+    private emptyStateElement: HTMLElement | null = null;
 
     /**
      * @param {MessageListProps} props - Свойства компонента.
@@ -43,6 +44,8 @@ export class MessageList extends BaseComponent {
         }
 
         this.flexContainer = this.element.querySelector('.message-list__flex-container'); 
+        this.emptyStateElement = this.element.querySelector('.message-list__empty-state');
+
         if (!this.flexContainer) {
             console.error("MessageList: flex-container не найден.");
             return;
@@ -61,6 +64,14 @@ export class MessageList extends BaseComponent {
         this.childMessages = [];
 
         const showAuthor = this.props.chatType === 'group';
+
+        if (messages.length === 0) {
+            if (this.emptyStateElement) this.emptyStateElement.style.display = 'flex';
+            if (this.flexContainer) this.flexContainer.style.display = 'none';
+        } else {
+            if (this.emptyStateElement) this.emptyStateElement.style.display = 'none';
+            if (this.flexContainer) this.flexContainer.style.display = 'flex';
+        }
 
         messages.forEach(msgData => {
             const isOwn = msgData.sender.login == this.props.currentUser.login;
@@ -83,6 +94,14 @@ export class MessageList extends BaseComponent {
             console.error("MessageList: контейнер для сообщений не найден при добавлении сообщения.");
             return;
         }
+
+        if (this.emptyStateElement) {
+            this.emptyStateElement.style.display = 'none';
+        }
+        if (this.flexContainer) {
+            this.flexContainer.style.display = 'flex';
+        }
+
         const showAuthor = this.props.chatType === 'group';
         const isOwn = newMessage.sender.login === this.props.currentUser.login;
         const messageComponent = new Message({

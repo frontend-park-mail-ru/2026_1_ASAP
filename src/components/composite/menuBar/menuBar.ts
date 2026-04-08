@@ -13,6 +13,8 @@ interface MenuBarProps extends IBaseComponentProps {
     onContactsClick?: () => void;
 }
 
+export type MenuButtonType = 'settings' | 'messages' | 'contacts';
+
 /**
  * Нижнее меню с кнопками навигации.
  */
@@ -29,7 +31,7 @@ export class MenuBar extends BaseComponent<MenuBarProps> {
         return template;
     }
 
-    public setActiveButton(active: 'settings' | 'messages' | 'contacts'): void {
+    public setActiveButton(active: MenuButtonType): void {
         const messageImg = this.messagesButton?.element?.querySelector('img');
         const settingsImg = this.settingsButton?.element?.querySelector('img');
         const contactsImg = this.contactsButton?.element?.querySelector('img');

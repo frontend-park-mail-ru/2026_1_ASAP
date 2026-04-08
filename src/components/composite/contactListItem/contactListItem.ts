@@ -35,6 +35,7 @@ interface ContactListItemProps extends IBaseFormProps {
 export class ContactListItem extends BaseForm<ContactListItemProps> {
     private contactItems: ContactItem[] = [];
     private emptyContactsList: HTMLElement | null = null;
+    private ActiveContactId: number | null = null;
 
     constructor(props: ContactListItemProps) {
         super(props);
@@ -59,6 +60,8 @@ export class ContactListItem extends BaseForm<ContactListItemProps> {
      * @param {number | null} contactId - ID контакта, который нужно сделать активным.
      */
     setActiveContact(contactId: number | null) {
+        this.ActiveContactId = contactId;
+
         this.contactItems.forEach(contact => {
             if (this.element) {
                 if (contact.props.id === contactId) {
@@ -142,8 +145,9 @@ export class ContactListItem extends BaseForm<ContactListItemProps> {
                     contactItem.element.style.borderBottom = "none";
                     contactItem.element.style.cursor = "default";
                 }
-                this.contactItems.push(contactItem);
+                this.contactItems.push(contactItem);    
             });
+            this.setActiveContact(this.ActiveContactId);
         });
     };
 
