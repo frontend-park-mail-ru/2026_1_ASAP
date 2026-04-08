@@ -7,7 +7,6 @@ import { Checkbox } from "../../ui/checkbox/checkbox";
 import { ContactItem } from "../contactItem/contactItem";
 import template from "./contactListItem.hbs";
 
-const CURRENT_USER = 'bob';
 
 /**
  * @interface ContactListItemProps
