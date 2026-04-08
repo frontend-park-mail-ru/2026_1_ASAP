@@ -207,7 +207,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                         const newChat = await chatService.createChat(
                             contactName, 
                             [myId, contactId], 
-                            "dialog"
+                            "dialog",
                         );
                         if (newChat && newChat.id) {    
                             this.props.router.navigate(`/chats/${newChat.id}`);

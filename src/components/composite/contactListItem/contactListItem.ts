@@ -117,7 +117,9 @@ export class ContactListItem extends BaseForm<ContactListItemProps> {
                         rightControl = new Checkbox({
                             name: `user_${contact.contact_user_id}`,
                             onChange: (isChecked: boolean) => {
-                                if (this.props.onAction) this.props.onAction(contact.contact_user_id, isChecked, contact.contact_name);
+                                if (this.props.onAction) {
+                                    this.props.onAction(contact.contact_user_id, isChecked, contact.contact_name);
+                                }
                             }
                         });
                         break;

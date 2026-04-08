@@ -40,8 +40,20 @@ export class Checkbox extends BaseComponent<CheckboxProps> {
             return;
         }
         this.inputElement = this.element.querySelector('.ui-checkbox__input');
+        this.inputElement.addEventListener("click", this.onClick);
     }
 
+    protected onClick(): void {
+        let isChecked = this.props.checked
+        console.log("тыкнул")
+        console.log(isChecked)
+
+        isChecked == true;
+        console.log(isChecked)
+        this.props.checked = isChecked
+        console.log(this.props.checked)
+
+    }
 
     /**
      * Размонтирует дочерние компоненты и удаляет обработчик клика.
