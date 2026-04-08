@@ -182,9 +182,8 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
                 this.closeAddContactWindow();
             },
             onSubmitSearch: async (login: string) => {
-                console.log(`Пробуем добавить контакт: ${login}`);
-                const contactId = 1; // TODO: нужно будет получить реальный id пользователя по логину, сейчас просто передаем 0
-                const success = await contactService.addContact(login, 0);
+                const targetUserId = await contactService.getIdByLogin(login);
+                const success = await contactService.addContact(login, targetUserId);
                 
                 if (success) {
                     alert(`Пользователь ${login} успешно добавлен в контакты!`);

@@ -199,7 +199,6 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         if (!this.mainContentArea) return;
 
         const myId = await contactService.getMyId();
-
         switch (type) {
             case 'dialog':
                 this.createChatWindow = new CreateDialogWindow({ 
@@ -210,16 +209,20 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                             [myId, contactId], 
                             "dialog"
                         );
-                        if (newChat && newChat.id) {
+                        if (newChat && newChat.id) {    
                             this.props.router.navigate(`/chats/${newChat.id}`);
                         }
                     },
                     onSubmitSearch: async (login: string) => {
-                        console.log("Ищем пользователя по логину:", login);
-                        // const targetUser = await contactService.getUserByLogin(login); 
-                        const targetUser = {"id": 1, "login": login};    // нужно написать реальный сервис когда будет на беке
+                        const targetUserId = await contactService.getIdByLogin(login); 
+                        const targetUser = {"id": targetUserId, "login": login};
 
                         if (targetUser && targetUser.id) {
+                            if (myId === targetUser.id) {
+                                alert("Вы не можете создать диалог с самим собой!");
+                                return;
+                            }
+                            console.log("Отправляем ID:", myId, targetUser.id);
                             const newChat = await chatService.createChat(
                                 "Диалог с " + targetUser.login,
                                 [myId, targetUser.id], 

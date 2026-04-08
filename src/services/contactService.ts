@@ -1,5 +1,6 @@
 import { BackendContact, FrontendContact } from "../types/contact";
 import { BackendProfile, FrontendProfile } from "../types/profile";
+import { httpClient } from "../core/utils/httpClient";
 
 // const BASE_URL = 'http://pulseapp.space:8080';
 const BASE_URL = 'http://0.0.0.0:8080';
@@ -82,11 +83,10 @@ export class ContactService {
             return MOCK_CONTACTS;
         }
         try {
-            const response = await fetch(`${BASE_URL}/api/v1/contacts`, {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/contacts`, {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                credentials: 'include'
             });
             if (!response.ok) {
                 console.error("Ошибка при получении контактов");
@@ -110,11 +110,10 @@ export class ContactService {
             return MOCK_PROFILES[profileId] || MOCK_PROFILES[1];
         }
         try {
-            const response = await fetch(`${BASE_URL}/api/v1/profiles/${profileId}`, {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/profiles/${profileId}`, {
                 headers: {
                     'Content-Type': 'application/json'
-                },
-                credentials: 'include'
+                }
             });
 
             if (!response.ok) {
@@ -140,11 +139,10 @@ export class ContactService {
 
     async getMyProfile(): Promise<FrontendProfile> {
         try {
-            const response = await fetch(`${BASE_URL}/api/v1/profiles/me`, {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/profiles/me`, {
                 headers: {
                     'Content-Type': 'application.json'
-                },
-                credentials: 'include'
+                }
             });
             if (!response.ok) {
                 console.error("Ошибка при получении профиля");
@@ -168,11 +166,10 @@ export class ContactService {
 
     async getMyId(): Promise<number> {
         try {
-            const response = await fetch(`${BASE_URL}/api/v1/profiles/me`, {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/profiles/me`, {
                 headers: {
                     'Content-Type': 'application.json'
                 },
-                credentials: 'include'
             });
             if (!response.ok) {
                 console.error("Ошибка при получении профиля");
@@ -193,15 +190,15 @@ export class ContactService {
      */
     public async addContact(login: string, id: number): Promise<boolean> {
         try {
-            const response = await fetch(`${BASE_URL}/api/v1/contacts`, {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/contacts`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                credentials: 'include',
                 body: JSON.stringify({ 
-                    login: login, 
-                    id: id 
+                    contact_user_id: id,
+                    first_name: "",
+                    last_name: ""
                 })
             });
 
@@ -213,6 +210,27 @@ export class ContactService {
         } catch (error) {
             console.error("Ошибка сети при добавлении контакта:", error);
             return false;
+        }
+    }
+
+    public async getIdByLogin(login: string): Promise<number | null> {
+        try {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/profiles/search?login=${login}`, {
+                method: 'Get',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+            });
+            console.log(response)
+            if (!response.ok) {
+                console.error(`Ошибка при поиске пользователя по логину: ${response.status}`);
+                return null;
+            }
+            const data: {status: string, body: BackendProfile} = await response.json();
+            return data.body.user_id;
+        } catch (error) {
+            console.error("Ошибка сети при поиске пользователя по логину:", error);
+            return null;
         }
     }
 };

@@ -1,4 +1,5 @@
 import { ChatDetail, FrontendMessage, User, DialogChat, GroupChat, ChannelChat, BackendChat, BackendMessage } from '../types/chat';
+import { httpClient } from '../core/utils/httpClient';
 
 // const BASE_URL = 'http://pulseapp.space:8080';
 const BASE_URL = 'http://0.0.0.0:8080';
@@ -93,11 +94,10 @@ export class ChatService {
             return new Promise(resolve => setTimeout(() => resolve(Object.values(MOCK_CHAT_DETAILS))));
         }
         try {
-            const response = await fetch(`${BASE_URL}/api/v1/chats`, {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/chats`, {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                credentials: 'include'
             });
 
             if (!response.ok) {
@@ -201,12 +201,11 @@ export class ChatService {
      */
     public async createChat(title: string, members_id: number[], type: "dialog" | "group" | "channel"): Promise<any | null> {
         try {
-            const response = await fetch(`${BASE_URL}/api/v1/chats`, {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/chats`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                credentials: 'include',
                 body: JSON.stringify({
                     members_id: members_id,
                     title: title,
@@ -238,9 +237,8 @@ export class ChatService {
      */
     public async deleteChat(chatId: string): Promise<boolean> {
         try {
-            const response = await fetch(`${BASE_URL}/api/v1/chats/${chatId}`, {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/chats/${chatId}`, {
                 method: 'DELETE',
-                credentials: 'include'
             });
 
             if (!response.ok) {

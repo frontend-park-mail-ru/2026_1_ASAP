@@ -1,3 +1,4 @@
+import { httpClient, HttpClient } from "../core/utils/httpClient";
 // const BASE_URL = "http://pulseapp.space:8080";
 const BASE_URL = 'http://0.0.0.0:8080';
 
@@ -36,10 +37,9 @@ class AuthService {
      */
     public async checkAuth(): Promise<boolean> {
         try {
-            const response = await fetch(`${BASE_URL}/api/v1/chats`,
+            const response = await httpClient.request(`${BASE_URL}/api/v1/chats`,
                 {
                     method: 'GET',
-                    credentials: 'include'
                 }
             );
             return response.ok;
@@ -58,9 +58,8 @@ class AuthService {
      */
     private async sendRequest(endpoint: string, data: object): Promise<AuthResult> {
         try {
-            const response = await fetch(`${BASE_URL}/api/v1/auth/${endpoint}`, {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/auth/${endpoint}`, {
                 method: 'POST',
-                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -120,7 +119,9 @@ class AuthService {
      * @returns {Promise<AuthResult>}
      */
     public async logout(): Promise<AuthResult> {
-        return this.sendRequest('logout', {});
+        const result = await this.sendRequest('logout', {});
+        httpClient.clearToken();
+        return result;
     }
 }
 
