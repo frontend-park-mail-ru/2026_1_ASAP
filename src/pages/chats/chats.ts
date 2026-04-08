@@ -243,26 +243,28 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                         }
                     },
                     onSubmitSearch: async (login: string) => {
-                        const targetUserId = await contactService.getIdByLogin(login); 
-                        const targetUser = {"id": targetUserId, "login": login};
+                        const targetUserRes = await contactService.getIdByLogin(login); 
+                        const targetUser = {"id": targetUserRes.id, "login": login};
 
-                        if (targetUser && targetUser.id) {
-                            if (myId === targetUser.id) {
-                                alert("Вы не можете создать диалог с самим собой!");
-                                return;
-                            }
-                            const newChat = await chatService.createChat(
-                                "Диалог с " + targetUser.login,
-                                [myId, targetUser.id], 
-                                "dialog"
-                            );
-                            
-                            if (newChat && newChat.id) {
-                                this.rebuildSidebar(); 
-                                this.props.router.navigate(`/chats/${newChat.id}`);
-                            }
+                        if (targetUserRes.status === 404 || !targetUser.id) {
+                            return `Пользователь с логином "${login}" не найден!`;
+                        }
+
+                        if (myId === targetUser.id) {
+                            return "Вы не можете создать диалог с самим собой!";
+                        }
+                        const newChat = await chatService.createChat(
+                            "Диалог с " + targetUser.login,
+                            [myId, targetUser.id], 
+                            "dialog"
+                        );
+                        
+                        if (newChat && newChat.id) {
+                            this.rebuildSidebar(); 
+                            this.props.router.navigate(`/chats/${newChat.id}`);
+                            return undefined;
                         } else {
-                            alert(`Пользователь с логином "${login}" не найден!`);
+                            return "Диалог с данным пользователем уже существует или произошла ошибка.";
                         }
                     }
                 });
@@ -345,6 +347,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                         const success = await chatService.deleteChat(chatId);
                         if (success) {
                             this.activeChatId = null;
+                            this.rebuildSidebar();
                             this.props.router.navigate('/chats');
                         } else {
                             alert("Не удалось удалить группу");
@@ -360,6 +363,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                         const success = await chatService.deleteChat(chatId);
                         if (success) {
                             this.activeChatId = null;
+                            this.rebuildSidebar();
                             this.props.router.navigate('/chats');
                         } else {
                             alert("Не удалось удалить канал");

@@ -6,6 +6,7 @@ import { ContactListWrapper } from "../contactListWrapper/contactListWrapper";
 import { Button } from "../../ui/button/button";
 import { Router } from "../../../core/router";
 import { SearchForm } from "../searchForm/searchForm";
+import { InfoMenu } from "../infoMenu/infoMenu";
 
 interface CreateGroupWindowProps extends IBaseComponentProps {
     router: Router;
@@ -19,6 +20,7 @@ export class CreateGroupWindow extends BaseComponent<CreateGroupWindowProps> {
     private submitButton: Button | null = null;
     private SearchField: SearchForm | null = null;
     private selectedUsers: Map<number, string> = new Map(); 
+    private infoMenu: InfoMenu | null = null;
 
     constructor(props: CreateGroupWindowProps) {
         super(props);
@@ -79,7 +81,14 @@ export class CreateGroupWindow extends BaseComponent<CreateGroupWindowProps> {
             class: "create-group-submit-btn ui-button__primary",
             onClick: () => {
                 if (this.selectedUsers.size === 0) {
-                    alert("Выберите хотя бы одного пользователя!");
+                    this.infoMenu = new InfoMenu({
+                        message: "Выберите хотя бы одного пользователя для создания чата!",
+                        onClose: () => {
+                            this.infoMenu?.unmount();
+                            this.infoMenu = null;
+                        }
+                    });
+                    this.infoMenu.mount(document.body);
                     return;
                 }
 
@@ -99,6 +108,7 @@ export class CreateGroupWindow extends BaseComponent<CreateGroupWindowProps> {
         this.actionHeader?.unmount();
         this.contactList?.unmount();
         this.submitButton?.unmount();
+        this.infoMenu?.unmount();
         this.selectedUsers.clear();
     }
 }

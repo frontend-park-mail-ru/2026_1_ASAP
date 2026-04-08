@@ -217,10 +217,13 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
                 this.props.router.navigate('/contacts');
             },
             onSubmitSearch: async (login: string) => {
-                const targetUserId = await contactService.getIdByLogin(login);
-                const success = await contactService.addContact(login, targetUserId);
+                const targetRes = await contactService.getIdByLogin(login);
+                if (targetRes.status === 404 || !targetRes.id) {
+                    return `Пользователь с логином "${login}" не найден!`;
+                }
+                const successRes = await contactService.addContact(login, targetRes.id);
                 
-                if (success) {
+                if (successRes.success) {
                     this.closeAddContactWindow();
                     
                     const sidebar = this.element!.querySelector('.contacts-page__sidebar');
@@ -248,9 +251,12 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
                     this.menuBar.mount(sidebar as HTMLElement);
                     this.menuBar.setActiveButton('contacts');
                     
-                    this.props.router.navigate(`/contacts/${targetUserId}`);
+                    this.props.router.navigate(`/contacts/${targetRes.id}`);
+                    return undefined;
+                } else if (successRes.status === 409) {
+                    return `Пользователь "${login}" уже в контактах!`;
                 } else {
-                    alert(`Не удалось добавить пользователя "${login}".`);
+                    return `Ошибка сервера: ${successRes.status}`;
                 }
             }
         });

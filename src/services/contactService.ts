@@ -192,7 +192,7 @@ export class ContactService {
      * @param {string} login - Логин пользователя для добавления.
      * @returns {Promise<boolean>} true, если контакт успешно добавлен.
      */
-    public async addContact(login: string, id: number): Promise<boolean> {
+    public async addContact(login: string, id: number): Promise<{success: boolean, status: number}> {
         try {
             const response = await httpClient.request(`${BASE_URL}/api/v1/contacts`, {
                 method: 'POST',
@@ -206,18 +206,21 @@ export class ContactService {
                 })
             });
 
+            if (response.status === 409) {
+                return { success: false, status: 409 };
+            }
             if (!response.ok) {
                 console.error(`Ошибка при добавлении контакта: ${response.status}`);
-                return false;
+                return { success: false, status: response.status };
             }
-            return true;
+            return { success: true, status: 200 };
         } catch (error) {
             console.error("Ошибка сети при добавлении контакта:", error);
-            return false;
+            return { success: false, status: 500 };
         }
     }
 
-    public async getIdByLogin(login: string): Promise<number | null> {
+    public async getIdByLogin(login: string): Promise<{id: number | null, status: number}> {
         try {
             const response = await httpClient.request(`${BASE_URL}/api/v1/profiles/search?login=${login}`, {
                 method: 'Get',
@@ -225,16 +228,18 @@ export class ContactService {
                     'Content-Type': 'application/json'
                 },
             });
-            console.log(response)
+            if (response.status === 404) {
+                return { id: null, status: 404 };
+            }
             if (!response.ok) {
                 console.error(`Ошибка при поиске пользователя по логину: ${response.status}`);
-                return null;
+                return { id: null, status: response.status };
             }
             const data: {status: string, body: BackendProfile} = await response.json();
-            return data.body.user_id;
+            return { id: data.body.user_id, status: 200 };
         } catch (error) {
             console.error("Ошибка сети при поиске пользователя по логину:", error);
-            return null;
+            return { id: null, status: 500 };
         }
     }
 };

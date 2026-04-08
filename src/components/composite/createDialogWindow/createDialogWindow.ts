@@ -20,7 +20,7 @@ import { FindUserContainer } from "../findUserContainer/findUserContainer";
 interface CreateDialogWindowProps extends IBaseComponentProps {
     router: Router;
     onSubmit: (contactId: number, contactName: string) => void;
-    onSubmitSearch: (login: string) => void;
+    onSubmitSearch: (login: string) => Promise<string | void> | void;
 }
 
 /**
@@ -88,9 +88,9 @@ export class CreateDialogWindow extends BaseComponent<CreateDialogWindowProps> {
         const contacts = await contactService.getContacts();
         if (contacts.length === 0) {        
             this.layoutContent = new FindUserContainer({
-                showEmptyMessage: true,
+                showEmptyMessage: false,
                 onSubmitSearch: (login: string) => {
-                    this.props.onSubmitSearch(login);
+                    return this.props.onSubmitSearch(login);
                 },
                 labelButton: "Написать",
                 labelInput: "Введите логин:",
