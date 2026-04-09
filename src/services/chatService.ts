@@ -168,7 +168,7 @@ export class ChatService {
     /**
      * Создает новый чат (Диалог или Группу)
      */
-    public async createChat(title: string, members_id: number[], type: "dialog" | "group" | "channel"): Promise<any | null> {
+    public async createChat(members_id: number[], type: "dialog" | "group" | "channel", title?: string): Promise<any | null> {
         try {
             const response = await httpClient.request(`${BASE_URL}/api/v1/chats`, {
                 method: 'POST',

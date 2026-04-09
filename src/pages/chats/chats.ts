@@ -236,9 +236,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     router: this.props.router,
                     onSubmit: async (contactId: number, contactName: string) => {
                         const newChat = await chatService.createChat(
-                            contactName, 
-                            [myId, contactId], 
-                            "dialog",
+                            [contactId], 
+                            "dialog"
                         );
                         if (newChat && newChat.id) {   
                             this.rebuildSidebar(); 
@@ -257,8 +256,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                             return "Вы не можете создать диалог с самим собой!";
                         }
                         const newChat = await chatService.createChat(
-                            "Диалог с " + targetUser.login,
-                            [myId, targetUser.id], 
+                            [targetUser.id], 
                             "dialog"
                         );
                         
@@ -277,9 +275,9 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     router: this.props.router,
                     onSubmit: async (userIds: number[], groupName: string) => {
                         const newChat = await chatService.createChat(
-                            groupName, 
                             [myId, ...userIds], 
-                            "group"
+                            "group",
+                            groupName
                         );
                         if (newChat && newChat.id) {
                             this.rebuildSidebar(); 
