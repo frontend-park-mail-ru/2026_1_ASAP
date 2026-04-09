@@ -6,10 +6,13 @@
     padding: 10px 15px 10px 15px;
     gap: 15px;
 }
-
+.group-header__avatar-container {
+    max-width: 50px;
+    max-height: 50px;
+}
 .group-header__avatar {
-    width: 40px;
-    height: 40px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
     object-fit: cover;
 }
@@ -35,4 +38,6 @@
     background: none;
     border: none;
     cursor: pointer;
+    max-width: 50px;
+    max-height: 50px;
 }

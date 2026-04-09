@@ -1,6 +1,6 @@
 import { BaseForm, IBaseFormProps } from '../../../core/base/baseForm';
 import { Button } from '../../ui/button/button';
-import { Checkbox } from '../../ui/checkbox/checkbox';
+import { Checkbox } from "../../ui/checkbox/checkbox";
 import { authService } from '../../../services/authService';
 import { Input } from '../../ui/input/input';
 import { validationService } from '../../../services/validationService';

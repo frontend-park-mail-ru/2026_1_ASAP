@@ -16,6 +16,7 @@ import { GroupHeader } from "../../components/composite/groupHeader/groupHeader"
 import { ChannelHeader } from "../../components/composite/channelHeader/channelHeader";
 import { CreateDialogWindow } from "../../components/composite/createDialogWindow/createDialogWindow"; 
 import { CreateGroupWindow } from "../../components/composite/createGroupWindow/createGroupWindow";
+import { GroupDetailsWindow } from "../../components/composite/groupDetailsWindow/groupDetailsWindow";
 import { contactService } from "../../services/contactService";
 
 const CURRENT_USER_LOGIN = 'alice'; 
@@ -56,6 +57,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     
     private chatWindow: ChatWindow | null = null;
     private createChatWindow: BaseComponent | null = null;
+    private groupDetailsWindow: GroupDetailsWindow | null = null;
     
     public activeChatId: string | null = null;
     private mainContentArea: HTMLElement | null = null;
@@ -113,6 +115,10 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             this.createChatWindow.unmount();
             this.createChatWindow = null;
         }
+        if (this.groupDetailsWindow) {
+            this.groupDetailsWindow.unmount();
+            this.groupDetailsWindow = null;
+        }
         if (this.placeholderElement) {
             this.placeholderElement.style.display = 'none';
         }
@@ -143,7 +149,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             return;
         }
 
-        // Открытие существующего чата по UUID
+        // Открытие существующего чата
         if (isValidId) {
             if (lastParam !== this.activeChatId || !this.chatWindow) {
                 this.cleanupMainContent();
@@ -178,16 +184,13 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         const sidebar = this.element?.querySelector('.chat-page__sidebar');
         if (!sidebar) return;
 
-        // 1. Корректно отписываемся от событий
         this.searchForm?.unmount();
         this.chatWrapper?.unmount();
         this.menuBar?.unmount();
         this.logoutWrapper?.remove();
 
-        // 2. Жестко очищаем контейнер
         sidebar.innerHTML = '';
 
-        // 3. Собираем сайдбар в правильном порядке
         this.searchForm = new SearchForm({ router: this.props.router });
         this.searchForm.mount(sidebar as HTMLElement);
 
@@ -375,7 +378,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                         } else {
                             alert("Не удалось удалить группу");
                         }
-                    }
+                    },
+                    onOpenGroupInfo: () => this.openGroupDetails(chatDetail as GroupChat)
                 });
                 break;
 
@@ -415,6 +419,62 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         });
         
         this.chatWindow.mount(this.mainContentArea);
+    }
+
+    /**
+     * Открывает окно деталей группы поверх чата
+     * @param chat {GroupChat} Объект группы
+     */
+    private openGroupDetails(chat: GroupChat): void {
+        if (!this.mainContentArea) return;
+
+        if (this.chatWindow?.element) {
+            this.chatWindow.element.style.display = 'none';
+        }
+
+        const mockMembers = [
+            { id: 101, login: 'Pavel', avatarUrl: '/assets/images/avatars/myAvatar.svg' },
+            { id: 102, login: 'Dmitry', avatarUrl: '/assets/images/avatars/chatAvatar.svg' },
+            { id: 103, login: 'Alexey', avatarUrl: '/assets/images/avatars/defaultAvatar.svg' }
+        ];
+
+        this.groupDetailsWindow = new GroupDetailsWindow({
+            groupId: chat.id,
+            groupName: chat.title,
+            groupAvatarUrl: chat.avatarUrl || '/assets/images/avatars/defaultAvatar.svg',
+            currentUserRole: 'owner',
+            members: mockMembers,
+            onBack: () => {
+                if (this.groupDetailsWindow) {
+                    this.groupDetailsWindow.unmount();
+                    this.groupDetailsWindow = null;
+                }
+                if (this.chatWindow?.element) {
+                    this.chatWindow.element.style.display = 'flex';
+                }
+            },
+            onLeaveGroup: async () => {
+                await chatService.leaveGroupMock(chat.id);
+                if (this.groupDetailsWindow) {
+                    this.groupDetailsWindow.unmount();
+                    this.groupDetailsWindow = null;
+                }
+                this.activeChatId = null;
+                this.rebuildSidebar();
+                this.props.router.navigate('/chats');
+            },
+            onUpdateGroup: async (newName: string, newAvatar?: File) => {
+                await chatService.updateGroupMock(chat.id, newName, newAvatar);
+            },
+            onRemoveMember: async (userId: number) => {
+                await chatService.removeMemberMock(chat.id, userId);
+            },
+            onAddMember: async () => {
+                await chatService.addMemberMock(chat.id, 999);
+            }
+        });
+
+        this.groupDetailsWindow.mount(this.mainContentArea);
     }
 
     /**
