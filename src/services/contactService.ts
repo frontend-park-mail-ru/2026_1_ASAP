@@ -47,6 +47,21 @@ const MOCK_PROFILES: { [id: number]: FrontendProfile } = {
     }
 };
 
+const MOCK_MY_PROFILE = {
+  mainInfo: {
+    firstName: "Альвин",
+    lastName: "Смирнов",
+    avatarUrl: "/assets/images/avatars/profileAvatar.svg",
+    lastSeen: "был в сети в 21:47 7 марта",
+  },
+  additionalInfo: {
+    login: "alvin_dev",
+    email: "alvin@example.com",
+    birthDate: new Date('1998-05-14').toLocaleDateString('ru-RU'),
+    bio: "Фронтенд-разработчик. Люблю чистую архитектуру, TypeScript и удобные интерфейсы.",
+  },
+};
+
 function formatLastSeen(date: Date): string {
     const time = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
     const dateStr = date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
@@ -143,11 +158,15 @@ export class ContactService {
     };
 
     async getMyProfile(): Promise<FrontendProfile> {
+        if (USE_MOCK) {
+            return MOCK_MY_PROFILE;
+        }
         try {
             const response = await httpClient.request(`${BASE_URL}/api/v1/profiles/me`, {
                 headers: {
-                    'Content-Type': 'application.json'
-                }
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
             });
             if (!response.ok) {
                 console.error("Ошибка при получении профиля");
@@ -169,6 +188,8 @@ export class ContactService {
         };
     };
 
+    async setMyProfile(): Promise<void> {};
+  
     async getMyId(): Promise<number> {
         try {
             const response = await httpClient.request(`${BASE_URL}/api/v1/profiles/me`, {

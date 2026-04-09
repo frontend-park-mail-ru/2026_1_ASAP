@@ -101,3 +101,7 @@
     color: var(--color-bubble);
     white-space: nowrap;
 }
+
+.settings-additional-info {
+    cursor: pointer;
+}

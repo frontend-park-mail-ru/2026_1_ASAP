@@ -26,11 +26,13 @@ export class ProfileWindow extends BaseComponent<ProfileWindowProps> {
 
     protected afterMount(): void {
         this.profileHeader = new ProfileHeader({
-            closeWindow: this.props.closeWindow
+            closeWindow: this.props.closeWindow,
+            label: "Профиль пользователя"
         });
         this.profileHeader.mount(this.element!);
         this.profileMainInfoBlock = new ProfileMainInfoBlock({
-            profileMainInfo: this.props.profileMainInfo
+            profileMainInfo: this.props.profileMainInfo,
+            type: "contact"
         });
         this.profileMainInfoBlock.mount(this.element!);
         this.profileAdditionalInfoBlock = new ProfileAdditionalInfoBlock({

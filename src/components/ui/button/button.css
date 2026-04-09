@@ -126,7 +126,10 @@ button > span {
     color: var(--color-text);
 }
 
-
+.ui-button__disabled {
+    opacity: 50%;
+    cursor: not-allowed;
+}
 
 .ui-button:disabled {
     opacity: 0.5;
@@ -222,4 +225,9 @@ button > span {
     color: var(--color-text);
     background-color: var(--color-error-border);
     transition: all 0.5s;
+.save-field-button {
+    width: 100%;
+    height: 42px;
+    background-color: var(--color-text);
+    color: var(--color-primary);
 }
