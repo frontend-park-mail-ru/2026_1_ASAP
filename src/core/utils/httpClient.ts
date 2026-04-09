@@ -6,8 +6,9 @@ export interface IRequestOptions extends RequestInit {
     ignoreUnauthorized?: boolean;
 }
 class HttpClient {
-    private readonly tokenHeaderName = 'X-CSRF-Token';
-    private readonly newTokenHeaderName = 'X-New-Csrf-Token';
+
+    private readonly tokenHeaderName = 'x-csrf-token';
+    private readonly newTokenHeaderName = 'x-new-csrf-token';
     private readonly storageKey = 'csrf_token';
 
     /**
@@ -55,10 +56,28 @@ class HttpClient {
         // первый запрос
         let response = await fetch(url, options);
 
-        const newToken = response.headers.get(this.newTokenHeaderName);
-        if (newToken) {
-            this.setToken(newToken);
+        // --- НАЧАЛО ДЕБАГА ---
+        console.log(`[HTTP Client] Ответ от ${url} получен. Статус:`, response.status);
+        
+        // Посмотрим, какие заголовки ВООБЩЕ видит JavaScript из-за CORS
+        console.log("[HTTP Client] Заголовки, доступные JS:");
+        response.headers.forEach((value, key) => {
+            console.log(`  -> ${key}: ${value}`);
+        });
+
+        const initialToken = response.headers.get(this.tokenHeaderName);
+        const updatedToken = response.headers.get(this.newTokenHeaderName);
+        const tokenToSave = updatedToken || initialToken;
+
+        console.log(`[HTTP Client] Найденный токен для сохранения:`, tokenToSave);
+        // --- КОНЕЦ ДЕБАГА ---
+
+        if (tokenToSave) {
+            this.setToken(tokenToSave);
+            console.log(`[HTTP Client] Токен успешно записан в localStorage! Проверка:`, localStorage.getItem(this.storageKey));
         }
+
+        // если 403, то второй запрос
 
         // если 403, то второй запрос
         if (response.status === 403 && newToken) {
