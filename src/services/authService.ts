@@ -1,6 +1,7 @@
 import { httpClient } from "../core/utils/httpClient";
-// const BASE_URL = "http://pulseapp.space:8080";
-const BASE_URL = 'http://0.0.0.0:8080';
+
+const BASE_URL = "http://pulseapp.space:8080";
+// const BASE_URL = 'http://0.0.0.0:8080';
 
 
 /**
