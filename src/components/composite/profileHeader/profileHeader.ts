@@ -5,12 +5,14 @@ import template from './profileHeader.hbs'
 
 interface ProfileHeaderProps extends IBaseComponentProps {
     closeWindow: (event: MouseEvent) => void;
+    label: string;
 };
 
 export class ProfileHeader extends BaseComponent<ProfileHeaderProps> {
     private backButton: Button | null = null;
     private mainParagraph: HTMLElement | null = null;
     private profileIcon: Avatar | null = null;
+    private label: string | null = null;
 
     constructor(props: ProfileHeaderProps) {
         super(props);
@@ -38,7 +40,7 @@ export class ProfileHeader extends BaseComponent<ProfileHeaderProps> {
         this.profileIcon.mount(this.mainParagraph);
         const title = document.createElement('p');
         title.className = 'profile-header-title';
-        title.textContent = 'Профиль пользователя';
+        title.textContent = this.props.label;
         this.mainParagraph.appendChild(title);
     };
 

@@ -3,7 +3,7 @@ import { BackendProfile, FrontendProfile } from "../types/profile";
 
 const BASE_URL = 'http://pulseapp.space:8080';
 // const BASE_URL = 'http://0.0.0.0:8080';
-const USE_MOCK = false;
+const USE_MOCK = true;
 const MOCK_CONTACTS: FrontendContact[] = [
     {
         contact_user_id: 1,
@@ -43,6 +43,21 @@ const MOCK_PROFILES: { [id: number]: FrontendProfile } = {
             bio: 'Просто Боб'
         }
     }
+};
+
+const MOCK_MY_PROFILE = {
+  mainInfo: {
+    firstName: "Альвин",
+    lastName: "Смирнов",
+    avatarUrl: "/assets/images/avatars/profileAvatar.svg",
+    lastSeen: "был в сети в 21:47 7 марта",
+  },
+  additionalInfo: {
+    login: "alvin_dev",
+    email: "alvin@example.com",
+    birthDate: new Date('1998-05-14').toLocaleDateString('ru-RU'),
+    bio: "Фронтенд-разработчик. Люблю чистую архитектуру, TypeScript и удобные интерфейсы.",
+  },
 };
 
 function formatLastSeen(date: Date): string {
@@ -139,10 +154,13 @@ export class ContactService {
     };
 
     async getMyProfile(): Promise<FrontendProfile> {
+        if (USE_MOCK) {
+            return MOCK_MY_PROFILE;
+        }
         try {
             const response = await fetch(`${BASE_URL}/api/v1/profiles/me`, {
                 headers: {
-                    'Content-Type': 'application.json'
+                    'Content-Type': 'application/json'
                 },
                 credentials: 'include'
             });
@@ -165,6 +183,8 @@ export class ContactService {
             };
         };
     };
+
+    async setMyProfile(): Promise<void> {};
 };
 
 export const contactService = new ContactService();
