@@ -11,6 +11,8 @@ import template from './input.hbs';
  * @property {boolean} [togglePassword=false] - Показывать ли кнопку показа/скрытия пароля.
  * @property {boolean} [showErrorText=true] - Показывать ли текст ошибки.
  * @property {Function} [onClick] - Обработчик клика по инпуту.
+ * @property {string} [autocomplete] - Атрибут автозаполнения браузером.
+ * @property {string} [value] - Начальное значение поля.
  */
 export interface InputProps extends IBaseComponentProps {
     class?: string;
@@ -21,6 +23,8 @@ export interface InputProps extends IBaseComponentProps {
     togglePassword?: boolean;
     showErrorText?: boolean;
     onClick?: (event: MouseEvent) => void;
+    autocomplete?: string;
+    value?: string;
 }
 
 /**
@@ -47,6 +51,8 @@ export class Input extends BaseComponent<InputProps> {
         this.props.required = props.required || false;
         this.props.togglePassword = props.togglePassword || false;
         this.props.showErrorText = props.showErrorText !== false;
+        this.props.autocomplete = props.autocomplete || "";
+        this.props.value = props.value || "";
     }
   
     getTemplate() {
@@ -61,6 +67,10 @@ export class Input extends BaseComponent<InputProps> {
         if (!this.inputElement) {
             console.warn(`Input component ${this.constructor.name} did not find its input element.`);
             return;
+        }
+        
+        if (this.props.value) {
+            this.inputElement.value = this.props.value;
         }
 
         if (this.props.showErrorText) {
