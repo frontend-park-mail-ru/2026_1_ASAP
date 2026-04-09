@@ -1,7 +1,12 @@
 import { IBaseComponentProps } from "./baseComponent";
 
 /**
- * @interface IBasePageProps - Базовый интерфейс для свойств страницы.
+ * @interface IBasePageProps
+ * @description Базовый интерфейс для свойств страницы.
+ * Расширяет `IBaseComponentProps` и добавляет опциональные
+ * ссылки на `router` и `pageManager`.
+ * @property {any} [router] - Экземпляр роутера.
+ * @property {any} [pageManager] - Экземпляр менеджера страниц.
  */
 export interface IBasePageProps extends IBaseComponentProps {
     router?: any;
@@ -9,9 +14,16 @@ export interface IBasePageProps extends IBaseComponentProps {
 }
 
 /**
- * Базовый класс страницы. Управляет рендерингом шаблона
- * в корневой контейнер root и предоставляет хуки жизненного цикла.
- * @abstract
+ * @class BasePage
+ * @extends BaseComponent
+ * @template P - Тип объекта свойств, расширяющий `IBasePageProps`.
+ * @description Абстрактный базовый класс для всех страниц приложения.
+ * Управляет созданием корневого элемента страницы (`<div class="page">`),
+ * рендерингом шаблона и предоставляет хуки жизненного цикла (`mount`, `unmount`, `updateProps`).
+ *
+ * @property {P} props - Свойства, переданные странице (включая `router` и `pageManager`).
+ * @property {HTMLDivElement} root - Корневой DOM-контейнер для всей страницы.
+ * @property {HTMLElement | null} element - Основной элемент, отрендеренный внутри `root`.
  */
 export class BasePage<P extends IBasePageProps = IBasePageProps> {
     /**
@@ -50,9 +62,8 @@ export class BasePage<P extends IBasePageProps = IBasePageProps> {
     }
 
     /**
-     * Рендерит шаблон страницы в root.
-     * @returns {HTMLElement} Корневой элемент страницы.
-     * @throws {Error} Если tempName не задан или шаблон не найден.
+     * Рендерит содержимое шаблона в корневой элемент `root`.
+     * @returns {HTMLElement | null} Основной отрендеренный элемент.
      */
     public render(): HTMLElement | null {
         const template = this.getTemplate();
@@ -63,7 +74,8 @@ export class BasePage<P extends IBasePageProps = IBasePageProps> {
     }
 
     /**
-     * Рендерит страницу и вызывает хук afterMount.
+     * Выполняет монтирование страницы: рендерит контент и вызывает хук `afterMount`.
+     * @returns {Promise<void>}
      */
     public async mount(): Promise<void> {
         this.render();
@@ -71,19 +83,22 @@ export class BasePage<P extends IBasePageProps = IBasePageProps> {
     }
 
     /**
-     * Хук, вызываемый после монтирования. Переопределяется в наследниках.
+     * Хук жизненного цикла, вызываемый после монтирования.
+     * Предназначен для асинхронных операций после рендеринга.
      * @protected
      */
     protected async afterMount(): Promise<void> {}
 
     /**
-     * Хук, вызываемый перед размонтированием. Переопределяется в наследниках.
+     * Хук жизненного цикла, вызываемый перед размонтированием.
+     * Предназначен для очистки ресурсов.
      * @protected
      */
     protected beforeUnmount(): void {}
 
     /**
-     * Размонтирует страницу: вызывает beforeUnmount и очищает root.
+     * Выполняет размонтирование страницы: вызывает `beforeUnmount` и очищает DOM.
+     * @returns {Promise<void>}
      */
     public async unmount(): Promise<void> {
         this.beforeUnmount();

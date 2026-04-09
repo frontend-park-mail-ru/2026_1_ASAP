@@ -117,10 +117,12 @@ export class RegisterForm extends BaseForm<RegisterFormProps> {
             const result = await authService.register(data.email!, data.login!, data.password!);
             if (result.success) {
                 this.props.router.navigate('/chats');
-            } else if (result.error === "Login already register") {
+            } else if (result.error?.includes("Login already register")) {
                 this.loginInput.setError("Пользователь с таким логином уже существует");
-            } else if (result.error === "Email already register") {
+            } else if (result.error?.includes("Email already register")) {
                 this.emailInput.setError("Пользователь с такой почтой уже существует");
+            } else if (result.error) {
+                this.loginInput.setError(result.error);
             }
         }
     }

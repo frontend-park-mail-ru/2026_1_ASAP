@@ -93,6 +93,9 @@ export class ProfileAdditionalInfoBlock extends BaseComponent<ProfileAdditionalI
         this.resizeObserver = new ResizeObserver(() => {
             this.truncate();
         });
+        if (!this.bioContainer) {
+            return;
+        }
         this.resizeObserver.observe(this.bioContainer);
 
     };

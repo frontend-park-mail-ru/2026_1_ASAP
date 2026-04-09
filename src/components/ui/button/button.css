@@ -101,6 +101,7 @@ button > span {
     font: var(--font-secondary);
     letter-spacing: var(--text-secondary-letter-spacing);
     overflow: hidden;
+    border-radius: 10px;
     border: none;
 }
 

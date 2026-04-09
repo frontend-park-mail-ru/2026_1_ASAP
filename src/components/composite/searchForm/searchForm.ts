@@ -13,7 +13,9 @@ interface SearchFormProps extends IBaseFormProps {
     router?: Router;
     hideAddButton?: boolean;
     class?: string;
-}
+    onSearch?: (query: string) => void; // для поиска
+    onAddClick?: () => void; // для открытия меню создания контакта
+}   
 
 /**
  * Панель поиска с полем ввода, иконкой поиска и кнопкой добавления.
@@ -72,6 +74,11 @@ export class SearchForm extends BaseForm<SearchFormProps> {
                 icon: "/assets/images/icons/deleteIcon.svg", 
                 daughterClass: "add-icon",
                 onClick: () => {
+                    if (this.props.onAddClick) {
+                        this.props.onAddClick();
+                        return;
+                    }
+                    
                     if (!this.isMenuOpen) {
                         this.isMenuOpen = true;
                         const menuContainer = this.element.querySelector(".add-button-cont");

@@ -5,12 +5,30 @@ import { MetaChatInfo } from "../../ui/metaChatInfo/metaChatInfo";
 import { Chat as ChatType } from '../../../types/chat';
 import template from "./chatItem.hbs";
 
+ /**
+ * @interface ChatItemProps
+ * @description Свойства для компонента элемента чата в списке.
+ * @extends IBaseFormProps
+ * @property {string} [class] - CSS-класс для кастомизации.
+ * @property {ChatType} chat - Объект с данными чата.
+ * @property {Function} [onClick] - Колбэк, вызываемый при клике на элемент чата.
+ */
 interface ChatItemProps extends IBaseFormProps {
     class?: string;
     chat: ChatType;
     onClick?: (item: ChatItem) => void;
 }
 
+/**
+ * @class ChatItem
+ * @extends BaseForm
+ * @description Компонент, представляющий один элемент в списке чатов.
+ * Отображает аватар, название чата, последнее сообщение и мета-информацию.
+ *
+ * @property {Avatar | null} avatar - Компонент аватара чата.
+ * @property {ChatInfo | null} chatInfo - Компонент с основной информацией о чате.
+ * @property {MetaChatInfo | null} metaChatInfo - Компонент с мета-информацией (время, непрочитанные сообщения).
+ */
 export class ChatItem extends BaseForm<ChatItemProps> {
     private avatar: Avatar | null = null;
     private chatInfo: ChatInfo | null = null;
@@ -26,6 +44,12 @@ export class ChatItem extends BaseForm<ChatItemProps> {
         return template;
     }
 
+    /**
+     * Преобразует тип чата в соответствующий CSS-класс для стилизации.
+     * @param {string} chatType - Тип чата ('group', 'channel', 'personal').
+     * @returns {string} CSS-класс.
+     * @private
+     */
     private typeToClass(chatType: string): string {
         switch (chatType) {
             case 'group':
@@ -37,6 +61,12 @@ export class ChatItem extends BaseForm<ChatItemProps> {
         }
     }
 
+    /**
+     * Выполняется после монтирования компонента.
+     * Инициализирует и монтирует дочерние компоненты (аватар, информация о чате, мета-данные)
+     * и добавляет обработчик клика.
+     * @protected
+     */
     protected afterMount() {
         if (!this.element) return;
 
@@ -74,12 +104,22 @@ export class ChatItem extends BaseForm<ChatItemProps> {
         }
     }
 
+    /**
+     * Обработчик клика по элементу чата.
+     * Вызывает колбэк `onClick`, переданный в свойствах.
+     * @private
+     */
     private handleClick = () => {
         if (this.props.onClick) {
             this.props.onClick(this);
         }
     }
 
+    /**
+     * Выполняется перед размонтированием компонента.
+     * Удаляет обработчик клика и размонтирует дочерние компоненты для предотвращения утечек памяти.
+     * @protected
+     */
     protected beforeUnmount() {
         if (this.props.onClick) {
             this.element?.removeEventListener('click', this.handleClick);

@@ -1,5 +1,6 @@
-const BASE_URL = "http://pulseapp.space:8080";
-// const BASE_URL = 'http://0.0.0.0:8080';
+import { httpClient } from "../core/utils/httpClient";
+// const BASE_URL = "http://pulseapp.space:8080";
+const BASE_URL = 'http://0.0.0.0:8080';
 
 
 /**
@@ -15,20 +16,30 @@ interface AuthResult {
 }
 
 /**
- * Сервис авторизации. Обеспечивает логин, регистрацию, логаут
- * и проверку текущей сессии через REST API.
+ * @class AuthService
+ * @description Сервис для взаимодействия с API аутентификации.
+ * Предоставляет методы для входа, регистрации, выхода из системы и проверки текущей сессии пользователя.
+ * Все методы возвращают стандартизированный объект `AuthResult`.
  */
 class AuthService {
     /**
-     * Проверяет, авторизован ли пользователь (по наличию cookie-сессии).
-     * @returns {Promise<boolean>} `true`, если пользователь авторизован.
+     * Проверяет, авторизован ли текущий пользователь.
+     * Делает запрос к защищенному эндпоинту (`/api/v1/chats`) и проверяет успешность ответа.
+     * Наличие валидной сессионной cookie определяет результат.
+     * @returns {Promise<boolean>} Возвращает `true`, если пользователь авторизован, иначе `false`.
+     * @example
+     * const isLoggedIn = await authService.checkAuth();
+     * if (isLoggedIn) {
+     *   console.log("Пользователь в системе.");
+     * } else {
+     *   console.log("Пользователь не авторизован.");
+     * }
      */
     public async checkAuth(): Promise<boolean> {
         try {
-            const response = await fetch(`${BASE_URL}/api/v1/chats`,
+            const response = await httpClient.request(`${BASE_URL}/api/v1/chats`,
                 {
                     method: 'GET',
-                    credentials: 'include'
                 }
             );
             return response.ok;
@@ -47,9 +58,8 @@ class AuthService {
      */
     private async sendRequest(endpoint: string, data: object): Promise<AuthResult> {
         try {
-            const response = await fetch(`${BASE_URL}/api/v1/auth/${endpoint}`, {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/auth/${endpoint}`, {
                 method: 'POST',
-                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -109,7 +119,9 @@ class AuthService {
      * @returns {Promise<AuthResult>}
      */
     public async logout(): Promise<AuthResult> {
-        return this.sendRequest('logout', {});
+        const result = await this.sendRequest('logout', {});
+        httpClient.clearToken();
+        return result;
     }
 }
 

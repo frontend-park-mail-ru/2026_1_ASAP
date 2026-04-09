@@ -6,10 +6,28 @@ import { SettingsListWrapper } from "../../components/composite/settingsListWrap
 import { contactService } from "../../services/contactService";
 import { SettingsProfileWindow } from "../../components/composite/settingsProfileWindow/settingsProfileWindow";
 
+/**
+ * @interface SettingsPageProps
+ * @description Свойства для компонента страницы настроек.
+ * @extends IBasePageProps
+ * @property {string} [currentPath] - Текущий URL-путь для внутреннего роутинга.
+ */
 interface SettingsPageProps extends IBasePageProps {
     currentPath?: string;
 };
 
+/**
+ * @class SettingsPage
+ * @extends BasePage
+ * @description Страница настроек приложения. Позволяет пользователю просматривать
+ * и редактировать свой профиль и другие параметры.
+ *
+ * @property {SearchForm | null} searchForm - Форма поиска (может быть неактивна).
+ * @property {SettingsListWrapper | null} settingsListWrapper - Обертка для списка разделов настроек.
+ * @property {MenuBar | null} menuBar - Нижнее меню навигации.
+ * @property {SettingsProfileWindow | null} settingsWindow - Окно с настройками профиля.
+ * @property {string | null} activeSetting - Идентификатор текущего активного раздела настроек.
+ */
 export class SettingsPage extends BasePage<SettingsPageProps> {
     private searchForm: SearchForm | null = null;
     private settingsListWrapper: SettingsListWrapper | null = null;
@@ -27,6 +45,12 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
         return template;
     }
 
+    /**
+     * Выполняется после монтирования страницы.
+     * Инициализирует все компоненты и запускает внутренний роутер
+     * для отображения нужного раздела настроек.
+     * @protected
+     */
     protected async afterMount(): Promise<void> {
         // const isAuth = await authService.checkAuth();
         // if (!isAuth) {
@@ -67,11 +91,20 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
 
     };
 
+    /**
+     * Обновляет свойства и перезапускает внутренний роутер.
+     * @param {SettingsPageProps} newProps - Новые свойства.
+     */
     public async updateProps(newProps: SettingsPageProps): Promise<void> {
         this.props = {...this.props, ...newProps};
         await this.handleSettingsRoute();
     }
 
+    /**
+     * Обрабатывает внутренний роутинг на странице настроек.
+     * Определяет, какой раздел настроек открыть, на основе URL.
+     * @private
+     */
     private async handleSettingsRoute(): Promise<void> {
         const path = this.props.currentPath || window.location.pathname;
         const pathParts = path.split('/');
@@ -85,6 +118,12 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
         await this.openSetting(this.activeSetting);
     };
 
+    /**
+     * Открывает окно с определенным разделом настроек.
+     * На данный момент реализовано только открытие профиля.
+     * @param {string} activeSetting - Идентификатор раздела ('profile').
+     * @private
+     */
     private async openSetting(activeSetting: string): Promise<void> {
         if (!this.mainContentArea) {
             console.error("Отсутствует элемент mainContentArea");
@@ -114,6 +153,10 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
         }
     };
 
+    /**
+     * Закрывает текущее открытое окно настроек и показывает плейсхолдер.
+     * @private
+     */
     private closeSetting = (): void => {
         if (!this.settingsWindow) return;
         this.settingsWindow!.unmount();

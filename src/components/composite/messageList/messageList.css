@@ -25,3 +25,18 @@
     background: var(--color-scroll);
     border-radius: 50px;
 }
+
+.message-list__empty-state {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+.message-list__empty-text {
+    background-color: var(--color-baseBackground);
+    color: var(--color-text-hover);
+    padding: 8px 16px;
+    border-radius: 16px;
+    font-size: 14px;
+}

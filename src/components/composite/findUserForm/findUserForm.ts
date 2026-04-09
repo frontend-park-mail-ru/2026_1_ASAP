@@ -5,7 +5,10 @@ import template from "./findUserForm.hbs";
 import { validationService } from "../../../services/validationService";
 
 interface FindUserFormProps extends IBaseFormProps {
-    onSubmitForm: (login: string) => void;
+    onSubmitForm: (login: string) => Promise<string | void> | void;
+    labelButton?: string;
+    labelInput?: string;
+    labelTitle?: string;
 }
 
 export class FindUserForm extends BaseForm<FindUserFormProps> {
@@ -24,7 +27,10 @@ export class FindUserForm extends BaseForm<FindUserFormProps> {
         super.afterMount();
         if (!this.element) return;
 
-        const label = "Введите логин:";
+        const title = this.props.labelTitle ? this.props.labelTitle : "Написать пользователю";
+        this.element.querySelector('.find-user-form__title')!.textContent = title;
+
+        const label = this.props.labelInput ? this.props.labelInput : "Введите логин:";
         this.element.querySelector('.find-user-form__label')!.textContent = label;
 
         const inputSlot = this.element.querySelector('[data-component="find-user-input-slot"]');
@@ -32,13 +38,14 @@ export class FindUserForm extends BaseForm<FindUserFormProps> {
             type: "text",
             name: "login",
             placeholder: "Pavel",
-            class: "ui-input-secondary find-user-input"
+            class: "ui-input-secondary find-user-input",
+            showErrorText: true
         });
         this.loginInput.mount(inputSlot as HTMLElement);
 
         const buttonSlot = this.element.querySelector('[data-component="find-user-submit-slot"]');
         this.submitButton = new Button({
-            label: "Написать",
+            label: this.props.labelButton ? this.props.labelButton : "Написать",
             type: "submit",
             class: "ui-button__secondary3 find-user-submit-btn"
         });
@@ -55,7 +62,11 @@ export class FindUserForm extends BaseForm<FindUserFormProps> {
         }
 
         this.loginInput?.clearError();
-        this.props.onSubmitForm(login);
+        
+        const errorMessage = await this.props.onSubmitForm(login);
+        if (typeof errorMessage === 'string') {
+            this.loginInput?.setError(errorMessage);
+        }
     }
 
     protected beforeUnmount(): void {
