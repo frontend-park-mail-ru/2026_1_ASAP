@@ -4,6 +4,7 @@ import template from "./profileAdditionalInfoBlock.hbs"
 
 interface ProfileAdditionalInfoBlockProps extends IBaseComponentProps {
     profileAdditionalInfo: ProfileAdditionalInfo;
+    class?: string;
 };
 
 export class ProfileAdditionalInfoBlock extends BaseComponent<ProfileAdditionalInfoBlockProps> {
@@ -19,6 +20,7 @@ export class ProfileAdditionalInfoBlock extends BaseComponent<ProfileAdditionalI
 
     constructor(props: ProfileAdditionalInfoBlockProps) {
         super(props);
+        this.props.class = props.class;
     };
 
     getTemplate() {

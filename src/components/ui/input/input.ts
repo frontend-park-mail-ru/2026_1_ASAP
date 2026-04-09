@@ -17,6 +17,7 @@ export interface InputProps extends IBaseComponentProps {
     placeholder?: string;
     name?: string;
     type?: string;
+    value?: string;
     required?: boolean;
     togglePassword?: boolean;
     showErrorText?: boolean;
@@ -47,6 +48,7 @@ export class Input extends BaseComponent<InputProps> {
         this.props.required = props.required || false;
         this.props.togglePassword = props.togglePassword || false;
         this.props.showErrorText = props.showErrorText !== false;
+        this.props.value = props.value || "";
     }
   
     getTemplate() {

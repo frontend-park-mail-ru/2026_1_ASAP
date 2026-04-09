@@ -18,6 +18,11 @@
     height: 85px;
 }
 
+.private-profile-avatar {
+    width: 62px;
+    height: 62px;
+}
+
 .setting-icon {
     height: 30px;
     width: 30px;
