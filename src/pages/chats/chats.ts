@@ -282,6 +282,29 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                             this.rebuildSidebar(); 
                             this.props.router.navigate(`/chats/${newChat.id}`);
                         }
+                    },
+                    onSubmitSearch: async (login: string) => {
+                        const targetUserRes = await contactService.getIdByLogin(login); 
+                        
+                        if (targetUserRes.status === 404 || !targetUserRes.id) {
+                            return `Пользователь с логином "${login}" не найден!`;
+                        }
+
+                        if (myId === targetUserRes.id) {
+                            return "Вы не можете добавить в контакты самого себя!";
+                        }
+                        
+                        const successRes = await contactService.addContact(login, targetUserRes.id);
+                        
+                        if (successRes.success) {
+                            this.rebuildSidebar(); 
+                            this.props.router.navigate(`/chats/create-group`);
+                            return undefined;
+                        } else if (successRes.status === 409) {
+                            return `Пользователь "${login}" уже в контактах!`;
+                        } else {
+                            return `Ошибка сервера: ${successRes.status}`;
+                        }
                     }
                 });
                 break;

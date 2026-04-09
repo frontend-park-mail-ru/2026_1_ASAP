@@ -13,6 +13,7 @@
  */
 
 import { App } from "./core/app";
+import { authService } from "./services/authService";
 import "./styles/main.css";
 import "./core/handlebars";
 
@@ -25,5 +26,11 @@ import "./core/handlebars";
  */
 document.addEventListener("DOMContentLoaded", async () => {
     const app = new App();
+
+    window.addEventListener('unauthorized', () => {
+        authService.isAuthStatus = false;
+        app.router.navigate('/login');
+    });
+
     await app.start();
 });

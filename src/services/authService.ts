@@ -22,6 +22,8 @@ interface AuthResult {
  * Все методы возвращают стандартизированный объект `AuthResult`.
  */
 class AuthService {
+    public isAuthStatus: boolean | null = null;
+
     /**
      * Проверяет, авторизован ли текущий пользователь.
      * Делает запрос к защищенному эндпоинту (`/api/v1/chats`) и проверяет успешность ответа.
@@ -36,15 +38,22 @@ class AuthService {
      * }
      */
     public async checkAuth(): Promise<boolean> {
+        if (this.isAuthStatus !== null) {
+            return this.isAuthStatus;
+        }
+
         try {
             const response = await httpClient.request(`${BASE_URL}/api/v1/chats`,
                 {
                     method: 'GET',
+                    ignoreUnauthorized: true
                 }
             );
-            return response.ok;
+            this.isAuthStatus = response.ok;
+            return this.isAuthStatus;
         } catch (error) {
             console.error("AuthService.checkAuth error:", error);
+            this.isAuthStatus = false;
             return false;
         }
     }
@@ -63,7 +72,8 @@ class AuthService {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(data)
+                body: JSON.stringify(data),
+                ignoreUnauthorized: true
             });
 
             if (!response.ok) {
@@ -100,7 +110,11 @@ class AuthService {
      * @returns {Promise<AuthResult>}
      */
     public async login(login: string, password: string): Promise<AuthResult> {
-        return this.sendRequest('login', { login, password });
+        const result = await this.sendRequest('login', { login, password });
+        if (result.success) {
+            this.isAuthStatus = true;
+        }
+        return result;
     }
 
     /**
@@ -111,7 +125,11 @@ class AuthService {
      * @returns {Promise<AuthResult>}
      */
     public async register(email: string, login: string, password: string): Promise<AuthResult> {
-        return this.sendRequest('register', { email, login, password });
+        const result = await this.sendRequest('register', { email, login, password });
+        if (result.success) {
+            this.isAuthStatus = true;
+        }
+        return result;
     }
 
     /**
@@ -121,6 +139,7 @@ class AuthService {
     public async logout(): Promise<AuthResult> {
         const result = await this.sendRequest('logout', {});
         httpClient.clearToken();
+        this.isAuthStatus = false;
         return result;
     }
 }

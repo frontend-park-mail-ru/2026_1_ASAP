@@ -52,11 +52,6 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
      * @protected
      */
     protected async afterMount(): Promise<void> {
-        // const isAuth = await authService.checkAuth();
-        // if (!isAuth) {
-        //     this.props.router.navigate('/login');
-        //     return;
-        // }
         if (!this.element) return;
 
         this.searchForm = new SearchForm({

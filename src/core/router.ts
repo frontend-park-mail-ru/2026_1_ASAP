@@ -48,10 +48,10 @@ export class Router {
         const isAuth = await authService.checkAuth();
         const isProtectedRoute = protectedRoutes.some(route => path.startsWith(route));
 
-        // if (isProtectedRoute && !isAuth) {
-        //     this.navigate('/login');
-        //     return;
-        // }
+        if (isProtectedRoute && !isAuth) {
+            this.navigate('/login');
+            return;
+        }
 
         if (!isProtectedRoute && isAuth && (path === '/login' || path === '/register' || path === '/')) {
             this.navigate('/chats');
