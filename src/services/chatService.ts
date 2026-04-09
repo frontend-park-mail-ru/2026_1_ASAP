@@ -1,8 +1,8 @@
 import { ChatDetail, FrontendMessage, User, DialogChat, GroupChat, ChannelChat, BackendChat, BackendMessage } from '../types/chat';
 import { httpClient } from '../core/utils/httpClient';
 
-// const BASE_URL = "http://pulseapp.space:8080";
-const BASE_URL = 'http://0.0.0.0:8080';
+const BASE_URL = "http://pulseapp.space:8080";
+// const BASE_URL = 'http://0.0.0.0:8080';
 
 /**
  * @class ChatService
@@ -168,7 +168,7 @@ export class ChatService {
     /**
      * Создает новый чат (Диалог или Группу)
      */
-    public async createChat(title: string, members_id: number[], type: "dialog" | "group" | "channel"): Promise<any | null> {
+    public async createChat(members_id: number[], type: "dialog" | "group" | "channel", title?: string): Promise<any | null> {
         try {
             const response = await httpClient.request(`${BASE_URL}/api/v1/chats`, {
                 method: 'POST',
@@ -218,6 +218,62 @@ export class ChatService {
             console.error("Ошибка сети при удалении чата:", error);
             return false;
         }
+    }
+
+    /**
+     * @description Мок для обновления названия и/или аватарки группы
+     * @param groupId ID группы
+     * @param newName Новое название группы
+     * @param newAvatar Новый файл аватарки (опционально)
+     */
+    public async updateGroupMock(groupId: string, newName: string, newAvatar?: File): Promise<boolean> {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                console.log(`[Mock] Группа ${groupId} обновлена. Новое имя: ${newName}`);
+                resolve(true);
+            }, 500);
+        });
+    }
+
+    /**
+     * @description Мок для добавления участника в группу
+     * @param groupId ID группы
+     * @param userId ID пользователя
+     */
+    public async addMemberMock(groupId: string, userId: number): Promise<boolean> {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                console.log(`[Mock] Пользователь ${userId} добавлен в группу ${groupId}`);
+                resolve(true);
+            }, 500);
+        });
+    }
+
+    /**
+     * @description Мок для удаления/исключения участника из группы (только owner)
+     * @param groupId ID группы
+     * @param userId ID пользователя для удаления
+     */
+    public async removeMemberMock(groupId: string, userId: number): Promise<boolean> {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                console.log(`[Mock] Пользователь ${userId} исключен из группы ${groupId}`);
+                resolve(true);
+            }, 500);
+        });
+    }
+
+    /**
+     * @description Мок для самостоятельного выхода пользователя из группы
+     * @param groupId ID группы
+     */
+    public async leaveGroupMock(groupId: string): Promise<boolean> {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                console.log(`[Mock] Вы покинули группу ${groupId}`);
+                resolve(true);
+            }, 500);
+        });
     }
 }
 

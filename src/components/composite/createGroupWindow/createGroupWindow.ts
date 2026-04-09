@@ -7,10 +7,13 @@ import { Button } from "../../ui/button/button";
 import { Router } from "../../../core/router";
 import { SearchForm } from "../searchForm/searchForm";
 import { InfoMenu } from "../infoMenu/infoMenu";
+import { FindUserContainer } from "../findUserContainer/findUserContainer";
+import { contactService } from "../../../services/contactService";
 
 interface CreateGroupWindowProps extends IBaseComponentProps {
     router: Router;
     onSubmit: (userIds: number[], contactNames: string) => void;
+    onSubmitSearch: (login: string) => Promise<string | void> | void;
 }
 
 export class CreateGroupWindow extends BaseComponent<CreateGroupWindowProps> {
@@ -19,6 +22,7 @@ export class CreateGroupWindow extends BaseComponent<CreateGroupWindowProps> {
     private contactList: ContactListWrapper | null = null;
     private submitButton: Button | null = null;
     private SearchField: SearchForm | null = null;
+    private layoutContent: BaseComponent<any> | null = null;
     private selectedUsers: Map<number, string> = new Map(); 
     private infoMenu: InfoMenu | null = null;
 
@@ -30,7 +34,7 @@ export class CreateGroupWindow extends BaseComponent<CreateGroupWindowProps> {
         return template;
     }
 
-    protected afterMount(): void {
+    protected async afterMount(): Promise<void> {
         super.afterMount();
         
         if (!this.element) return;
@@ -56,50 +60,68 @@ export class CreateGroupWindow extends BaseComponent<CreateGroupWindowProps> {
             content: "Выберите пользователей"
         });
 
-        this.contactList = new ContactListWrapper({
-            router: this.props.router,
-            listMode: "createGroup",
-            onAction: (contactId: number, isSelected?: boolean, contactName?: string) => {
-                if (isSelected && contactName) {
-                    this.selectedUsers.set(contactId, contactName);
-                } else {
-                    this.selectedUsers.delete(contactId);
+        const contacts = await contactService.getContacts();
+
+        if (contacts.length === 0) {
+            this.layoutContent = new FindUserContainer({
+                showEmptyMessage: false,
+                onSubmitSearch: (login: string) => {
+                    return this.props.onSubmitSearch(login);
+                },
+                labelButton: "Добавить",
+                labelInput: "Введите логин:",
+                labelTitle: "У вас пока нет контактов, найдите кого-нибудь!"
+            });
+
+            this.actionLayout = new ActionLayout({
+                header: this.actionHeader,
+                content: [this.SearchField, this.layoutContent],
+            });
+            this.actionLayout.mount(layoutSlot as HTMLElement);
+        } else {
+            this.contactList = new ContactListWrapper({
+                router: this.props.router,
+                listMode: "createGroup",
+                onAction: (contactId: number, isSelected?: boolean, contactName?: string) => {
+                    if (isSelected && contactName) {
+                        this.selectedUsers.set(contactId, contactName);
+                    } else {
+                        this.selectedUsers.delete(contactId);
+                    }
                 }
-                console.log("Выбранные пользователи:", Array.from(this.selectedUsers));
-                // todo проверить чек боксы и юзеров в списке контактов
-            }
-        });
+            });
 
-        this.actionLayout = new ActionLayout({
-            header: this.actionHeader,
-            content: [this.SearchField, this.contactList],
-        });
-        this.actionLayout.mount(layoutSlot as HTMLElement);
+            this.actionLayout = new ActionLayout({
+                header: this.actionHeader,
+                content: [this.SearchField, this.contactList],
+            });
+            this.actionLayout.mount(layoutSlot as HTMLElement);
 
-        this.submitButton = new Button({
-            label: "Создать группу",
-            class: "create-group-submit-btn ui-button__primary",
-            onClick: () => {
-                if (this.selectedUsers.size === 0) {
-                    this.infoMenu = new InfoMenu({
-                        message: "Выберите хотя бы одного пользователя для создания чата!",
-                        onClose: () => {
-                            this.infoMenu?.unmount();
-                            this.infoMenu = null;
-                        }
-                    });
-                    this.infoMenu.mount(document.body);
-                    return;
+            this.submitButton = new Button({
+                label: "Создать группу",
+                class: "create-group-submit-btn ui-button__primary",
+                onClick: () => {
+                    if (this.selectedUsers.size === 0) {
+                        this.infoMenu = new InfoMenu({
+                            message: "Выберите хотя бы одного пользователя для создания чата!",
+                            onClose: () => {
+                                this.infoMenu?.unmount();
+                                this.infoMenu = null;
+                            }
+                        });
+                        this.infoMenu.mount(document.body);
+                        return;
+                    }
+
+                    const idsArray = Array.from(this.selectedUsers.keys());
+                    // Склеиваем имена через запятую для названия группы
+                    const groupName = Array.from(this.selectedUsers.values()).join(', ');
+                    
+                    this.props.onSubmit(idsArray, groupName);
                 }
-
-                const idsArray = Array.from(this.selectedUsers.keys());
-                // Склеиваем имена через запятую для названия группы
-                const groupName = Array.from(this.selectedUsers.values()).join(', ');
-                
-                this.props.onSubmit(idsArray, groupName);
-            }
-        });
-        if (footerSlot) this.submitButton.mount(footerSlot as HTMLElement);
+            });
+            if (footerSlot) this.submitButton.mount(footerSlot as HTMLElement);
+        }
     }
 
     protected beforeUnmount(): void {
@@ -107,6 +129,7 @@ export class CreateGroupWindow extends BaseComponent<CreateGroupWindowProps> {
         this.actionLayout?.unmount();
         this.actionHeader?.unmount();
         this.contactList?.unmount();
+        this.layoutContent?.unmount();
         this.submitButton?.unmount();
         this.infoMenu?.unmount();
         this.selectedUsers.clear();

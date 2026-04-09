@@ -59,12 +59,14 @@ export class AuthForm extends BaseForm<AuthFormProps> {
         if (!this.element) return;
 
         this.loginInput = new Input({ 
-            type: 'login', 
+            type: 'text', 
             name: 'login', 
             placeholder: 'Логин', 
             required: true, 
             class: 'ui-input', 
-            showErrorText: true 
+            showErrorText: true,
+            autocomplete: 'username',
+            value: localStorage.getItem('saved_login') || ''
         });
         this.loginInput.mount(this.element.querySelector("[data-component='loginInput']") as HTMLElement);
 
@@ -80,13 +82,16 @@ export class AuthForm extends BaseForm<AuthFormProps> {
             placeholder: 'Пароль', 
             required: true, 
             togglePassword: true, 
-            showErrorText: true 
+            showErrorText: true,
+            autocomplete: 'current-password'
         });
         this.passwordInput.mount(this.element.querySelector("[data-component='passwordInput']") as HTMLElement);
 
+        const savedLogin = localStorage.getItem('saved_login');
         this.remember = new Checkbox({ 
             label: 'Запомнить меня', 
-            name: 'remember' 
+            name: 'remember',
+            checked: !!savedLogin
         });
         this.remember.mount(this.element.querySelector(".auth__remember") as HTMLElement);
 
@@ -178,6 +183,11 @@ export class AuthForm extends BaseForm<AuthFormProps> {
 
         const result = await authService.login(data.login!, data.password!);
         if (result.success) {
+            if (this.remember?.value) {
+                localStorage.setItem('saved_login', data.login!);
+            } else {
+                localStorage.removeItem('saved_login');
+            }
             this.props.router.navigate('/chats');
         } else {
             this.loginInput.setError(' ');

@@ -1,0 +1,84 @@
+import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent";
+import { Button } from "../../ui/button/button";
+import template from './confirmModal.hbs';
+
+/**
+ * @interface ConfirmModalProps
+ * @description Пропсы для универсального модального окна подтверждения.
+ * @property {string} text - Текст вопроса/предупреждения.
+ * @property {string} confirmButtonText - Текст кнопки подтверждения (красная).
+ * @property {Function} onConfirm - Коллбэк при подтверждении действия.
+ * @property {Function} onCancel - Коллбэк при отмене (закрытии модалки).
+ */
+interface ConfirmModalProps extends IBaseComponentProps {
+    text: string;
+    confirmButtonText: string;
+    onConfirm(): void;
+    onCancel(): void;
+}
+
+/**
+ * @class ConfirmModal
+ * @extends BaseComponent
+ * @description Универсальный компонент модального окна подтверждения.
+ * Переиспользуется для любых подтверждений: удаление чата, выход из группы,
+ * исключение участника и т.д. Принимает текст и текст кнопки через пропсы.
+ */
+export class ConfirmModal extends BaseComponent<ConfirmModalProps> {
+    private cancelButton: Button | null = null;
+    private confirmButton: Button | null = null;
+
+    constructor(props: ConfirmModalProps) {
+        super(props);
+    }
+
+    getTemplate() {
+        return template;
+    }
+
+    protected afterMount(): void {
+        if (!this.element) {
+            console.error("confirmModal: нет элемента для монтирования");
+            return;
+        }
+
+        const overlay = this.element.querySelector('[data-component="confirm-modal-overlay"]');
+        if (overlay) {
+            overlay.addEventListener('click', () => {
+                this.props.onCancel();
+            });
+        }
+
+        const mainContainer = this.element.querySelector('[data-component="confirm-modal__container"]');
+        if (!mainContainer) return;
+
+        const textContainer = mainContainer.querySelector('[data-component="confirm-modal-info-container"]');
+        if (textContainer) {
+            textContainer.textContent = this.props.text;
+        }
+
+        const buttonsContainer = mainContainer.querySelector('[data-component="confirm-modal-buttons-container"]');
+        if (!buttonsContainer) return;
+
+        this.cancelButton = new Button({
+            label: "Отмена",
+            class: "confirm-modal__button--cancel ui-button ui-button__secondary2",
+            onClick: this.props.onCancel,
+        });
+        this.cancelButton.mount(buttonsContainer as HTMLElement);
+
+        this.confirmButton = new Button({
+            label: this.props.confirmButtonText,
+            class: "confirm-modal__button--submit ui-button",
+            onClick: () => {
+                this.props.onConfirm();
+            },
+        });
+        this.confirmButton.mount(buttonsContainer as HTMLElement);
+    }
+
+    protected beforeUnmount(): void {
+        this.cancelButton?.unmount();
+        this.confirmButton?.unmount();
+    }
+}

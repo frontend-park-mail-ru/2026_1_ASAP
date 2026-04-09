@@ -2,6 +2,9 @@
  * @class HttpClient
  * @description Обеспечивает отправку HTTP-запросов с автоматической обработкой CSRF-токенов.
  */
+export interface IRequestOptions extends RequestInit {
+    ignoreUnauthorized?: boolean;
+}
 class HttpClient {
     private readonly tokenHeaderName = 'X-CSRF-Token';
     private readonly newTokenHeaderName = 'X-New-Csrf-Token';
@@ -38,7 +41,7 @@ class HttpClient {
      * @param {RequestInit} options - Опции запроса.
      * @returns {Promise<Response>} - Промис, который разрешается с ответом сервера.
      */
-    public async request(url: string, options: RequestInit = {}): Promise<Response> {
+    public async request(url: string, options: IRequestOptions = {}): Promise<Response> {
         const headers = new Headers(options.headers || {});
         const currentToken = this.getToken();
 
@@ -69,6 +72,12 @@ class HttpClient {
                 this.setToken(retryNewToken);
             }
         }
+
+        if (response.status === 401 && !options.ignoreUnauthorized) {
+            this.clearToken();
+            window.dispatchEvent(new CustomEvent('unauthorized'));
+        }
+
         return response;
     }
 }

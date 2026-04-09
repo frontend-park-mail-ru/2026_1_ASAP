@@ -4,7 +4,7 @@ import { Avatar } from '../../ui/avatar/avatar';
 import template from './dialogHeader.hbs';
 import { Button } from '../../ui/button/button';
 import { DeleteChatMenu } from '../deleteChatMenu/deleteChatMenu';
-import { DeleteMenu } from '../deleteMenu/deleteMenu';
+import { ConfirmModal } from '../confirmModal/confirmModal';
 
 /**
  * @interface DialogHeaderProps - Свойства компонента шапки диалога.
@@ -23,7 +23,7 @@ export class DialogHeader extends BaseComponent {
     private avatarComponent: Avatar | null = null;
     private settingsButton: Button | null = null;
     private deleteChatMenu: DeleteChatMenu | null = null;
-    private deleteMenu: DeleteMenu | null = null;
+    private confirmModal: ConfirmModal | null = null;
     isDeleteMenuOpen: boolean = false;
     isDeleteConfirmationOpen: boolean = false;
 
@@ -100,22 +100,24 @@ export class DialogHeader extends BaseComponent {
         
         if (!this.isDeleteConfirmationOpen) {
             const deleteMenuContainer = this.element.querySelector('[data-component="dialog-settings-slot"]');
-            this.deleteMenu = new DeleteMenu({
-                onClose: () => {
+            this.confirmModal = new ConfirmModal({
+                text: "Вы точно хотите удалить чат?",
+                confirmButtonText: "Удалить",
+                onCancel: () => {
                     this.isDeleteConfirmationOpen = false;
-                    this.deleteMenu?.unmount();
-                    this.deleteMenu = null;
+                    this.confirmModal?.unmount();
+                    this.confirmModal = null;
                 },
-                onSubmitDelete: () => {
+                onConfirm: () => {
                     if (this.props.onDeleteChat) {
                         this.props.onDeleteChat(); 
                     }
                     this.isDeleteConfirmationOpen = false;
-                    this.deleteMenu?.unmount();
-                    this.deleteMenu = null;
+                    this.confirmModal?.unmount();
+                    this.confirmModal = null;
                 }
             });
-            this.deleteMenu.mount(deleteMenuContainer as HTMLElement);
+            this.confirmModal.mount(deleteMenuContainer as HTMLElement);
             this.isDeleteConfirmationOpen = true;
 
         }
@@ -128,5 +130,7 @@ export class DialogHeader extends BaseComponent {
     protected beforeUnmount() {
         this.avatarComponent?.unmount();
         this.settingsButton?.unmount();
+        this.deleteChatMenu?.unmount();
+        this.confirmModal?.unmount();
     }
 }

@@ -9,7 +9,7 @@
 }
 
 .action-layout__header {
-    height: 70px;
+    display: flex;
 }
 
 .action-layout__content {

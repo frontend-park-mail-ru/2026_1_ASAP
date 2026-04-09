@@ -4,7 +4,6 @@ import { RegisterPage } from "../pages/register/register";
 import { Layout } from "./layout/layout";
 import { PageManager } from "./pageManager";
 import { Router } from "./router";
-import { authService } from "../services/authService";
 import { ContactsPage } from "../pages/contacts/contacts";
 import { SettingsPage } from "../pages/settings/settings";
 
@@ -30,7 +29,7 @@ const routes = {
  */
 export class App {
     private layout: Layout;
-    private router: Router;
+    public router: Router;
     private pageManager: PageManager;
 
     constructor() {
@@ -48,18 +47,6 @@ export class App {
      * @returns {Promise<void>}
      */
     async start(): Promise<void> {
-        const isAuth = await authService.checkAuth();
-        const currentPath = window.location.pathname;
-
-        if (isAuth) {
-            const protectedPaths = ['/', '/login', '/register'];
-            const targetPath = protectedPaths.includes(currentPath) ? '/chats' : currentPath;
-            this.router.navigate(targetPath);
-        } else {
-            this.router.navigate('/login');
-        }
-
-
         this.router.init();
     }
 }
