@@ -1,31 +1,31 @@
 <div class="profile-additional-info-block">
     <div class="additional-info-paragraph-default">
-        <span class="additional-title">Логин:</span><p class="{{class}}">{{profileAdditionalInfo.login}}</p>
+        <span class="additional-title">Логин:</span><p class="{{class}}" data-editable="true" data-field="login">{{profileAdditionalInfo.login}}</p>
     </div>
     <div class="additional-info-paragraph-default">
         <span class="additional-title">Почта:</span>
         {{#if profileAdditionalInfo.email}}
-            <p class="{{class}}">{{profileAdditionalInfo.email}}</p>
+            <p class="{{class}}" data-editable="true" data-field="email">{{profileAdditionalInfo.email}}</p>
         {{else}}
-            <p class="empty-additional-info {{class}}">Не указано</p>
+            <p class="empty-additional-info {{class}}" data-editable="true" data-field="email">Не указано</p>
         {{/if}}
     </div>
     <div class="additional-info-paragraph-default">
         <span class="additional-title">День рождения:</span>
         {{#if profileAdditionalInfo.birthDate}}
-            <p class="{{class}}">{{profileAdditionalInfo.birthDate}}</p>
+            <p class="{{class}}" data-editable="true" data-field="birthDate">{{profileAdditionalInfo.birthDate}}</p>
         {{else}}
-            <p class="empty-additional-info {{class}}">Не указано</p>
+            <p class="empty-additional-info {{class}}" data-editable="true" data-field="birthDate">Не указано</p>
         {{/if}}
     </div>
     <div class="bio-info">
         <span class="additional-title">О себе:</span>
         {{#if profileAdditionalInfo.bio}}
             <div class="bio-container">
-                <span class="bio-text {{class}}"></span>
+                <span class="bio-text {{class}}" data-editable="true" data-field="bio"></span>
             </div>
         {{else}}
-            <p class="empty-additional-info {{class}}">Не указано</p>
+            <p class="empty-additional-info {{class}}" data-editable="true" data-field="bio">Не указано</p>
         {{/if}}
     </div>
 </div>

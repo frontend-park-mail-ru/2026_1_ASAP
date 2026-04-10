@@ -27,10 +27,34 @@ export class SettingsListItem extends BaseComponent<SettingsListItemProps> {
     };
 
     private setActiveSetting(settingItem: SettingsItem): void {
-        this.activeItem?.element.classList.remove('settings-item--selected');
-        this.activeItem = settingItem;
-        this.activeItem.element.classList.add('settings-item--selected');
+        if (settingItem) {
+            this.activeItem?.element.classList.remove('settings-item--selected');
+            this.activeItem = settingItem;
+            this.activeItem.element.classList.add('settings-item--selected');
+        } else {
+            this.activeItem?.element.classList.remove('settings-item--selected');
+            this.activeItem = null;
+        }
     };
+
+    public setActiveByKey(setting: string) {
+        switch (setting) {
+            case "profile":
+                this.setActiveSetting(this.profileSetting!);
+                break;
+            case "common":
+                this.setActiveSetting(this.commonSetting!);
+                break;
+            case "privacy":
+                this.setActiveSetting(this.privacySetting!);
+                break;
+            case "sub":
+                this.setActiveSetting(this.subscriptionSetting!);
+                break;
+            default:
+                this.setActiveSetting(null);
+        }
+    }
 
     private handleLogout = async (): Promise<void> => {
         await authService.logout();
@@ -44,7 +68,7 @@ export class SettingsListItem extends BaseComponent<SettingsListItemProps> {
             title: 'Мой профиль',
             onClick: () => {
                 this.setActiveSetting(this.profileSetting!);
-                this.props.onProfileClick();
+                this.props.router.navigate(`/settings`);
             },
         });
         this.profileSetting.mount(this.mainContentArea);
