@@ -6,6 +6,7 @@ import { PageManager } from "./pageManager";
 import { Router } from "./router";
 import { ContactsPage } from "../pages/contacts/contacts";
 import { SettingsPage } from "../pages/settings/settings";
+import { authService } from "../services/authService";
 
 const routes = {
     '/': LoginPage,
@@ -47,6 +48,7 @@ export class App {
      * @returns {Promise<void>}
      */
     async start(): Promise<void> {
+
         this.router.init();
     }
 }

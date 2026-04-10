@@ -25,7 +25,6 @@ export interface InputProps extends IBaseComponentProps {
     showErrorText?: boolean;
     onClick?: (event: MouseEvent) => void;
     autocomplete?: string;
-    value?: string;
 }
 
 /**
@@ -34,7 +33,7 @@ export interface InputProps extends IBaseComponentProps {
  */
 export class Input extends BaseComponent<InputProps> {
     private _error: string = "";
-    private inputElement: HTMLInputElement | null = null;
+    private inputElement: HTMLInputElement | HTMLTextAreaElement | null = null;
     private errorElement: HTMLElement | null = null;
     private toggleIconElement: HTMLImageElement | null = null;
     private inputHandler: (() => void) | null = null;
@@ -63,7 +62,11 @@ export class Input extends BaseComponent<InputProps> {
      * @override
      */
     protected afterMount(): void {
-        this.inputElement = this.element?.querySelector('input') || null;
+        if (this.element instanceof HTMLInputElement || this.element instanceof HTMLTextAreaElement) {
+            this.inputElement = this.element;
+        } else {
+            this.inputElement = this.element?.querySelector('input') || this.element?.querySelector('textarea') || null;
+        }
         if (!this.inputElement) {
             console.warn(`Input component ${this.constructor.name} did not find its input element.`);
             return;

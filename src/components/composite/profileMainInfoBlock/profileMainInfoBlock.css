@@ -22,3 +22,45 @@
 .contact-user-full-name {
     font: 400 24px/30px var(--font-primary);
 }
+
+.settings-avatar-wrap {
+    position: relative;
+    flex-shrink: 0;
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+.settings-avatar-wrap .private-profile-avatar {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.settings-avatar-wrap__overlay {
+    position: absolute;
+    inset: 0;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    border: none;
+    background-color: rgba(0, 0, 0, 0.35);
+    width: 100%;
+    height: 100%;
+    line-height: 0;
+}
+
+.settings-avatar-wrap__overlay > img {
+    display: block;
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+    opacity: 0.85;
+    pointer-events: none;
+}
