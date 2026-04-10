@@ -17,6 +17,7 @@ import { ChannelHeader } from "../../components/composite/channelHeader/channelH
 import { CreateDialogWindow } from "../../components/composite/createDialogWindow/createDialogWindow"; 
 import { CreateGroupWindow } from "../../components/composite/createGroupWindow/createGroupWindow";
 import { GroupDetailsWindow } from "../../components/composite/groupDetailsWindow/groupDetailsWindow";
+import { AddMemberWindow } from "../../components/composite/addMemberWindow/addMemberWindow";
 import { contactService } from "../../services/contactService";
 
 const CURRENT_USER_LOGIN = 'alice'; 
@@ -58,6 +59,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private chatWindow: ChatWindow | null = null;
     private createChatWindow: BaseComponent | null = null;
     private groupDetailsWindow: GroupDetailsWindow | null = null;
+    private addMemberWindow: AddMemberWindow | null = null;
     
     public activeChatId: string | null = null;
     private mainContentArea: HTMLElement | null = null;
@@ -118,6 +120,10 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         if (this.groupDetailsWindow) {
             this.groupDetailsWindow.unmount();
             this.groupDetailsWindow = null;
+        }
+        if (this.addMemberWindow) {
+            this.addMemberWindow.unmount();
+            this.addMemberWindow = null;
         }
         if (this.placeholderElement) {
             this.placeholderElement.style.display = 'none';
@@ -420,8 +426,10 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     }
 
     /**
-     * Открывает окно деталей группы поверх чата
-     * @param chat {GroupChat} Объект группы
+     * Открывает окно деталей группы поверх чата.
+     * При успешном обновлении группы (название/аватарка) пересобирает
+     * шапку чата и сайдбар, чтобы отобразить актуальные данные.
+     * @param chat Объект группы
      */
     private openGroupDetails(chat: GroupChat): void {
         if (!this.mainContentArea) return;
@@ -461,18 +469,82 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 this.rebuildSidebar();
                 this.props.router.navigate('/chats');
             },
-            onUpdateGroup: async (newName: string, newAvatar?: File) => {
-                await chatService.updateGroupMock(chat.id, newName, newAvatar);
+            onGroupUpdated: async () => {
+                this.rebuildSidebar();
+                if (this.activeChatId) {
+                    if (this.groupDetailsWindow) {
+                        this.groupDetailsWindow.unmount();
+                        this.groupDetailsWindow = null;
+                    }
+                    this.chatWindow?.unmount();
+                    this.chatWindow = null;
+                    await this.openChat(this.activeChatId);
+                }
             },
             onRemoveMember: async (userId: number) => {
                 await chatService.removeMemberMock(chat.id, userId);
             },
-            onAddMember: async () => {
-                await chatService.addMemberMock(chat.id, 999);
+            onAddMember: () => {
+                this.openAddMemberWindow(chat);
             }
         });
 
         this.groupDetailsWindow.mount(this.mainContentArea);
+    }
+    /**
+     * Открывает окно добавления участника в группу по логину.
+     * Прячет окно деталей группы и показывает форму поиска пользователя.
+     * @param chat — Объект группового чата, в который добавляем участника.
+     */
+    private openAddMemberWindow(chat: GroupChat): void {
+        if (!this.mainContentArea) return;
+
+        if (this.groupDetailsWindow?.element) {
+            this.groupDetailsWindow.element.style.display = 'none';
+        }
+
+        this.addMemberWindow = new AddMemberWindow({
+            onBack: () => {
+                if (this.addMemberWindow) {
+                    this.addMemberWindow.unmount();
+                    this.addMemberWindow = null;
+                }
+                if (this.groupDetailsWindow?.element) {
+                    this.groupDetailsWindow.element.style.display = 'flex';
+                }
+            },
+            onSubmitSearch: async (login: string) => {
+                const targetUserRes = await contactService.getIdByLogin(login);
+
+                if (targetUserRes.status === 404 || !targetUserRes.id) {
+                    return `Пользователь с логином "${login}" не найден!`;
+                }
+
+                const success = await chatService.addMembersToChat(chat.id, [targetUserRes.id]);
+
+                if (success) {
+                    if (this.addMemberWindow) {
+                        this.addMemberWindow.unmount();
+                        this.addMemberWindow = null;
+                    }
+                    if (this.groupDetailsWindow) {
+                        this.groupDetailsWindow.unmount();
+                        this.groupDetailsWindow = null;
+                    }
+                    this.rebuildSidebar();
+                    if (this.activeChatId) {
+                        this.chatWindow?.unmount();
+                        this.chatWindow = null;
+                        await this.openChat(this.activeChatId);
+                    }
+                    return undefined;
+                } else {
+                    return 'Не удалось добавить участника. Возможно, он уже в группе.';
+                }
+            }
+        });
+
+        this.addMemberWindow.mount(this.mainContentArea);
     }
 
     /**

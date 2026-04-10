@@ -2,9 +2,9 @@
 .find-user-form {
     background-color: var(--color-baseBackground);
     border-radius: 10px;
-    padding: 25px 25px 0px 25px;
+    padding: 25px 25px 50px 25px;
     width: 360px;
-    height: 251px;
+    height: fit-content;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -26,7 +26,7 @@
 
 .find-user-form__label {
     color: var(--color-text);
-    font: var(--text-tertiary);
+    font: var(--font-secondary);
 }
 
 .find-user-form__button-wrapper {

@@ -1,0 +1,46 @@
+.add-member-window {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.add-member-window__layout-slot {
+    flex: 1;
+    overflow: hidden;
+}
+
+.add-member-window__footer {
+    display: flex;
+    justify-content: center;
+    height: 60px;
+    gap: 10px;
+}
+
+.add-member-window__back-button {
+    padding: 10px;
+    width: 100%;
+    align-items: center;
+    font: var(--font-text-main);
+    letter-spacing: var(--text-main-letter-spacing);
+    background: none;
+    border: none;
+    color: var(--color-text);
+}
+
+.add-member-window__back-button:hover {
+    cursor: pointer;
+}
+
+.add-member-submit-btn {
+    width: 35%;
+    border-radius: 10px;
+    margin: 10px;
+    gap: 10px;
+    background: var(--gradiend-button);
+    color: var(--color-text);
+    border: none;
+    font: var(--font-secondary);
+    letter-spacing: var(--text-secondary-letter-spacing);
+}
