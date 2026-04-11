@@ -28,14 +28,19 @@ export default {
             },
             {
                 test: /\.ts$/,
-                use: {
-                    loader: "ts-loader",
-                    options: {
-                        transpileOnly: true,
-                    }
-                },
-                exclude:  /node_modules/
-            }
+                use: [
+                    {
+                        loader: 'babel-loader',
+                    },
+                    {
+                        loader: 'ts-loader',
+                        options: {
+                            transpileOnly: true,
+                        },
+                    },
+                ],
+                exclude: /node_modules/,
+            },
         ]
     },
 
