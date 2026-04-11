@@ -1,0 +1,77 @@
+/**
+ * @file editProfileOverlay.scss
+ * @description Стили оверлея для редактирования профиля (например, выбор области аватара).
+ */
+
+.edit-profile {
+    position: static;
+
+    &__overlay {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 100%;
+        background-color: $color-overlay-light;
+        z-index: 999;
+    }
+
+    &__edit-container {
+        position: fixed;
+        z-index: 1000;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        background-color: $color-neutral;
+        @include flex-column;
+        align-items: center;
+        gap: 10px;
+        border-radius: 10px;
+        padding: 10px;
+        min-width: 320px;
+        box-sizing: border-box;
+
+        .edit-title {
+            color: $color-scroll;
+            height: 30px;
+        }
+    }
+
+    &__bio-block {
+        width: 100%;
+        @include flex-column;
+        align-items: stretch;
+        gap: 4px;
+        box-sizing: border-box;
+    }
+
+    &__bio-counter-row {
+        display: flex;
+        justify-content: flex-end;
+        width: 100%;
+        box-sizing: border-box;
+        padding-right: 10px;
+    }
+
+    &__char-count {
+        font: $text-secondary;
+        font-size: 14px;
+        line-height: 1.2;
+        color: $color-scroll;
+        opacity: 0.85;
+    }
+
+    &__validation-error {
+        margin: 0;
+        width: 100%;
+        min-height: 1.25em;
+        font: $text-secondary;
+        color: $color-error;
+        text-align: center;
+        box-sizing: border-box;
+
+        &[hidden] {
+            display: none;
+        }
+    }
+}

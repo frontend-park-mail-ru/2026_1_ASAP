@@ -6,6 +6,7 @@ interface SettingsItemProps extends IBaseComponentProps {
     src: string;
     class?: string;
     title: string;
+    disabled?: boolean;
     onClick?: () => void;
 };
 
@@ -22,6 +23,10 @@ export class SettingsItem extends BaseComponent<SettingsItemProps> {
     };
     
     protected afterMount(): void {
+        if (this.props.disabled) {
+            this.element!.classList.add('settings-item--disabled');
+        }
+
         this.settingIcon = new Avatar({
             class: 'setting-icon',
             src: this.props.src
@@ -32,7 +37,7 @@ export class SettingsItem extends BaseComponent<SettingsItemProps> {
         this.settingName.textContent = this.props.title;
         this.element!.appendChild(this.settingName);
 
-        if (this.props.onClick)
+        if (this.props.onClick && !this.props.disabled)
             this.element!.addEventListener('click', this.props.onClick);
     };
 

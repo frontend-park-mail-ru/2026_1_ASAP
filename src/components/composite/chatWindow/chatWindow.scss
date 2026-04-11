@@ -1,0 +1,41 @@
+/**
+ * @file chatWindow.scss
+ * @description Основная структура окна чата.
+ */
+
+.chat-window {
+    @include flex-column;
+    height: 100%;
+    width: 100%;
+    flex-grow: 1;
+    background-color: $color-background-default;
+    padding: 10px;
+    gap: 10px;
+    box-sizing: border-box;
+    min-height: 0;
+    overflow: hidden;
+
+    &__header {
+        padding: $spacing-sm $spacing-md;
+        border: 1px solid $color-stroke;
+        border-radius: 10px;
+        background-color: transparent;
+        min-height: 60px;
+        display: flex;
+        align-items: center;
+    }
+
+    &__main {
+        flex-grow: 1;
+        min-height: 0;
+        overflow: hidden;
+        @include flex-column;
+    }
+
+    &__footer {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        padding: 10px;
+    }
+}

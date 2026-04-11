@@ -1,0 +1,36 @@
+/**
+ * @file contacts.scss
+ * @description Стили страницы контактов.
+ */
+
+.contacts-page {
+    min-height: 100vh;
+    width: 100vw;
+    background: $gradient-background-chats;
+    background-attachment: fixed;
+    display: flex;
+    flex-direction: row;
+    margin: 0;
+
+    &__sidebar {
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        background-color: $color-chat-sidebar;
+        min-width: 280px;
+        max-width: 459px;
+        height: 100vh;
+        width: 35%;
+        border-right: 1px solid $color-border-sidebar;
+    }
+
+    &__mainfield {
+        flex-grow: 1;
+        display: flex;
+        background-color: $color-background;
+        justify-content: center;
+        align-items: center;
+        min-width: 0;
+        overflow: hidden;
+    }
+}

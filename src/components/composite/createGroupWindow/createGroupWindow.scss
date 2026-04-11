@@ -1,0 +1,66 @@
+/**
+ * @file createGroupWindow.scss
+ * @description Стили окна создания группы.
+ */
+
+.create-group-window {
+    width: 100%;
+    height: 100%;
+    @include flex-column;
+    position: relative;
+
+    &__layout-slot {
+        flex: 1;
+        overflow: hidden;
+    }
+
+    &__footer {
+        display: flex;
+        justify-content: center;
+        height: 60px;
+        gap: 10px;
+    }
+
+    &__back-button {
+        padding: 10px;
+        width: 100%;
+        align-items: center;
+        font: $text-main-style;
+        letter-spacing: $text-main-ls;
+        @include btn-reset;
+        color: $color-text;
+        @include hover-transition;
+
+        &:hover {
+            cursor: pointer;
+        }
+    }
+
+    .create-group-submit-btn {
+        width: 35%;
+        border-radius: 10px;
+        margin: 10px;
+        gap: 10px;
+        background: $gradient-button;
+        color: $color-text;
+        border: none;
+        font: $text-secondary;
+        letter-spacing: $text-secondary-ls;
+    }
+
+    /* стиль для чекбокса */
+    .contact-item__control-wrapper {
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+    }
+
+    &__search {
+        padding: 10px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+    }
+}

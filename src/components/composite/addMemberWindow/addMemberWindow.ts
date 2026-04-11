@@ -1,6 +1,5 @@
 import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent";
 import template from './addMemberWindow.hbs';
-import './addMemberWindow.css';
 import { ActionLayout } from "../../ui/actionLayout/actionLayout";
 import { ActionHeader } from "../../ui/actionHeader/actionHeader";
 import { Button } from "../../ui/button/button";

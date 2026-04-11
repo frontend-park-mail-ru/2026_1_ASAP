@@ -1,0 +1,45 @@
+/**
+ * @file login.scss
+ * @description Стили страницы входа.
+ */
+
+.login-page {
+    min-height: 100vh;
+    width: 100%;
+    overflow: hidden;
+    position: fixed;
+    inset: 0;
+    @include flex-center;
+    background: $color-background;
+
+    &__glow {
+        position: absolute;
+        width: 410px;
+        height: 520px;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        background: $color-background-blur;
+        filter: blur(238px);
+        z-index: 0;
+        pointer-events: none;
+    }
+}
+
+.login-card {
+    background-color: $color-text;
+    border-radius: 10px;
+    @include flex-column;
+    gap: 25px;
+    height: 520px;
+    width: 100%;
+    max-width: 410px;
+    align-items: center;
+    z-index: 1;
+}
+
+.auth__logo {
+    position: absolute;
+    top: 0;
+    left: 0;
+}

@@ -14,7 +14,7 @@
 
 import { App } from "./core/app";
 import { authService } from "./services/authService";
-import "./styles/main.css";
+import "./styles/main.scss";
 import "./core/handlebars";
 
 /**

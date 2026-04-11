@@ -1,0 +1,50 @@
+/**
+ * @file createDialogWindow.scss
+ * @description Стили окна создания диалога.
+ */
+
+.create-dialog-window {
+    width: 100%;
+    height: 100%;
+    @include flex-column;
+    position: relative;
+
+    &__layout-slot {
+        flex: 1;
+        overflow: hidden;
+    }
+
+    &__back-button {
+        padding: 10px;
+        width: 100%;
+        align-items: center;
+        font: $text-main-style;
+        letter-spacing: $text-main-ls;
+        @include btn-reset;
+        color: $color-text;
+        @include hover-transition;
+
+        &:hover {
+            cursor: pointer;
+        }
+    }
+
+    .create-dialog-btn {
+        @include btn-reset;
+        @include hover-transition;
+
+        &:hover {
+            cursor: pointer;
+            background-color: $color-text-hover2;
+            border-radius: 5px;
+        }
+    }
+
+    &__search {
+        padding: 10px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+    }
+}

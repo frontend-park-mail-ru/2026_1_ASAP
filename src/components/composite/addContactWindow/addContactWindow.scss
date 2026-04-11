@@ -1,0 +1,10 @@
+/**
+ * @file addContactWindow.scss
+ * @description Стили окна добавления контакта.
+ */
+
+.add-contact-window {
+    @include flex-column;
+    height: 100%;
+    width: 100%;
+}

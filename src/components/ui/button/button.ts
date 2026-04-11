@@ -19,6 +19,7 @@ export interface ButtonProps extends IBaseComponentProps {
     onClick?: (event: MouseEvent) => void;
     daughterClass?: string;
     disabled?: boolean;
+    title?: string;
 }
 
 /**
@@ -37,6 +38,7 @@ export class Button extends BaseComponent<ButtonProps> {
         this.props.type = props.type || "button";
         this.props.daughterClass = props.daughterClass;
         this.props.disabled = props.disabled || false;
+        this.props.title = props.title || "";
     }
   
     getTemplate() {

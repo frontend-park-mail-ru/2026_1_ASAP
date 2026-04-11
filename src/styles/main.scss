@@ -1,0 +1,58 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Reddit+Sans+Condensed:wght@500&display=swap');
+
+@import "./base/base.scss";
+
+@import "../components/composite/registerForm/registerForm.scss";
+@import "../components/composite/authForm/authForm.scss";
+@import "../components/composite/searchForm/searchForm.scss";
+@import "../components/composite/menuBar/menuBar.scss";
+@import "../components/composite/chatItem/chatItem.scss";
+@import "../components/composite/chatListItem/chatListItem.scss";
+@import "../components/composite/chatListWrapper/chatListWrapper.scss";
+@import "../components/composite/messageList/messageList.scss";
+@import "../components/composite/chatWindow/chatWindow.scss";
+@import "../components/composite/dialogHeader/dialogHeader.scss";
+@import "../components/composite/groupHeader/groupHeader.scss";
+@import "../components/composite/groupDetailsWindow/groupDetailsWindow.scss";
+@import "../components/composite/addMemberWindow/addMemberWindow.scss";
+@import "../components/composite/contactListWrapper/contactListWrapper.scss";
+@import "../components/composite/contactListItem/contactListItem.scss";
+@import "../components/composite/contactItem/contactItem.scss";
+@import "../components/composite/profileWindow/profileWindow.scss";
+@import "../components/composite/profileHeader/profileHeader.scss";
+@import "../components/composite/profileMainInfoBlock/profileMainInfoBlock.scss";
+@import "../components/composite/profileAdditionalInfoBlock/profileAdditionalInfoBlock.scss";
+@import "../components/composite/createChatMenu/createChatMenu.scss";
+@import "../components/composite/createDialogWindow/createDialogWindow.scss";
+@import "../components/composite/createGroupWindow/createGroupWindow.scss";
+@import "../components/composite/deleteChatMenu/deleteChatMenu.scss";
+@import "../components/composite/confirmModal/confirmModal.scss";
+@import "../components/composite/findUserContainer/findUserContainer.scss";
+@import "../components/composite/findUserForm/findUserForm.scss";
+@import "../components/composite/addContactWindow/addContactWindow.scss";
+@import "../components/composite/infoMenu/infoMenu.scss";
+
+@import "../components/composite/settingsListWrapper/settingsListWrapper.scss";
+@import "../components/composite/settingsListItem/settingsListItem.scss";
+@import "../components/composite/settingsItem/settingsItem.scss";
+@import "../components/composite/settingsProfileWindow/settingsProfileWindow.scss";
+@import "../components/composite/settingsFullNameForm/settingsFullNameForm.scss";
+@import "../components/composite/editProfileOverlay/editProfileOverlay.scss";
+@import "../components/composite/avatarEditMenuOverlay/avatarEditMenuOverlay.scss";
+
+@import "../components/ui/button/button.scss";
+@import "../components/ui/input/input.scss";
+@import "../components/ui/avatar/avatar.scss";
+@import "../components/ui/chatInfo/chatInfo.scss";
+@import "../components/ui/metaChatInfo/metaChatInfo.scss";
+@import "../components/ui/message/message.scss";
+@import "../components/ui/messageInput/messageInput.scss";
+@import "../components/ui/actionHeader/actionHeader.scss";
+@import "../components/ui/actionLayout/actionLayout.scss";
+@import "../components/ui/checkbox/checkbox.scss";
+
+@import "./pages/login.scss";
+@import "./pages/chats.scss";
+@import "./pages/register.scss";
+@import "./pages/contacts.scss";
+@import "./pages/settings.scss";

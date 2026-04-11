@@ -1,9 +1,9 @@
 import { ChatDetail, FrontendMessage, User, DialogChat, GroupChat, ChannelChat, BackendChat, BackendMessage } from '../types/chat';
 import { httpClient } from '../core/utils/httpClient';
+import { wsClient, MessageDto } from '../core/utils/wsClient';
 
-const BASE_URL = "http://pulseapp.space:8080";
-// const BASE_URL = 'http://0.0.0.0:8080';
-
+const host = window.location.hostname;
+const BASE_URL = `${window.location.protocol}//${host}:8080`;
 /**
  * @class ChatService
  * @description Сервис для управления чатами. Предоставляет методы для получения списка чатов,
@@ -12,19 +12,56 @@ const BASE_URL = "http://pulseapp.space:8080";
 export class ChatService {
     
     /**
-     * Преобразует BackendMessage в FrontendMessage.
+     * Преобразует BackendMessage (REST) в FrontendMessage.
+     * @param backendMessage - «сырой» объект сообщения из REST-ответа.
+     * @param currentUserId  - Логин текущего пользователя для определения авторства.
      */
     private convertToFrontendMessage(backendMessage: any, currentUserId?: string): FrontendMessage {
         return {
-            // Если бек не отдает ID сообщения, генерируем временный для ключей рендера
-            id: backendMessage.id?.toString() || Math.random().toString(36).substring(2, 9), 
+            // Если бек не отдаёт ID сообщения, генерируем временный для ключей рендера
+            id: backendMessage.id?.toString() || Math.random().toString(36).substring(2, 9),
             sender: backendMessage.sender || { login: 'unknown', avatarUrl: '/assets/images/avatars/chatAvatar.svg' },
             text: backendMessage.text,
             // Учитываем, что на беке поле может называться created_at или CreatedAt
-            timestamp: new Date(backendMessage.created_at || backendMessage.CreatedAt || Date.now()), 
+            timestamp: new Date(backendMessage.created_at || backendMessage.CreatedAt || Date.now()),
             // Проверяем авторство (учитываем, что бек может отдавать sender_id вместо объекта)
-            isOwn: (backendMessage.sender?.login === currentUserId) || (backendMessage.sender_id?.toString() === currentUserId?.toString()), 
+            isOwn: (backendMessage.sender?.login === currentUserId) || (backendMessage.sender_id?.toString() === currentUserId?.toString()),
         };
+    }
+
+    /**
+     * Конвертирует WS-DTO сообщения (MessageDto) во фронтендную модель FrontendMessage.
+     * Используется в подписчиках WebSocket для добавления новых сообщений в UI без перерисовки.
+     *
+     * @param dto           - DTO сообщения, полученное из WebSocket-пакета.
+     * @param currentUserId - ID текущего пользователя для определения поля `isOwn`.
+     * @returns {FrontendMessage} Сообщение в формате фронтенда.
+     */
+    public convertWsMessageDto(dto: MessageDto, currentUserId: number): FrontendMessage {
+        return {
+            id: dto.id.toString(),
+            sender: {
+                login: dto.login ?? `user_${dto.sender_id}`,
+                avatarUrl: '/assets/images/avatars/chatAvatar.svg',
+            },
+            text: dto.text,
+            timestamp: new Date(dto.created_at),
+            isOwn: dto.sender_id === currentUserId || dto.sender_id.toString() === currentUserId.toString(),
+        };
+    }
+
+    /**
+     * Отправляет сообщение в текущий чат через WebSocket.
+     * Формат пакета: `{ type: "message.Send", payload: { text } }`.
+     *
+     * @param chatId - Строковый ID чата (не используется в payload, так как он в URL сокета).
+     * @param text   - Текст отправляемого сообщения.
+     */
+    public sendMessage(chatId: string, text: string): void {
+        wsClient.send('message.Send', {
+            chat_id: Number(chatId),
+            text,
+        });
     }
 
     /**
@@ -135,34 +172,53 @@ export class ChatService {
     }
 
     /**
-     * Получает список сообщений для конкретного чата.
+     * Получает список сообщений для конкретного чата через WebSocket (паттерн Request-Response).
+     * Отправляет запрос "message.Receive" и ждёт ответа "message.Get".
+     * 
+     * @param chatId - ID чата.
+     * @param currentUserId - ID текущего пользователя.
+     * @returns {Promise<FrontendMessage[]>} Промис со списком сообщений.
      */
-    public async getMessages(chatId: string, currentUserId: string): Promise<FrontendMessage[]> {
-        try {
-            // Предполагаемый REST эндпоинт для сообщений
-            const response = await httpClient.request(`${BASE_URL}/api/v1/chats/${chatId}/messages`, {
-                method: 'GET'
+    public async getMessages(chatId: string, currentUserId: number): Promise<FrontendMessage[]> {
+        return new Promise((resolve) => {
+            const timeoutMs = 5000;
+            
+            /**
+             * Временный обработчик для получения истории сообщений.
+             */
+            const handleGetMessages = (payload: any) => {
+                clearTimeout(timeout);
+                wsClient.unsubscribe('message.Get', handleGetMessages);
+                
+                // Бэкенд возвращает объект { messages: MessageDto[], has_more: boolean }
+                const messagesArray = payload && payload.messages ? payload.messages : payload;
+
+                if (Array.isArray(messagesArray)) {
+                    const messages = messagesArray.map((msg: MessageDto) => 
+                        this.convertWsMessageDto(msg, currentUserId)
+                    ).reverse();
+                    resolve(messages);
+                } else {
+                    resolve([]);
+                }
+            };
+
+            // Подписываемся на событие получения истории
+            wsClient.subscribe('message.Get', handleGetMessages);
+
+            // Отправляем запрос на получение последних 50 сообщений
+            wsClient.send('message.Receive', { 
+                chat_id: Number(chatId),
+                limit: 50,
+                before_id: null 
             });
 
-            if (!response.ok) {
-                //просто возвращаем пустой список, чтобы не ломать UI
-                if (response.status !== 404) {
-                    console.error(`Ошибка при получении сообщений: ${response.status}`);
-                }
-                return [];
-            }
-
-            const data = await response.json();
-            
-            if (data.status === 'success' && Array.isArray(data.body)) {
-                return data.body.map((msg: any) => this.convertToFrontendMessage(msg, currentUserId));
-            }
-            
-            return [];
-        } catch (error) {
-            console.error("Ошибка сети при получении сообщений:", error);
-            return [];
-        }
+            const timeout = setTimeout(() => {
+                wsClient.unsubscribe('message.Get', handleGetMessages);
+                console.warn(`getMessages: Таймаут ожидания ответа от сервера для чата ${chatId}`);
+                resolve([]);
+            }, timeoutMs);
+        });
     }
 
     /**

@@ -2,6 +2,7 @@ import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseCompo
 import { Router } from "../../../core/router";
 import { authService } from "../../../services/authService";
 import { SettingsItem } from "../settingsItem/settingsItem";
+import { ConfirmModal } from "../confirmModal/confirmModal";
 import template from "./settingsListItem.hbs";
 
 interface SettingsListItemProps extends IBaseComponentProps {
@@ -56,9 +57,20 @@ export class SettingsListItem extends BaseComponent<SettingsListItemProps> {
         }
     }
 
-    private handleLogout = async (): Promise<void> => {
-        await authService.logout();
-        this.props.router.navigate('/login');
+    private handleLogout = (): void => {
+        const modal = new ConfirmModal({
+            text: "Вы уверены, что хотите выйти из аккаунта?",
+            confirmButtonText: "Выйти",
+            onConfirm: async () => {
+                await authService.logout();
+                this.props.router.navigate('/login');
+                modal.unmount();
+            },
+            onCancel: () => {
+                modal.unmount();
+            }
+        });
+        modal.mount(document.body);
     };
 
     protected afterMount(): void {
@@ -75,7 +87,8 @@ export class SettingsListItem extends BaseComponent<SettingsListItemProps> {
 
         this.commonSetting = new SettingsItem({
             src: '/assets/images/icons/commonSettings.svg',
-            title: 'Общие',
+            title: 'В разработке',
+            disabled: true,
             onClick: () => {
                 this.setActiveSetting(this.commonSetting!);
                 this.props.router.navigate(`/settings/common`);
@@ -85,7 +98,8 @@ export class SettingsListItem extends BaseComponent<SettingsListItemProps> {
 
         this.privacySetting = new SettingsItem({
             src: '/assets/images/icons/privacySettings.svg',
-            title: 'Конфиденциальность',
+            title: 'В разработке',
+            disabled: true,
             onClick: () => {
                 this.setActiveSetting(this.privacySetting!);
                 this.props.router.navigate(`/settings/privacy`);
@@ -95,7 +109,8 @@ export class SettingsListItem extends BaseComponent<SettingsListItemProps> {
 
         this.subscriptionSetting = new SettingsItem({
             src: '/assets/images/icons/subscriptionSettings.svg',
-            title: 'Подписка ImPulse',
+            title: 'В разработке',
+            disabled: true,
             onClick: () => {
                 this.setActiveSetting(this.subscriptionSetting!);
                 this.props.router.navigate(`/settings/subscription`);

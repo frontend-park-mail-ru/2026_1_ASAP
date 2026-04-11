@@ -1,0 +1,80 @@
+/**
+ * @file registerForm.scss
+ * @description Стили формы регистрации с использованием вложенности и миксинов.
+ */
+
+.auth {
+    &__form__register {
+        @include flex-column;
+        height: 100%;
+        width: 100%;
+        max-width: 360px;
+        gap: 15px;
+        padding: 35px 25px 25px 25px;
+    }
+
+    &__header {
+        display: flex;
+        align-items: center;
+        position: relative;
+        justify-content: center;
+        margin-bottom: 10px;
+        flex-direction: row;
+    }
+
+    &__backArrow {
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-110%);
+        cursor: pointer;
+        @include flex-center;
+        @include hover-transition;
+
+        &:hover {
+            opacity: 1;
+            filter: brightness(1.2);
+        }
+    }
+
+    &__label {
+        font: $text-secondary;
+        background: $gradient-msg;
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin: 0;
+        width: fit-content;
+    }
+
+    &__title {
+        text-align: center;
+        font: $text-heading1;
+        letter-spacing: $text-heading1-ls;
+        background: $gradient-msg;
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin: 0;
+        padding: 10px 0;
+    }
+
+    &__field {
+        @include flex-column;
+        gap: 6px;
+    }
+
+    &__inputs {
+        @include flex-column;
+        gap: 10px;
+    }
+
+    &__login,
+    &__register {
+        height: 100%;
+        width: 100%;
+        max-height: 42px;
+        border: none;
+        cursor: pointer;
+    }
+}

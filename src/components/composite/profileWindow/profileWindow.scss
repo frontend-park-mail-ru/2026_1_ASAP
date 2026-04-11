@@ -1,0 +1,16 @@
+/**
+ * @file profileWindow.scss
+ * @description Стили окна профиля.
+ */
+
+.profile-window {
+    @include flex-column;
+    height: 100%;
+    width: 100%;
+    background-color: $color-background;
+    padding: 10px;
+    box-sizing: border-box;
+    min-height: 0;
+    min-width: 200px;
+    gap: 10px;
+}

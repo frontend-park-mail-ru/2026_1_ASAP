@@ -1,0 +1,11 @@
+/**
+ * @file settingsFullNameForm.scss
+ * @description Стили формы смены имени пользователя.
+ */
+
+.full-name-form {
+    @include flex-column;
+    gap: 15px;
+    width: 100%;
+    background-color: $color-empty;
+}

@@ -96,19 +96,11 @@ export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowPr
     };
 
     setButtonState(): void {
-        if (!this.profileSaveButton?.element) return;
-        if (this.isSavingProfile) {
+        // Для MVP-версии кнопка всегда заблокирована.
+        if (this.profileSaveButton) {
             this.profileSaveButton.disabled = true;
-            return;
         }
-        const unchanged = this.isDraftMatchingBaseline();
-        if (unchanged) {
-            this.profileSaveButton.element.classList.add("ui-button__disabled");
-            this.profileSaveButton.disabled = true;
-        } else {
-            this.profileSaveButton.element.classList.remove("ui-button__disabled");
-            this.profileSaveButton.disabled = false;
-        }
+        return;
     }
 
     handleMainInfoInput = (firstName: string, lastName: string) => {
@@ -337,6 +329,8 @@ export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowPr
         this.profileSaveButton = new Button({
             label: "Сохранить изменения",
             class: "ui-button ui-button__primary ui-button__disabled",
+            disabled: true,
+            title: "В разработке",
             onClick: () => {
                 void this.handleSaveProfile();
             },

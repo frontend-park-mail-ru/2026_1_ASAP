@@ -1,0 +1,46 @@
+/**
+ * @file findUserForm.scss
+ * @description Стили формы поиска пользователя.
+ */
+
+.find-user-form {
+    background-color: $color-base-background; // Используем как в оригинале
+    border-radius: 10px;
+    padding: 25px 25px 50px 25px;
+    width: 360px;
+    height: fit-content;
+    @include flex-column;
+    gap: 10px;
+
+    &__title {
+        color: $color-text;
+        font: $text-heading1;
+        text-align: center;
+        margin: 0;
+        padding: 10px 0;
+    }
+
+    &__field {
+        @include flex-column;
+        gap: 8px;
+    }
+
+    &__label {
+        color: $color-text;
+        font: $text-secondary;
+    }
+
+    &__button-wrapper {
+        height: 42px;
+        margin-top: 10px;
+    }
+}
+
+.find-user-input {
+    width: 100%;
+}
+
+.find-user-submit-btn {
+    width: 100%;
+    height: 42px;
+}

@@ -1,0 +1,21 @@
+/**
+ * @file contactListItem.scss
+ * @description Стили списка контактов с поддержкой пустого состояния.
+ */
+
+.contact-list {
+    @include flex-column;
+    height: 100%;
+    width: 100%;
+
+    &--empty {
+        @include flex-center;
+        height: 100%;
+    }
+
+    .no-contacts {
+        font: $text-heading1;
+        text-align: center;
+        user-select: none;
+    }
+}

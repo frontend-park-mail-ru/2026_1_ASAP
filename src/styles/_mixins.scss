@@ -1,0 +1,77 @@
+/**
+ * @file _mixins.scss
+ * @description Глобальные миксины для упрощения стилизации.
+ */
+
+/**
+ * Центрирование элементов через Flexbox.
+ */
+@mixin flex-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/**
+ * Колоночный Flexbox.
+ */
+@mixin flex-column {
+    display: flex;
+    flex-direction: column;
+}
+
+/**
+ * Обрезка длинного текста троеточием.
+ */
+@mixin text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/**
+ * Стандартный переход для состояний при наведении.
+ */
+@mixin hover-transition {
+    transition: all 0.2s ease;
+}
+
+/**
+ * Сброс стилей кнопки.
+ */
+@mixin btn-reset {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    outline: none;
+}
+
+/**
+ * Сложный эффект наведения с градиентом через :after.
+ */
+@mixin hover-after-gradient($gradient) {
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+
+    &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: $gradient;
+        opacity: 0;
+        z-index: 0;
+        transition: opacity 0.5s;
+        border-radius: inherit;
+    }
+
+    &:hover::after {
+        opacity: 1;
+    }
+
+    & > * {
+        position: relative;
+        z-index: 1;
+    }
+}

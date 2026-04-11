@@ -44,6 +44,11 @@ export class Message extends BaseComponent<MessageProps> {
             console.error("message: нет эллемента для монтирования");
             return;
         }
+
+        if (this.props.isOwn) {
+            return;
+        }
+
         const avatarSlot = this.element.querySelector('[data-component="message-avatar-slot"]');
         if (avatarSlot) {
             this.avatarComponent = new Avatar({
