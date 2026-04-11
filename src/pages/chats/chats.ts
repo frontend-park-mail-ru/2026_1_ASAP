@@ -17,7 +17,9 @@ import { ChannelHeader } from "../../components/composite/channelHeader/channelH
 import { CreateDialogWindow } from "../../components/composite/createDialogWindow/createDialogWindow"; 
 import { CreateGroupWindow } from "../../components/composite/createGroupWindow/createGroupWindow";
 import { GroupDetailsWindow } from "../../components/composite/groupDetailsWindow/groupDetailsWindow";
+import { AddMemberWindow } from "../../components/composite/addMemberWindow/addMemberWindow";
 import { contactService } from "../../services/contactService";
+import { ConfirmModal } from "../../components/composite/confirmModal/confirmModal";
 
 const CURRENT_USER_LOGIN = 'alice'; 
 const CURRENT_USER: User = { login: CURRENT_USER_LOGIN, avatarUrl: '/assets/images/avatars/myAvatar.svg' };
@@ -58,6 +60,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private chatWindow: ChatWindow | null = null;
     private createChatWindow: BaseComponent | null = null;
     private groupDetailsWindow: GroupDetailsWindow | null = null;
+    private addMemberWindow: AddMemberWindow | null = null;
+    private modalComponent: ConfirmModal | null = null;
     
     public activeChatId: string | null = null;
     private mainContentArea: HTMLElement | null = null;
@@ -119,9 +123,14 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             this.groupDetailsWindow.unmount();
             this.groupDetailsWindow = null;
         }
+        if (this.addMemberWindow) {
+            this.addMemberWindow.unmount();
+            this.addMemberWindow = null;
+        }
         if (this.placeholderElement) {
             this.placeholderElement.style.display = 'none';
         }
+        this.closeModal();
     }
 
     /**
@@ -358,7 +367,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                             this.rebuildSidebar();
                             this.props.router.navigate('/chats');
                         } else {
-                            alert("Не удалось удалить диалог");
+                            this.showAlert("Не удалось удалить диалог");
                         }
                     }
                 });
@@ -374,7 +383,9 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                             this.rebuildSidebar();
                             this.props.router.navigate('/chats');
                         } else {
-                            alert("Не удалось удалить группу");
+                            this.showAlert("Не удалось удалить группу", () => {
+                                this.openGroupDetails(chatDetail as GroupChat, true);
+                            });
                         }
                     },
                     onOpenGroupInfo: () => this.openGroupDetails(chatDetail as GroupChat)
@@ -391,7 +402,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                             this.rebuildSidebar();
                             this.props.router.navigate('/chats');
                         } else {
-                            alert("Не удалось удалить канал");
+                            this.showAlert("Не удалось удалить канал");
                         }
                     }
                 });
@@ -420,28 +431,51 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     }
 
     /**
-     * Открывает окно деталей группы поверх чата
-     * @param chat {GroupChat} Объект группы
+     * Открывает окно деталей группы поверх чата.
+     * При успешном обновлении группы (название/аватарка) пересобирает
+     * шапку чата и сайдбар, чтобы отобразить актуальные данные.
+     * @param chat Объект группы.
+     * @param initialIsEditing Флаг для открытия сразу в режиме редактирования.
      */
-    private openGroupDetails(chat: GroupChat): void {
+    private async openGroupDetails(chat: GroupChat, initialIsEditing: boolean = false): Promise<void> {
         if (!this.mainContentArea) return;
+
+        // Очищаем старый экземпляр, если он есть
+        if (this.groupDetailsWindow) {
+            this.groupDetailsWindow.unmount();
+            this.groupDetailsWindow = null;
+        }
+        if (this.addMemberWindow) {
+            this.addMemberWindow.unmount();
+            this.addMemberWindow = null;
+        }
 
         if (this.chatWindow?.element) {
             this.chatWindow.element.style.display = 'none';
         }
 
-        const mockMembers = [
-            { id: 101, login: 'Pavel', avatarUrl: '/assets/images/avatars/myAvatar.svg' },
-            { id: 102, login: 'Dmitry', avatarUrl: '/assets/images/avatars/chatAvatar.svg' },
-            { id: 103, login: 'Alexey', avatarUrl: '/assets/images/avatars/defaultAvatar.svg' }
-        ];
+        // Загружаем список ID участников
+        const memberIds = await chatService.getChatMembers(chat.id);
+        
+        // Загружаем профили участников
+        const profiles = await Promise.all(memberIds.map(id => contactService.getProfileInfo(id)));
+
+        const members = profiles.map((p, index) => ({
+            id: memberIds[index],
+            name: `${p.mainInfo.firstName}${p.mainInfo.lastName ? ' ' + p.mainInfo.lastName : ''}`,
+            avatarUrl: p.mainInfo.avatarUrl || '/assets/images/avatars/defaultAvatar.svg'
+        }));
+
+        const myId = await contactService.getMyId();
 
         this.groupDetailsWindow = new GroupDetailsWindow({
             groupId: chat.id,
             groupName: chat.title,
             groupAvatarUrl: chat.avatarUrl || '/assets/images/avatars/defaultAvatar.svg',
+            // Оставляем owner, чтобы кнопки были доступны; сервер проверит права при действии
             currentUserRole: 'owner',
-            members: mockMembers,
+            members: members,
+            initialIsEditing: initialIsEditing,
             onBack: () => {
                 if (this.groupDetailsWindow) {
                     this.groupDetailsWindow.unmount();
@@ -452,27 +486,117 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 }
             },
             onLeaveGroup: async () => {
-                await chatService.leaveGroupMock(chat.id);
-                if (this.groupDetailsWindow) {
-                    this.groupDetailsWindow.unmount();
-                    this.groupDetailsWindow = null;
+                const success = await chatService.deleteChat(chat.id);
+                if (success) {
+                    if (this.groupDetailsWindow) {
+                        this.groupDetailsWindow.unmount();
+                        this.groupDetailsWindow = null;
+                    }
+                    this.activeChatId = null;
+                    this.rebuildSidebar();
+                    this.props.router.navigate('/chats');
+                } else {
+                    this.showAlert('Не удалось покинуть группу.', () => {
+                        this.openGroupDetails(chat, true);
+                    });
                 }
-                this.activeChatId = null;
-                this.rebuildSidebar();
-                this.props.router.navigate('/chats');
             },
-            onUpdateGroup: async (newName: string, newAvatar?: File) => {
-                await chatService.updateGroupMock(chat.id, newName, newAvatar);
+            onGroupUpdated: async () => {
+                this.rebuildSidebar();
+                if (this.activeChatId) {
+                    if (this.groupDetailsWindow) {
+                        this.groupDetailsWindow.unmount();
+                        this.groupDetailsWindow = null;
+                    }
+                    this.chatWindow?.unmount();
+                    this.chatWindow = null;
+                    await this.openChat(this.activeChatId);
+                }
             },
             onRemoveMember: async (userId: number) => {
-                await chatService.removeMemberMock(chat.id, userId);
+                const res = await chatService.removeMember(chat.id, userId);
+                if (!res.success) {
+                    let errorMsg = 'Произошла ошибка при удалении участника.';
+                    if (res.status === 403) {
+                        errorMsg = 'У вас недостаточно прав для удаления участников.';
+                    } else if (res.status === 400) {
+                        errorMsg = 'Невозможно удалить владельца чата или ошибка запроса.';
+                    }
+                    
+                    this.showAlert(errorMsg, () => {
+                        this.openGroupDetails(chat, true);
+                    });
+                }
             },
-            onAddMember: async () => {
-                await chatService.addMemberMock(chat.id, 999);
+            onAddMember: () => {
+                this.openAddMemberWindow(chat);
+            },
+            onMemberClick: (userId: number) => {
+                this.props.router.navigate(`/contacts/${userId}`);
             }
         });
 
         this.groupDetailsWindow.mount(this.mainContentArea);
+    }
+    /**
+     * Открывает окно добавления участника в группу по логину.
+     * Прячет окно деталей группы и показывает форму поиска пользователя.
+     * @param chat — Объект группового чата, в который добавляем участника.
+     */
+    private openAddMemberWindow(chat: GroupChat): void {
+        if (!this.mainContentArea) return;
+
+        if (this.addMemberWindow) {
+            this.addMemberWindow.unmount();
+            this.addMemberWindow = null;
+        }
+
+        if (this.groupDetailsWindow?.element) {
+            this.groupDetailsWindow.element.style.display = 'none';
+        }
+
+        this.addMemberWindow = new AddMemberWindow({
+            onBack: () => {
+                if (this.addMemberWindow) {
+                    this.addMemberWindow.unmount();
+                    this.addMemberWindow = null;
+                }
+                if (this.groupDetailsWindow?.element) {
+                    this.groupDetailsWindow.element.style.display = 'flex';
+                }
+            },
+            onSubmitSearch: async (login: string) => {
+                const targetUserRes = await contactService.getIdByLogin(login);
+
+                if (targetUserRes.status === 404 || !targetUserRes.id) {
+                    return `Пользователь с логином "${login}" не найден!`;
+                }
+
+                const success = await chatService.addMembersToChat(chat.id, [targetUserRes.id]);
+
+                if (success) {
+                    if (this.addMemberWindow) {
+                        this.addMemberWindow.unmount();
+                        this.addMemberWindow = null;
+                    }
+                    if (this.groupDetailsWindow) {
+                        this.groupDetailsWindow.unmount();
+                        this.groupDetailsWindow = null;
+                    }
+                    this.rebuildSidebar();
+                    if (this.activeChatId) {
+                        this.chatWindow?.unmount();
+                        this.chatWindow = null;
+                        await this.openChat(this.activeChatId);
+                    }
+                    return undefined;
+                } else {
+                    return 'Не удалось добавить участника. Возможно, он уже в группе.';
+                }
+            }
+        });
+
+        this.addMemberWindow.mount(this.mainContentArea);
     }
 
     /**
@@ -482,6 +606,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      */
     beforeUnmount() {
         this.cleanupMainContent();
+        this.closeModal();
         this.logoutWrapper?.remove();
         this.searchForm?.unmount();
         this.chatWrapper?.unmount();
@@ -490,5 +615,29 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         
         this.activeChatId = null;
         this.placeholderElement = null; 
+    }
+
+    private showAlert(text: string, onConfirm?: () => void): void {
+        this.closeModal();
+        this.modalComponent = new ConfirmModal({
+            text: text,
+            confirmButtonText: "Ок",
+            hideCancel: true,
+            confirmButtonClass: "confirm-modal__button--submit ui-button",
+            onConfirm: () => {
+                this.closeModal();
+                if (onConfirm) {
+                    onConfirm();
+                }
+            }
+        });
+        this.modalComponent.mount(document.body);
+    }
+
+    private closeModal(): void {
+        if (this.modalComponent) {
+            this.modalComponent.unmount();
+            this.modalComponent = null;
+        }
     }
 }

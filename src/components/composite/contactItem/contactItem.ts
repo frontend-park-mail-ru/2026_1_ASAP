@@ -51,6 +51,7 @@ export class ContactItem extends BaseForm<ContactItemProps> {
         if (!this.element) return;
 
         this.avatar = new Avatar({
+            class: 'contact-item__avatar',
             src: this.props.avatarUrl,
         });
         this.avatar.mount(this.element.querySelector('[data-component="contact-item-avatar-slot"]')!);

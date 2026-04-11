@@ -57,7 +57,7 @@ export class ChatService {
                     id: chat.id.toString(),
                     title: chat.title,
                     type: chat.chat_type,
-                    avatarUrl: '/assets/images/avatars/chatAvatar.svg',
+                    avatarUrl: chat.avatar || '/assets/images/avatars/chatAvatar.svg',
                     unreadCount: 0,
                 };
 
@@ -122,7 +122,7 @@ export class ChatService {
                     id: chat.id.toString(),
                     title: chat.title,
                     type: chat.chat_type,
-                    avatarUrl: '/assets/images/avatars/chatAvatar.svg',
+                    avatarUrl: chat.avatar || '/assets/images/avatars/chatAvatar.svg',
                     unreadCount: 0
                 } as ChatDetail;
             }
@@ -221,59 +221,144 @@ export class ChatService {
     }
 
     /**
-     * @description Мок для обновления названия и/или аватарки группы
-     * @param groupId ID группы
-     * @param newName Новое название группы
-     * @param newAvatar Новый файл аватарки (опционально)
+     * Обновляет название группового чата.
+     * @param chatId — Идентификатор чата.
+     * @param title — Новое название (макс. 100 символов, не пустое).
+     * @returns true, если запрос завершился успешно.
      */
-    public async updateGroupMock(groupId: string, newName: string, newAvatar?: File): Promise<boolean> {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                console.log(`[Mock] Группа ${groupId} обновлена. Новое имя: ${newName}`);
-                resolve(true);
-            }, 500);
-        });
+    public async updateChatTitle(chatId: string, title: string): Promise<boolean> {
+        try {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/chats/${chatId}/title`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ title })
+            });
+
+            if (!response.ok) {
+                console.error(`Ошибка при обновлении названия чата: ${response.status}`);
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Ошибка сети при обновлении названия чата:', error);
+            return false;
+        }
     }
 
     /**
-     * @description Мок для добавления участника в группу
-     * @param groupId ID группы
-     * @param userId ID пользователя
+     * Добавляет участников в групповой чат.
+     * @param chatId — Идентификатор чата.
+     * @param userIds — Массив ID пользователей для добавления (не пустой, без дубликатов).
+     * @returns true, если запрос завершился успешно.
      */
-    public async addMemberMock(groupId: string, userId: number): Promise<boolean> {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                console.log(`[Mock] Пользователь ${userId} добавлен в группу ${groupId}`);
-                resolve(true);
-            }, 500);
-        });
+    public async addMembersToChat(chatId: string, userIds: number[]): Promise<boolean> {
+        try {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/chats/${chatId}/members`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ members_id: userIds })
+            });
+
+            if (!response.ok) {
+                console.error(`Ошибка при добавлении участников: ${response.status}`);
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Ошибка сети при добавлении участников:', error);
+            return false;
+        }
     }
 
     /**
-     * @description Мок для удаления/исключения участника из группы (только owner)
-     * @param groupId ID группы
-     * @param userId ID пользователя для удаления
+     * Обновляет аватарку группового чата.
+     * Использует FormData — заголовок Content-Type НЕ указывается вручную,
+     * чтобы браузер корректно проставил multipart/form-data с boundary.
+     * @param chatId — Идентификатор чата.
+     * @param file — Файл изображения (макс. 5 МБ; допустимые типы: jpeg, jpg, png, webp, gif).
+     * @returns true, если запрос завершился успешно.
      */
-    public async removeMemberMock(groupId: string, userId: number): Promise<boolean> {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                console.log(`[Mock] Пользователь ${userId} исключен из группы ${groupId}`);
-                resolve(true);
-            }, 500);
-        });
+    public async updateChatAvatar(chatId: string, file: File): Promise<boolean> {
+        try {
+            const formData = new FormData();
+            formData.append('avatar', file);
+
+            const response = await httpClient.request(`${BASE_URL}/api/v1/chats/${chatId}/avatar`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                console.error(`Ошибка при обновлении аватарки чата: ${response.status}`);
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Ошибка сети при обновлении аватарки:', error);
+            return false;
+        }
     }
 
     /**
-     * @description Мок для самостоятельного выхода пользователя из группы
-     * @param groupId ID группы
+     * Получает список ID всех участников чата.
+     * @param chatId — Идентификатор чата.
+     * @returns Массив ID участников.
      */
-    public async leaveGroupMock(groupId: string): Promise<boolean> {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                console.log(`[Mock] Вы покинули группу ${groupId}`);
-                resolve(true);
-            }, 500);
-        });
+    public async getChatMembers(chatId: string): Promise<number[]> {
+        try {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/chats/${chatId}/members`, {
+                method: 'GET'
+            });
+
+            if (!response.ok) {
+                console.error(`Ошибка при получении участников чата: ${response.status}`);
+                return [];
+            }
+
+            const data = await response.json();
+            if (data.status === 'success' && data.body && Array.isArray(data.body.members_id)) {
+                return data.body.members_id;
+            }
+            return [];
+        } catch (error) {
+            console.error('Ошибка сети при получении участников чата:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Удаляет участника из группового чата.
+     * @param chatId — Идентификатор чата.
+     * @param userId — ID пользователя для удаления.
+     * @returns Объект с флагом успеха и HTTP-статусом.
+     */
+    public async removeMember(chatId: string, userId: number): Promise<{ success: boolean; status: number }> {
+        try {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/chats/${chatId}/members`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ member_id: userId })
+            });
+
+            if (response.ok) {
+                return { success: true, status: response.status };
+            }
+
+            console.error(`Ошибка при удалении участника: ${response.status}`);
+            return { success: false, status: response.status };
+        } catch (error) {
+            console.error('Ошибка сети при удалении участника:', error);
+            return { success: false, status: 500 };
+        }
     }
 }
 
