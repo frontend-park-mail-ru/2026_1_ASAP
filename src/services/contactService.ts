@@ -3,9 +3,11 @@ import { BackendProfile, FrontendProfile, ProfileAdditionalInfo, ProfileMainInfo
 import { httpClient } from "../core/utils/httpClient";
 
 const host = window.location.hostname;
-const BASE_URL = `${window.location.protocol}//${host}:8080`;
+// const BASE_URL = `${window.location.protocol}//${host}:8080`;
+const BASE_URL = 'http://pulseapp:8080';
 
-const USE_MOCK = true;
+
+const USE_MOCK = false;
 const MOCK_CONTACTS: FrontendContact[] = [
     {
         contact_user_id: 1,

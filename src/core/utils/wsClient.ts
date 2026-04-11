@@ -6,7 +6,8 @@
 const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
 
-const WS_BASE_URL = `${protocol}://${hostname}:8080`;
+// const WS_BASE_URL = `${protocol}://${hostname}:8080`;
+const WS_BASE_URL = 'http://pulseapp:8080';
 const WS_PATH = '/api/v1/ws';
 
 /**
