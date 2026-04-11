@@ -32,10 +32,12 @@
         gap: 5px;
         width: 100%;
         flex-grow: 1;
+        min-width: 0;
     }
 
     &__info-wrapper {
         width: 100%;
+        min-width: 0;
     }
 
     &__meta-wrapper {

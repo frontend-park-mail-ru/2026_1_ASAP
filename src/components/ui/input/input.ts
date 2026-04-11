@@ -93,8 +93,9 @@ export class Input extends BaseComponent<InputProps> {
             if (this.toggleIconElement) {
                 this.togglePasswordHandler = () => {
                     if (!this.inputElement) return;
-                    const isPassword = this.inputElement.type === 'password';
-                    this.inputElement.type = isPassword ? 'text' : 'password';
+                    const input = this.inputElement as HTMLInputElement;
+                    const isPassword = input.type === 'password';
+                    input.type = isPassword ? 'text' : 'password';
 
                     this.toggleIconElement!.src = isPassword
                         ? '/assets/images/icons/openEye.svg'

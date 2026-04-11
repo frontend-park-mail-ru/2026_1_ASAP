@@ -6,9 +6,12 @@
 .message-list {
     display: flex;
     flex-direction: column;
-    flex-grow: 1;
+    flex: 1 1 auto;
     min-height: 0;
+    width: 100%;
     overflow-y: auto;
+    overflow-x: hidden;
+    position: relative; /* Чтобы дочерние абсолютные элементы не ломали поток */
 
     &::-webkit-scrollbar {
         width: 10px;
@@ -26,10 +29,17 @@
     &__flex-container {
         display: flex;
         flex-direction: column;
-        justify-content: flex-end;
         min-height: 100%; 
         padding: $spacing-md;
         gap: 10px;
+
+        /* Распорка, которая прижимает сообщения к низу, если их мало. 
+           При переполнении она просто сжимается до 0, не мешая скроллу. */
+        &::before {
+            content: "";
+            flex: 1 1 auto; // Занимает всё свободное место сверху
+            min-height: 0;
+        }
     }
 
     &__empty-state {

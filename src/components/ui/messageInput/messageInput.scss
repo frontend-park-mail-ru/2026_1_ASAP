@@ -78,6 +78,7 @@
     }
     
     &__upload-button-container {
+        margin-bottom: 5px;
         @include btn-reset;
         @include hover-transition;
 

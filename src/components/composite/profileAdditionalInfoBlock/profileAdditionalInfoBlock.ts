@@ -6,7 +6,7 @@ import template from "./profileAdditionalInfoBlock.hbs"
 interface ProfileAdditionalInfoBlockProps extends IBaseComponentProps {
     profileAdditionalInfo: ProfileAdditionalInfo;
     class?: string;
-    onEditOverlay: (fieldKey: EditableField, value: string) => void;
+    onEditOverlay?: (fieldKey: EditableField, value: string) => void;
 };
 
 export class ProfileAdditionalInfoBlock extends BaseComponent<ProfileAdditionalInfoBlockProps> {

@@ -122,6 +122,9 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             console.error("ChatsPage: Не удалось получить ID пользователя", error);
         }
 
+        // Подключаемся к глобальному WebSocket-хабу
+        wsClient.connect();
+
         await this.handleChatRoute();
     }
 
@@ -466,11 +469,10 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         
         this.chatWindow.mount(this.mainContentArea);
 
-        // Подключаемся к сокету и дожидаемся открытия соединения
-        await wsClient.connect(chatId);
+        // Подписываемся на новые сообщения (соединение уже установлено в afterMount)
         wsClient.subscribe('message.New', this.handleNewMessage);
 
-        // Загружаем историю через сокеты сразу после подключения
+        // Загружаем историю через сокеты сразу после открытия чата
         this.loadHistory(chatId);
     }
 

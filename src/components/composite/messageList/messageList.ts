@@ -82,6 +82,7 @@ export class MessageList extends BaseComponent {
             messageComponent.mount(this.flexContainer!);
             this.childMessages.push(messageComponent);
         });
+        this.scrollToBottom();
     }
 
     /**
@@ -115,9 +116,15 @@ export class MessageList extends BaseComponent {
 
     /**
      * Прокручивает список сообщений до конца.
+     * Используется setTimeout, чтобы дать браузеру время отрисовать новые элементы
+     * и обновить scrollHeight контейнера.
      */
-    private scrollToBottom(): void {
-        this.element?.scrollTo({ top: this.element.scrollHeight, behavior: 'smooth' });
+    public scrollToBottom(): void {
+        setTimeout(() => {
+            if (this.element) {
+                this.element.scrollTop = this.element.scrollHeight;
+            }
+        }, 100);
     }
 
     /**

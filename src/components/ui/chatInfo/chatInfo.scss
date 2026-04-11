@@ -49,4 +49,7 @@ p {
     font: $text-main-style;
     font-size: 14px;
     letter-spacing: $text-main-ls;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }

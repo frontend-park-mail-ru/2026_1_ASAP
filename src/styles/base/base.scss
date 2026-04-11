@@ -3,9 +3,14 @@
  * @description Базовые стили приложения.
  */
 
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
 body {
     font-family: $font-primary;
-    margin: 0;
     background: $color-background;
     overflow: hidden;
     color: $color-text;

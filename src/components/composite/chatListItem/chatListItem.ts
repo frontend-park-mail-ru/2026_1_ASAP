@@ -145,12 +145,17 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
      * @param {string} text   - Новый текст последнего сообщения.
      */
     public updateLastMessage(chatId: string, text: string): void {
-        const targetItem = this.chatItems.find(item => item.props.chat.id === chatId);
-        if (!targetItem?.element) return;
+        const targetItem = this.chatItems.find(item => String(item.props.chat.id) === String(chatId));
+        if (!targetItem?.element) {
+            console.warn(`[WS] Чат с ID ${chatId} не найден в сайдбаре для обновления сообщения`);
+            return;
+        }
 
-        const lastMsgEl = targetItem.element.querySelector<HTMLElement>('.chat-info__last-message');
+        const lastMsgEl = targetItem.element.querySelector<HTMLElement>('.msg-text');
         if (lastMsgEl) {
             lastMsgEl.textContent = text;
+        } else {
+            console.warn(`[WS] Элемент .msg-text не найден в ChatItem для чата ${chatId}`);
         }
     }
 
@@ -162,7 +167,7 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
     public moveChatToTop(chatId: string): void {
         if (!this.element) return;
 
-        const index = this.chatItems.findIndex(item => item.props.chat.id === chatId);
+        const index = this.chatItems.findIndex(item => String(item.props.chat.id) === String(chatId));
         if (index <= 0) return; // уже наверху или не найден
 
         const [targetItem] = this.chatItems.splice(index, 1);

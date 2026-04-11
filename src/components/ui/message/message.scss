@@ -15,6 +15,7 @@
             background-color: $color-background-blur;
             color: $color-text-inverted;
             max-width: 675px;
+            height: fit-content;
         }
 
         .message__author {
@@ -33,7 +34,7 @@
         border-radius: 10px;
         max-width: 700px;
         min-width: 50px;
-        height: 100%;
+        height: fit-content;
         padding: 10px 20px;
     }
 
