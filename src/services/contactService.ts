@@ -1,9 +1,9 @@
 import { BackendContact, FrontendContact } from "../types/contact";
-import { BackendProfile, FrontendProfile } from "../types/profile";
+import { BackendProfile, FrontendProfile, ProfileAdditionalInfo, ProfileMainInfo } from "../types/profile";
 import { httpClient } from "../core/utils/httpClient";
 
-const BASE_URL = 'http://pulseapp.space:8080';
-// const BASE_URL = 'http://0.0.0.0:8080';
+// const BASE_URL = 'http://pulseapp.space:8080';
+const BASE_URL = 'http://0.0.0.0:8080';
 
 const USE_MOCK = false;
 const MOCK_CONTACTS: FrontendContact[] = [
@@ -98,6 +98,7 @@ export class ContactService {
         };
     };
 
+
     async getContacts(): Promise<FrontendContact[]> {
         if (USE_MOCK) {
             return MOCK_CONTACTS;
@@ -188,13 +189,106 @@ export class ContactService {
         };
     };
 
-    async setMyProfile(): Promise<void> {};
+    async uploadMyAvatar(file: File): Promise<{ success: boolean, status: number }> {
+        if (USE_MOCK) {
+            return { success: true, status: 200 };
+        }
+
+        const formData = new FormData();
+        formData.append("avatar", file, file.name);
+
+        try {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/profiles/me/avatar`, {
+                method: 'POST',
+                body: formData,
+                credentials: 'include',
+            });
+            if (!response.ok) {
+                return { success: false, status: response.status };
+            }
+            return { success: true, status: 200 };
+        } catch {
+            return { success: false, status: 500 };
+        }
+    };
+
+    async setMyProfile(_mainInfo: ProfileMainInfo, additionalInfo: ProfileAdditionalInfo): Promise<{success: boolean, status: number}> {
+        const previousData = await this.getMyProfile();
+        if (!previousData) {
+            console.error("Не удалось получить данные профиля с бэкенда");
+            return { success: false, status: 500 };
+        }
+
+        if (USE_MOCK) {
+            if (previousData.additionalInfo.bio !== additionalInfo.bio) {
+                MOCK_MY_PROFILE.additionalInfo.bio = additionalInfo.bio ?? '';
+            }
+            if (previousData.additionalInfo.birthDate !== additionalInfo.birthDate) {
+                if (additionalInfo.birthDate !== undefined && String(additionalInfo.birthDate).trim() !== '') {
+                    MOCK_MY_PROFILE.additionalInfo.birthDate = additionalInfo.birthDate;
+                } else {
+                    delete MOCK_MY_PROFILE.additionalInfo.birthDate;
+                }
+            }
+            return { success: true, status: 200 };
+        }
+
+        if (previousData.additionalInfo.bio !== additionalInfo.bio) {
+            try {
+                const response = await httpClient.request(`${BASE_URL}/api/v1/profiles/me/bio`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        bio: additionalInfo.bio
+                    })
+                });
+
+                if (response.status === 409) {
+                    return { success: false, status: 409 };
+                }
+                if (!response.ok) {
+                    console.error(`Ошибка при изменении био: ${response.status}`);
+                    return { success: false, status: response.status };
+                }
+            } catch(error) {
+                return { success: false, status: 500 };
+            }
+        }
+        if (previousData.additionalInfo.birthDate !== additionalInfo.birthDate) {
+            try {
+                const response = await httpClient.request(`${BASE_URL}/api/v1/profiles/me/birth`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        birth_date: additionalInfo.birthDate
+                    })
+                });
+
+                if (response.status === 409) {
+                    return { success: false, status: 409 };
+                }
+                if (!response.ok) {
+                    console.error(`Ошибка при изменении дня рождения: ${response.status}`);
+                    return { success: false, status: response.status };
+                }
+            } catch(error) {
+                return { success: false, status: 500 };
+            }
+        }
+        return { success: true, status: 200 };
+    };
   
     async getMyId(): Promise<number> {
         try {
             const response = await httpClient.request(`${BASE_URL}/api/v1/profiles/me`, {
                 headers: {
-                    'Content-Type': 'application.json'
+                    'Content-Type': 'application/json'
                 },
             });
             if (!response.ok) {

@@ -5,6 +5,7 @@ import { SearchForm } from "../../components/composite/searchForm/searchForm";
 import { SettingsListWrapper } from "../../components/composite/settingsListWrapper/settingsListWrapper";
 import { contactService } from "../../services/contactService";
 import { SettingsProfileWindow } from "../../components/composite/settingsProfileWindow/settingsProfileWindow";
+import { ProfileAdditionalInfo, ProfileMainInfo } from "../../types/profile";
 
 /**
  * @interface SettingsPageProps
@@ -36,6 +37,7 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
     private placeHolder: HTMLElement | null = null;
     private activeSetting: string | null = null;
     private settingsWindow: SettingsProfileWindow | null = null;
+    private cachedUserProfile: {mainInfo: ProfileMainInfo, additionalInfo: ProfileAdditionalInfo} | null = null;
 
     constructor(props: SettingsPageProps) {
         super(props);
@@ -83,6 +85,7 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
         this.placeHolder.style.display = 'none'; // временно, пока у нас только профиль в настройках
 
         await this.handleSettingsRoute();
+        this.settingsListWrapper.setActiveByKey(this.activeSetting);
 
     };
 
@@ -136,11 +139,15 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
 
         if (activeSetting === "profile") {
             const userProfile = await contactService.getMyProfile();
+            this.cachedUserProfile = userProfile;
 
             this.settingsWindow = new SettingsProfileWindow({
                 profileAdditionalInfo: userProfile.additionalInfo,
                 profileMainInfo: userProfile.mainInfo,
-                closeWindow: this.closeSetting
+                closeWindow: this.closeSetting,
+                onProfileSaved: (main, additional) => {
+                    this.cachedUserProfile = {mainInfo: main, additionalInfo: additional};
+                }
             });
             this.settingsWindow.mount(this.mainContentArea!);
         } else {
@@ -158,6 +165,7 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
         if (this.placeHolder)
             this.placeHolder.style.display = "block";
         this.activeSetting = null;
+        this.settingsListWrapper.setActiveByKey("");
     };
 
     protected beforeUnmount(): void {

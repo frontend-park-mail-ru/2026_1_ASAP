@@ -30,6 +30,10 @@ export class SettingsListWrapper extends BaseForm<SettingsListWrapperProps> {
         return template;
     };
 
+    public setActiveByKey(setting: string) {
+        this.settingsListItem.setActiveByKey(setting);
+    }
+
     /**
      * @override
      */

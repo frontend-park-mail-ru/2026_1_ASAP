@@ -1,10 +1,12 @@
 import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent";
 import { ProfileAdditionalInfo } from "../../../types/profile";
+import { EditableField } from "../settingsProfileWindow/settingsProfileWindow";
 import template from "./profileAdditionalInfoBlock.hbs"
 
 interface ProfileAdditionalInfoBlockProps extends IBaseComponentProps {
     profileAdditionalInfo: ProfileAdditionalInfo;
     class?: string;
+    onEditOverlay: (fieldKey: EditableField, value: string) => void;
 };
 
 export class ProfileAdditionalInfoBlock extends BaseComponent<ProfileAdditionalInfoBlockProps> {
@@ -84,11 +86,27 @@ export class ProfileAdditionalInfoBlock extends BaseComponent<ProfileAdditionalI
         }
     };
 
+    private handleFieldClick = (event: MouseEvent): void => {
+        const target = event.target as HTMLElement;
+        if (target.closest('.bio-toggle')) return;
+
+        const editable = target.closest('[data-editable=true]') as HTMLElement;
+        if (!editable) return;
+
+        const field = editable.dataset.field;
+        if (!field || !['login', 'email', 'birthDate', 'bio'].includes(field)) return;
+        const value = editable.textContent.trim() || "";
+
+        this.props.onEditOverlay(field as EditableField, value);
+    };
+
     protected afterMount(): void {
         this.fullText = this.props.profileAdditionalInfo.bio;
         this.bioText = this.element.querySelector('.bio-text');
         this.bioContainer = this.element.querySelector('.bio-container');
         this.bioInfo = this.element.querySelector('.bio-info');
+        if (this.props.class === "settings-additional-info")
+            this.element!.addEventListener("click", this.handleFieldClick);
 
         this.resizeObserver = new ResizeObserver(() => {
             this.truncate();
@@ -97,10 +115,11 @@ export class ProfileAdditionalInfoBlock extends BaseComponent<ProfileAdditionalI
             return;
         }
         this.resizeObserver.observe(this.bioContainer);
-
     };
 
     protected beforeUnmount(): void {
         this.resizeObserver?.disconnect();
+        if (this.props.class === "settings-additional-info")
+            this.element!.removeEventListener("click", this.handleFieldClick);
     };
 };
