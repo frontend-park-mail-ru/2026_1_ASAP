@@ -1,0 +1,22 @@
+/**
+ * @file findUserContainer.scss
+ * @description Стили контейнера поиска пользователей.
+ */
+
+.find-user-container {
+    @include flex-column;
+    align-items: center;
+    justify-content: flex-start;
+    height: 100%;
+    width: 100%;
+    gap: 30px;
+
+    &__message {
+        color: $color-text;
+        font: $text-heading1;
+        text-align: center;
+        margin: 0;
+        padding-top: 90px;
+        padding-bottom: 10px;
+    }
+}

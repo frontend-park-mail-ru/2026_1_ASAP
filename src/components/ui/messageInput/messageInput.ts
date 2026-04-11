@@ -1,6 +1,5 @@
 import { BaseForm, IBaseFormProps } from '../../../core/base/baseForm'; 
 import { Button } from '../button/button';
-import { Input } from '../input/input';
 import template from './messageInput.hbs';
 
 /**
@@ -15,7 +14,7 @@ interface MessageInputProps extends IBaseFormProps {
  * Компонент формы для ввода и отправки текстовых сообщений.
  */
 export class MessageInput extends BaseForm<MessageInputProps> { 
-    private messageInput: Input | null = null;
+    private textarea: HTMLTextAreaElement | null = null;
     private uplodadButton: Button | null = null;
     private stikerButton: Button | null = null;
     private sendButton: Button | null = null;
@@ -42,28 +41,22 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             return;
         }
 
-        const stikerButtonContainer = this.element.querySelector('[data-component="message-text-input"]');
-        this.stikerButton = new Button({
+        const stickerButtonContainer = this.element.querySelector('[data-component="message-input__sticker-button-container"]');
+        this.stikerButton = new Button({    
             label: '',
             icon: '/assets/images/icons/sticker.svg',
             class: 'message-input__sticker-button',
             type: 'button',
         });
-        this.stikerButton.mount(stikerButtonContainer as HTMLElement);
+        this.stikerButton.mount(stickerButtonContainer as HTMLElement);
 
-        
-        const messageInputContainer = this.element.querySelector('[data-component="message-text-input"]');
-        this.messageInput = new Input({
-            name: 'messageText',
-            placeholder: 'Введите сообщение...',
-            type: 'text',
-            class: 'message-input__textarea',
-            showErrorText: false,
-        });
-        this.messageInput.mount(messageInputContainer as HTMLElement);
+        this.textarea = this.element.querySelector('.message-input__textarea') as HTMLTextAreaElement;
+        if (this.textarea) {
+            this.textarea.addEventListener('keydown', this.handleKeyDown);
+            this.textarea.addEventListener('input', this.handleInput);
+        }
 
-
-        const uploadButtonContainer = this.element.querySelector('[data-component="message-text-input"]');
+        const uploadButtonContainer = this.element.querySelector('[data-component="upload-button-container"]');
         this.uplodadButton = new Button({
             label: '',
             icon: '/assets/images/icons/upload.svg',
@@ -72,7 +65,6 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         });
         this.uplodadButton.mount(uploadButtonContainer as HTMLElement);
 
-        
         const sendButtonContainer = this.element.querySelector('[data-component="send-button-container"]');
         this.sendButton = new Button({
             label: '',
@@ -84,16 +76,40 @@ export class MessageInput extends BaseForm<MessageInputProps> {
     }
 
     /**
+     * Обработчик нажатия клавиш в текстовой области.
+     * @param {KeyboardEvent} event - Событие клавиатуры.
+     * @private
+     */
+    private handleKeyDown = (event: KeyboardEvent): void => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            this.form?.requestSubmit();
+        }
+    };
+
+    /**
+     * Обработчик ввода текста для автоматического изменения высоты.
+     * @private
+     */
+    private handleInput = (): void => {
+        if (this.textarea) {
+            this.textarea.style.height = '';
+            this.textarea.style.height = `${this.textarea.scrollHeight}px`;
+        }
+    };
+
+    /**
      * Переопределяем метод onSubmit из BaseForm.
      * @param {{messageText: string}} data - Данные формы.
      * @returns {Promise<void>}
      */
     protected async onSubmit(data: { messageText: string }): Promise<void> { 
-        const text = data.messageText.trim();
+        const text = data.messageText?.trim();
         if (text) {
             this.props.onSubmit(text);
-            if (this.messageInput) {
-                this.messageInput.value = '';
+            if (this.textarea) {
+                this.textarea.value = '';
+                this.textarea.style.height = ''; // Сброс высоты после отправки
             }
         }
     }
@@ -102,10 +118,19 @@ export class MessageInput extends BaseForm<MessageInputProps> {
      * @override
      */
     protected beforeUnmount(): void { 
+        if (this.textarea) {
+            this.textarea.removeEventListener('keydown', this.handleKeyDown);
+            this.textarea.removeEventListener('input', this.handleInput);
+        }
+        
         super.beforeUnmount();
-        this.messageInput?.unmount();
+        this.stikerButton?.unmount();
+        this.uplodadButton?.unmount();
         this.sendButton?.unmount();
-        this.messageInput = null;
+        
+        this.textarea = null;
+        this.stikerButton = null;
+        this.uplodadButton = null;
         this.sendButton = null;
     }
 }

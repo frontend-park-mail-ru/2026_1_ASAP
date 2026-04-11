@@ -1,0 +1,12 @@
+/**
+ * @file base.scss
+ * @description Базовые стили приложения.
+ */
+
+body {
+    font-family: $font-primary;
+    margin: 0;
+    background: $color-background;
+    overflow: hidden;
+    color: $color-text;
+}

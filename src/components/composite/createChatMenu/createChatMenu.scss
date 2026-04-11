@@ -1,0 +1,50 @@
+/**
+ * @file createChatMenu.scss
+ * @description Стили меню создания чата с оверлеем и позиционированием.
+ */
+
+.create-chat-menu {
+    position: absolute;
+
+    &__overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: $color-overlay-light;
+        z-index: 999;
+    }
+
+    &__button-container {
+        position: absolute;
+        top: 30px;
+        left: 35px;
+        @include flex-column;
+        z-index: 1000;
+        border: none;
+        border-radius: 10px;
+        width: 220px;
+        height: 150px;
+        background-color: $color-neutral;
+    }
+
+    &__add-button {
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+        height: 100%;
+        gap: 8px;
+        padding: 10px;
+        @include btn-reset;
+        color: $color-text;
+        align-items: center;
+        @include hover-transition;
+
+        &:hover {
+            background-color: $color-text-hover2;
+            cursor: pointer;
+            border-radius: 10px;
+        }
+    }
+}

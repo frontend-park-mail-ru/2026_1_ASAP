@@ -1,0 +1,23 @@
+/**
+ * @file addMemberWindow.scss
+ * @description Стили окна добавления участника в группу.
+ */
+
+.add-member-window {
+    width: 100%;
+    height: 100%;
+    @include flex-column;
+    position: relative;
+
+    &__layout-slot {
+        flex: 1;
+        overflow: hidden;
+    }
+
+    &__footer {
+        display: flex;
+        justify-content: center;
+        height: 60px;
+        gap: 10px;
+    }
+}

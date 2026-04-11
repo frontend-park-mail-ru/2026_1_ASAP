@@ -1,0 +1,25 @@
+/**
+ * @file actionLayout.scss
+ * @description Стили макета для страниц действий.
+ */
+
+.action-layout {
+    height: 100%;
+    width: 100%;
+    @include flex-column;
+    padding: 10px;
+    gap: 10px;
+    box-sizing: border-box;
+
+    &__header {
+        display: flex;
+    }
+
+    &__content {
+        padding: 0 0 10px 0;
+        gap: 10px;
+        height: 100%;
+        width: 100%;
+        @include flex-column;
+    }
+}

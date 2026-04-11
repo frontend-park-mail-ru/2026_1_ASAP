@@ -1,0 +1,13 @@
+/**
+ * @file menuBar.scss
+ * @description Стили нижней панели навигации.
+ */
+
+.menu-bar {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    box-sizing: border-box;
+    background-color: $color-neutral;
+    margin-top: auto;
+}

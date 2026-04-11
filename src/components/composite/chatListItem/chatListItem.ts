@@ -2,6 +2,7 @@ import { BaseForm } from "../../../core/base/baseForm";
 import { ChatItem } from "../chatItem/chatItem";
 import { chatService } from "../../../services/chatService";
 import { Router } from '../../../core/router';
+import { wsClient, MessageDto } from '../../../core/utils/wsClient';
 import template from "./chatListItem.hbs";
 
 const CURRENT_USER_LOGIN = 'bob'; // Заглушка для теста, потом убрать
@@ -32,6 +33,16 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
     private chatItems: ChatItem[] = [];
     private activeChatId: string | null = null;
     private noChatsElement: HTMLElement | null = null;
+
+    /**
+     * Стрелочная функция-обработчик WS-события «message.New».
+     * Хранится как поле класса, чтобы иметь возможность отписаться в beforeUnmount.
+     */
+    private readonly handleNewWsMessage = (dto: MessageDto): void => {
+        const chatId = dto.chat_id.toString();
+        this.updateLastMessage(chatId, dto.text);
+        this.moveChatToTop(chatId);
+    };
 
     constructor(props: ChatListItemProps) {
         super(props);
@@ -75,6 +86,7 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
      * Выполняется после монтирования компонента.
      * Загружает список чатов с помощью `chatService`, создает и монтирует
      * для каждого чата компонент `ChatItem`. Если чатов нет, отображает соответствующее сообщение.
+     * Также подписывается на WS-событие «message.New» для обновления превью.
      * @protected
      */
     protected afterMount() {
@@ -106,16 +118,58 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
                 this.chatItems.push(item);
             });
         });
+
+        // Подписываемся на входящие сообщения для обновления превью в сайдбаре
+        wsClient.subscribe('message.New', this.handleNewWsMessage);
     }
 
     /**
      * Выполняется перед размонтированием компонента.
-     * Очищает список, размонтируя все `ChatItem`, и удаляет сообщение об отсутствии чатов.
+     * Очищает список, размонтируя все `ChatItem`, удаляет сообщение об отсутствии чатов
+     * и **отписывается** от WS-событий для предотвращения утечек памяти.
      */
     beforeUnmount() {
+        // Отписываемся от WS
+        wsClient.unsubscribe('message.New', this.handleNewWsMessage);
+
         this.chatItems.forEach(item => item.unmount());
         this.chatItems = [];
         this.activeChatId = null;
         this.noChatsElement?.remove();
+    }
+
+    /**
+     * Обновляет текст последнего сообщения у чата в сайдбаре без перерисовки списка.
+     * Находит нужный DOM-элемент `.chat-info__last-message` внутри соответствующего ChatItem.
+     * @param {string} chatId - ID чата, у которого обновляем превью.
+     * @param {string} text   - Новый текст последнего сообщения.
+     */
+    public updateLastMessage(chatId: string, text: string): void {
+        const targetItem = this.chatItems.find(item => item.props.chat.id === chatId);
+        if (!targetItem?.element) return;
+
+        const lastMsgEl = targetItem.element.querySelector<HTMLElement>('.chat-info__last-message');
+        if (lastMsgEl) {
+            lastMsgEl.textContent = text;
+        }
+    }
+
+    /**
+     * Перемещает элемент чата в начало DOM-списка (визуально «поднимает» чат наверх).
+     * Также переставляет соответствующий `ChatItem` в начало массива `chatItems`.
+     * @param {string} chatId - ID чата для перемещения.
+     */
+    public moveChatToTop(chatId: string): void {
+        if (!this.element) return;
+
+        const index = this.chatItems.findIndex(item => item.props.chat.id === chatId);
+        if (index <= 0) return; // уже наверху или не найден
+
+        const [targetItem] = this.chatItems.splice(index, 1);
+        this.chatItems.unshift(targetItem);
+
+        if (targetItem.element) {
+            this.element.prepend(targetItem.element);
+        }
     }
 }

@@ -1,0 +1,59 @@
+/**
+ * @file chatItem.scss
+ * @description Стили элемента списка чатов с использованием вложенности (BEM).
+ */
+
+.chat-item {
+    &--default,
+    &--selected {
+        height: 70px;
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        padding: 10px;
+        gap: 10px;
+        box-sizing: border-box;
+    }
+
+    &--default {
+        background-color: $color-empty;
+        border-bottom: 1px solid $color-border-chats;
+        cursor: pointer;
+    }
+
+    &--selected {
+        background-image: $gradient-selected-chat;
+    }
+
+    &__content {
+        display: flex;
+        flex-direction: row;
+        gap: 5px;
+        width: 100%;
+        flex-grow: 1;
+    }
+
+    &__info-wrapper {
+        width: 100%;
+    }
+
+    &__meta-wrapper {
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-end;
+    }
+}
+
+/** 
+ * Счетчик непрочитанных сообщений (вынесено в chatItem.css разработчиками).
+ */
+.meta-chat-info__unread-count {
+    background-color: $color-primary;
+    color: $color-text-inverted;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    @include flex-center;
+    font-size: $font-size-xs;
+}

@@ -1,0 +1,147 @@
+/**
+ * @file input.scss
+ * @description Стили компонента ввода (input) с использованием вложенности и миксинов.
+ */
+
+.ui-input-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+
+    &--error {
+        .ui-input {
+            border: 1.5px solid $color-error-border;
+        }
+
+        .ui-input__error-message {
+            opacity: 1;
+        }
+    }
+}
+
+.ui-input {
+    height: 41px;
+    border-radius: 10px;
+    padding: 0 10px;
+    border: 1px solid #2A2A2A;
+    box-shadow: 0 0 0 0 $color-primary;
+    opacity: 0.5;
+    background: rgba(255, 255, 255, 0.05);
+    color: $color-neutral;
+    width: 100%;
+    box-sizing: border-box;
+    padding-right: 40px;
+    @include hover-transition;
+
+    &:hover {
+        opacity: 0.8;
+        border: 1.5px solid $color-primary;
+    }
+
+    &:focus {
+        box-shadow: 0 0 0 0.5px $color-primary;
+        border-color: $color-primary;
+        opacity: 1;
+    }
+
+    &__toggle-password {
+        position: absolute;
+        right: 10px;
+        transform: translateY(-145%);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #9ca3af;
+        @include hover-transition;
+
+        &:hover {
+            opacity: 0.7;
+        }
+
+        & img {
+            width: 20px;
+            height: 20px;
+            display: block;
+        }
+    }
+
+    &__error-message {
+        color: $color-error;
+        font-size: 12px;
+        margin-top: 4px;
+        margin-bottom: 0;
+        min-height: 14px;
+        opacity: 0;
+        @include hover-transition;
+        word-break: break-word;
+        white-space: normal;
+    }
+}
+
+.search-line {
+    background-color: $color-empty;
+    border: none;
+    width: 100%;
+    color: $color-text;
+    transition: border-color 0.2s;
+
+    &::placeholder {
+        color: $color-text;
+        font-weight: 500;
+        font: $text-tertiary;
+        letter-spacing: $text-tertiary-ls;
+    }
+}
+
+.ui-input-secondary {
+    height: 41px;
+    border-radius: 10px;
+    padding: 0 10px;
+    border: 1px solid $color-text;
+    color: $color-text;
+    width: 100%;
+    box-sizing: border-box;
+    background: none;
+    opacity: 0.5;
+    @include hover-transition;
+
+    &:hover {
+        opacity: 0.8;
+    }
+}
+
+.settings-name-input {
+    background-color: $color-empty;
+    border: none;
+    color: $color-text;
+    border-bottom: 1px solid $color-border-chats;
+    font: $text-heading1;
+}
+
+.edit-profile__edit-input {
+    width: 100%;
+    height: 150px;
+    background-color: $color-empty;
+    border: 1px solid $color-bubble;
+    border-radius: 10px;
+    color: $color-text;
+    padding: 10px;
+    resize: none;
+    box-sizing: border-box;
+
+    &::-webkit-scrollbar {
+        width: 10px;
+        border: 1px solid $color-border-sidebar;
+        border-radius: 50px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background-color: $color-empty;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: $color-scroll;
+        border-radius: 50px;
+    }
+}

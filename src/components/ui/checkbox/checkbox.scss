@@ -1,0 +1,54 @@
+/**
+ * @file checkbox.scss
+ * @description Стили кастомного чекбокса.
+ */
+
+.ui-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    cursor: pointer;
+    user-select: none;
+
+    &__input {
+        display: none;
+
+        &:checked + .ui-checkbox__box {
+            background: $color-checkbox-active;
+
+            &::after {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+    }
+
+    &__box {
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        background: $color-checkbox-bg;
+        @include flex-center;
+        transition: 0.2s;
+
+        &:hover {
+            background: $color-checkbox-hover;
+        }
+
+        &::after {
+            content: "✓";
+            font-size: 14px;
+            color: white;
+            opacity: 0;
+            transform: scale(0.6);
+            transition: 0.2s;
+        }
+    }
+
+    &__label {
+        font: $text-secondary;
+        background: $color-secondary;
+        color: $color-neutral;
+    }
+}

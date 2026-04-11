@@ -47,7 +47,7 @@ export class FindUserForm extends BaseForm<FindUserFormProps> {
         this.submitButton = new Button({
             label: this.props.labelButton ? this.props.labelButton : "Написать",
             type: "submit",
-            class: "ui-button__secondary3 find-user-submit-btn"
+            class: "ui-button ui-button__secondary3 find-user-submit-btn"
         });
         this.submitButton.mount(buttonSlot as HTMLElement);
     }

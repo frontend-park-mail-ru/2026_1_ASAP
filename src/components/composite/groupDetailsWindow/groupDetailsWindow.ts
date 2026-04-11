@@ -5,7 +5,7 @@ import { Avatar } from '../../ui/avatar/avatar';
 import { Input } from '../../ui/input/input';
 import { ActionHeader } from '../../ui/actionHeader/actionHeader';
 import template from './groupDetailsWindow.hbs';
-import './groupDetailsWindow.css';
+import './groupDetailsWindow.scss';
 import { ConfirmModal } from '../confirmModal/confirmModal';
 import { chatService } from '../../../services/chatService';
 
@@ -212,7 +212,7 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
         if (this.props.isEditing) {
             const cancelBtn = new Button({
                 label: "Отмена",
-                class: "group-details__btn ui-button__secondary2",
+                class: "group-details__btn ui-button ui-button__secondary2",
                 onClick: () => this.setEditing(false)
             });
             cancelBtn.mount(buttonsSlot as HTMLElement);
@@ -220,7 +220,7 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
             this.actionButtons.push(cancelBtn);
             const doneBtn = new Button({
                 label: "Готово",
-                class: "group-details__btn ui-button__secondary",
+                class: "group-details__btn ui-button ui-button__secondary",
                 onClick: () => this.handleSubmit()
             });
             doneBtn.mount(buttonsSlot as HTMLElement);
@@ -230,7 +230,7 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
             if (this.props.currentUserRole === 'owner') {
                 const addBtn = new Button({
                     label: "Добавить",
-                    class: "group-details__btn ui-button__secondary",
+                    class: "group-details__btn ui-button ui-button__secondary",
                     onClick: () => this.props.onAddMember()
                 });
                 addBtn.mount(buttonsSlot as HTMLElement);
@@ -240,7 +240,7 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
             if (this.props.currentUserRole === 'owner') {
                 const editBtn = new Button({
                     label: "Изменить",
-                    class: "group-details__btn ui-button__secondary2",
+                    class: "group-details__btn ui-button ui-button__secondary2",
                     onClick: () => this.setEditing(true)
                 });
                 editBtn.mount(buttonsSlot as HTMLElement);
@@ -249,7 +249,7 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
 
             const leaveBtn = new Button({
                 label: "Выйти",
-                class: "group-details__btn exit-button",
+                class: "group-details__btn ui-button exit-button",
                 onClick: () => this.confirmLeaveGroup()
             });
             leaveBtn.mount(buttonsSlot as HTMLElement);

@@ -20,6 +20,7 @@ import { GroupDetailsWindow } from "../../components/composite/groupDetailsWindo
 import { AddMemberWindow } from "../../components/composite/addMemberWindow/addMemberWindow";
 import { contactService } from "../../services/contactService";
 import { ConfirmModal } from "../../components/composite/confirmModal/confirmModal";
+import { wsClient, MessageDto } from "../../core/utils/wsClient";
 
 const CURRENT_USER_LOGIN = 'alice'; 
 const CURRENT_USER: User = { login: CURRENT_USER_LOGIN, avatarUrl: '/assets/images/avatars/myAvatar.svg' };
@@ -65,7 +66,31 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     
     public activeChatId: string | null = null;
     private mainContentArea: HTMLElement | null = null;
-    private placeholderElement: HTMLElement | null = null; 
+    private placeholderElement: HTMLElement | null = null;
+    private currentUserId: number | null = null;
+
+    /**
+     * Ссылка на активный MessageList-компонент.
+     * Хранится отдельно для доступа из WS-обработчика сообщений.
+     */
+    private activeMessageList: MessageList | null = null;
+
+    /**
+     * Стрелочный обработчик WS-события «message.New».
+     * Хранится как поле класса для корректной отписки.
+     */
+    private readonly handleNewMessage = (dto: MessageDto): void => {
+        if (!this.activeChatId || dto.chat_id.toString() !== this.activeChatId) {
+            return;
+        }
+
+        if (!this.activeMessageList || this.currentUserId === null) {
+            return;
+        }
+
+        const frontendMsg = chatService.convertWsMessageDto(dto, this.currentUserId);
+        this.activeMessageList.addMessage(frontendMsg);
+    };
 
     constructor(props: ChatsPageProps = {}) {
         super(props);
@@ -90,7 +115,13 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
         this.mainContentArea = this.element.querySelector('.chat-page__mainfield') || null;
         this.placeholderElement = this.mainContentArea?.querySelector('.empty-field') || null;
-        
+
+        try {
+            this.currentUserId = await contactService.getMyId();
+        } catch (error) {
+            console.error("ChatsPage: Не удалось получить ID пользователя", error);
+        }
+
         await this.handleChatRoute();
     }
 
@@ -111,6 +142,9 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * @private
      */
     private cleanupMainContent(): void {
+        wsClient.unsubscribe('message.New', this.handleNewMessage);
+        this.activeMessageList = null;
+
         if (this.chatWindow) {
             this.chatWindow.unmount();
             this.chatWindow = null;
@@ -246,7 +280,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     onSubmit: async (contactId: number, contactName: string) => {
                         const newChat = await chatService.createChat(
                             [contactId], 
-                            "dialog"
+                            "dialog",
                         );
                         if (newChat && newChat.id) {   
                             this.rebuildSidebar(); 
@@ -266,7 +300,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                         }
                         const newChat = await chatService.createChat(
                             [targetUser.id], 
-                            "dialog"
+                            "dialog",
                         );
                         
                         if (newChat && newChat.id) {
@@ -344,7 +378,6 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         if (!this.mainContentArea) return;
 
         const chatDetail = await chatService.getChatDetail(chatId);
-        const messages = await chatService.getMessages(chatId, CURRENT_USER_LOGIN);
 
         if (this.activeChatId !== chatId) {
             return;
@@ -410,14 +443,18 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         }
 
         const messageListComponent = new MessageList({ 
-            messages: messages, 
+            messages: [],
             currentUser: CURRENT_USER,
             chatType: chatDetail.type
-        });  
+        });
+
+        this.activeMessageList = messageListComponent;
 
         const messageInputComponent = new MessageInput({
             onSubmit: (text: string) => {
-                //todo : отправка сообщения в чат
+                if (this.activeChatId) {
+                    chatService.sendMessage(this.activeChatId, text);
+                }
             } 
         });
 
@@ -428,7 +465,33 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         });
         
         this.chatWindow.mount(this.mainContentArea);
+
+        // Подключаемся к сокету и дожидаемся открытия соединения
+        await wsClient.connect(chatId);
+        wsClient.subscribe('message.New', this.handleNewMessage);
+
+        // Загружаем историю через сокеты сразу после подключения
+        this.loadHistory(chatId);
     }
+
+    /**
+     * Загружает историю сообщений через WebSocket и обновляет MessageList.
+     * @param {string} chatId - ID чата для загрузки истории.
+     * @private
+     */
+    private async loadHistory(chatId: string): Promise<void> {
+        if (!this.currentUserId) {
+            this.currentUserId = await contactService.getMyId();
+        }
+
+        const history = await chatService.getMessages(chatId, this.currentUserId as any);
+        
+        // Проверяем, что пользователь все еще в этом же чате
+        if (this.activeChatId === chatId && this.activeMessageList) {
+            this.activeMessageList.setMessages(history);
+        }
+    }
+
 
     /**
      * Открывает окно деталей группы поверх чата.
@@ -612,7 +675,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         this.chatWrapper?.unmount();
         this.menuBar?.unmount();
         this.logoutButton?.unmount();
-        
+        wsClient.disconnect();
         this.activeChatId = null;
         this.placeholderElement = null; 
     }

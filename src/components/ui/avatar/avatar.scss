@@ -1,0 +1,35 @@
+/**
+ * @file avatar.scss
+ * @description Стили компонента аватарок с использованием вложенности.
+ */
+
+.chat-avatar {
+    width: 50px;
+    height: 50px;
+}
+
+.search-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.profile-header-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.profile-avatar {
+    width: 85px;
+    height: 85px;
+}
+
+.private-profile-avatar {
+    width: 100%;
+    height: 100%;
+    opacity: 0.6;
+}
+
+.setting-icon {
+    height: 30px;
+    width: 30px;
+}

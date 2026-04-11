@@ -1,0 +1,76 @@
+/**
+ * @file message.scss
+ * @description Стили компонента сообщения с использованием вложенности и миксинов.
+ */
+
+.message {
+    display: flex;
+    padding: 10px;
+    gap: 10px;
+
+    &--own {
+        justify-content: flex-end;
+
+        .message__content-wrapper {
+            background-color: $color-background-blur;
+            color: $color-text-inverted;
+            max-width: 675px;
+        }
+
+        .message__author {
+            color: $color-text-hover;
+            text-align: right;
+        }
+
+        .message__meta {
+            color: $color-text-hover;
+        }
+    }
+
+    &__content-wrapper {
+        @include flex-column;
+        background-color: $color-bubble;
+        border-radius: 10px;
+        max-width: 700px;
+        min-width: 50px;
+        height: 100%;
+        padding: 10px 20px;
+    }
+
+    &__avatar-container {
+        display: flex;
+        width: 50px;
+        height: 100%;
+        flex-direction: column;
+        justify-content: flex-end;
+    }
+
+    &__avatar {
+        padding-bottom: 20px;
+    }
+
+    &__author {
+        color: $color-text-hover;
+        font: $text-main-style;
+        letter-spacing: $text-main-ls;
+        font-size: 12px;
+    }
+
+    &__text {
+        padding-top: 5px;
+        font: $text-main-style;
+        letter-spacing: $text-main-ls;
+        font-size: 14px;
+        line-height: 1.4;
+        word-wrap: break-word;
+        white-space: pre-wrap;
+    }
+
+    &__meta {
+        color: $color-text-hover;
+        font: $text-main-style;
+        letter-spacing: $text-main-ls;
+        font-size: 12px;
+        text-align: right;
+    }
+}

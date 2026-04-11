@@ -51,15 +51,15 @@ export class MessageList extends BaseComponent {
             return;
         }
 
-        this.renderMessages(this.props.messages);
+        this.setMessages(this.props.messages);
         this.scrollToBottom();
     }
 
     /**
-     * Рендерит сообщения в список.
-     * @param {MessageType[]} messages - Массив сообщений для отображения.
+     * Рендерит сообщения в список (полная замена текущих сообщений).
+     * @param {FrontendMessage[]} messages - Массив сообщений для отображения.
      */
-    private renderMessages(messages: FrontendMessage[]): void {
+    public setMessages(messages: FrontendMessage[]): void {
         this.childMessages.forEach(msg => msg.unmount());
         this.childMessages = [];
 
@@ -74,10 +74,9 @@ export class MessageList extends BaseComponent {
         }
 
         messages.forEach(msgData => {
-            const isOwn = msgData.sender.login == this.props.currentUser.login;
             const messageComponent = new Message({
                 message: msgData, 
-                isOwn: isOwn,
+                isOwn: msgData.isOwn || false,
                 showAuthor: showAuthor
             });
             messageComponent.mount(this.flexContainer!);
@@ -87,7 +86,7 @@ export class MessageList extends BaseComponent {
 
     /**
      * Добавляет новое сообщение в список и прокручивает вниз.
-     * @param {MessageType} newMessage - Новое сообщение.
+     * @param {FrontendMessage} newMessage - Новое сообщение.
      */
     public addMessage(newMessage: FrontendMessage): void {
         if (!this.element) {
@@ -103,10 +102,9 @@ export class MessageList extends BaseComponent {
         }
 
         const showAuthor = this.props.chatType === 'group';
-        const isOwn = newMessage.sender.login === this.props.currentUser.login;
         const messageComponent = new Message({
             message: newMessage, 
-            isOwn: isOwn,
+            isOwn: newMessage.isOwn || false,
             showAuthor: showAuthor
         });
         

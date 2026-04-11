@@ -1,0 +1,28 @@
+/**
+ * @file chatListWrapper.scss
+ * @description Стили обертки списка чатов с кастомным скроллбаром.
+ */
+
+.chat-list-wrapper {
+    display: flex;
+    flex-direction: row; 
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    background-color: $color-empty;
+
+    &::-webkit-scrollbar {
+        width: 10px;
+        border: 1px solid $color-border-sidebar;
+        border-radius: 50px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background-color: $color-empty;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: $color-scroll;
+        border-radius: 50px;
+    }
+}

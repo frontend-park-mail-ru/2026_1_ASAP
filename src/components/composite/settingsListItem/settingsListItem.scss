@@ -1,0 +1,10 @@
+/**
+ * @file settingsListItem.scss
+ * @description Стили списка настроек.
+ */
+
+.settings-list-item {
+    @include flex-column;
+    height: 100%;
+    width: 100%;
+}

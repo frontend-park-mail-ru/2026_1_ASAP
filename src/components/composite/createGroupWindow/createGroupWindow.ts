@@ -99,7 +99,7 @@ export class CreateGroupWindow extends BaseComponent<CreateGroupWindowProps> {
 
             this.submitButton = new Button({
                 label: "Создать группу",
-                class: "create-group-submit-btn ui-button__primary",
+                class: "ui-button ui-button__primary create-group-submit-btn",
                 onClick: () => {
                     if (this.selectedUsers.size === 0) {
                         this.infoMenu = new InfoMenu({
