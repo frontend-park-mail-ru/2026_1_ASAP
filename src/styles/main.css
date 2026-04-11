@@ -40,6 +40,7 @@
 @import "../components/composite/settingsProfileWindow/settingsProfileWindow.css";
 @import "../components/composite/settingsFullNameForm/settingsFullNameForm.css";
 @import "../components/composite/editProfileOverlay/editProfileOverlay.css";
+@import "../components/composite/avatarEditMenuOverlay/avatarEditMenuOverlay.css";
 
 
 @import "../components/ui/button/button.css";

@@ -2,8 +2,8 @@ import { BackendContact, FrontendContact } from "../types/contact";
 import { BackendProfile, FrontendProfile, ProfileAdditionalInfo, ProfileMainInfo } from "../types/profile";
 import { httpClient } from "../core/utils/httpClient";
 
-// const BASE_URL = 'http://pulseapp.space:8080';
-const BASE_URL = 'http://0.0.0.0:8080';
+const BASE_URL = 'http://pulseapp.space:8080';
+// const BASE_URL = 'http://0.0.0.0:8080';
 
 const USE_MOCK = false;
 const MOCK_CONTACTS: FrontendContact[] = [
@@ -220,6 +220,13 @@ export class ContactService {
         }
 
         if (USE_MOCK) {
+            const draftAvatar = _mainInfo.avatarUrl ?? '';
+            if (!draftAvatar.startsWith('blob:')) {
+                MOCK_MY_PROFILE.mainInfo.avatarUrl =
+                    draftAvatar || '/assets/images/avatars/profileAvatar.svg';
+            }
+            MOCK_MY_PROFILE.mainInfo.firstName = _mainInfo.firstName;
+            MOCK_MY_PROFILE.mainInfo.lastName = _mainInfo.lastName;
             if (previousData.additionalInfo.bio !== additionalInfo.bio) {
                 MOCK_MY_PROFILE.additionalInfo.bio = additionalInfo.bio ?? '';
             }

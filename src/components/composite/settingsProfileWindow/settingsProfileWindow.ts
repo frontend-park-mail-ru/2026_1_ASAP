@@ -2,6 +2,8 @@ import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseCompo
 import { contactService } from "../../../services/contactService";
 import { ProfileAdditionalInfo, ProfileMainInfo } from "../../../types/profile";
 import { Button } from "../../ui/button/button";
+import { AvatarEditMenuOverlay } from "../avatarEditMenuOverlay/avatarEditMenuOverlay";
+import { ConfirmModal } from "../confirmModal/confirmModal";
 import { EditProfileOverlay } from "../editProfileOverlay/editProfileOverlay";
 import { ProfileAdditionalInfoBlock } from "../profileAdditionalInfoBlock/profileAdditionalInfoBlock";
 import { ProfileHeader } from "../profileHeader/profileHeader";
@@ -28,6 +30,9 @@ export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowPr
     private draftProfileMainInfo: ProfileMainInfo | null = null;
     private draftProfileAdditionalInfo: ProfileAdditionalInfo | null = null;
     private editProfileOverlay: EditProfileOverlay | null = null;
+    private avatarEditMenu: AvatarEditMenuOverlay | null = null;
+    private deleteAvatarConfirm: ConfirmModal | null = null;
+    private avatarFileInput: HTMLInputElement | null = null;
     private avatarPreviewUrl: string | null = null;
     private pendingAvatarFile: File | null = null;
     private baselineProfileMainInfo: ProfileMainInfo;
@@ -114,7 +119,60 @@ export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowPr
         this.setButtonState();
     };
 
+    private closeAvatarMenu(): void {
+        this.avatarEditMenu?.unmount();
+        this.avatarEditMenu = null;
+    }
+
+    private closeDeleteAvatarConfirm(): void {
+        this.deleteAvatarConfirm?.unmount();
+        this.deleteAvatarConfirm = null;
+    }
+
+    private applyAvatarDelete(): void {
+        if (this.avatarPreviewUrl?.startsWith("blob:")) {
+            URL.revokeObjectURL(this.avatarPreviewUrl);
+        }
+        this.avatarPreviewUrl = null;
+        this.pendingAvatarFile = null;
+        if (this.draftProfileMainInfo) {
+            this.draftProfileMainInfo.avatarUrl = DEFAULT_AVATAR_URL;
+        }
+        this.remountProfileMainInfoBlock();
+        this.setButtonState();
+    }
+
+    handleAvatarEditClick = (avatarWrap: HTMLElement): void => {
+        this.closeAvatarMenu();
+        const rect = avatarWrap.getBoundingClientRect();
+        this.avatarEditMenu = new AvatarEditMenuOverlay({
+            anchorRect: rect,
+            onUpload: () => {
+                if (!this.avatarFileInput) return;
+                this.avatarFileInput.value = "";
+                this.avatarFileInput.click();
+            },
+            onDelete: () => {
+                this.closeAvatarMenu();
+                this.deleteAvatarConfirm = new ConfirmModal({
+                    text: "Вы точно хотите удалить аватар?",
+                    confirmButtonText: "Удалить",
+                    cancelButtonText: "Отменить",
+                    onConfirm: () => {
+                        this.applyAvatarDelete();
+                        this.closeDeleteAvatarConfirm();
+                    },
+                    onCancel: () => this.closeDeleteAvatarConfirm(),
+                });
+                this.deleteAvatarConfirm.mount(this.element!);
+            },
+            onClose: () => this.closeAvatarMenu(),
+        });
+        this.avatarEditMenu.mount(this.element!);
+    };
+
     handleAvatarFile = (file: File) => {
+        this.closeAvatarMenu();
         if (this.avatarPreviewUrl?.startsWith('blob:')) {
             URL.revokeObjectURL(this.avatarPreviewUrl);
         }
@@ -136,7 +194,7 @@ export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowPr
             profileMainInfo: this.draftProfileMainInfo,
             type: "private_profile",
             onInput: this.handleMainInfoInput,
-            onAvatarFile: this.handleAvatarFile,
+            onAvatarEditClick: this.handleAvatarEditClick,
         });
         this.profileMainInfoBlock.mount(this.element);
         const mainEl = this.profileMainInfoBlock.element;
@@ -262,7 +320,7 @@ export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowPr
             profileMainInfo: this.draftProfileMainInfo,
             type: "private_profile",
             onInput: this.handleMainInfoInput,
-            onAvatarFile: this.handleAvatarFile,
+            onAvatarEditClick: this.handleAvatarEditClick,
         });
         this.profileMainInfoBlock.mount(this.element!);
 
@@ -285,10 +343,25 @@ export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowPr
         });
         this.element!.appendChild(buttonWrapper);
         this.profileSaveButton.mount(buttonWrapper);
+        this.avatarFileInput = document.createElement("input");
+        this.avatarFileInput.type = "file";
+        this.avatarFileInput.accept = "image/*";
+        this.avatarFileInput.hidden = true;
+        this.element!.appendChild(this.avatarFileInput);
+        this.avatarFileInput.addEventListener("change", () => {
+            const file = this.avatarFileInput?.files?.[0];
+            if (file) this.handleAvatarFile(file);
+        });
         this.setButtonState();
     };
 
     protected beforeUnmount(): void {
+        this.closeAvatarMenu();
+        this.closeDeleteAvatarConfirm();
+        if (this.avatarFileInput?.parentNode) {
+            this.avatarFileInput.parentNode.removeChild(this.avatarFileInput);
+        }
+        this.avatarFileInput = null;
         if (this.avatarPreviewUrl?.startsWith('blob:')) {
             URL.revokeObjectURL(this.avatarPreviewUrl);
             this.avatarPreviewUrl = null;

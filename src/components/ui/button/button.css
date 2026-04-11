@@ -30,8 +30,14 @@
     border-radius: 10px;
 }
 
-.ui-button__primary:hover:after {
+.ui-button__primary:hover:not(:disabled):not(.ui-button__disabled):after {
     opacity: 1;
+}
+
+.ui-button__primary:disabled:hover:after,
+.ui-button__primary[disabled]:hover:after,
+.ui-button__primary.ui-button__disabled:hover:after {
+    opacity: 0;
 }
 
 button > span {

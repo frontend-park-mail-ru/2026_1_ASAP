@@ -13,6 +13,7 @@ import template from './confirmModal.hbs';
 interface ConfirmModalProps extends IBaseComponentProps {
     text: string;
     confirmButtonText: string;
+    cancelButtonText?: string;
     onConfirm(): void;
     onCancel?(): void;
     hideCancel?: boolean;
@@ -63,6 +64,12 @@ export class ConfirmModal extends BaseComponent<ConfirmModalProps> {
         const buttonsContainer = mainContainer.querySelector('[data-component="confirm-modal-buttons-container"]');
         if (!buttonsContainer) return;
 
+        this.cancelButton = new Button({
+            label: this.props.cancelButtonText ?? "Отмена",
+            class: "confirm-modal__button--cancel ui-button ui-button__secondary2",
+            onClick: this.props.onCancel,
+        });
+        this.cancelButton.mount(buttonsContainer as HTMLElement);
         if (!this.props.hideCancel) {
             this.cancelButton = new Button({
                 label: this.props.cancelButtonText || "Отмена",

@@ -4,11 +4,13 @@
  * @property {string} message - Сообщение об ошибке, если невалидно.
  * @property {string[]} [missing] - Список невыполненных требований (для пароля).
  */
-interface ValidationResult {
+export interface ValidationResult {
     isValid: boolean;
     message: string;
     missing?: string[];
 }
+
+export const PROFILE_BIO_MAX_LENGTH = 1000;
 
 /**
  * Сервис валидации пользовательского ввода: email, пароль, логин, обязательные поля.
@@ -116,6 +118,54 @@ class ValidationService {
             return { isValid: false, message: `${fieldName} не может быть пустым` };
         }
 
+        return { isValid: true, message: '' };
+    }
+
+    /**
+     * Дата рождения (необязательно): пусто — ок; иначе YYYY-MM-DD или ДД.ММ.ГГГГ.
+     */
+    public validateBirthDate(value: string): ValidationResult {
+        const v = value?.trim() ?? '';
+        if (!v) {
+            return { isValid: true, message: '' };
+        }
+        let d: Date;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+            d = new Date(v);
+        } else {
+            const ru = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(v);
+            if (ru) {
+                const day = parseInt(ru[1], 10);
+                const month = parseInt(ru[2], 10) - 1;
+                const year = parseInt(ru[3], 10);
+                d = new Date(year, month, day);
+            } else {
+                d = new Date(v);
+            }
+        }
+        if (Number.isNaN(d.getTime())) {
+            return { isValid: false, message: 'Некорректная дата' };
+        }
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+        if (d > today) {
+            return { isValid: false, message: 'Дата не может быть в будущем' };
+        }
+        const min = new Date('1900-01-01');
+        if (d < min) {
+            return { isValid: false, message: 'Некорректная дата' };
+        }
+        return { isValid: true, message: '' };
+    }
+
+    public validateBio(bio: string): ValidationResult {
+        const t = (bio ?? '').trim();
+        if (t.length > PROFILE_BIO_MAX_LENGTH) {
+            return {
+                isValid: false,
+                message: `Слишком длинный текст (максимум ${PROFILE_BIO_MAX_LENGTH} символов)`,
+            };
+        }
         return { isValid: true, message: '' };
     }
 }
