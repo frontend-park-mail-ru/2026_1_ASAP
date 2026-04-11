@@ -15,7 +15,10 @@ interface ConfirmModalProps extends IBaseComponentProps {
     confirmButtonText: string;
     cancelButtonText?: string;
     onConfirm(): void;
-    onCancel(): void;
+    onCancel?(): void;
+    hideCancel?: boolean;
+    cancelButtonText?: string;
+    confirmButtonClass?: string;
 }
 
 /**
@@ -67,10 +70,22 @@ export class ConfirmModal extends BaseComponent<ConfirmModalProps> {
             onClick: this.props.onCancel,
         });
         this.cancelButton.mount(buttonsContainer as HTMLElement);
+        if (!this.props.hideCancel) {
+            this.cancelButton = new Button({
+                label: this.props.cancelButtonText || "Отмена",
+                class: "confirm-modal__button--cancel ui-button ui-button__secondary2",
+                onClick: () => {
+                    if (this.props.onCancel) {
+                        this.props.onCancel();
+                    }
+                },
+            });
+            this.cancelButton.mount(buttonsContainer as HTMLElement);
+        }
 
         this.confirmButton = new Button({
             label: this.props.confirmButtonText,
-            class: "confirm-modal__button--submit ui-button",
+            class: this.props.confirmButtonClass || "confirm-modal__button--submit ui-button",
             onClick: () => {
                 this.props.onConfirm();
             },

@@ -25,3 +25,8 @@
     padding: 10px;
     box-sizing: border-box;
 }
+
+.contact-item__avatar {
+    max-width: 50px;
+    max-height: 50px;
+}
