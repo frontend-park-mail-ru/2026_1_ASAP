@@ -31,6 +31,7 @@ export interface GroupDetailsWindowProps {
     /** @deprecated Заменён на onGroupUpdated. Оставлен для обратной совместимости. */
     onUpdateGroup?: (newName: string, newAvatar?: File) => void;
     /** Вызывается после успешного обновления группы на сервере */
+    onGroupUpdated?: () => void;
     onRemoveMember: (userId: number) => void;
     onAddMember: () => void;
     onMemberClick?: (userId: number) => void;
