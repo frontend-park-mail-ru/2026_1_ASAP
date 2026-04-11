@@ -5,7 +5,7 @@ import { httpClient } from "../core/utils/httpClient";
 const BASE_URL = 'http://pulseapp.space:8080';
 // const BASE_URL = 'http://0.0.0.0:8080';
 
-const USE_MOCK = false;
+const USE_MOCK = true;
 const MOCK_CONTACTS: FrontendContact[] = [
     {
         contact_user_id: 1,

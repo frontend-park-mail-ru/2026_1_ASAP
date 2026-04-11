@@ -8,7 +8,8 @@ import template from './confirmModal.hbs';
  * @property {string} text - Текст вопроса/предупреждения.
  * @property {string} confirmButtonText - Текст кнопки подтверждения (красная).
  * @property {Function} onConfirm - Коллбэк при подтверждении действия.
- * @property {Function} onCancel - Коллбэк при отмене (закрытии модалки).
+ * @property {Function} [onCancel] - Коллбэк при отмене (закрытии модалки).
+ * @property {boolean} [hideCancel] - Не показывать кнопку отмены (клик по оверлею всё равно вызывает onCancel, если передан).
  */
 interface ConfirmModalProps extends IBaseComponentProps {
     text: string;
@@ -17,7 +18,6 @@ interface ConfirmModalProps extends IBaseComponentProps {
     onConfirm(): void;
     onCancel?(): void;
     hideCancel?: boolean;
-    cancelButtonText?: string;
     confirmButtonClass?: string;
 }
 
@@ -49,7 +49,7 @@ export class ConfirmModal extends BaseComponent<ConfirmModalProps> {
         const overlay = this.element.querySelector('[data-component="confirm-modal-overlay"]');
         if (overlay) {
             overlay.addEventListener('click', () => {
-                this.props.onCancel();
+                this.props.onCancel?.();
             });
         }
 
@@ -64,20 +64,12 @@ export class ConfirmModal extends BaseComponent<ConfirmModalProps> {
         const buttonsContainer = mainContainer.querySelector('[data-component="confirm-modal-buttons-container"]');
         if (!buttonsContainer) return;
 
-        this.cancelButton = new Button({
-            label: this.props.cancelButtonText ?? "Отмена",
-            class: "confirm-modal__button--cancel ui-button ui-button__secondary2",
-            onClick: this.props.onCancel,
-        });
-        this.cancelButton.mount(buttonsContainer as HTMLElement);
         if (!this.props.hideCancel) {
             this.cancelButton = new Button({
-                label: this.props.cancelButtonText || "Отмена",
+                label: this.props.cancelButtonText ?? "Отмена",
                 class: "confirm-modal__button--cancel ui-button ui-button__secondary2",
                 onClick: () => {
-                    if (this.props.onCancel) {
-                        this.props.onCancel();
-                    }
+                    this.props.onCancel?.();
                 },
             });
             this.cancelButton.mount(buttonsContainer as HTMLElement);
