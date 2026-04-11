@@ -9,14 +9,13 @@ interface ProfileMainInfoBlockProps extends IBaseComponentProps {
     profileMainInfo: ProfileMainInfo;
     type: "contact" | "private_profile";
     onInput?: (firstName: string, lastName: string) => void;
-    onAvatarFile?: (file: File) => void;
+    onAvatarEditClick?: (avatarWrapElement: HTMLElement) => void;
 };
 
 export class ProfileMainInfoBlock extends BaseComponent<ProfileMainInfoBlockProps> {
     private profileAvatar: Avatar | null = null;
     private settingsFullNameForm: SettingsFullNameForm | null = null;
     private wrapOverlay: Button | null = null;
-    private avatarFileInput: HTMLInputElement | null = null;
 
     constructor(props: ProfileMainInfoBlockProps) {
         super(props);
@@ -57,23 +56,10 @@ export class ProfileMainInfoBlock extends BaseComponent<ProfileMainInfoBlockProp
                     class: "settings-avatar-wrap__overlay",
                     type: "button",
                     onClick: () => {
-                        if (!this.avatarFileInput) return;
-                        this.avatarFileInput.value = '';
-                        this.avatarFileInput.click();
+                        this.props.onAvatarEditClick?.(avatarWrapper);
                     },
                 });
                 this.wrapOverlay.mount(avatarWrapper);
-                this.avatarFileInput = document.createElement('input');
-                this.avatarFileInput.type = "file";
-                this.avatarFileInput.accept = "image/*";
-                this.avatarFileInput.hidden = true;
-                avatarWrapper.appendChild(this.avatarFileInput!);
-
-                this.avatarFileInput.addEventListener('change', () => {
-                    const file = this.avatarFileInput?.files?.[0];
-                    if (!file) return;
-                    this.props.onAvatarFile?.(file);
-                });
 
                 this.settingsFullNameForm = new SettingsFullNameForm({
                     firstName: this.props.profileMainInfo.firstName,

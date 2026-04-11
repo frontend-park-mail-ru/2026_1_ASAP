@@ -33,3 +33,42 @@
     color: var(--color-scroll);
     height: 30px;
 }
+
+.edit-profile__bio-block {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    box-sizing: border-box;
+}
+
+.edit-profile__bio-counter-row {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+    box-sizing: border-box;
+    padding-right: 10px;
+}
+
+.edit-profile__char-count {
+    font: var(--font-secondary);
+    font-size: 14px;
+    line-height: 1.2;
+    color: var(--color-scroll);
+    opacity: 0.85;
+}
+
+.edit-profile__validation-error {
+    margin: 0;
+    width: 100%;
+    min-height: 1.25em;
+    font: var(--font-secondary);
+    color: var(--color-error);
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.edit-profile__validation-error[hidden] {
+    display: none;
+}
