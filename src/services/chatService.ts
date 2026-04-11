@@ -307,30 +307,58 @@ export class ChatService {
     }
 
     /**
-     * @description Мок для удаления/исключения участника из группы (только owner)
-     * @param groupId ID группы
-     * @param userId ID пользователя для удаления
+     * Получает список ID всех участников чата.
+     * @param chatId — Идентификатор чата.
+     * @returns Массив ID участников.
      */
-    public async removeMemberMock(groupId: string, userId: number): Promise<boolean> {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                console.log(`[Mock] Пользователь ${userId} исключен из группы ${groupId}`);
-                resolve(true);
-            }, 500);
-        });
+    public async getChatMembers(chatId: string): Promise<number[]> {
+        try {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/chats/${chatId}/members`, {
+                method: 'GET'
+            });
+
+            if (!response.ok) {
+                console.error(`Ошибка при получении участников чата: ${response.status}`);
+                return [];
+            }
+
+            const data = await response.json();
+            if (data.status === 'success' && data.body && Array.isArray(data.body.members_id)) {
+                return data.body.members_id;
+            }
+            return [];
+        } catch (error) {
+            console.error('Ошибка сети при получении участников чата:', error);
+            return [];
+        }
     }
 
     /**
-     * @description Мок для самостоятельного выхода пользователя из группы
-     * @param groupId ID группы
+     * Удаляет участника из группового чата.
+     * @param chatId — Идентификатор чата.
+     * @param userId — ID пользователя для удаления.
+     * @returns Объект с флагом успеха и HTTP-статусом.
      */
-    public async leaveGroupMock(groupId: string): Promise<boolean> {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                console.log(`[Mock] Вы покинули группу ${groupId}`);
-                resolve(true);
-            }, 500);
-        });
+    public async removeMember(chatId: string, userId: number): Promise<{ success: boolean; status: number }> {
+        try {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/chats/${chatId}/members`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ member_id: userId })
+            });
+
+            if (response.ok) {
+                return { success: true, status: response.status };
+            }
+
+            console.error(`Ошибка при удалении участника: ${response.status}`);
+            return { success: false, status: response.status };
+        } catch (error) {
+            console.error('Ошибка сети при удалении участника:', error);
+            return { success: false, status: 500 };
+        }
     }
 }
 

@@ -16,7 +16,7 @@ const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/web
 
 interface GroupMember {
     id: number;
-    login: string;
+    name: string;
     avatarUrl?: string;
 }
 
@@ -31,9 +31,10 @@ export interface GroupDetailsWindowProps {
     /** @deprecated Заменён на onGroupUpdated. Оставлен для обратной совместимости. */
     onUpdateGroup?: (newName: string, newAvatar?: File) => void;
     /** Вызывается после успешного обновления группы на сервере */
-    onGroupUpdated?: () => void;
     onRemoveMember: (userId: number) => void;
     onAddMember: () => void;
+    onMemberClick?: (userId: number) => void;
+    initialIsEditing?: boolean;
 }
 
 /**
@@ -58,7 +59,7 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
     private avatarPreviewUrl: string | null = null;
 
     constructor(props: GroupDetailsWindowProps) {
-        super({ ...props, isEditing: false });
+        super({ ...props, isEditing: props.initialIsEditing || false });
     }
 
     getTemplate() {
@@ -147,13 +148,17 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
 
                     // Валидация типа файла
                     if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
-                        alert('Недопустимый формат файла. Разрешены: jpeg, jpg, png, webp, gif.');
+                        this.showAlert('Недопустимый формат файла. Разрешены: jpeg, jpg, png, webp, gif.', () => {
+                            this.setEditing(true);
+                        });
                         return;
                     }
 
                     // Валидация размера файла
                     if (file.size > MAX_AVATAR_SIZE) {
-                        alert('Файл слишком большой. Максимальный размер — 5 МБ.');
+                        this.showAlert('Файл слишком большой. Максимальный размер — 5 МБ.', () => {
+                            this.setEditing(true);
+                        });
                         return;
                     }
 
@@ -270,9 +275,14 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
 
             const item = new ContactItem({
                 id: member.id,
-                name: member.login,
+                name: member.name,
                 avatarUrl: member.avatarUrl || '/assets/images/avatars/chatAvatar.svg',
-                rightSlot: rightControl
+                rightSlot: rightControl,
+                onClick: !this.props.isEditing ? () => {
+                    if (this.props.onMemberClick) {
+                        this.props.onMemberClick(member.id);
+                    }
+                } : undefined
             });
 
             item.mount(membersSlot as HTMLElement);
@@ -293,7 +303,9 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
         // Валидация названия
         if (titleChanged) {
             if (newName.length > MAX_TITLE_LENGTH) {
-                alert(`Название группы не должно превышать ${MAX_TITLE_LENGTH} символов.`);
+                this.showAlert(`Название группы не должно превышать ${MAX_TITLE_LENGTH} символов.`, () => {
+                    this.setEditing(true);
+                });
                 return;
             }
         }
@@ -331,7 +343,9 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
                 this.props.onGroupUpdated();
             }
         } else {
-            alert('Не удалось сохранить изменения. Попробуйте ещё раз.');
+            this.showAlert('Не удалось сохранить изменения. Попробуйте ещё раз.', () => {
+                this.setEditing(true);
+            });
         }
     }
 
@@ -348,7 +362,7 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
 
     private confirmRemoveMember(member: GroupMember): void {
         this.openModal(
-            `Вы точно хотите исключить участника ${member.login} из группы?`,
+            `Вы точно хотите исключить участника ${member.name} из группы?`,
             "Удалить",
             () => {
                 this.closeModal();
@@ -357,6 +371,23 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
                 this.setEditing(this.props.isEditing || false);
             }
         );
+    }
+
+    private showAlert(text: string, onConfirm?: () => void): void {
+        this.closeModal();
+        this.modalComponent = new ConfirmModal({
+            text: text,
+            confirmButtonText: "Ок",
+            hideCancel: true,
+            confirmButtonClass: "ui-button ui-button__secondary",
+            onConfirm: () => {
+                this.closeModal();
+                if (onConfirm) {
+                    onConfirm();
+                }
+            }
+        });
+        this.modalComponent.mount(document.body);
     }
 
     private openModal(text: string, confirmText: string, onConfirm: () => void): void {
