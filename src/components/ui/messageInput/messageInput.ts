@@ -1,5 +1,6 @@
 import { BaseForm, IBaseFormProps } from '../../../core/base/baseForm'; 
 import { Button } from '../button/button';
+import { ConfirmModal } from '../../composite/confirmModal/confirmModal';
 import template from './messageInput.hbs';
 
 /**
@@ -18,6 +19,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
     private uplodadButton: Button | null = null;
     private stikerButton: Button | null = null;
     private sendButton: Button | null = null;
+    private modalComponent: ConfirmModal | null = null;
 
     /**
      * @param {MessageInputProps} props - Свойства компонента.
@@ -107,7 +109,31 @@ export class MessageInput extends BaseForm<MessageInputProps> {
      */
     protected async onSubmit(data: { messageText: string }): Promise<void> { 
         const text = data.messageText?.trim();
+        
         if (text) {
+            if (text.length > 2000) {
+                if (this.modalComponent) {
+                    this.modalComponent.unmount();
+                }
+                
+                this.modalComponent = new ConfirmModal({
+                    text: `Сообщение слишком длинное! Максимальная длина — 2000 символов (сейчас ${text.length}).`,
+                    confirmButtonText: "Понятно",
+                    hideCancel: true,
+                    confirmButtonClass: "confirm-modal__button--submit ui-button",
+                    onConfirm: () => {
+                        this.modalComponent?.unmount();
+                        this.modalComponent = null;
+                    },
+                    onCancel: () => {
+                        this.modalComponent?.unmount();
+                        this.modalComponent = null;
+                    }
+                });
+                this.modalComponent.mount(document.body);
+                return;
+            }
+
             this.props.onSubmit(text);
             if (this.textarea) {
                 this.textarea.value = '';
@@ -124,6 +150,8 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             this.textarea.removeEventListener('keydown', this.handleKeyDown);
             this.textarea.removeEventListener('input', this.handleInput);
         }
+        
+        this.modalComponent?.unmount();
         
         super.beforeUnmount();
         this.stikerButton?.unmount();
