@@ -9,6 +9,23 @@
     @include flex-column;
     position: relative;
 
+    &__back-button {
+            padding: 0;
+            width: 100%;
+            align-items: center;
+            font: $text-main-style;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            outline: none;
+            color: $color-text;
+            transition: all 0.2s ease;
+
+            &:hover {
+                opacity: 0.7;
+            }
+        }
+
     &__layout-slot {
         flex: 1;
         overflow: hidden;

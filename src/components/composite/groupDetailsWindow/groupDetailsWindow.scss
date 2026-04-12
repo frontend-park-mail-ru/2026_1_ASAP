@@ -9,6 +9,7 @@
     background-color: $color-background;
     color: $color-text;
     overflow-y: auto;
+    gap: 10px;
 
     &__content {
         @include flex-column;
@@ -18,7 +19,6 @@
 
     &__header {
         @include flex-center;
-        padding: 10px 15px;
     }
 
     &__title {

@@ -397,8 +397,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 headerComponent = new DialogHeader({ 
                     chat: chatDetail as DialogChat,
                     onDeleteChat: async() => {
-                        const success = await chatService.deleteChat(chatId);
-                        if (success) {
+                        const res = await chatService.deleteChat(chatId);
+                        if (res.success) {
                             this.activeChatId = null;
                             this.rebuildSidebar();
                             this.props.router.navigate('/chats');
@@ -413,14 +413,17 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 headerComponent = new GroupHeader({ 
                     chat: chatDetail as GroupChat,
                     onDeleteChat: async () => {
-                        const success = await chatService.deleteChat(chatId);
-                        if (success) {
+                        const res = await chatService.deleteChat(chatId);
+                        if (res.success) {
                             this.activeChatId = null;
                             this.rebuildSidebar();
                             this.props.router.navigate('/chats');
                         } else {
-                            this.showAlert("Не удалось удалить группу", () => {
-                                this.openGroupDetails(chatDetail as GroupChat, true);
+                            const errorMsg = res.status === 403 
+                                ? "Нет прав на удаление чата (вы не владелец)" 
+                                : "Не удалось удалить группу";
+                            this.showAlert(errorMsg, () => {
+                                this.openGroupDetails(chatDetail as GroupChat);
                             });
                         }
                     },
@@ -432,8 +435,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 headerComponent = new ChannelHeader({ 
                     chat: chatDetail as ChannelChat,
                     onDeleteChat: async () => {
-                        const success = await chatService.deleteChat(chatId);
-                        if (success) {
+                        const res = await chatService.deleteChat(chatId);
+                        if (res.success) {
                             this.activeChatId = null;
                             this.rebuildSidebar();
                             this.props.router.navigate('/chats');
@@ -551,8 +554,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 }
             },
             onLeaveGroup: async () => {
-                const success = await chatService.deleteChat(chat.id);
-                if (success) {
+                const res = await chatService.leaveGroup(chat.id);
+                if (res.success) {
                     if (this.groupDetailsWindow) {
                         this.groupDetailsWindow.unmount();
                         this.groupDetailsWindow = null;
@@ -561,8 +564,14 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     this.rebuildSidebar();
                     this.props.router.navigate('/chats');
                 } else {
-                    this.showAlert('Не удалось покинуть группу.', () => {
-                        this.openGroupDetails(chat, true);
+                    let errorMsg = 'Не удалось покинуть группу.';
+                    if (res.status === 403) {
+                        errorMsg = 'Нет прав для выхода.';
+                    } else if (res.status === 400) {
+                        errorMsg = 'Владелец не может покинуть чат.';
+                    }
+                    this.showAlert(errorMsg, () => {
+                        this.openGroupDetails(chat);
                     });
                 }
             },
@@ -583,15 +592,17 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 if (!res.success) {
                     let errorMsg = 'Произошла ошибка при удалении участника.';
                     if (res.status === 403) {
-                        errorMsg = 'У вас недостаточно прав для удаления участников.';
+                        errorMsg = 'Только владелец может удалять участников.';
                     } else if (res.status === 400) {
-                        errorMsg = 'Невозможно удалить владельца чата или ошибка запроса.';
+                        errorMsg = 'Невозможно удалить владельца чата.';
                     }
                     
                     this.showAlert(errorMsg, () => {
-                        this.openGroupDetails(chat, true);
+                        this.openGroupDetails(chat);
                     });
+                    return false;
                 }
+                return true;
             },
             onAddMember: () => {
                 this.openAddMemberWindow(chat);
@@ -637,9 +648,9 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     return `Пользователь с логином "${login}" не найден!`;
                 }
 
-                const success = await chatService.addMembersToChat(chat.id, [targetUserRes.id]);
+                const res = await chatService.addMembersToChat(chat.id, [targetUserRes.id]);
 
-                if (success) {
+                if (res.success) {
                     if (this.addMemberWindow) {
                         this.addMemberWindow.unmount();
                         this.addMemberWindow = null;
@@ -656,7 +667,16 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     }
                     return undefined;
                 } else {
-                    return 'Не удалось добавить участника. Возможно, он уже в группе.';
+                    if (res.errorCode === 'MEMBER_ALREADY_IN_CHAT') {
+                        return "Пользователь уже в чате";
+                    }
+                    if (res.status === 403) {
+                        return "Только владелец может добавлять новых участников";
+                    }
+                    if (res.status === 400) {
+                        return "Неверный запрос (проверьте данные)";
+                    }
+                    return 'Не удалось добавить участника.';
                 }
             }
         });

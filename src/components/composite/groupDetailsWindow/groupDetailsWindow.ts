@@ -34,7 +34,7 @@ export interface GroupDetailsWindowProps {
 
     /** Вызывается после успешного обновления группы на сервере */
     onGroupUpdated?: () => void;
-    onRemoveMember: (userId: number) => void;
+    onRemoveMember: (userId: number) => Promise<boolean>;
     onAddMember: () => void;
     onMemberClick?: (userId: number) => void;
     initialIsEditing?: boolean;
@@ -419,11 +419,14 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
         this.openModal(
             `Вы точно хотите исключить участника ${member.name} из группы?`,
             "Удалить",
-            () => {
+            async () => {
                 this.closeModal();
-                this.props.onRemoveMember(member.id);
-                this.props.members = this.props.members.filter(m => m.id !== member.id);
-                this.setEditing(this.props.isEditing || false);
+                const isSuccess = await this.props.onRemoveMember(member.id);
+                
+                if (isSuccess) {
+                    this.props.members = this.props.members.filter(m => m.id !== member.id);
+                    this.setEditing(this.props.isEditing || false);
+                }
             }
         );
     }

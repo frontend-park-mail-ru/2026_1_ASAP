@@ -322,22 +322,34 @@ export class ChatService {
     /**
      * Удаляет чат.
      */
-    public async deleteChat(chatId: string): Promise<boolean> {
+    public async deleteChat(chatId: string): Promise<{ success: boolean; status: number }> {
         try {
             const response = await httpClient.request(`${BASE_URL}/api/v1/chats/${chatId}`, {
                 method: 'DELETE',
             });
 
-            if (!response.ok) {
-                console.error(`Ошибка при удалении чата: ${response.status}`);
-                return false;
-            }
-
-            const data = await response.json();
-            return data.status === 'success';
+            return { success: response.ok, status: response.status };
         } catch (error) {
             console.error("Ошибка сети при удалении чата:", error);
-            return false;
+            return { success: false, status: 500 };
+        }
+    }
+
+    /**
+     * Позволяет участнику покинуть групповой чат.
+     * @param chatId — Идентификатор чата.
+     * @returns Объект со статусом успеха и HTTP-кодом.
+     */
+    public async leaveGroup(chatId: string): Promise<{ success: boolean; status: number }> {
+        try {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/chats/${chatId}/leave`, {
+                method: 'DELETE',
+            });
+
+            return { success: response.ok, status: response.status };
+        } catch (error) {
+            console.error("Ошибка сети при выходе из группы:", error);
+            return { success: false, status: 500 };
         }
     }
 
@@ -375,7 +387,7 @@ export class ChatService {
      * @param userIds — Массив ID пользователей для добавления (не пустой, без дубликатов).
      * @returns true, если запрос завершился успешно.
      */
-    public async addMembersToChat(chatId: string, userIds: number[]): Promise<boolean> {
+    public async addMembersToChat(chatId: string, userIds: number[]): Promise<{ success: boolean; status: number; errorCode?: string }> {
         try {
             const response = await httpClient.request(`${BASE_URL}/api/v1/chats/${chatId}/members`, {
                 method: 'POST',
@@ -385,15 +397,24 @@ export class ChatService {
                 body: JSON.stringify({ members_id: userIds })
             });
 
-            if (!response.ok) {
-                console.error(`Ошибка при добавлении участников: ${response.status}`);
-                return false;
+            if (response.ok) {
+                return { success: true, status: response.status };
             }
 
-            return true;
+            let errorCode: string | undefined;
+            try {
+                const data = await response.json();
+                if (data.status === 'error' && data.errors && data.errors.length > 0) {
+                    errorCode = data.errors[0].code;
+                }
+            } catch (e) {
+                // Игнорируем ошибки парсинг а
+            }
+
+            return { success: false, status: response.status, errorCode };
         } catch (error) {
             console.error('Ошибка сети при добавлении участников:', error);
-            return false;
+            return { success: false, status: 500 };
         }
     }
 
