@@ -3,7 +3,7 @@ import { BackendProfile, FrontendProfile, ProfileAdditionalInfo, ProfileMainInfo
 import { httpClient } from "../core/utils/httpClient";
 
 const host = window.location.hostname;
-const BASE_URL = `${window.location.protocol}//${host}/api`;
+const BASE_URL = `${window.location.protocol}//${host}`;
 
 const USE_MOCK = false;
 const MOCK_CONTACTS: FrontendContact[] = [

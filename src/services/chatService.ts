@@ -1,9 +1,10 @@
 import { ChatDetail, FrontendMessage, User, DialogChat, GroupChat, ChannelChat, BackendChat, BackendMessage } from '../types/chat';
 import { httpClient } from '../core/utils/httpClient';
 import { wsClient, MessageDto, ChatInformationDto } from '../core/utils/wsClient';
+import { getFullUrl } from '../core/utils/url';
 
 const host = window.location.hostname;
-const BASE_URL = `${window.location.protocol}//${host}/api`;
+const BASE_URL = `${window.location.protocol}//${host}`;
 
 /**
  * @class ChatService
@@ -27,7 +28,7 @@ export class ChatService {
             sender: { 
                 id: Number(backendMessage.sender_id || backendMessage.sender?.id || 0),
                 login: login, 
-                avatarUrl: backendMessage.sender?.avatar || backendMessage.avatar || '/assets/images/avatars/chatAvatar.svg',
+                avatarUrl: getFullUrl(backendMessage.sender?.avatar || backendMessage.avatar),
                 firstName: backendMessage.sender?.first_name || backendMessage.first_name,
                 lastName: backendMessage.sender?.last_name || backendMessage.last_name,
             },
@@ -53,7 +54,7 @@ export class ChatService {
             sender: {
                 id: Number(dto.sender_id),
                 login: dto.login ?? `user_${dto.sender_id || 0}`,
-                avatarUrl: dto.avatar || '/assets/images/avatars/chatAvatar.svg',
+                avatarUrl: getFullUrl(dto.avatar),
                 firstName: dto.first_name,
                 lastName: dto.last_name,
             },
@@ -75,7 +76,7 @@ export class ChatService {
         const commonProps = {
             id: dto.id.toString(),
             title: dto.title,
-            avatarUrl: dto.avatar || '/assets/images/avatars/chatAvatar.svg',
+            avatarUrl: getFullUrl(dto.avatar),
             unreadCount: 0,
             type: dto.chat_type as 'dialog' | 'group' | 'channel',
         };
@@ -93,7 +94,7 @@ export class ChatService {
                 chat = {
                     ...commonProps,
                     members: [],
-                    owner: { login: 'owner', avatarUrl: '/assets/images/avatars/chatAvatar.svg' },
+                    owner: { login: 'owner', avatarUrl: getFullUrl() },
                 } as GroupChat;
                 break;
             case 'channel':
@@ -157,7 +158,7 @@ export class ChatService {
                     id: chat.id.toString(),
                     title: chat.title,
                     type: chat.chat_type,
-                    avatarUrl: chat.avatar || '/assets/images/avatars/chatAvatar.svg',
+                    avatarUrl: getFullUrl(chat.avatar),
                     unreadCount: 0,
                 };
 
@@ -176,7 +177,7 @@ export class ChatService {
                         frontendChat = {
                             ...commonProps,
                             members: [], // Пока бек не отдает список участников
-                            owner: { login: 'owner', avatarUrl: '/assets/images/avatars/chatAvatar.svg' },
+                            owner: { login: 'owner', avatarUrl: getFullUrl() },
                         } as GroupChat;
                         break;
                     case 'channel':
@@ -227,7 +228,7 @@ export class ChatService {
                     id: chat.id.toString(),
                     title: chat.title,
                     type: chat.chat_type,
-                    avatarUrl: chat.avatar || '/assets/images/avatars/chatAvatar.svg',
+                    avatarUrl: getFullUrl(chat.avatar),
                     unreadCount: 0
                 };
 
@@ -577,7 +578,7 @@ export class ChatService {
                     const user: User = {
                         id: userId,
                         login: profile.login,
-                        avatarUrl: profile.avatar || '/assets/images/avatars/chatAvatar.svg',
+                        avatarUrl: getFullUrl(profile.avatar),
                         firstName: profile.first_name,
                         lastName: profile.last_name
                     };

@@ -75,7 +75,8 @@ export class Message extends BaseComponent<MessageProps> {
 
                 if (this.avatarComponent && profile.avatarUrl) {
                     this.avatarComponent.props.src = profile.avatarUrl;
-                    const img = this.avatarComponent.element?.querySelector('img');
+                    const el = this.avatarComponent.element;
+                    const img = el?.tagName === 'IMG' ? (el as HTMLImageElement) : el?.querySelector('img');
                     if (img) {
                         img.src = profile.avatarUrl;
                     }
@@ -107,13 +108,6 @@ export class Message extends BaseComponent<MessageProps> {
             return;
         }
 
-        if (this.props.showAuthor && !this.props.senderName) {
-            const senderId = this.props.message.sender.id;
-            if (senderId) {
-                this.fetchAndSetSenderName(senderId);
-            }
-        }
-
         const avatarSlot = this.element.querySelector('[data-component="message-avatar-slot"]');
         if (avatarSlot) {
             this.avatarComponent = new Avatar({
@@ -121,6 +115,18 @@ export class Message extends BaseComponent<MessageProps> {
                 class: 'message__avatar',
             });
             this.avatarComponent.mount(avatarSlot as HTMLElement);
+        }
+
+        const sender = this.props.message.sender;
+        const isDefaultAvatar = !sender.avatarUrl || 
+                                sender.avatarUrl.includes('defaultAvatar.svg') || 
+                                sender.avatarUrl.includes('chatAvatar.svg');
+        
+        if (!this.props.senderName || isDefaultAvatar) {
+            const senderId = sender.id;
+            if (senderId) {
+                this.fetchAndSetSenderName(senderId);
+            }
         }
     }
 
