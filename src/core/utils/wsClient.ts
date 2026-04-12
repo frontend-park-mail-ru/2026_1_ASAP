@@ -103,6 +103,9 @@ class WebSocketClient {
     /** ID таймера переподключения. */
     private reconnectTimerId: ReturnType<typeof setTimeout> | null = null;
 
+    /** Очередь пакетов на отправку (на случай, если сокет еще не открыт). */
+    private sendQueue: WsPacket[] = [];
+
     private constructor() {}
 
     /**
@@ -126,8 +129,16 @@ class WebSocketClient {
                 this.socket.readyState === WebSocket.CONNECTING);
 
         if (isAlive) {
-            // Уже подключены или в процессе подключения к хабу
             return;
+        }
+
+        if (this.socket) {
+            this.socket.onopen = null;
+            this.socket.onmessage = null;
+            this.socket.onerror = null;
+            this.socket.onclose = null;
+            this.socket.close();
+            this.socket = null;
         }
 
         this.intentionallyClosed = false;
@@ -154,7 +165,16 @@ class WebSocketClient {
     public disconnect(): void {
         this.intentionallyClosed = true;
         this.clearReconnectTimer();
-        this.socket?.close();
+
+        if (this.socket) {
+            // Отвязываем события перед закрытием, чтобы избежать фантомных вызовов handleClose
+            this.socket.onopen = null;
+            this.socket.onmessage = null;
+            this.socket.onerror = null;
+            this.socket.onclose = null;
+            this.socket.close();
+        }
+
         this.socket = null;
     }
 
@@ -164,12 +184,14 @@ class WebSocketClient {
      * @param {unknown} payload - Полезная нагрузка.
      */
     public send(type: string, payload: unknown): void {
+        const packet: WsPacket = { type, payload };
+
         if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
-            console.warn('[WS] Попытка отправки при закрытом соединении. Пакет отброшен:', { type, payload });
+            console.warn('[WS] Соединение не готово. Пакет добавлен в очередь:', { type, payload });
+            this.sendQueue.push(packet);
             return;
         }
 
-        const packet: WsPacket = { type, payload };
         this.socket.send(JSON.stringify(packet));
     }
 
@@ -196,6 +218,25 @@ class WebSocketClient {
     private handleOpen(): void {
         console.log('[WS] Соединение установлено.');
         this.reconnectAttempts = 0;
+
+        // Отправляем накопившиеся пакеты
+        while (this.sendQueue.length > 0) {
+            const packet = this.sendQueue.shift();
+            if (packet) {
+                this.socket?.send(JSON.stringify(packet));
+            }
+        }
+
+        const handlers = this.subscribers.get('system.Connected');
+        if (handlers && handlers.size > 0) {
+            handlers.forEach(cb => {
+                try {
+                    cb(null);
+                } catch (e) {
+                    console.error('[WS] Ошибка в обработчике system.Connected:', e);
+                }
+            });
+        }
     }
 
     /**

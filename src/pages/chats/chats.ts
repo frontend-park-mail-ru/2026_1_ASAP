@@ -70,6 +70,9 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private nextBeforeId: number | null = null;
     private currentUserProfile: User | null = null;
 
+    /** ID текущего запроса истории (используется для защиты от гонок). */
+    private historyRequestId = 0;
+
     /**
      * Ссылка на активный MessageList-компонент.
      * Хранится отдельно для доступа из WS-обработчика сообщений.
@@ -91,6 +94,19 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
         const frontendMsg = chatService.convertWsMessageDto(dto, this.currentUserId);
         this.activeMessageList.addMessage(frontendMsg);
+    };
+
+    /**
+     * Обработчик системного события переподключения WS.
+     * Перезапрашивает историю для активного чата.
+     */
+    private handleWsConnected = () => {
+        if (this.activeChatId) {
+            console.log('[ChatsPage] WS переподключен, запрашиваем свежую историю...');
+            this.hasMoreHistory = false;
+            this.nextBeforeId = null;
+            this.loadHistory(this.activeChatId);
+        }
     };
 
     constructor(props: ChatsPageProps = {}) {
@@ -128,6 +144,9 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
         // Подключаемся к глобальному WebSocket-хабу
         wsClient.connect();
+
+        // Подписываемся на системное событие подключения
+        wsClient.subscribe('system.Connected', this.handleWsConnected);
 
         await this.handleChatRoute();
     }
@@ -470,20 +489,18 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 break;
         }
 
-        const fallbackUser: User = { 
-            login: 'me', 
-            avatarUrl: '/assets/images/avatars/myAvatar.svg' 
-        };
-
         const messageListComponent = new MessageList({ 
             messages: [],
-            currentUser: this.currentUserProfile || fallbackUser,
+            currentUser: this.currentUserProfile,
             chatType: chatDetail.type,
             onLoadMore: async () => {
                 if (!this.hasMoreHistory || !this.nextBeforeId || !this.currentUserId || !this.activeChatId) return;
                 
                 const res = await chatService.getMessages(this.activeChatId, this.currentUserId as number, this.nextBeforeId);
                 
+                // Если случился таймаут или ошибка — ничего не делаем
+                if (res === null) return;
+
                 if (this.activeChatId === chatDetail.id && this.activeMessageList) {
                     this.hasMoreHistory = res.hasMore;
                     this.nextBeforeId = res.nextBeforeId;
@@ -527,10 +544,19 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             this.currentUserId = await contactService.getMyId();
         }
 
+        const reqId = ++this.historyRequestId;
+
         const res = await chatService.getMessages(chatId, this.currentUserId as number, null);
         
-        // Проверяем, что пользователь все еще в этом же чате
-        if (this.activeChatId === chatId && this.activeMessageList) {
+        if (this.activeChatId !== chatId || reqId !== this.historyRequestId) {
+            return;
+        }
+
+        if (res === null) {
+            return;
+        }
+
+        if (this.activeMessageList) {
             this.hasMoreHistory = res.hasMore;
             this.nextBeforeId = res.nextBeforeId;
             this.activeMessageList.setMessages(res.messages);
@@ -737,7 +763,10 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         this.chatWrapper?.unmount();
         this.menuBar?.unmount();
         this.logoutButton?.unmount();
+        
+        wsClient.unsubscribe('system.Connected', this.handleWsConnected);
         wsClient.disconnect();
+        
         this.activeChatId = null;
         this.placeholderElement = null; 
     }

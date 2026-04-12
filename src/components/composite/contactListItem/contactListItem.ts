@@ -86,7 +86,6 @@ export class ContactListItem extends BaseForm<ContactListItemProps> {
         this.contactItems = [];
         contactService.getContacts().then(contacts => {
             if (!this.element) {
-                console.error("Элемент contact-list-item не существует");
                 return;
             };
 
@@ -159,7 +158,7 @@ export class ContactListItem extends BaseForm<ContactListItemProps> {
     protected beforeUnmount(): void {
         this.emptyContactsList?.remove();
         this.contactItems.forEach(contactItem => contactItem.unmount());
-        this.contactItems = null;
+        this.contactItems = [];
     };
 
     protected async onSubmit(data: { [key: string]: string | File; }): Promise<void> {

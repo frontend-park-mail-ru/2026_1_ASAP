@@ -261,9 +261,9 @@ export class ChatService {
      * @param chatId - ID чата.
      * @param currentUserId - ID текущего пользователя.
      * @param beforeId - ID сообщения, до которого загружать историю (для пагинации).
-     * @returns {Promise<{ messages: FrontendMessage[], hasMore: boolean, nextBeforeId: number | null }>} Промис с объектом, содержащим список сообщений и данные для пагинации.
+     * @returns {Promise<{ messages: FrontendMessage[], hasMore: boolean, nextBeforeId: number | null } | null>} Промис с объектом данных или null при таймауте.
      */
-    public async getMessages(chatId: string, currentUserId: number, beforeId: number | null = null): Promise<{ messages: FrontendMessage[], hasMore: boolean, nextBeforeId: number | null }> {
+    public async getMessages(chatId: string, currentUserId: number, beforeId: number | null = null): Promise<{ messages: FrontendMessage[], hasMore: boolean, nextBeforeId: number | null } | null> {
         return new Promise((resolve) => {
             const timeoutMs = 5000;
             
@@ -300,7 +300,8 @@ export class ChatService {
             const timeout = setTimeout(() => {
                 wsClient.unsubscribe('message.Get', handleGetMessages);
                 console.warn(`getMessages: Таймаут ожидания ответа от сервера для чата ${chatId}`);
-                resolve({ messages: [], hasMore: false, nextBeforeId: null });
+                // Возвращаем null вместо пустой истории, чтобы фронт понял, что это ошибка
+                resolve(null);
             }, timeoutMs);
         });
     }
