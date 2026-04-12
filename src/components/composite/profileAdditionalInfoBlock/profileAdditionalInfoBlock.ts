@@ -1,5 +1,6 @@
 import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent";
 import { ProfileAdditionalInfo } from "../../../types/profile";
+import { sanitizeBioText } from "../../../utils/sanitizeBioText";
 import { EditableField } from "../settingsProfileWindow/settingsProfileWindow";
 import template from "./profileAdditionalInfoBlock.hbs"
 
@@ -101,7 +102,7 @@ export class ProfileAdditionalInfoBlock extends BaseComponent<ProfileAdditionalI
 
         let value: string;
         if (field === 'bio') {
-            value = this.props.profileAdditionalInfo.bio ?? '';
+            value = sanitizeBioText(this.props.profileAdditionalInfo.bio ?? '').trim();
         } else if (field === 'birthDate') {
             value = this.props.profileAdditionalInfo.birthDate ?? '';
         } else {
@@ -112,7 +113,7 @@ export class ProfileAdditionalInfoBlock extends BaseComponent<ProfileAdditionalI
     };
 
     protected afterMount(): void {
-        this.fullText = this.props.profileAdditionalInfo.bio;
+        this.fullText = sanitizeBioText(this.props.profileAdditionalInfo.bio ?? '').trim();
         this.bioText = this.element.querySelector('.bio-text');
         this.bioContainer = this.element.querySelector('.bio-container');
         this.bioInfo = this.element.querySelector('.bio-info');

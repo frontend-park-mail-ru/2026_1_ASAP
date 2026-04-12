@@ -222,6 +222,9 @@
     outline: none;
     font: $text-tertiary;
     letter-spacing: $text-tertiary-ls;
+    line-height: 1.5;
+    overflow-x: hidden;
+    overflow-y: auto;
     @include hover-transition;
 
     &::placeholder {
