@@ -206,7 +206,7 @@ export class ChatItem extends BaseForm<ChatItemProps> {
             avatarImg.src = newData.avatarUrl || "../../../assets/images/avatars/chatAvatar.svg";
         }
 
-        const nameEl = this.element.querySelector('.user-name, .group-name, .chanel-name');
+        const nameEl = this.element.querySelector('.user-name .name-text, .group-name .name-text, .chanel-name .name-text');
         if (nameEl) {
             nameEl.textContent = newData.title;
         }

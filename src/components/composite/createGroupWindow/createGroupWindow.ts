@@ -75,7 +75,9 @@ export class CreateGroupWindow extends BaseComponent<CreateGroupWindowProps> {
 
             this.actionLayout = new ActionLayout({
                 header: this.actionHeader,
-                content: [this.SearchField, this.layoutContent],
+                content: [
+                    // this.SearchField, 
+                    this.layoutContent],
             });
             this.actionLayout.mount(layoutSlot as HTMLElement);
         } else {

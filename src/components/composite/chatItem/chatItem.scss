@@ -47,14 +47,16 @@
     }
 
     &__info-wrapper {
-        width: 100%;
-        min-width: 0;
+        flex: 1;           
+        min-width: 0;      
     }
 
     &__meta-wrapper {
         display: flex;
         flex-direction: row;
         justify-content: flex-end;
+        flex-shrink: 0;    
+        margin-left: 10px;
     }
 }
 
