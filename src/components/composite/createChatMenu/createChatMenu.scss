@@ -1,3 +1,6 @@
+@use "variables" as *;
+@use "mixins" as *;
+
 /**
  * @file createChatMenu.scss
  * @description Стили меню создания чата с оверлеем и позиционированием.

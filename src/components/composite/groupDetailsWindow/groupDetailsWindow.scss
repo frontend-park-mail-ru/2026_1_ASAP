@@ -1,3 +1,6 @@
+@use "variables" as *;
+@use "mixins" as *;
+
 /**
  * @file groupDetailsWindow.scss
  * @description Стили компонента информации о группе с использованием вложенности и миксинов.

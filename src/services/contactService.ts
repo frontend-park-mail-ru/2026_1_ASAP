@@ -6,7 +6,6 @@ const host = window.location.hostname;
 // const BASE_URL = `${window.location.protocol}//${host}:8080`;
 const BASE_URL = 'http://pulseapp.space:8080';
 
-
 const USE_MOCK = false;
 const MOCK_CONTACTS: FrontendContact[] = [
     {
@@ -227,8 +226,16 @@ export class ContactService {
                 MOCK_MY_PROFILE.mainInfo.avatarUrl =
                     draftAvatar || '/assets/images/avatars/profileAvatar.svg';
             }
-            MOCK_MY_PROFILE.mainInfo.firstName = _mainInfo.firstName;
-            MOCK_MY_PROFILE.mainInfo.lastName = _mainInfo.lastName;
+            const pf = (previousData.mainInfo.firstName ?? '').trim();
+            const pl = (previousData.mainInfo.lastName ?? '').trim();
+            const nf = (_mainInfo.firstName ?? '').trim();
+            const nl = (_mainInfo.lastName ?? '').trim();
+            if (pf !== nf) {
+                MOCK_MY_PROFILE.mainInfo.firstName = nf;
+            }
+            if (pl !== nl) {
+                MOCK_MY_PROFILE.mainInfo.lastName = nl;
+            }
             if (previousData.additionalInfo.bio !== additionalInfo.bio) {
                 MOCK_MY_PROFILE.additionalInfo.bio = additionalInfo.bio ?? '';
             }
@@ -241,6 +248,57 @@ export class ContactService {
             }
             return { success: true, status: 200 };
         }
+
+        // const prevFirst = (previousData.mainInfo.firstName ?? '').trim();
+        // const prevLast = (previousData.mainInfo.lastName ?? '').trim();
+        // const nextFirst = (_mainInfo.firstName ?? '').trim();
+        // const nextLast = (_mainInfo.lastName ?? '').trim();
+        // if (prevFirst !== nextFirst) {
+        //     try {
+        //         const response = await httpClient.request(PROFILE_ME_FIRST_NAME_URL, {
+        //             method: 'POST',
+        //             headers: {
+        //                 'Content-Type': 'application/json',
+        //             },
+        //             credentials: 'include',
+        //             body: JSON.stringify({
+        //                 first_name: nextFirst,
+        //             }),
+        //         });
+        //         if (response.status === 409) {
+        //             return { success: false, status: 409 };
+        //         }
+        //         if (!response.ok) {
+        //             console.error(`Ошибка при изменении имени: ${response.status}`);
+        //             return { success: false, status: response.status };
+        //         }
+        //     } catch {
+        //         return { success: false, status: 500 };
+        //     }
+        // }
+        // if (prevLast !== nextLast) {
+        //     try {
+        //         const response = await httpClient.request(PROFILE_ME_LAST_NAME_URL, {
+        //             method: 'POST',
+        //             headers: {
+        //                 'Content-Type': 'application/json',
+        //             },
+        //             credentials: 'include',
+        //             body: JSON.stringify({
+        //                 last_name: nextLast,
+        //             }),
+        //         });
+        //         if (response.status === 409) {
+        //             return { success: false, status: 409 };
+        //         }
+        //         if (!response.ok) {
+        //             console.error(`Ошибка при изменении фамилии: ${response.status}`);
+        //             return { success: false, status: response.status };
+        //         }
+        //     } catch {
+        //         return { success: false, status: 500 };
+        //     }
+        // }
 
         if (previousData.additionalInfo.bio !== additionalInfo.bio) {
             try {

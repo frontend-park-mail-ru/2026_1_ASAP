@@ -1,3 +1,6 @@
+@use "variables" as *;
+@use "mixins" as *;
+
 /**
  * @file confirmModal.scss
  * @description Стили модального окна подтверждения (выход, удаление).

@@ -1,3 +1,6 @@
+@use "variables" as *;
+@use "mixins" as *;
+
 /**
  * @file messageList.scss
  * @description Стили списка сообщений с кастомным скроллбаром.

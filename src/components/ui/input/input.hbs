@@ -1,13 +1,13 @@
 {{#if (eq class "settings-name-input")}}
-    <input class="{{class}}" name="{{name}}" placeholder="{{placeholder}}" value="{{value}}" type="{{type}}" {{#if required}}required{{/if}} />
+    <input class="{{class}}" name="{{name}}" placeholder="{{placeholder}}" value="{{value}}" type="{{type}}" {{#if required}}required{{/if}} {{#if autocomplete}}autocomplete="{{autocomplete}}"{{/if}} />
 {{else if (eq class "edit-profile__edit-input")}}
-    <textarea class="{{class}}" name="{{name}}" placeholder="{{placeholder}}" type="{{type}}" {{#if required}}required{{/if}} >{{value}}</textarea>
+    <textarea class="{{class}}" name="{{name}}" placeholder="{{placeholder}}" type="{{type}}" {{#if required}}required{{/if}} {{#if autocomplete}}autocomplete="{{autocomplete}}"{{/if}} >{{value}}</textarea>
     {{#if showErrorText}}
             <p class="ui-input__error-message">{{_errorMessage}}</p>
     {{/if}}
 {{else}}
     <div class="ui-input-wrapper">
-        <input class="{{class}}" name="{{name}}" placeholder="{{placeholder}}" type="{{type}}" {{#if required}}required{{/if}} />
+        <input class="{{class}}" name="{{name}}" placeholder="{{placeholder}}" type="{{type}}" {{#if required}}required{{/if}} {{#if autocomplete}}autocomplete="{{autocomplete}}"{{/if}} />
         {{#if (and (eq type "password") togglePassword)}}
             <span class="ui-input__toggle-password">
                 <img src="../../assets/images/icons/closeEye.svg" alt="Показать пароль" />
