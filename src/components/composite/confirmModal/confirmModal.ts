@@ -53,6 +53,8 @@ export class ConfirmModal extends BaseComponent<ConfirmModalProps> {
             });
         }
 
+        document.addEventListener('keydown', this.handleKeyDown);
+
         const mainContainer = this.element.querySelector('[data-component="confirm-modal__container"]');
         if (!mainContainer) return;
 
@@ -85,7 +87,19 @@ export class ConfirmModal extends BaseComponent<ConfirmModalProps> {
         this.confirmButton.mount(buttonsContainer as HTMLElement);
     }
 
+    /**
+     * Обработчик нажатия клавиш.
+     * @param {KeyboardEvent} event - Событие клавиатуры.
+     * @private
+     */
+    private handleKeyDown = (event: KeyboardEvent): void => {
+        if (event.key === 'Escape') {
+            this.props.onCancel?.();
+        }
+    };
+
     protected beforeUnmount(): void {
+        document.removeEventListener('keydown', this.handleKeyDown);
         this.cancelButton?.unmount();
         this.confirmButton?.unmount();
     }
