@@ -107,8 +107,7 @@ export class ChatService {
                 chat = { ...commonProps } as any;
         }
 
-        // Бэкенд может прислать пустую заглушку для нового чата, где нет id
-        if (dto.last_message && dto.last_message.id) {
+        if (dto.last_message && dto.last_message.id !== 0 && (dto.last_message.id !== undefined || dto.last_message.created_at)) {
             chat.lastMessage = this.convertWsMessageDto(dto.last_message, currentUserId);
         }
 
@@ -187,7 +186,8 @@ export class ChatService {
                         frontendChat = { ...commonProps } as any;
                 }
 
-                if (chat.last_message) {
+                // Бэкенд может прислать пустую заглушку (zero-value) для нового чата, где id = 0 или объект пуст
+                if (chat.last_message && chat.last_message.id !== 0 && (chat.last_message.id !== undefined || chat.last_message.created_at)) {
                     frontendChat.lastMessage = this.convertToFrontendMessage(chat.last_message, currentUserId);
                 }
                 
@@ -197,7 +197,7 @@ export class ChatService {
             return frontendChats;
         } catch (error) {
             console.error("Ошибка сети или сервера при получении чатов:", error);
-            return []; // Возвращаем пустой массив, чтобы просто показать пустой список, а не падать
+            return [];
         }
     }
 

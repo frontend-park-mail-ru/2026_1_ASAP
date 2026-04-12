@@ -76,7 +76,7 @@ export class ChatItem extends BaseForm<ChatItemProps> {
 
         const { firstName, lastName, login } = message.sender;
         
-        if ((!login || login.startsWith('user_')) && !firstName && !lastName) {
+        if ((!login || login === 'unknown' || login.startsWith('user_')) && !firstName && !lastName) {
             return null;
         }
 
@@ -138,7 +138,7 @@ export class ChatItem extends BaseForm<ChatItemProps> {
         if (avatarSlot) {
             this.avatar = new Avatar({
                 class: "chat-avatar",
-                src: this.props.chat.avatarUrl || "../../../assets/images/avatars/chatAvatar.svg",
+                src: this.props.chat.avatarUrl || "/assets/images/avatars/chatAvatar.svg",
             });
             this.avatar.mount(avatarSlot as HTMLElement);
         }
