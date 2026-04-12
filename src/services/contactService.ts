@@ -1,6 +1,7 @@
 import { BackendContact, FrontendContact } from "../types/contact";
 import { BackendProfile, FrontendProfile, ProfileAdditionalInfo, ProfileMainInfo } from "../types/profile";
 import { httpClient } from "../core/utils/httpClient";
+import { sanitizeBioText } from "../utils/sanitizeBioText";
 
 const host = window.location.hostname;
 const BASE_URL = `${window.location.protocol}//${host}`;
@@ -72,12 +73,15 @@ function birthDateToApiValue(raw: string | undefined): string | null {
     const s = String(raw ?? '').trim();
     if (!s) return null;
     if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-    const m = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(s);
+    const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(s);
     if (m) {
-        const dd = m[1].padStart(2, '0');
-        const mm = m[2].padStart(2, '0');
-        const yyyy = m[3];
-        return `${yyyy}-${mm}-${dd}`;
+        return `${m[3]}-${m[2]}-${m[1]}`;
+    }
+    const mLoose = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(s);
+    if (mLoose) {
+        const dd = mLoose[1].padStart(2, '0');
+        const mm = mLoose[2].padStart(2, '0');
+        return `${mLoose[3]}-${mm}-${dd}`;
     }
     const t = new Date(s);
     if (!Number.isNaN(t.getTime())) {
@@ -114,7 +118,7 @@ export class ContactService {
                 login: backendProfile.login,
                 email: backendProfile.email,
                 birthDate: backendProfile.birth_date ? new Date(backendProfile.birth_date).toLocaleDateString('ru-RU') : undefined,
-                bio: backendProfile.bio || ""
+                bio: sanitizeBioText(backendProfile.bio || "").trim(),
             }
         };
     };

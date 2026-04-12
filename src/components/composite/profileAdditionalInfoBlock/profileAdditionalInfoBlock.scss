@@ -64,6 +64,18 @@
     min-height: 0;
     align-items: center;
     padding: 5px 0;
+    overflow: hidden;
+}
+
+.bio-text {
+    display: block;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+    line-height: 1.5em;
+    overflow-wrap: anywhere;
+    word-wrap: break-word;
+    word-break: break-word;
 }
 
 .bio-container {
@@ -73,10 +85,14 @@
     line-height: 1.5em;
     height: 4.5em;
     overflow: hidden;
+    overflow-x: hidden;
+    contain: paint;
 
     &--disclosed {
         height: auto;
         max-height: 50vh;
+        contain: none;
+        overflow-x: hidden;
         overflow-y: auto;
 
         &::-webkit-scrollbar {

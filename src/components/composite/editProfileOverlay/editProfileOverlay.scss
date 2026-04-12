@@ -63,6 +63,9 @@
         align-items: stretch;
         gap: 4px;
         box-sizing: border-box;
+        contain: paint;
+        overflow: hidden;
+        border-radius: 10px;
     }
 
     &__bio-counter-row {
@@ -92,6 +95,45 @@
 
         &[hidden] {
             display: none;
+        }
+    }
+
+    &__birth-date-field {
+        width: 100%;
+        @include flex-column;
+        align-items: stretch;
+        gap: 8px;
+        box-sizing: border-box;
+    }
+
+    &__birth-date-hint {
+        margin: 0;
+        font: $text-tertiary;
+        letter-spacing: $text-tertiary-ls;
+        color: $color-text-tertiary;
+        text-align: center;
+    }
+
+    &__birth-date-input {
+        width: 100%;
+        height: 48px;
+        background-color: $color-empty;
+        border: 1px solid $color-bubble;
+        border-radius: 10px;
+        color: $color-text;
+        padding: 0 12px;
+        box-sizing: border-box;
+        outline: none;
+        font: $text-tertiary;
+        letter-spacing: $text-tertiary-ls;
+        text-align: center;
+        @include hover-transition;
+
+        &:focus,
+        &:focus-visible {
+            outline: none;
+            border-color: $color-primary;
+            box-shadow: 0 0 0 1px $color-primary;
         }
     }
 }

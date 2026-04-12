@@ -1,3 +1,5 @@
+import { sanitizeBioText } from '../utils/sanitizeBioText';
+
 /**
  * @interface ValidationResult - Результат валидации.
  * @property {boolean} isValid - true, если значение валидно.
@@ -126,45 +128,65 @@ class ValidationService {
         return this.validateRequired((firstName ?? '').trim(), 'Имя');
     }
 
-    /**
-     * Дата рождения (необязательно): пусто — ок; иначе YYYY-MM-DD или ДД.ММ.ГГГГ.
-     */
+
     public validateBirthDate(value: string): ValidationResult {
         const v = value?.trim() ?? '';
         if (!v) {
             return { isValid: true, message: '' };
         }
-        let d: Date;
+
+        let day: number;
+        let month: number;
+        let year: number;
+
         if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
-            d = new Date(v);
+            year = parseInt(v.slice(0, 4), 10);
+            month = parseInt(v.slice(5, 7), 10);
+            day = parseInt(v.slice(8, 10), 10);
+        } else if (/^\d{2}\.\d{2}\.\d{4}$/.test(v)) {
+            day = parseInt(v.slice(0, 2), 10);
+            month = parseInt(v.slice(3, 5), 10);
+            year = parseInt(v.slice(6, 10), 10);
         } else {
-            const ru = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(v);
-            if (ru) {
-                const day = parseInt(ru[1], 10);
-                const month = parseInt(ru[2], 10) - 1;
-                const year = parseInt(ru[3], 10);
-                d = new Date(year, month, day);
-            } else {
-                d = new Date(v);
-            }
+            return {
+                isValid: false,
+                message: 'Введите дату полностью: ДД.ММ.ГГГГ',
+            };
         }
-        if (Number.isNaN(d.getTime())) {
+
+        if (year < 1900) {
+            return { isValid: false, message: 'Год не может быть раньше 1900' };
+        }
+
+        if (month < 1 || month > 12) {
+            return { isValid: false, message: 'Некорректный месяц' };
+        }
+
+        const dim = new Date(year, month, 0).getDate();
+        if (day < 1 || day > dim) {
+            return { isValid: false, message: 'Некорректный день для этого месяца' };
+        }
+
+        const d = new Date(year, month - 1, day);
+        if (
+            d.getFullYear() !== year ||
+            d.getMonth() !== month - 1 ||
+            d.getDate() !== day
+        ) {
             return { isValid: false, message: 'Некорректная дата' };
         }
+
         const today = new Date();
         today.setHours(23, 59, 59, 999);
         if (d > today) {
             return { isValid: false, message: 'Дата не может быть в будущем' };
         }
-        const min = new Date('1900-01-01');
-        if (d < min) {
-            return { isValid: false, message: 'Некорректная дата' };
-        }
+
         return { isValid: true, message: '' };
     }
 
     public validateBio(bio: string): ValidationResult {
-        const t = (bio ?? '').trim();
+        const t = sanitizeBioText(bio ?? '').trim();
         if (t.length > PROFILE_BIO_MAX_LENGTH) {
             return {
                 isValid: false,
