@@ -64,14 +64,14 @@ export class CreateDialogWindow extends BaseComponent<CreateDialogWindowProps> {
             return;
         }
         
-        this.SearchField = new SearchForm({
-            class: "create-dialog-window__search",
-            hideAddButton: true,
-            placeholder: "Поиск",
-            onSearch: (query: string) => {
-                console.log("Поиск контактов по запросу:", query); // todo: реализовать поиск контактов 
-            }
-        });
+        // this.SearchField = new SearchForm({
+        //     class: "create-dialog-window__search",
+        //     hideAddButton: true,
+        //     placeholder: "Поиск",
+        //     onSearch: (query: string) => {
+        //         console.log("Поиск контактов по запросу:", query); // todo: реализовать поиск контактов 
+        //     }
+        // });
 
 
         this.actionHeader = new ActionHeader({
@@ -108,7 +108,9 @@ export class CreateDialogWindow extends BaseComponent<CreateDialogWindowProps> {
 1
         this.actionLayout = new ActionLayout({
             header: this.actionHeader,
-            content: [this.SearchField, this.layoutContent],
+            content: [
+                // this.SearchField, 
+                this.layoutContent],
         });
 
         this.actionLayout.mount(this.element);
