@@ -80,6 +80,18 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private activeMessageList: MessageList | null = null;
 
     /**
+     * Обработчик глобальных нажатий клавиш.
+     * Закрывает текущий чат или всплывающие окна по нажатию Escape.
+     */
+    private handleKeyDown = (event: KeyboardEvent): void => {
+        if (event.key === 'Escape') {
+            if (this.activeChatId || this.createChatWindow || this.groupDetailsWindow || this.addMemberWindow) {
+                this.props.router.navigate('/chats');
+            }
+        }
+    };
+
+    /**
      * Стрелочный обработчик WS-события «message.New».
      * Хранится как поле класса для корректной отписки.
      */
@@ -149,6 +161,9 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         wsClient.subscribe('system.Connected', this.handleWsConnected);
 
         await this.handleChatRoute();
+
+        // Подписываемся на глобальное нажатие клавиш для выхода по Esc
+        document.addEventListener('keydown', this.handleKeyDown);
     }
 
     /**
@@ -768,6 +783,9 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         
         wsClient.unsubscribe('system.Connected', this.handleWsConnected);
         wsClient.disconnect();
+        
+        // Отписываемся от глобального события
+        document.removeEventListener('keydown', this.handleKeyDown);
         
         this.activeChatId = null;
         this.placeholderElement = null; 

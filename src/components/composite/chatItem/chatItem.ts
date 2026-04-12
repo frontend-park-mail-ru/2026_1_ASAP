@@ -5,6 +5,7 @@ import { MetaChatInfo } from "../../ui/metaChatInfo/metaChatInfo";
 import { Chat as ChatType } from '../../../types/chat';
 import { chatService } from "../../../services/chatService";    
 import template from "./chatItem.hbs";
+import { escapeHtml } from "../../../core/utils/escape";
 
  /**
  * @interface ChatItemProps
@@ -115,7 +116,7 @@ export class ChatItem extends BaseForm<ChatItemProps> {
                 if (msgTextEl) {
                     const senderName = this.getSenderDisplayName(this.props.chat.lastMessage);
                     if (senderName) {
-                        msgTextEl.innerHTML = `<span class="sender-group">${senderName}: </span>${this.props.chat.lastMessage.text}`;
+                        msgTextEl.innerHTML = `<span class="sender-group">${escapeHtml(senderName)}: </span>${escapeHtml(this.props.chat.lastMessage.text)}`;
                     }
                 }
             }
@@ -215,7 +216,7 @@ export class ChatItem extends BaseForm<ChatItemProps> {
             if (newData.type === 'group' && newData.lastMessage) {
                 const senderName = this.getSenderDisplayName(newData.lastMessage);
                 if (senderName) {
-                    msgTextEl.innerHTML = `<span class="sender-group">${senderName}: </span>${newData.lastMessage.text}`;
+                    msgTextEl.innerHTML = `<span class="sender-group">${escapeHtml(senderName)}: </span>${escapeHtml(newData.lastMessage.text)}`;
                 } else {
                     msgTextEl.textContent = newData.lastMessage.text || '';
                     
