@@ -1,5 +1,6 @@
 import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent";
 import { contactService } from "../../../services/contactService";
+import { validationService } from "../../../services/validationService";
 import { ProfileAdditionalInfo, ProfileMainInfo } from "../../../types/profile";
 import { Button } from "../../ui/button/button";
 import { AvatarEditMenuOverlay } from "../avatarEditMenuOverlay/avatarEditMenuOverlay";
@@ -71,6 +72,11 @@ export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowPr
         };
     }
 
+    private isProfileFirstNameValid(): boolean {
+        const n = this.draftProfileMainInfo?.firstName ?? '';
+        return validationService.validateProfileFirstName(n).isValid;
+    }
+
     /** Сравнение без JSON.stringify (порядок ключей, пробелы в bio/email) */
     private isDraftMatchingBaseline(): boolean {
         if (!this.draftProfileMainInfo || !this.draftProfileAdditionalInfo) return true;
@@ -100,7 +106,8 @@ export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowPr
 
         const dirty =
             this.pendingAvatarFile !== null || !this.isDraftMatchingBaseline();
-        const enable = dirty && !this.isSavingProfile;
+        const enable =
+            dirty && !this.isSavingProfile && this.isProfileFirstNameValid();
 
         btn.disabled = !enable;
         btn.element.classList.toggle("ui-button__disabled", !enable);
@@ -242,6 +249,9 @@ export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowPr
     handleSaveProfile = async (): Promise<void> => {
         if (!this.draftProfileMainInfo || !this.draftProfileAdditionalInfo || this.isSavingProfile) return;
         if (!this.pendingAvatarFile && this.isDraftMatchingBaseline()) return;
+        if (!validationService.validateProfileFirstName(this.draftProfileMainInfo.firstName).isValid) {
+            return;
+        }
 
         this.isSavingProfile = true;
         if (this.profileSaveButton) {

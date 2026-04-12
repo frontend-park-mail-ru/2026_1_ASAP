@@ -272,56 +272,34 @@ export class ContactService {
             return { success: true, status: 200 };
         }
 
-        // const prevFirst = (previousData.mainInfo.firstName ?? '').trim();
-        // const prevLast = (previousData.mainInfo.lastName ?? '').trim();
-        // const nextFirst = (_mainInfo.firstName ?? '').trim();
-        // const nextLast = (_mainInfo.lastName ?? '').trim();
-        // if (prevFirst !== nextFirst) {
-        //     try {
-        //         const response = await httpClient.request(PROFILE_ME_FIRST_NAME_URL, {
-        //             method: 'POST',
-        //             headers: {
-        //                 'Content-Type': 'application/json',
-        //             },
-        //             credentials: 'include',
-        //             body: JSON.stringify({
-        //                 first_name: nextFirst,
-        //             }),
-        //         });
-        //         if (response.status === 409) {
-        //             return { success: false, status: 409 };
-        //         }
-        //         if (!response.ok) {
-        //             console.error(`Ошибка при изменении имени: ${response.status}`);
-        //             return { success: false, status: response.status };
-        //         }
-        //     } catch {
-        //         return { success: false, status: 500 };
-        //     }
-        // }
-        // if (prevLast !== nextLast) {
-        //     try {
-        //         const response = await httpClient.request(PROFILE_ME_LAST_NAME_URL, {
-        //             method: 'POST',
-        //             headers: {
-        //                 'Content-Type': 'application/json',
-        //             },
-        //             credentials: 'include',
-        //             body: JSON.stringify({
-        //                 last_name: nextLast,
-        //             }),
-        //         });
-        //         if (response.status === 409) {
-        //             return { success: false, status: 409 };
-        //         }
-        //         if (!response.ok) {
-        //             console.error(`Ошибка при изменении фамилии: ${response.status}`);
-        //             return { success: false, status: response.status };
-        //         }
-        //     } catch {
-        //         return { success: false, status: 500 };
-        //     }
-        // }
+        const prevFirst = (previousData.mainInfo.firstName ?? '').trim();
+        const prevLast = (previousData.mainInfo.lastName ?? '').trim();
+        const nextFirst = (_mainInfo.firstName ?? '').trim();
+        const nextLast = (_mainInfo.lastName ?? '').trim();
+        if (prevFirst !== nextFirst || prevLast !== nextLast) {
+            try {
+                const response = await httpClient.request(`${BASE_URL}/api/v1/profiles/me/name`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        first_name: nextFirst,
+                        last_name: nextLast,
+                    }),
+                });
+                if (response.status === 409) {
+                    return { success: false, status: 409 };
+                }
+                if (!response.ok) {
+                    console.error(`Ошибка при изменении имени и фамилии: ${response.status}`);
+                    return { success: false, status: response.status };
+                }
+            } catch {
+                return { success: false, status: 500 };
+            }
+        }
 
         if (previousData.additionalInfo.bio !== additionalInfo.bio) {
             try {

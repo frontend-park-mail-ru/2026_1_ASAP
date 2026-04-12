@@ -30,7 +30,8 @@
     &__mainfield {
         flex-grow: 1;
         display: flex;
-        background-color: $color-background;
+        background: $gradient-background-chats;
+        background-attachment: fixed;
         justify-content: center;
         align-items: center;
         min-width: 0;
