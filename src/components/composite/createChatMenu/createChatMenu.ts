@@ -88,7 +88,8 @@ export class CreateChatMenu extends BaseComponent<createChatMenuProps> {
             class: "create-chat-menu__add-button",
             onClick: this.props.onCreateChannel,
             icon: "/assets/images/icons/createChatMenuIcons/channel.svg",   
-            disabled: true // пока не используется
+            disabled: true,
+            title: "В разработке"
         })
         this.channelButton.mount(buttonsContainer as HTMLElement);
 

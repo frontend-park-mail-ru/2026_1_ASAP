@@ -64,6 +64,7 @@
     &:disabled {
         opacity: 0.5;
         cursor: not-allowed;
+        pointer-events: none;
     }
 }
 
@@ -81,9 +82,16 @@
     border-radius: 10px;
     background-color: $color-empty;
     cursor: pointer;
-    @include hover-transition;
+    transition: background-color 0.2s, transform 0.1s;
+    user-select: none;
 
-    &:hover {
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    &:hover:not(:disabled) {
         border: 2px solid $color-text-hover;
 
         & > img {
