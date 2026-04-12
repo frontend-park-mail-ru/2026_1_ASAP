@@ -648,11 +648,19 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     this.props.router.navigate('/chats');
                 } else {
                     let errorMsg = 'Не удалось покинуть группу.';
-                    if (res.status === 403) {
-                        errorMsg = 'Нет прав для выхода.';
+                    
+                    if (res.status === 403 || res.errorCode === 'CANT_LEAVE_OWN_CHAT') {
+                        errorMsg = 'У вас нет прав для выхода (вы владелец)';
                     } else if (res.status === 400) {
-                        errorMsg = 'Владелец не может покинуть чат.';
+                        errorMsg = 'Неверный запрос или попытка выхода из личного диалога.';
+                    } else if (res.status === 404) {
+                        errorMsg = 'Чат не найден.';
+                    } else if (res.errorMessage) {
+                        errorMsg = res.errorMessage;
+                    } else if (res.errorCode) {
+                        errorMsg = `Ошибка: ${res.errorCode}`;
                     }
+
                     this.showAlert(errorMsg, () => {
                         this.openGroupDetails(chat);
                     });

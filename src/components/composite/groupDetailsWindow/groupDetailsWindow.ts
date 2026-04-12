@@ -251,13 +251,13 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
                 this.actionButtons.push(editBtn);
             }
 
-            const leaveBtn = new Button({
-                label: "Выйти",
-                class: "group-details__btn ui-button exit-button",
-                onClick: () => this.confirmLeaveGroup()
-            });
-            leaveBtn.mount(buttonsSlot as HTMLElement);
-            this.actionButtons.push(leaveBtn);
+                const leaveBtn = new Button({
+                    label: "Выйти",
+                    class: "group-details__btn ui-button exit-button",
+                    onClick: () => this.confirmLeaveGroup()
+                });
+                leaveBtn.mount(buttonsSlot as HTMLElement);
+                this.actionButtons.push(leaveBtn);
 
 
         }
