@@ -52,6 +52,8 @@
     &__avatar {
         height: 100%;
         width: 100%;
+        object-fit: cover;
+        display: block;
     }
 
     &__avatar-slot {
@@ -129,6 +131,8 @@
         text-align: center;
         width: 80%;
         max-width: 300px;
+        font: $text-tertiary;
+        letter-spacing: $text-tertiary-ls;
     }
 
     &__actions {

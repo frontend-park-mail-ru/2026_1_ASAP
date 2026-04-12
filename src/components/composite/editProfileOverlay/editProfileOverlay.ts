@@ -43,6 +43,13 @@ export class EditProfileOverlay extends BaseComponent<EditProfileOverlayProps> {
         }
     }
 
+    private getPlaceholder(): string {
+        if (this.props.fieldKey === 'birthDate') {
+            return 'ДД.ММ.ГГГГ или ГГГГ-ММ-ДД';
+        }
+        return '';
+    }
+
     private validateField(raw: string): { ok: true; value: string } | { ok: false; message: string } {
         const value = raw ?? '';
         switch (this.props.fieldKey) {
@@ -106,7 +113,8 @@ export class EditProfileOverlay extends BaseComponent<EditProfileOverlayProps> {
             value: this.props.value,
             type: this.props.inputType,
             class: "edit-profile__edit-input",
-            name: "edit-field"
+            name: "edit-field",
+            placeholder: this.getPlaceholder(),
         });
         this.editInput.mount(inputParent);
 

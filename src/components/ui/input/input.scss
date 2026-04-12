@@ -35,8 +35,8 @@
     box-sizing: border-box;
     padding-right: 40px;
     outline: none;
-    font: $text-secondary;
-    letter-spacing: $text-secondary-ls;
+    font: $text-tertiary;
+    letter-spacing: $text-tertiary-ls;
     @include hover-transition;
 
     &:hover {
@@ -54,12 +54,12 @@
 
     @include webkit-autofill-override(
         $color-neutral,
-        $font: $text-secondary,
-        $letter-spacing: $text-secondary-ls,
-        $font-size: $font-size-lg,
+        $font: $text-tertiary,
+        $letter-spacing: $text-tertiary-ls,
+        $font-size: $font-size-base,
         $line-height: 16px,
         $font-weight: 400,
-        $font-family: $font-secondary
+        $font-family: $font-tertiary
     );
 
     &__toggle-password {
@@ -141,8 +141,8 @@
     background: none;
     opacity: 0.5;
     outline: none;
-    font: $text-secondary;
-    letter-spacing: $text-secondary-ls;
+    font: $text-tertiary;
+    letter-spacing: $text-tertiary-ls;
     @include hover-transition;
 
     &:hover {
@@ -159,12 +159,12 @@
 
     @include webkit-autofill-override(
         $color-text,
-        $font: $text-secondary,
-        $letter-spacing: $text-secondary-ls,
-        $font-size: $font-size-lg,
+        $font: $text-tertiary,
+        $letter-spacing: $text-tertiary-ls,
+        $font-size: $font-size-base,
         $line-height: 16px,
         $font-weight: 400,
-        $font-family: $font-secondary
+        $font-family: $font-tertiary
     );
 }
 
@@ -186,7 +186,8 @@
     border: none;
     color: $color-text;
     border-bottom: 1px solid $color-border-chats;
-    font: $text-secondary;
+    font: $text-tertiary;
+    letter-spacing: $text-tertiary-ls;
     outline: none;
     @include hover-transition;
 
@@ -199,12 +200,12 @@
 
     @include webkit-autofill-override(
         $color-text,
-        $font: $text-secondary,
-        $letter-spacing: $text-secondary-ls,
-        $font-size: $font-size-lg,
+        $font: $text-tertiary,
+        $letter-spacing: $text-tertiary-ls,
+        $font-size: $font-size-base,
         $line-height: 16px,
         $font-weight: 400,
-        $font-family: $font-secondary
+        $font-family: $font-tertiary
     );
 }
 
@@ -219,12 +220,14 @@
     resize: none;
     box-sizing: border-box;
     outline: none;
-    font-family: monospace;
-    font-size: 14px;
-    font-weight: 400;
-    line-height: normal;
-    letter-spacing: normal;
+    font: $text-tertiary;
+    letter-spacing: $text-tertiary-ls;
     @include hover-transition;
+
+    &::placeholder {
+        color: $color-input-placeholder;
+        opacity: 1;
+    }
 
     &:focus,
     &:focus-visible {
@@ -235,12 +238,12 @@
 
     @include webkit-autofill-override(
         $color-text,
-        $font: 400 16px/normal monospace,
-        $letter-spacing: normal,
-        $font-size: 16px,
-        $line-height: normal,
+        $font: $text-tertiary,
+        $letter-spacing: $text-tertiary-ls,
+        $font-size: $font-size-base,
+        $line-height: 16px,
         $font-weight: 400,
-        $font-family: monospace
+        $font-family: $font-tertiary
     );
 
     &::-webkit-scrollbar {
