@@ -69,6 +69,27 @@ function formatLastSeen(date: Date): string {
     return `был(а) в сети в ${time} ${dateStr}`;
 }
 
+function birthDateToApiValue(raw: string | undefined): string | null {
+    const s = String(raw ?? '').trim();
+    if (!s) return null;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    const m = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(s);
+    if (m) {
+        const dd = m[1].padStart(2, '0');
+        const mm = m[2].padStart(2, '0');
+        const yyyy = m[3];
+        return `${yyyy}-${mm}-${dd}`;
+    }
+    const t = new Date(s);
+    if (!Number.isNaN(t.getTime())) {
+        const y = t.getFullYear();
+        const mo = String(t.getMonth() + 1).padStart(2, '0');
+        const da = String(t.getDate()).padStart(2, '0');
+        return `${y}-${mo}-${da}`;
+    }
+    return null;
+}
+
 export class ContactService {
     private convertToFrontendContact(backendContact: BackendContact): FrontendContact {
         const name = backendContact.first_name || backendContact.last_name
@@ -92,7 +113,7 @@ export class ContactService {
             },
             additionalInfo: {
                 login: backendProfile.login,
-                email: backendProfile.email || "",
+                email: backendProfile.email,
                 birthDate: backendProfile.birth_date ? new Date(backendProfile.birth_date).toLocaleDateString('ru-RU') : undefined,
                 bio: backendProfile.bio || ""
             }
@@ -239,8 +260,10 @@ export class ContactService {
             if (previousData.additionalInfo.bio !== additionalInfo.bio) {
                 MOCK_MY_PROFILE.additionalInfo.bio = additionalInfo.bio ?? '';
             }
-            if (previousData.additionalInfo.birthDate !== additionalInfo.birthDate) {
-                if (additionalInfo.birthDate !== undefined && String(additionalInfo.birthDate).trim() !== '') {
+            const mockPrevBirth = birthDateToApiValue(previousData.additionalInfo.birthDate);
+            const mockNextBirth = birthDateToApiValue(additionalInfo.birthDate);
+            if (mockPrevBirth !== mockNextBirth) {
+                if (mockNextBirth !== null) {
                     MOCK_MY_PROFILE.additionalInfo.birthDate = additionalInfo.birthDate;
                 } else {
                     delete MOCK_MY_PROFILE.additionalInfo.birthDate;
@@ -324,7 +347,9 @@ export class ContactService {
                 return { success: false, status: 500 };
             }
         }
-        if (previousData.additionalInfo.birthDate !== additionalInfo.birthDate) {
+        const prevBirthApi = birthDateToApiValue(previousData.additionalInfo.birthDate);
+        const nextBirthApi = birthDateToApiValue(additionalInfo.birthDate);
+        if (prevBirthApi !== nextBirthApi) {
             try {
                 const response = await httpClient.request(`${BASE_URL}/api/v1/profiles/me/birth`, {
                     method: 'POST',
@@ -333,7 +358,7 @@ export class ContactService {
                     },
                     credentials: 'include',
                     body: JSON.stringify({
-                        birth_date: additionalInfo.birthDate
+                        birth_date: nextBirthApi,
                     })
                 });
 
