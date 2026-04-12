@@ -70,6 +70,7 @@
 
     &__text {
         padding-top: 5px;
+        overflow: hidden;
         font: $text-main-style;
         letter-spacing: $text-main-ls;
         font-size: 14px;

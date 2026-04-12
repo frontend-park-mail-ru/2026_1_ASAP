@@ -85,38 +85,38 @@ export class SettingsListItem extends BaseComponent<SettingsListItemProps> {
         });
         this.profileSetting.mount(this.mainContentArea);
 
-        this.commonSetting = new SettingsItem({
-            src: '/assets/images/icons/commonSettings.svg',
-            title: 'В разработке',
-            disabled: true,
-            onClick: () => {
-                this.setActiveSetting(this.commonSetting!);
-                this.props.router.navigate(`/settings/common`);
-            },
-        });
-        this.commonSetting.mount(this.mainContentArea);
+        // this.commonSetting = new SettingsItem({
+        //     src: '/assets/images/icons/commonSettings.svg',
+        //     title: 'В разработке',
+        //     disabled: true,
+        //     onClick: () => {
+        //         this.setActiveSetting(this.commonSetting!);
+        //         this.props.router.navigate(`/settings/common`);
+        //     },
+        // });
+        // this.commonSetting.mount(this.mainContentArea);
 
-        this.privacySetting = new SettingsItem({
-            src: '/assets/images/icons/privacySettings.svg',
-            title: 'В разработке',
-            disabled: true,
-            onClick: () => {
-                this.setActiveSetting(this.privacySetting!);
-                this.props.router.navigate(`/settings/privacy`);
-            },
-        });
-        this.privacySetting.mount(this.mainContentArea);
+        // this.privacySetting = new SettingsItem({
+        //     src: '/assets/images/icons/privacySettings.svg',
+        //     title: 'В разработке',
+        //     disabled: true,
+        //     onClick: () => {
+        //         this.setActiveSetting(this.privacySetting!);
+        //         this.props.router.navigate(`/settings/privacy`);
+        //     },
+        // });
+        // this.privacySetting.mount(this.mainContentArea);
 
-        this.subscriptionSetting = new SettingsItem({
-            src: '/assets/images/icons/subscriptionSettings.svg',
-            title: 'В разработке',
-            disabled: true,
-            onClick: () => {
-                this.setActiveSetting(this.subscriptionSetting!);
-                this.props.router.navigate(`/settings/subscription`);
-            },
-        });
-        this.subscriptionSetting.mount(this.mainContentArea);
+        // this.subscriptionSetting = new SettingsItem({
+        //     src: '/assets/images/icons/subscriptionSettings.svg',
+        //     title: 'В разработке',
+        //     disabled: true,
+        //     onClick: () => {
+        //         this.setActiveSetting(this.subscriptionSetting!);
+        //         this.props.router.navigate(`/settings/subscription`);
+        //     },
+        // });
+        // this.subscriptionSetting.mount(this.mainContentArea);
 
         this.logoutSetting = new SettingsItem({
             src: '/assets/images/icons/logoutSettings.svg',
