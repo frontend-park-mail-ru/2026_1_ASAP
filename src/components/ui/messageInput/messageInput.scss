@@ -25,6 +25,11 @@
         padding: 0 10px;
         gap: 10px;
         align-items: flex-end;
+        transition: border-color 0.2s;
+
+        &:focus-within {
+            border-color: $color-text-hover;
+        }
     }
 
     &__textarea {
@@ -32,7 +37,8 @@
         height: 60px;
         padding: 18px 0;
         background: transparent;
-        font-size: $font-size-base;
+        font: $text-tertiary;
+        letter-spacing: $text-tertiary-ls;
         box-sizing: border-box;
         border: none;
         color: $color-text;
@@ -40,7 +46,14 @@
         max-height: 200px;
         overflow-y: auto;
         line-height: 1.5;
-        font-family: inherit;
+        appearance: none;
+        outline: none;
+
+        &:focus,
+        &:focus-visible {
+            outline: none;
+            box-shadow: none;
+        }
 
         &::-webkit-scrollbar {
             width: 4px;

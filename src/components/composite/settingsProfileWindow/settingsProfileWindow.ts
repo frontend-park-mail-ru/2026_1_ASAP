@@ -291,7 +291,7 @@ export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowPr
         const type = {
             'login': 'text',
             'email': 'email',
-            'birthDate': 'date',
+            'birthDate': 'text',
             'bio': 'textarea'
         };
         this.editProfileOverlay = new EditProfileOverlay({
