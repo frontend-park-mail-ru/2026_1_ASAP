@@ -1,3 +1,6 @@
+@use "variables" as *;
+@use "mixins" as *;
+
 /**
  * @file contactListItem.scss
  * @description Стили списка контактов с поддержкой пустого состояния.

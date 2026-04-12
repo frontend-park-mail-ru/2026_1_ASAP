@@ -1,3 +1,6 @@
+@use "variables" as *;
+@use "mixins" as *;
+
 /**
  * @file profileAdditionalInfoBlock.scss
  * @description Стили дополнительной информации профиля с поддержкой разворачивания (bio).

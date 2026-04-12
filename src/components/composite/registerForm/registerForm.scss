@@ -1,3 +1,6 @@
+@use "variables" as *;
+@use "mixins" as *;
+
 /**
  * @file registerForm.scss
  * @description Стили формы регистрации с использованием вложенности и миксинов.

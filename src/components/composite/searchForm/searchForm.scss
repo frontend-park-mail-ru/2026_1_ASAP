@@ -1,3 +1,6 @@
+@use "variables" as *;
+@use "mixins" as *;
+
 /**
  * @file searchForm.scss
  * @description Стили формы поиска с использованием вложенности и переменных.

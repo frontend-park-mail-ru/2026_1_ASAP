@@ -1,3 +1,6 @@
+@use "variables" as *;
+@use "mixins" as *;
+
 /**
  * @file metaChatInfo.scss
  * @description Стили мета-информации чата (время, счетчик непрочитанных).

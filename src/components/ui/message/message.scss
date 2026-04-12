@@ -1,3 +1,6 @@
+@use "variables" as *;
+@use "mixins" as *;
+
 /**
  * @file message.scss
  * @description Стили компонента сообщения с использованием вложенности и миксинов.

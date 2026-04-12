@@ -53,12 +53,14 @@ export class SearchForm extends BaseForm<SearchFormProps> {
         });
         this.searchImg.mount(searchPanel as HTMLElement);
 
-        this.input = new Input({ 
-            type: "text", 
-            placeholder: "Поиск", 
-            name: "search", 
-            class: "search-line", 
-            showErrorText: false });
+        this.input = new Input({
+            type: "text",
+            placeholder: "Поиск",
+            name: "search",
+            class: "search-line",
+            showErrorText: false,
+            autocomplete: "off",
+        });
         this.input.mount(searchPanel as HTMLElement);
 
         this.deleteButton = new Button({ 

@@ -48,6 +48,56 @@
 }
 
 /**
+ * Chrome / Safari: :-webkit-autofill — цвет и типографика как у поля.
+ * Явные $font-size / $line-height / $font-weight / $font-family с !important — Chrome иначе подставляет свой размер.
+ */
+@mixin webkit-autofill-override(
+    $text-color,
+    $fill: transparent,
+    $font: null,
+    $letter-spacing: null,
+    $font-size: null,
+    $line-height: null,
+    $font-weight: null,
+    $font-family: null
+) {
+    &:-webkit-autofill,
+    &:-webkit-autofill:hover,
+    &:-webkit-autofill:focus,
+    &:-webkit-autofill:focus-visible,
+    &:-webkit-autofill:active {
+        -webkit-text-fill-color: $text-color;
+        caret-color: $text-color;
+        box-shadow: 0 0 0 1000px $fill inset;
+        transition: background-color 99999s ease-out 0s;
+
+        @if $font != null {
+            font: $font !important;
+        }
+
+        @if $letter-spacing != null {
+            letter-spacing: $letter-spacing !important;
+        }
+
+        @if $font-size != null {
+            font-size: $font-size !important;
+        }
+
+        @if $line-height != null {
+            line-height: $line-height !important;
+        }
+
+        @if $font-weight != null {
+            font-weight: $font-weight !important;
+        }
+
+        @if $font-family != null {
+            font-family: $font-family !important;
+        }
+    }
+}
+
+/**
  * Сложный эффект наведения с градиентом через :after.
  */
 @mixin hover-after-gradient($gradient) {
@@ -66,7 +116,7 @@
         border-radius: inherit;
     }
 
-    &:hover::after {
+    &:hover:not(:disabled)::after {
         opacity: 1;
     }
 

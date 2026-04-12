@@ -26,17 +26,6 @@ export default {
                     {
                         loader: 'sass-loader',
                         options: {
-                            additionalData: (content, loaderContext) => {
-                                const { resourcePath } = loaderContext;
-                                if (resourcePath.endsWith('variables.scss') || resourcePath.endsWith('mixins.scss')) {
-                                    return content;
-                                }
-                                return `
-                                    @use "variables" as *;
-                                    @use "mixins" as *;
-                                    ${content}
-                                `;
-                            },
                             sassOptions: {
                                 loadPaths: [resolve(__dirname, 'src/styles')],
                             },

@@ -1,3 +1,6 @@
+@use "variables" as *;
+@use "mixins" as *;
+
 /**
  * @file avatarEditMenuOverlay.scss
  * @description Стили оверлея меню редактирования аватара.
@@ -85,7 +88,6 @@
         }
     }
 
-    /* Иконка загрузки: currentColor следует за цветом текста кнопки */
     &__icon-upload {
         width: 22px;
         height: 22px;

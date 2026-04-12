@@ -1,3 +1,6 @@
+@use "variables" as *;
+@use "mixins" as *;
+
 /**
  * @file input.scss
  * @description Стили компонента ввода (input) с использованием вложенности и миксинов.
@@ -31,6 +34,9 @@
     width: 100%;
     box-sizing: border-box;
     padding-right: 40px;
+    outline: none;
+    font: $text-secondary;
+    letter-spacing: $text-secondary-ls;
     @include hover-transition;
 
     &:hover {
@@ -38,11 +44,23 @@
         border: 1.5px solid $color-primary;
     }
 
-    &:focus {
+    &:focus,
+    &:focus-visible {
+        outline: none;
         box-shadow: 0 0 0 0.5px $color-primary;
         border-color: $color-primary;
         opacity: 1;
     }
+
+    @include webkit-autofill-override(
+        $color-neutral,
+        $font: $text-secondary,
+        $letter-spacing: $text-secondary-ls,
+        $font-size: $font-size-lg,
+        $line-height: 16px,
+        $font-weight: 400,
+        $font-family: $font-secondary
+    );
 
     &__toggle-password {
         position: absolute;
@@ -84,7 +102,10 @@
     border: none;
     width: 100%;
     color: $color-text;
-    transition: border-color 0.2s;
+    outline: none;
+    font: $text-tertiary;
+    letter-spacing: $text-tertiary-ls;
+    font-weight: 500;
 
     &::placeholder {
         color: $color-text;
@@ -92,6 +113,21 @@
         font: $text-tertiary;
         letter-spacing: $text-tertiary-ls;
     }
+
+    &:focus,
+    &:focus-visible {
+        outline: none;
+    }
+
+    @include webkit-autofill-override(
+        $color-text,
+        $font: $text-tertiary,
+        $letter-spacing: $text-tertiary-ls,
+        $font-size: $font-size-base,
+        $line-height: 16px,
+        $font-weight: 500,
+        $font-family: $font-tertiary
+    );
 }
 
 .ui-input-secondary {
@@ -104,11 +140,32 @@
     box-sizing: border-box;
     background: none;
     opacity: 0.5;
+    outline: none;
+    font: $text-secondary;
+    letter-spacing: $text-secondary-ls;
     @include hover-transition;
 
     &:hover {
         opacity: 0.8;
     }
+
+    &:focus,
+    &:focus-visible {
+        outline: none;
+        opacity: 1;
+        border-color: $color-primary;
+        box-shadow: 0 0 0 0.5px $color-primary;
+    }
+
+    @include webkit-autofill-override(
+        $color-text,
+        $font: $text-secondary,
+        $letter-spacing: $text-secondary-ls,
+        $font-size: $font-size-lg,
+        $line-height: 16px,
+        $font-weight: 400,
+        $font-family: $font-secondary
+    );
 }
 
 .settings-name-input {
@@ -117,6 +174,25 @@
     color: $color-text;
     border-bottom: 1px solid $color-border-chats;
     font: $text-secondary;
+    outline: none;
+    @include hover-transition;
+
+    &:focus,
+    &:focus-visible {
+        outline: none;
+        border-bottom-color: $color-primary;
+        opacity: 1;
+    }
+
+    @include webkit-autofill-override(
+        $color-text,
+        $font: $text-secondary,
+        $letter-spacing: $text-secondary-ls,
+        $font-size: $font-size-lg,
+        $line-height: 16px,
+        $font-weight: 400,
+        $font-family: $font-secondary
+    );
 }
 
 .edit-profile__edit-input {
@@ -129,6 +205,30 @@
     padding: 10px;
     resize: none;
     box-sizing: border-box;
+    outline: none;
+    font-family: monospace;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: normal;
+    letter-spacing: normal;
+    @include hover-transition;
+
+    &:focus,
+    &:focus-visible {
+        outline: none;
+        border-color: $color-primary;
+        box-shadow: 0 0 0 1px $color-primary;
+    }
+
+    @include webkit-autofill-override(
+        $color-text,
+        $font: 400 16px/normal monospace,
+        $letter-spacing: normal,
+        $font-size: 16px,
+        $line-height: normal,
+        $font-weight: 400,
+        $font-family: monospace
+    );
 
     &::-webkit-scrollbar {
         width: 10px;

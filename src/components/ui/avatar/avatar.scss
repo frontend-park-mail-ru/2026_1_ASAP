@@ -1,3 +1,6 @@
+@use "variables" as *;
+@use "mixins" as *;
+
 /**
  * @file avatar.scss
  * @description Стили компонента аватарок с использованием вложенности.
