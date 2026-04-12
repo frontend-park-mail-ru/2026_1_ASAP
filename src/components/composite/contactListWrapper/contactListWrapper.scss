@@ -1,3 +1,6 @@
+@use "variables" as *;
+@use "mixins" as *;
+
 /**
  * @file contactListWrapper.scss
  * @description Стили обертки списка контактов с кастомным скроллбаром.

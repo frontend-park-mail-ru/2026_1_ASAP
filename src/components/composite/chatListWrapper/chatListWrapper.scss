@@ -1,3 +1,6 @@
+@use "variables" as *;
+@use "mixins" as *;
+
 /**
  * @file chatListWrapper.scss
  * @description Стили обертки списка чатов с кастомным скроллбаром.

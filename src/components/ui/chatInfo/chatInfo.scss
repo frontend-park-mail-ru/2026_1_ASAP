@@ -1,3 +1,6 @@
+@use "variables" as *;
+@use "mixins" as *;
+
 /**
  * @file chatInfo.scss
  * @description Стили информационных блоков чата (имя отправителя, текст последнего сообщения).

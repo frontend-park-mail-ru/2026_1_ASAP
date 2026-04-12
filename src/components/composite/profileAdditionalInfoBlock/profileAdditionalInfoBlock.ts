@@ -96,6 +96,9 @@ export class ProfileAdditionalInfoBlock extends BaseComponent<ProfileAdditionalI
         const field = editable.dataset.field;
         if (!field || !['login', 'email', 'birthDate', 'bio'].includes(field)) return;
 
+        // Редактирование логина и почты временно отключено
+        if (field === 'login' || field === 'email') return;
+
         let value: string;
         if (field === 'bio') {
             value = this.props.profileAdditionalInfo.bio ?? '';

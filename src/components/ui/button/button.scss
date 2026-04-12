@@ -1,3 +1,6 @@
+@use "variables" as *;
+@use "mixins" as *;
+
 /**
  * @file button.scss
  * @description Стили компонента кнопок с использованием вложенности и миксинов.
@@ -28,7 +31,7 @@
         color: $color-primary;
         @include hover-after-gradient($gradient-button-hover);
 
-        &:hover {
+        &:hover:not(:disabled) {
             color: $color-text;
         }
     }
@@ -39,7 +42,7 @@
         color: $color-text;
         @include hover-after-gradient($color-text);
 
-        &:hover {
+        &:hover:not(:disabled) {
             color: $color-primary;
         }
     }
@@ -52,7 +55,7 @@
         border: none;
         @include hover-after-gradient($gradient-button-hover);
 
-        &:hover {
+        &:hover:not(:disabled) {
             color: $color-text;
         }
     }
@@ -156,7 +159,7 @@
     letter-spacing: inherit;
     @include hover-after-gradient($gradient-button-hover);
 
-    &:hover {
+    &:hover:not(:disabled) {
         color: $color-text;
     }
 }

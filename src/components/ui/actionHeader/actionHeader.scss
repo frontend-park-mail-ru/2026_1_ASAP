@@ -1,3 +1,6 @@
+@use "variables" as *;
+@use "mixins" as *;
+
 /**
  * @file actionHeader.scss
  * @description Стили заголовка для страниц действий (создание групп и др).

@@ -38,6 +38,7 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
     private activeSetting: string | null = null;
     private settingsWindow: SettingsProfileWindow | null = null;
     private cachedUserProfile: {mainInfo: ProfileMainInfo, additionalInfo: ProfileAdditionalInfo} | null = null;
+    private openSettingSeq = 0;
 
     constructor(props: SettingsPageProps) {
         super(props);
@@ -123,6 +124,8 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
      * @private
      */
     private async openSetting(activeSetting: string): Promise<void> {
+        const seq = ++this.openSettingSeq;
+
         if (!this.mainContentArea) {
             console.error("Отсутствует элемент mainContentArea");
             return;
@@ -139,6 +142,13 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
 
         if (activeSetting === "profile") {
             const userProfile = await contactService.getMyProfile();
+            if (seq !== this.openSettingSeq) {
+                return;
+            }
+            if (this.settingsWindow) {
+                this.settingsWindow.unmount();
+                this.settingsWindow = null;
+            }
             this.cachedUserProfile = userProfile;
 
             this.settingsWindow = new SettingsProfileWindow({
@@ -151,6 +161,9 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
             });
             this.settingsWindow.mount(this.mainContentArea!);
         } else {
+            if (seq !== this.openSettingSeq) {
+                return;
+            }
             this.placeHolder.style.display = "block";
         }
     };

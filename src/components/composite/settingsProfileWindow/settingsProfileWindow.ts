@@ -1,5 +1,6 @@
 import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent";
 import { contactService } from "../../../services/contactService";
+import { validationService } from "../../../services/validationService";
 import { ProfileAdditionalInfo, ProfileMainInfo } from "../../../types/profile";
 import { Button } from "../../ui/button/button";
 import { AvatarEditMenuOverlay } from "../avatarEditMenuOverlay/avatarEditMenuOverlay";
@@ -24,7 +25,6 @@ const DEFAULT_AVATAR_URL = '/assets/images/avatars/profileAvatar.svg';
 export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowProps> {
     private profileHeader: ProfileHeader | null = null;
     private profileSaveButton: Button | null = null;
-    private isDisabled: Boolean | null = true;
     private profileMainInfoBlock: ProfileMainInfoBlock | null = null;
     private profileAdditionalInfoBlock: ProfileAdditionalInfoBlock | null = null;
     private draftProfileMainInfo: ProfileMainInfo | null = null;
@@ -72,6 +72,11 @@ export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowPr
         };
     }
 
+    private isProfileFirstNameValid(): boolean {
+        const n = this.draftProfileMainInfo?.firstName ?? '';
+        return validationService.validateProfileFirstName(n).isValid;
+    }
+
     /** Сравнение без JSON.stringify (порядок ключей, пробелы в bio/email) */
     private isDraftMatchingBaseline(): boolean {
         if (!this.draftProfileMainInfo || !this.draftProfileAdditionalInfo) return true;
@@ -96,11 +101,17 @@ export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowPr
     };
 
     setButtonState(): void {
-        // Для MVP-версии кнопка всегда заблокирована.
-        if (this.profileSaveButton) {
-            this.profileSaveButton.disabled = true;
-        }
-        return;
+        const btn = this.profileSaveButton;
+        if (!btn?.element || !(btn.element instanceof HTMLButtonElement)) return;
+
+        const dirty =
+            this.pendingAvatarFile !== null || !this.isDraftMatchingBaseline();
+        const enable =
+            dirty && !this.isSavingProfile && this.isProfileFirstNameValid();
+
+        btn.disabled = !enable;
+        btn.element.classList.toggle("ui-button__disabled", !enable);
+        btn.element.title = "";
     }
 
     handleMainInfoInput = (firstName: string, lastName: string) => {
@@ -237,6 +248,10 @@ export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowPr
 
     handleSaveProfile = async (): Promise<void> => {
         if (!this.draftProfileMainInfo || !this.draftProfileAdditionalInfo || this.isSavingProfile) return;
+        if (!this.pendingAvatarFile && this.isDraftMatchingBaseline()) return;
+        if (!validationService.validateProfileFirstName(this.draftProfileMainInfo.firstName).isValid) {
+            return;
+        }
 
         this.isSavingProfile = true;
         if (this.profileSaveButton) {
@@ -330,7 +345,6 @@ export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowPr
             label: "Сохранить изменения",
             class: "ui-button ui-button__primary ui-button__disabled",
             disabled: true,
-            title: "В разработке",
             onClick: () => {
                 void this.handleSaveProfile();
             },

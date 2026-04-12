@@ -121,6 +121,11 @@ class ValidationService {
         return { isValid: true, message: '' };
     }
 
+    /** Имя в профиле обязательно (не пустая строка после trim). */
+    public validateProfileFirstName(firstName: string): ValidationResult {
+        return this.validateRequired((firstName ?? '').trim(), 'Имя');
+    }
+
     /**
      * Дата рождения (необязательно): пусто — ок; иначе YYYY-MM-DD или ДД.ММ.ГГГГ.
      */

@@ -1,3 +1,6 @@
+@use "variables" as *;
+@use "mixins" as *;
+
 /**
  * @file editProfileOverlay.scss
  * @description Стили оверлея для редактирования профиля (например, выбор области аватара).
@@ -30,10 +33,27 @@
         padding: 10px;
         min-width: 320px;
         box-sizing: border-box;
+        font-family: $font-secondary;
+        font-size: $font-size-lg;
+        font-weight: 400;
+        line-height: 22px;
+        letter-spacing: $text-secondary-ls;
+        color: $color-text;
 
         .edit-title {
+            margin: 0;
+            width: 100%;
+            text-align: center;
             color: $color-scroll;
-            height: 30px;
+            min-height: 30px;
+            font-family: $font-secondary;
+            font-size: $font-size-lg;
+            font-weight: 500;
+            line-height: 22px;
+            letter-spacing: $text-secondary-ls;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
     }
 

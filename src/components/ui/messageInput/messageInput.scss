@@ -1,3 +1,6 @@
+@use "variables" as *;
+@use "mixins" as *;
+
 /**
  * @file messageInput.scss
  * @description Стили поля ввода сообщения.

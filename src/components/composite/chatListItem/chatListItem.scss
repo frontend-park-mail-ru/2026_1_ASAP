@@ -1,3 +1,6 @@
+@use "variables" as *;
+@use "mixins" as *;
+
 /**
  * @file chatListItem.scss
  * @description Стили контейнера списка чатов с использованием вложенности и миксинов.
