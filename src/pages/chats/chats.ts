@@ -281,13 +281,13 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 this.createChatWindow = new CreateDialogWindow({ 
                     router: this.props.router,
                     onSubmit: async (contactId: number, contactName: string) => {
-                        const newChat = await chatService.createChat(
+                        const res = await chatService.createChat(
                             [contactId], 
                             "dialog",
                         );
-                        if (newChat && newChat.id) {   
+                        if (res.success && res.body?.id) {   
                             this.rebuildSidebar(); 
-                            this.props.router.navigate(`/chats/${newChat.id}`);
+                            this.props.router.navigate(`/chats/${res.body.id}`);
                         }
                     },
                     onSubmitSearch: async (login: string) => {
@@ -301,17 +301,21 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                         if (myId === targetUser.id) {
                             return "Вы не можете создать диалог с самим собой!";
                         }
-                        const newChat = await chatService.createChat(
+                        const res = await chatService.createChat(
                             [targetUser.id], 
                             "dialog",
                         );
                         
-                        if (newChat && newChat.id) {
+                        if (res.status === 409) {
+                            return "Диалог с этим пользователем уже существует";
+                        }
+
+                        if (res.success && res.body?.id) {
                             this.rebuildSidebar(); 
-                            this.props.router.navigate(`/chats/${newChat.id}`);
+                            this.props.router.navigate(`/chats/${res.body.id}`);
                             return undefined;
                         } else {
-                            return "Диалог с данным пользователем уже существует или произошла ошибка.";
+                            return "Произошла ошибка при создании диалога";
                         }
                     }
                 });
@@ -320,14 +324,14 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 this.createChatWindow = new CreateGroupWindow({ 
                     router: this.props.router,
                     onSubmit: async (userIds: number[], groupName: string) => {
-                        const newChat = await chatService.createChat(
+                        const res = await chatService.createChat(
                             [myId, ...userIds], 
                             "group",
                             groupName
                         );
-                        if (newChat && newChat.id) {
+                        if (res.success && res.body?.id) {
                             this.rebuildSidebar(); 
-                            this.props.router.navigate(`/chats/${newChat.id}`);
+                            this.props.router.navigate(`/chats/${res.body.id}`);
                         }
                     },
                     onSubmitSearch: async (login: string) => {
@@ -394,8 +398,15 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         let headerComponent: BaseComponent;
         switch (chatDetail.type) {
             case 'dialog':
+                const members = await chatService.getChatMembers(chatId);
+                const myId = await contactService.getMyId();
+                const interlocutorId = members.find(id => id !== myId) || members[0] || 0;
+                
+                (chatDetail as DialogChat).interlocutor.id = interlocutorId;
+
                 headerComponent = new DialogHeader({ 
                     chat: chatDetail as DialogChat,
+                    onOpenProfile: () => this.props.router.navigate('/contacts/' + interlocutorId),
                     onDeleteChat: async() => {
                         const res = await chatService.deleteChat(chatId);
                         if (res.success) {
@@ -403,7 +414,10 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                             this.rebuildSidebar();
                             this.props.router.navigate('/chats');
                         } else {
-                            this.showAlert("Не удалось удалить диалог");
+                            const errorMsg = res.errorCode === 'CANT_DELETE_CHAT'
+                                ? "Вы не можете удалить этот чат"
+                                : "Не удалось удалить диалог";
+                            this.showAlert(errorMsg);
                         }
                     }
                 });
@@ -419,9 +433,10 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                             this.rebuildSidebar();
                             this.props.router.navigate('/chats');
                         } else {
-                            const errorMsg = res.status === 403 
-                                ? "Нет прав на удаление чата (вы не владелец)" 
-                                : "Не удалось удалить группу";
+                            let errorMsg = "Не удалось удалить группу";
+                            if (res.errorCode === 'CANT_DELETE_CHAT' || res.status === 403) {
+                                errorMsg = "Нет прав на удаление чата (вы не владелец)";
+                            }
                             this.showAlert(errorMsg, () => {
                                 this.openGroupDetails(chatDetail as GroupChat);
                             });
@@ -441,7 +456,10 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                             this.rebuildSidebar();
                             this.props.router.navigate('/chats');
                         } else {
-                            this.showAlert("Не удалось удалить канал");
+                            const errorMsg = res.errorCode === 'CANT_DELETE_CHAT'
+                                ? "Вы не можете удалить этот чат"
+                                : "Не удалось удалить канал";
+                            this.showAlert(errorMsg);
                         }
                     }
                 });

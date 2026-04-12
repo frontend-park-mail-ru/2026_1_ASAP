@@ -13,6 +13,7 @@ import { ConfirmModal } from '../confirmModal/confirmModal';
 interface DialogHeaderProps {
     chat: DialogChat;
     onDeleteChat?: () => void;
+    onOpenProfile: () => void;
 }
 
 /**
@@ -54,6 +55,18 @@ export class DialogHeader extends BaseComponent {
                 class: 'dialog-header__avatar',
             });
             this.avatarComponent.mount(avatarSlot as HTMLElement);
+            
+            const avatarContainer = this.element.querySelector('.dialog-header__avatar-container');
+            avatarContainer?.addEventListener('click', () => {
+                this.props.onOpenProfile();
+            });
+        }
+
+        const infoBlock = this.element.querySelector('.dialog-header__info');
+        if (infoBlock) {
+            infoBlock.addEventListener('click', () => {
+                this.props.onOpenProfile();
+            });
         }
 
         const settingsSlot = this.element.querySelector('[data-component="dialog-settings-slot"]');
@@ -65,11 +78,10 @@ export class DialogHeader extends BaseComponent {
                 type: "button",
                 onClick: () => {
                     if (!this.isDeleteMenuOpen) {
-                        console.log("Открытие меню настроек диалога");
                         this.deleteChatMenu = new DeleteChatMenu({
                             typeChat: "dialog",
                             onInfo: () => {
-                                this.openInfo();
+                                this.props.onOpenProfile();
                             },
                             onDelete: () => {
                                 this.openDeleteMenu();

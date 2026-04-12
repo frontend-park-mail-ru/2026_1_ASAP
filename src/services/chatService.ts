@@ -166,7 +166,11 @@ export class ChatService {
                     case 'dialog':
                         frontendChat = {
                             ...commonProps,
-                            interlocutor: { login: chat.title, avatarUrl: '/assets/images/avatars/chatAvatar.svg' }, 
+                            interlocutor: { 
+                                id: 0, 
+                                login: chat.title, 
+                                avatarUrl: chat.avatar || '/assets/images/avatars/chatAvatar.svg' 
+                            }, 
                         } as DialogChat;
                         break;
                     case 'group':
@@ -220,13 +224,26 @@ export class ChatService {
             if (data.status === 'success' && data.body) {
                 const chat = data.body;
                 
-                return {
+                const commonProps = {
                     id: chat.id.toString(),
                     title: chat.title,
                     type: chat.chat_type,
                     avatarUrl: chat.avatar || '/assets/images/avatars/chatAvatar.svg',
                     unreadCount: 0
-                } as ChatDetail;
+                };
+
+                if (chat.chat_type === 'dialog') {
+                    return {
+                        ...commonProps,
+                        interlocutor: {
+                            id: 0,
+                            login: chat.title,
+                            avatarUrl: commonProps.avatarUrl
+                        }
+                    } as DialogChat;
+                }
+                
+                return commonProps as ChatDetail;
             }
             
             return undefined;
@@ -287,9 +304,13 @@ export class ChatService {
     }
 
     /**
-     * Создает новый чат (Диалог или Группу)
+     * Создает новый чат (Диалог или Группу).
+     * @param members_id - Список ID участников.
+     * @param type - Тип чата.
+     * @param title - Заголовок чата (необязательно).
+     * @returns Объект с результатом операции: флаг успеха, HTTP статус и тело ответа.
      */
-    public async createChat(members_id: number[], type: "dialog" | "group" | "channel", title?: string): Promise<any | null> {
+    public async createChat(members_id: number[], type: "dialog" | "group" | "channel", title?: string): Promise<{ success: boolean; status: number; body?: any }> {
         try {
             const response = await httpClient.request(`${BASE_URL}/api/v1/chats`, {
                 method: 'POST',
@@ -303,32 +324,53 @@ export class ChatService {
                 })
             });
 
-            if (!response.ok) {
-                console.error(`Ошибка при создании чата: ${response.status}`);
-                return null;
+            let body: any = null;
+            if (response.ok || response.status === 409) {
+                try {
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        body = data.body;
+                    }
+                } catch (e) {
+                    console.error("ChatService: ошибка парсинга JSON", e);
+                }
             }
 
-            const data = await response.json();
-            if (data.status === 'success') {
-                 return data.body; 
-            }
-            return null;
+            return { 
+                success: response.ok, 
+                status: response.status, 
+                body: body 
+            };
         } catch (error) {
             console.error("Ошибка сети при создании чата:", error);
-            return null;
+            return { success: false, status: 500 };
         }
     }
 
     /**
      * Удаляет чат.
      */
-    public async deleteChat(chatId: string): Promise<{ success: boolean; status: number }> {
+    public async deleteChat(chatId: string): Promise<{ success: boolean; status: number; errorCode?: string }> {
         try {
             const response = await httpClient.request(`${BASE_URL}/api/v1/chats/${chatId}`, {
                 method: 'DELETE',
             });
 
-            return { success: response.ok, status: response.status };
+            if (response.ok) {
+                return { success: true, status: response.status };
+            }
+
+            let errorCode: string | undefined;
+            try {
+                const data = await response.json();
+                if (data.status === 'error' && data.errors && data.errors.length > 0) {
+                    errorCode = data.errors[0].code;
+                }
+            } catch (e) {
+                // Игнорируем ошибки парсинга
+            }
+
+            return { success: false, status: response.status, errorCode };
         } catch (error) {
             console.error("Ошибка сети при удалении чата:", error);
             return { success: false, status: 500 };
