@@ -74,6 +74,16 @@ export class RegisterForm extends BaseForm<RegisterFormProps> {
             type: "submit" 
         });
         this.registerButton.mount(this.element.querySelector('.auth__register') as HTMLElement);
+
+        const onInputChange = () => {
+            if (this.registerButton) {
+                this.registerButton.disabled = false;
+            }
+        };
+
+        this.element.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', onInputChange);
+        });
     }
 
     protected beforeUnmount(): void {
@@ -94,6 +104,7 @@ export class RegisterForm extends BaseForm<RegisterFormProps> {
         this.loginInput.clearError();
         this.emailInput.clearError();
         this.passwordInput.clearError();
+        this.registerButton.disabled = false;
 
         const loginResult = validationService.validateLogin(data.login || '');
         const emailResult = validationService.validateEmail(data.email || '');
@@ -113,11 +124,17 @@ export class RegisterForm extends BaseForm<RegisterFormProps> {
             isFormValid = false;
         }
 
-        if (isFormValid) {
-            const result = await authService.register(data.email!, data.login!, data.password!);
-            if (result.success) {
-                this.props.router.navigate('/chats');
-            } else if (result.error?.includes("Login already register")) {
+        if (!isFormValid) {
+            this.registerButton.disabled = true;
+            return;
+        }
+
+        const result = await authService.register(data.email!, data.login!, data.password!);
+        if (result.success) {
+            this.props.router.navigate('/chats');
+        } else {
+            this.registerButton.disabled = true;
+            if (result.error?.includes("Login already register")) {
                 this.loginInput.setError("Пользователь с таким логином уже существует");
             } else if (result.error?.includes("Email already register")) {
                 this.emailInput.setError("Пользователь с такой почтой уже существует");

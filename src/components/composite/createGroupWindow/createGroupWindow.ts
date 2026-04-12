@@ -42,14 +42,14 @@ export class CreateGroupWindow extends BaseComponent<CreateGroupWindowProps> {
         const layoutSlot = this.element.querySelector('[data-component="layout-slot"]');
         const footerSlot = this.element.querySelector('[data-component="footer-slot"]');
 
-        this.SearchField = new SearchForm({
-            class: "create-group-window__search",
-            hideAddButton: true,
-            placeholder: "Поиск",
-            onSearch: (query: string) => {
-                console.log("Поиск контактов по запросу:", query); // todo: реализовать поиск контактов 
-            }
-        });
+        // this.SearchField = new SearchForm({
+        //     class: "create-group-window__search",
+        //     hideAddButton: true,
+        //     placeholder: "Поиск",
+        //     onSearch: (query: string) => {
+        //         console.log("Поиск контактов по запросу:", query); // todo: реализовать поиск контактов 
+        //     }
+        // });
 
         this.actionHeader = new ActionHeader({
             backButton: new Button({

@@ -247,6 +247,8 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
                     
                     this.props.router.navigate(`/contacts/${targetRes.id}`);
                     return undefined;
+                } else if (successRes.code === 'CANT_CREATE_CONTACT_WITH_YOURSELF') {
+                    return "Вы не можете добавить самого себя в контакты";
                 } else if (successRes.status === 409) {
                     return `Пользователь "${login}" уже в контактах!`;
                 } else {

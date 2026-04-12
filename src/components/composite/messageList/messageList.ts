@@ -94,6 +94,9 @@ export class MessageList extends BaseComponent {
         }
 
         messages.forEach(msgData => {
+            if (msgData.isOwn && this.props.currentUser?.avatarUrl) {
+                msgData.sender.avatarUrl = this.props.currentUser.avatarUrl;
+            }
             const messageComponent = new Message({
                 message: msgData, 
                 isOwn: msgData.isOwn || false,
@@ -161,6 +164,9 @@ export class MessageList extends BaseComponent {
         }
 
         const showAuthor = this.props.chatType === 'group';
+        if (newMessage.isOwn && this.props.currentUser?.avatarUrl) {
+            newMessage.sender.avatarUrl = this.props.currentUser.avatarUrl;
+        }
         const messageComponent = new Message({
             message: newMessage, 
             isOwn: newMessage.isOwn || false,

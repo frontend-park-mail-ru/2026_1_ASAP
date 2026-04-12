@@ -50,14 +50,26 @@ export class FindUserForm extends BaseForm<FindUserFormProps> {
             class: "ui-button ui-button__secondary3 find-user-submit-btn"
         });
         this.submitButton.mount(buttonSlot as HTMLElement);
+
+        const onInputChange = () => {
+            if (this.submitButton) {
+                this.submitButton.disabled = false;
+            }
+        };
+
+        this.element.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', onInputChange);
+        });
     }
 
     protected async onSubmit(data: { [key: string]: string }): Promise<void> {
         const login = data['login'];
+        if (this.submitButton) this.submitButton.disabled = false;
         
         const loginValidation = validationService.validateLogin(login);
         if (!loginValidation.isValid) {
             this.loginInput?.setError(loginValidation.message);
+            if (this.submitButton) this.submitButton.disabled = true;
             return;
         }
 
@@ -66,6 +78,7 @@ export class FindUserForm extends BaseForm<FindUserFormProps> {
         const errorMessage = await this.props.onSubmitForm(login);
         if (typeof errorMessage === 'string') {
             this.loginInput?.setError(errorMessage);
+            if (this.submitButton) this.submitButton.disabled = true;
         }
     }
 
