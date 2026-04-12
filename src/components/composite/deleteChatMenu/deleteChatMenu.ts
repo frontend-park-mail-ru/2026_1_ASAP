@@ -32,9 +32,9 @@ export class DeleteChatMenu extends BaseComponent<deleteChatMenuProps> {
         
         this.infoButton = new Button({
             label: "Информация",
-            class: "ui-button delete-chat-menu__button",
+            class: "delete-chat-menu__button",
             onClick: this.props.onInfo,
-            icon: "/assets/images/icons/deleteChatMenuIcons/info.svg"
+            icon: "/assets/images/icons/Info.svg"
         });
         this.infoButton.mount(buttonsContainer as HTMLElement);
 
@@ -54,9 +54,9 @@ export class DeleteChatMenu extends BaseComponent<deleteChatMenuProps> {
 
         this.deleteButton = new Button({
             label: label,
-            class: "ui-button delete-chat-menu__button",
+            class: "delete-chat-menu__button delete-chat-menu__button-red",
             onClick: this.props.onDelete,
-            icon: "/assets/images/icons/deleteChatMenuIcons/delete.svg"
+            icon: "/assets/images/icons/deleteAvatar.svg"
         });
         this.deleteButton.mount(buttonsContainer as HTMLElement);
 

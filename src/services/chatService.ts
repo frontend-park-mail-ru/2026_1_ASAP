@@ -1,9 +1,10 @@
 import { ChatDetail, FrontendMessage, User, DialogChat, GroupChat, ChannelChat, BackendChat, BackendMessage } from '../types/chat';
 import { httpClient } from '../core/utils/httpClient';
-import { wsClient, MessageDto } from '../core/utils/wsClient';
+import { wsClient, MessageDto, ChatInformationDto } from '../core/utils/wsClient';
 
-const host = window.location.hostname;
+// const host = window.location.hostname;
 // const BASE_URL = `${window.location.protocol}//${host}:8080`;
+
 const BASE_URL = 'http://pulseapp.space:8080';
 
 /**
@@ -12,22 +13,31 @@ const BASE_URL = 'http://pulseapp.space:8080';
  * детальной информации о чате, сообщений, а также для создания и удаления чатов.
  */
 export class ChatService {
+    private profilesCache: Map<number, User> = new Map();
+    private pendingProfiles: Map<number, Promise<User | null>> = new Map();
     
     /**
      * Преобразует BackendMessage (REST) в FrontendMessage.
      * @param backendMessage - «сырой» объект сообщения из REST-ответа.
-     * @param currentUserId  - Логин текущего пользователя для определения авторства.
+     * @param currentUserId  - ID или логин текущего пользователя для определения авторства.
      */
-    private convertToFrontendMessage(backendMessage: any, currentUserId?: string): FrontendMessage {
+    private convertToFrontendMessage(backendMessage: any, currentUserId?: string | number): FrontendMessage {
+        const login = backendMessage.sender?.login || backendMessage.login || (backendMessage.sender_id ? `user_${backendMessage.sender_id}` : 'unknown');
+        
         return {
-            // Если бек не отдаёт ID сообщения, генерируем временный для ключей рендера
             id: backendMessage.id?.toString() || Math.random().toString(36).substring(2, 9),
-            sender: backendMessage.sender || { login: 'unknown', avatarUrl: '/assets/images/avatars/chatAvatar.svg' },
+            sender: { 
+                id: Number(backendMessage.sender_id || backendMessage.sender?.id || 0),
+                login: login, 
+                avatarUrl: backendMessage.sender?.avatar || backendMessage.avatar || '/assets/images/avatars/chatAvatar.svg',
+                firstName: backendMessage.sender?.first_name || backendMessage.first_name,
+                lastName: backendMessage.sender?.last_name || backendMessage.last_name,
+            },
             text: backendMessage.text,
-            // Учитываем, что на беке поле может называться created_at или CreatedAt
-            timestamp: new Date(backendMessage.created_at || backendMessage.CreatedAt || Date.now()),
-            // Проверяем авторство (учитываем, что бек может отдавать sender_id вместо объекта)
-            isOwn: (backendMessage.sender?.login === currentUserId) || (backendMessage.sender_id?.toString() === currentUserId?.toString()),
+            timestamp: new Date(backendMessage.created_at || Date.now()),
+            isOwn: (backendMessage.sender?.login === currentUserId) || 
+                   (backendMessage.login === currentUserId) ||
+                   (String(backendMessage.sender_id) === String(currentUserId)),
         };
     }
 
@@ -39,17 +49,70 @@ export class ChatService {
      * @param currentUserId - ID текущего пользователя для определения поля `isOwn`.
      * @returns {FrontendMessage} Сообщение в формате фронтенда.
      */
-    public convertWsMessageDto(dto: MessageDto, currentUserId: number): FrontendMessage {
+    public convertWsMessageDto(dto: MessageDto, currentUserId: number | string): FrontendMessage {
         return {
-            id: dto.id.toString(),
+            id: dto.id?.toString(),
             sender: {
-                login: dto.login ?? `user_${dto.sender_id}`,
-                avatarUrl: '/assets/images/avatars/chatAvatar.svg',
+                id: Number(dto.sender_id),
+                login: dto.login ?? `user_${dto.sender_id || 0}`,
+                avatarUrl: dto.avatar || '/assets/images/avatars/chatAvatar.svg',
+                firstName: dto.first_name,
+                lastName: dto.last_name,
             },
-            text: dto.text,
-            timestamp: new Date(dto.created_at),
-            isOwn: dto.sender_id === currentUserId || dto.sender_id.toString() === currentUserId.toString(),
+            text: dto.text || '',
+            timestamp: new Date(dto.created_at || Date.now()),
+            isOwn: String(dto.sender_id) === String(currentUserId) || dto.login === currentUserId,
         };
+    }
+
+    /**
+     * Преобразует DTO чата (ChatInformationDto) из WebSocket во фронтендную модель ChatDetail.
+     * Безопасно обрабатывает отсутствие последнего сообщения.
+     * 
+     * @param dto           - DTO чата из WebSocket.
+     * @param currentUserId - ID текущего пользователя.
+     * @returns {ChatDetail} Объект чата для фронтенда.
+     */
+    public mapChatDtoToChat(dto: ChatInformationDto, currentUserId: number): ChatDetail {
+        const commonProps = {
+            id: dto.id.toString(),
+            title: dto.title,
+            avatarUrl: dto.avatar || '/assets/images/avatars/chatAvatar.svg',
+            unreadCount: 0,
+            type: dto.chat_type as 'dialog' | 'group' | 'channel',
+        };
+
+        let chat: ChatDetail;
+
+        switch (dto.chat_type) {
+            case 'dialog':
+                chat = {
+                    ...commonProps,
+                    interlocutor: { login: dto.title, avatarUrl: commonProps.avatarUrl },
+                } as DialogChat;
+                break;
+            case 'group':
+                chat = {
+                    ...commonProps,
+                    members: [],
+                    owner: { login: 'owner', avatarUrl: '/assets/images/avatars/chatAvatar.svg' },
+                } as GroupChat;
+                break;
+            case 'channel':
+                chat = {
+                    ...commonProps,
+                    subscribersCount: 0,
+                } as ChannelChat;
+                break;
+            default:
+                chat = { ...commonProps } as any;
+        }
+
+        if (dto.last_message && dto.last_message.id !== 0 && (dto.last_message.id !== undefined || dto.last_message.created_at)) {
+            chat.lastMessage = this.convertWsMessageDto(dto.last_message, currentUserId);
+        }
+
+        return chat;
     }
 
     /**
@@ -69,7 +132,7 @@ export class ChatService {
     /**
      * Получает список чатов пользователя.
      */
-    public async getChats(currentUserId?: string): Promise<ChatDetail[]> {
+    public async getChats(currentUserId?: string | number): Promise<ChatDetail[]> {
         try {
             const response = await httpClient.request(`${BASE_URL}/api/v1/chats`, {
                 method: 'GET',
@@ -104,7 +167,11 @@ export class ChatService {
                     case 'dialog':
                         frontendChat = {
                             ...commonProps,
-                            interlocutor: { login: chat.title, avatarUrl: '/assets/images/avatars/chatAvatar.svg' }, 
+                            interlocutor: { 
+                                id: 0, 
+                                login: chat.title, 
+                                avatarUrl: chat.avatar || '/assets/images/avatars/chatAvatar.svg' 
+                            }, 
                         } as DialogChat;
                         break;
                     case 'group':
@@ -124,7 +191,8 @@ export class ChatService {
                         frontendChat = { ...commonProps } as any;
                 }
 
-                if (chat.last_message) {
+                // Бэкенд может прислать пустую заглушку (zero-value) для нового чата, где id = 0 или объект пуст
+                if (chat.last_message && chat.last_message.id !== 0 && (chat.last_message.id !== undefined || chat.last_message.created_at)) {
                     frontendChat.lastMessage = this.convertToFrontendMessage(chat.last_message, currentUserId);
                 }
                 
@@ -134,7 +202,7 @@ export class ChatService {
             return frontendChats;
         } catch (error) {
             console.error("Ошибка сети или сервера при получении чатов:", error);
-            return []; // Возвращаем пустой массив, чтобы просто показать пустой список, а не падать
+            return [];
         }
     }
 
@@ -157,13 +225,26 @@ export class ChatService {
             if (data.status === 'success' && data.body) {
                 const chat = data.body;
                 
-                return {
+                const commonProps = {
                     id: chat.id.toString(),
                     title: chat.title,
                     type: chat.chat_type,
                     avatarUrl: chat.avatar || '/assets/images/avatars/chatAvatar.svg',
                     unreadCount: 0
-                } as ChatDetail;
+                };
+
+                if (chat.chat_type === 'dialog') {
+                    return {
+                        ...commonProps,
+                        interlocutor: {
+                            id: 0,
+                            login: chat.title,
+                            avatarUrl: commonProps.avatarUrl
+                        }
+                    } as DialogChat;
+                }
+                
+                return commonProps as ChatDetail;
             }
             
             return undefined;
@@ -179,54 +260,59 @@ export class ChatService {
      * 
      * @param chatId - ID чата.
      * @param currentUserId - ID текущего пользователя.
-     * @returns {Promise<FrontendMessage[]>} Промис со списком сообщений.
+     * @param beforeId - ID сообщения, до которого загружать историю (для пагинации).
+     * @returns {Promise<{ messages: FrontendMessage[], hasMore: boolean, nextBeforeId: number | null }>} Промис с объектом, содержащим список сообщений и данные для пагинации.
      */
-    public async getMessages(chatId: string, currentUserId: number): Promise<FrontendMessage[]> {
+    public async getMessages(chatId: string, currentUserId: number, beforeId: number | null = null): Promise<{ messages: FrontendMessage[], hasMore: boolean, nextBeforeId: number | null }> {
         return new Promise((resolve) => {
             const timeoutMs = 5000;
             
-            /**
-             * Временный обработчик для получения истории сообщений.
-             */
             const handleGetMessages = (payload: any) => {
                 clearTimeout(timeout);
                 wsClient.unsubscribe('message.Get', handleGetMessages);
                 
-                // Бэкенд возвращает объект { messages: MessageDto[], has_more: boolean }
+                // Бэкенд возвращает объект { messages: MessageDto[], has_more: boolean, next_before_id: number }
                 const messagesArray = payload && payload.messages ? payload.messages : payload;
 
                 if (Array.isArray(messagesArray)) {
                     const messages = messagesArray.map((msg: MessageDto) => 
                         this.convertWsMessageDto(msg, currentUserId)
                     ).reverse();
-                    resolve(messages);
+                    
+                    resolve({ 
+                        messages, 
+                        hasMore: payload.has_more || false, 
+                        nextBeforeId: payload.next_before_id || null 
+                    });
                 } else {
-                    resolve([]);
+                    resolve({ messages: [], hasMore: false, nextBeforeId: null });
                 }
             };
 
-            // Подписываемся на событие получения истории
             wsClient.subscribe('message.Get', handleGetMessages);
 
-            // Отправляем запрос на получение последних 50 сообщений
             wsClient.send('message.Receive', { 
                 chat_id: Number(chatId),
                 limit: 50,
-                before_id: null 
+                before_id: beforeId 
             });
 
             const timeout = setTimeout(() => {
                 wsClient.unsubscribe('message.Get', handleGetMessages);
                 console.warn(`getMessages: Таймаут ожидания ответа от сервера для чата ${chatId}`);
-                resolve([]);
+                resolve({ messages: [], hasMore: false, nextBeforeId: null });
             }, timeoutMs);
         });
     }
 
     /**
-     * Создает новый чат (Диалог или Группу)
+     * Создает новый чат (Диалог или Группу).
+     * @param members_id - Список ID участников.
+     * @param type - Тип чата.
+     * @param title - Заголовок чата (необязательно).
+     * @returns Объект с результатом операции: флаг успеха, HTTP статус и тело ответа.
      */
-    public async createChat(members_id: number[], type: "dialog" | "group" | "channel", title?: string): Promise<any | null> {
+    public async createChat(members_id: number[], type: "dialog" | "group" | "channel", title?: string): Promise<{ success: boolean; status: number; body?: any }> {
         try {
             const response = await httpClient.request(`${BASE_URL}/api/v1/chats`, {
                 method: 'POST',
@@ -240,41 +326,74 @@ export class ChatService {
                 })
             });
 
-            if (!response.ok) {
-                console.error(`Ошибка при создании чата: ${response.status}`);
-                return null;
+            let body: any = null;
+            if (response.ok || response.status === 409) {
+                try {
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        body = data.body;
+                    }
+                } catch (e) {
+                    console.error("ChatService: ошибка парсинга JSON", e);
+                }
             }
 
-            const data = await response.json();
-            if (data.status === 'success') {
-                 return data.body; 
-            }
-            return null;
+            return { 
+                success: response.ok, 
+                status: response.status, 
+                body: body 
+            };
         } catch (error) {
             console.error("Ошибка сети при создании чата:", error);
-            return null;
+            return { success: false, status: 500 };
         }
     }
 
     /**
      * Удаляет чат.
      */
-    public async deleteChat(chatId: string): Promise<boolean> {
+    public async deleteChat(chatId: string): Promise<{ success: boolean; status: number; errorCode?: string }> {
         try {
             const response = await httpClient.request(`${BASE_URL}/api/v1/chats/${chatId}`, {
                 method: 'DELETE',
             });
 
-            if (!response.ok) {
-                console.error(`Ошибка при удалении чата: ${response.status}`);
-                return false;
+            if (response.ok) {
+                return { success: true, status: response.status };
             }
 
-            const data = await response.json();
-            return data.status === 'success';
+            let errorCode: string | undefined;
+            try {
+                const data = await response.json();
+                if (data.status === 'error' && data.errors && data.errors.length > 0) {
+                    errorCode = data.errors[0].code;
+                }
+            } catch (e) {
+                // Игнорируем ошибки парсинга
+            }
+
+            return { success: false, status: response.status, errorCode };
         } catch (error) {
             console.error("Ошибка сети при удалении чата:", error);
-            return false;
+            return { success: false, status: 500 };
+        }
+    }
+
+    /**
+     * Позволяет участнику покинуть групповой чат.
+     * @param chatId — Идентификатор чата.
+     * @returns Объект со статусом успеха и HTTP-кодом.
+     */
+    public async leaveGroup(chatId: string): Promise<{ success: boolean; status: number }> {
+        try {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/chats/${chatId}/leave`, {
+                method: 'DELETE',
+            });
+
+            return { success: response.ok, status: response.status };
+        } catch (error) {
+            console.error("Ошибка сети при выходе из группы:", error);
+            return { success: false, status: 500 };
         }
     }
 
@@ -312,7 +431,7 @@ export class ChatService {
      * @param userIds — Массив ID пользователей для добавления (не пустой, без дубликатов).
      * @returns true, если запрос завершился успешно.
      */
-    public async addMembersToChat(chatId: string, userIds: number[]): Promise<boolean> {
+    public async addMembersToChat(chatId: string, userIds: number[]): Promise<{ success: boolean; status: number; errorCode?: string }> {
         try {
             const response = await httpClient.request(`${BASE_URL}/api/v1/chats/${chatId}/members`, {
                 method: 'POST',
@@ -322,15 +441,24 @@ export class ChatService {
                 body: JSON.stringify({ members_id: userIds })
             });
 
-            if (!response.ok) {
-                console.error(`Ошибка при добавлении участников: ${response.status}`);
-                return false;
+            if (response.ok) {
+                return { success: true, status: response.status };
             }
 
-            return true;
+            let errorCode: string | undefined;
+            try {
+                const data = await response.json();
+                if (data.status === 'error' && data.errors && data.errors.length > 0) {
+                    errorCode = data.errors[0].code;
+                }
+            } catch (e) {
+                // Игнорируем ошибки парсинг а
+            }
+
+            return { success: false, status: response.status, errorCode };
         } catch (error) {
             console.error('Ошибка сети при добавлении участников:', error);
-            return false;
+            return { success: false, status: 500 };
         }
     }
 
@@ -417,6 +545,56 @@ export class ChatService {
             console.error('Ошибка сети при удалении участника:', error);
             return { success: false, status: 500 };
         }
+    }
+
+    /**
+     * Получает профиль пользователя по его ID. Использует внутренний кэш и дедупликацию запросов.
+     * @param userId - Числовой ID пользователя.
+     * @returns {Promise<User | null>} Объект пользователя или null в случае ошибки.
+     */
+    public async getUserProfile(userId: number): Promise<User | null> {
+        if (this.profilesCache.has(userId)) {
+            return this.profilesCache.get(userId)!;
+        }
+
+        if (this.pendingProfiles.has(userId)) {
+            return this.pendingProfiles.get(userId)!;
+        }
+
+        const profilePromise = (async () => {
+            try {
+                const response = await httpClient.request(`${BASE_URL}/api/v1/profiles/${userId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) return null;
+
+                const data = await response.json();
+                if (data.status === 'success' && data.body) {
+                    const profile = data.body;
+                    const user: User = {
+                        id: userId,
+                        login: profile.login,
+                        avatarUrl: profile.avatar || '/assets/images/avatars/chatAvatar.svg',
+                        firstName: profile.first_name,
+                        lastName: profile.last_name
+                    };
+                    this.profilesCache.set(userId, user);
+                    return user;
+                }
+                return null;
+            } catch (error) {
+                return null;
+            } finally {
+                this.pendingProfiles.delete(userId);
+            }
+        })();
+
+        this.pendingProfiles.set(userId, profilePromise);
+        return profilePromise;
     }
 }
 

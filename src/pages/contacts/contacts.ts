@@ -188,17 +188,11 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
     };
 
     /**
-     * Закрывает окно профиля и возвращает плейсхолдер.
+     * Закрывает окно профиля и возвращает на предыдущую страницу через историю браузера.
      * @private
      */
     private closeContact = (): void => {
-        if (!this.profileWindow) return;
-
-        this.profileWindow!.unmount();
-        if (this.placeHolder)
-            this.placeHolder.style.display = "block";
-        this.activeContactId = null;
-        this.contactListWrapper?.setActiveContact(this.activeContactId);
+        window.history.back();
     };
 
     /**

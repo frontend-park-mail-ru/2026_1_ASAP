@@ -2,8 +2,9 @@ import { BackendContact, FrontendContact } from "../types/contact";
 import { BackendProfile, FrontendProfile, ProfileAdditionalInfo, ProfileMainInfo } from "../types/profile";
 import { httpClient } from "../core/utils/httpClient";
 
-const host = window.location.hostname;
+// const host = window.location.hostname;
 // const BASE_URL = `${window.location.protocol}//${host}:8080`;
+
 const BASE_URL = 'http://pulseapp.space:8080';
 
 const USE_MOCK = false;
@@ -64,7 +65,7 @@ const MOCK_MY_PROFILE = {
 };
 
 function formatLastSeen(date: Date): string {
-    const time = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    const time = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', hour12: false });
     const dateStr = date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
     return `был(а) в сети в ${time} ${dateStr}`;
 }

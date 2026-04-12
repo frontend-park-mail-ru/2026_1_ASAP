@@ -5,14 +5,16 @@ import template from './messageList.hbs';
 
 /**
  * @interface MessageListProps - Свойства компонента списка сообщений.
- * @property {MessageType[]} messages - Массив сообщений.
+ * @property {FrontendMessage[]} messages - Массив сообщений.
  * @property {User} currentUser - Текущий пользователь (для определения isOwn).
- * @property {'dialog' | 'group' | 'channel'} chatType - Тип текущего чата. 
+ * @property {Chat['type']} chatType - Тип текущего чата. 
+ * @property {() => Promise<void>} [onLoadMore] - Колбэк для подгрузки старых сообщений.
 */
 interface MessageListProps {
     messages: FrontendMessage[];
     currentUser: User;
     chatType: Chat['type'];
+    onLoadMore?: () => Promise<void>;
 }
 
 /**
@@ -22,6 +24,7 @@ export class MessageList extends BaseComponent {
     private childMessages: Message[] = [];
     private flexContainer: HTMLElement | null = null;
     private emptyStateElement: HTMLElement | null = null;
+    private isLoadingMore = false;
 
     /**
      * @param {MessageListProps} props - Свойства компонента.
@@ -33,6 +36,21 @@ export class MessageList extends BaseComponent {
     getTemplate() {
         return template;
     }
+
+    /**
+     * Обработчик скролла для подгрузки истории.
+     * @private
+     */
+    private handleScroll = async () => {
+        if (!this.element || this.isLoadingMore) return;
+        
+        // Если доскроллили почти до самого верха (с запасом 10px)
+        if (this.element.scrollTop <= 10 && this.props.onLoadMore) {
+            this.isLoadingMore = true;
+            await this.props.onLoadMore();
+            this.isLoadingMore = false;
+        }
+    };
 
     /**
      * @override
@@ -50,6 +68,8 @@ export class MessageList extends BaseComponent {
             console.error("MessageList: flex-container не найден.");
             return;
         }
+
+        this.element.addEventListener('scroll', this.handleScroll);
 
         this.setMessages(this.props.messages);
         this.scrollToBottom();
@@ -83,6 +103,44 @@ export class MessageList extends BaseComponent {
             this.childMessages.push(messageComponent);
         });
         this.scrollToBottom();
+    }
+
+    /**
+     * Добавляет новые сообщения в начало списка без скачков скролла.
+     * @param {FrontendMessage[]} messages - Массив старых сообщений.
+     */
+    public prependMessages(messages: FrontendMessage[]): void {
+        if (!this.element || !this.flexContainer || messages.length === 0) return;
+
+        const oldScrollHeight = this.element.scrollHeight;
+        const fragment = document.createDocumentFragment();
+        const newComponents: Message[] = [];
+
+        const showAuthor = this.props.chatType === 'group';
+
+        messages.forEach(msgData => {
+            const comp = new Message({ 
+                message: msgData, 
+                isOwn: msgData.isOwn || false, 
+                showAuthor 
+            });
+            // Монтируем во временный элемент, чтобы получить comp.element
+            const tempDiv = document.createElement('div');
+            comp.mount(tempDiv);
+            if (comp.element) fragment.appendChild(comp.element);
+            newComponents.push(comp);
+        });
+
+        this.flexContainer.prepend(fragment);
+        this.childMessages = [...newComponents, ...this.childMessages];
+
+        // Восстанавливаем позицию скролла, чтобы список не прыгал
+        setTimeout(() => {
+            if (this.element) {
+                const newScrollHeight = this.element.scrollHeight;
+                this.element.scrollTop = newScrollHeight - oldScrollHeight;
+            }
+        }, 0);
     }
 
     /**
@@ -131,6 +189,9 @@ export class MessageList extends BaseComponent {
      * @override
      */
     beforeUnmount() {
+        if (this.element) {
+            this.element.removeEventListener('scroll', this.handleScroll);
+        }
         this.childMessages.forEach(msg => msg.unmount());
         this.childMessages = [];
     }

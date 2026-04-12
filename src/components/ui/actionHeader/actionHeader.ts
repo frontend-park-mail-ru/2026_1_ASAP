@@ -6,11 +6,13 @@ import template from "./actionHeader.hbs";
 interface ActionHeaderProps extends IBaseComponentProps {
     backButton: Button;
     content: string;
+    icon?: string;
 }
 
 export class ActionHeader extends BaseComponent<ActionHeaderProps> {
     constructor(props: ActionHeaderProps) {
         super(props);
+        this.props.icon = props.icon || "";
     }
 
     getTemplate() {

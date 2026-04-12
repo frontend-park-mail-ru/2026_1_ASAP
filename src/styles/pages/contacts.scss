@@ -30,8 +30,6 @@
     &__mainfield {
         flex-grow: 1;
         display: flex;
-        background: $gradient-background-chats;
-        background-attachment: fixed;
         justify-content: center;
         align-items: center;
         min-width: 0;
@@ -47,4 +45,10 @@
             max-width: min(520px, 90vw);
         }
     }
+}
+
+.empty-field {
+    font: $text-heading1;
+    text-align: center;
+    
 }

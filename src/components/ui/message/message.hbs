@@ -5,7 +5,7 @@
     <div class="message__content-wrapper">
         {{#unless isOwn}}
             {{#if showAuthor }}
-                <div class="message__author">{{message.sender.login}}</div>
+                <div class="message__author">{{senderName}}</div>
             {{/if}}
         {{/unless}}
         <div class="message__text">{{message.text}}</div>

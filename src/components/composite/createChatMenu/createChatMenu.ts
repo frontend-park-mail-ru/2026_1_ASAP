@@ -68,7 +68,7 @@ export class CreateChatMenu extends BaseComponent<createChatMenuProps> {
 
         this.dialogButton = new Button({
             label: "Создать диалог",
-            class: "ui-button create-chat-menu__add-button",
+            class: "create-chat-menu__add-button",
             onClick: this.props.onCreateDialog,
             icon: "/assets/images/icons/createChatMenuIcons/dialog.svg"
         });
@@ -76,7 +76,7 @@ export class CreateChatMenu extends BaseComponent<createChatMenuProps> {
 
         this.groupButton = new Button({
             label: "Создать группу",
-            class: "ui-button create-chat-menu__add-button",
+            class: "create-chat-menu__add-button",
             onClick: this.props.onCreateGroup,
             icon: "/assets/images/icons/createChatMenuIcons/group.svg"
 
@@ -85,7 +85,7 @@ export class CreateChatMenu extends BaseComponent<createChatMenuProps> {
 
         this.channelButton = new Button({
             label: "Создать канал",
-            class: "ui-button create-chat-menu__add-button",
+            class: "create-chat-menu__add-button",
             onClick: this.props.onCreateChannel,
             icon: "/assets/images/icons/createChatMenuIcons/channel.svg",   
             disabled: true // пока не используется

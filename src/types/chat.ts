@@ -15,9 +15,11 @@
  * @property {string} [avatarUrl] - URL аватара пользователя (опционально).
  */
 export interface User {
-    // id: number;
+    id: number;
     login: string;
     avatarUrl?: string;
+    firstName?: string;
+    lastName?: string;
 }
 
 /**

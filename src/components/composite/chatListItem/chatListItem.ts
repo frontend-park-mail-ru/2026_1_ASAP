@@ -2,10 +2,11 @@ import { BaseForm } from "../../../core/base/baseForm";
 import { ChatItem } from "../chatItem/chatItem";
 import { chatService } from "../../../services/chatService";
 import { Router } from '../../../core/router';
-import { wsClient, MessageDto } from '../../../core/utils/wsClient';
+import { wsClient, MessageDto, ChatInformationDto } from '../../../core/utils/wsClient';
+import { contactService } from "../../../services/contactService";
 import template from "./chatListItem.hbs";
 
-const CURRENT_USER_LOGIN = 'bob'; // Заглушка для теста, потом убрать
+
 
 
 /**
@@ -38,10 +39,96 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
      * Стрелочная функция-обработчик WS-события «message.New».
      * Хранится как поле класса, чтобы иметь возможность отписаться в beforeUnmount.
      */
-    private readonly handleNewWsMessage = (dto: MessageDto): void => {
-        const chatId = dto.chat_id.toString();
-        this.updateLastMessage(chatId, dto.text);
-        this.moveChatToTop(chatId);
+    private myId: number | null = null;
+
+    /**
+     * Обработчик события «chat.New»: добавление нового чата в начало списка.
+     */
+    private readonly handleChatNew = (payload: ChatInformationDto): void => {
+        if (!this.myId || this.chatItems.some(item => String(item.props.chat.id) === String(payload.id))) {
+            return;
+        }
+
+        const chat = chatService.mapChatDtoToChat(payload, this.myId);
+        const item = new ChatItem({
+            class: 'chat-item--default',
+            chat: chat,
+            onClick: (clickedItem: ChatItem) => this.handleChatClick(clickedItem)
+        });
+
+        if (this.element) {
+            this.noChatsElement?.remove();
+            this.element.classList.remove('chat-list--empty');
+            
+            item.mount(this.element);
+            this.element.prepend(item.element!);
+            this.chatItems.unshift(item);
+        }
+    };
+
+    /**
+     * Обработчик события «chat.Updated»: обновление данных чата.
+     * Перемещает чат наверх только если пришло новое сообщение.
+     */
+    private readonly handleChatUpdated = (payload: ChatInformationDto): void => {
+        if (!this.myId) return;
+
+        const targetItem = this.chatItems.find(item => String(item.props.chat.id) === String(payload.id));
+        if (!targetItem) return;
+
+        const oldLastMessageId = targetItem.props.chat.lastMessage?.id;
+        const newLastMessageId = payload.last_message?.id?.toString();
+
+        const updatedChat = chatService.mapChatDtoToChat(payload, this.myId);
+        targetItem.update(updatedChat);
+
+        if (newLastMessageId && oldLastMessageId !== newLastMessageId) {
+            this.moveChatToTop(String(payload.id));
+        }
+    };
+
+    /**
+     * Обработчик события «chat.Deleted»: удаление чата из списка.
+     * Если удален текущий открытый чат, выполняется переход на страницу «Выберите чат».
+     */
+    private readonly handleChatDeleted = (payload: any): void => {
+        const targetId = String(payload.id || payload);
+        const index = this.chatItems.findIndex(item => String(item.props.chat.id) === targetId);
+
+        if (index === -1) return;
+
+        const [item] = this.chatItems.splice(index, 1);
+        item.unmount();
+
+        if (this.chatItems.length === 0 && this.element) {
+            this.element.classList.add('chat-list--empty');
+            this.noChatsElement = document.createElement('p');
+            this.noChatsElement.className = "no-chats";
+            this.noChatsElement.innerHTML = "У вас пока нет чатов,<br> скорее напишите кому нибудь!";
+            this.element.appendChild(this.noChatsElement);
+        }
+
+        if (this.activeChatId === targetId) {
+            this.props.router.navigate('/chats');
+        }
+    };
+
+    /**
+     * Обработчик события «message.New»: обновление текста последнего сообщения и подъем чата.
+     */
+    private readonly handleMessageNew = (payload: MessageDto): void => {
+        if (!this.myId) return;
+
+        const targetId = String(payload.chat_id);
+        const targetItem = this.chatItems.find(item => String(item.props.chat.id) === targetId);
+        
+        if (targetItem) {
+            const updatedChat = { ...targetItem.props.chat };
+            updatedChat.lastMessage = chatService.convertWsMessageDto(payload, this.myId);
+
+            targetItem.update(updatedChat);
+            this.moveChatToTop(targetId);
+        }
     };
 
     constructor(props: ChatListItemProps) {
@@ -92,7 +179,10 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
     protected afterMount() {
         this.chatItems = [];
 
-        chatService.getChats(CURRENT_USER_LOGIN).then(chats => {
+        contactService.getMyId().then(myId => {
+            this.myId = myId;
+            return chatService.getChats(myId);
+        }).then(chats => {
             if (!this.element) {
                 console.error("ChatListItem: компонент не имеет элемента при afterMount.");
                 return;
@@ -119,8 +209,10 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
             });
         });
 
-        // Подписываемся на входящие сообщения для обновления превью в сайдбаре
-        wsClient.subscribe('message.New', this.handleNewWsMessage);
+        wsClient.subscribe<ChatInformationDto>('chat.New', this.handleChatNew);
+        wsClient.subscribe<ChatInformationDto>('chat.Updated', this.handleChatUpdated);
+        wsClient.subscribe<any>('chat.Deleted', this.handleChatDeleted);
+        wsClient.subscribe<MessageDto>('message.New', this.handleMessageNew);
     }
 
     /**
@@ -129,34 +221,15 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
      * и **отписывается** от WS-событий для предотвращения утечек памяти.
      */
     beforeUnmount() {
-        // Отписываемся от WS
-        wsClient.unsubscribe('message.New', this.handleNewWsMessage);
+        wsClient.unsubscribe('chat.New', this.handleChatNew);
+        wsClient.unsubscribe('chat.Updated', this.handleChatUpdated);
+        wsClient.unsubscribe('chat.Deleted', this.handleChatDeleted);
+        wsClient.unsubscribe('message.New', this.handleMessageNew);
 
         this.chatItems.forEach(item => item.unmount());
         this.chatItems = [];
         this.activeChatId = null;
         this.noChatsElement?.remove();
-    }
-
-    /**
-     * Обновляет текст последнего сообщения у чата в сайдбаре без перерисовки списка.
-     * Находит нужный DOM-элемент `.chat-info__last-message` внутри соответствующего ChatItem.
-     * @param {string} chatId - ID чата, у которого обновляем превью.
-     * @param {string} text   - Новый текст последнего сообщения.
-     */
-    public updateLastMessage(chatId: string, text: string): void {
-        const targetItem = this.chatItems.find(item => String(item.props.chat.id) === String(chatId));
-        if (!targetItem?.element) {
-            console.warn(`[WS] Чат с ID ${chatId} не найден в сайдбаре для обновления сообщения`);
-            return;
-        }
-
-        const lastMsgEl = targetItem.element.querySelector<HTMLElement>('.msg-text');
-        if (lastMsgEl) {
-            lastMsgEl.textContent = text;
-        } else {
-            console.warn(`[WS] Элемент .msg-text не найден в ChatItem для чата ${chatId}`);
-        }
     }
 
     /**

@@ -5,6 +5,7 @@ import { Button } from '../../ui/button/button';
 import template from './groupHeader.hbs'
 import { DeleteChatMenu } from '../deleteChatMenu/deleteChatMenu';
 import { ConfirmModal } from '../confirmModal/confirmModal';
+import { chatService } from '../../../services/chatService';
 
 interface GroupHeaderProps extends IBaseComponentProps {
     chat: GroupChat;
@@ -83,6 +84,43 @@ export class GroupHeader extends BaseComponent<GroupHeaderProps> {
             });
             this.settingsButton.mount(settingsSlot as HTMLElement);
         }
+
+        // Загружаем количество участников, если это группа
+        this.loadMemberCount();
+    }
+
+    /**
+     * Загружает количество участников группы и обновляет UI.
+     */
+    private async loadMemberCount(): Promise<void> {
+        if (!this.element) return;
+        
+        const countElement = this.element.querySelector('.group-header__members');
+        if (!countElement) return;
+
+        const members = await chatService.getChatMembers(this.props.chat.id);
+        const count = members.length;
+        
+        countElement.textContent = `${count} ${this.getMemberWord(count)}`;
+    }
+
+    /**
+     * Возвращает правильную форму слова "участник"
+     */
+    private getMemberWord(count: number): string {
+        const lastDigit = count % 10;
+        const lastTwoDigits = count % 100;
+
+        if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
+            return 'участников';
+        }
+        if (lastDigit === 1) {
+            return 'участник';
+        }
+        if (lastDigit >= 2 && lastDigit <= 4) {
+            return 'участника';
+        }
+        return 'участников';
     }
 
 
@@ -97,8 +135,12 @@ export class GroupHeader extends BaseComponent<GroupHeaderProps> {
         
         if (!this.isDeleteConfirmationOpen) {
             const deleteMenuContainer = this.element.querySelector('[data-component="group-settings-slot"]');
+            const displayName = this.props.chat.title.length > 20 
+                ? this.props.chat.title.substring(0, 20) + '...' 
+                : this.props.chat.title;
+
             this.confirmModal = new ConfirmModal({
-                text: "Вы точно хотите удалить чат?",
+                text: `Вы действительно хотите удалить группу "${displayName}"?`,
                 confirmButtonText: "Удалить",
                 onCancel: () => {
                     this.isDeleteConfirmationOpen = false;

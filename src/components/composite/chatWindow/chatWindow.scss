@@ -11,16 +11,13 @@
     height: 100%;
     width: 100%;
     flex-grow: 1;
-    background: $gradient-background-chats;
-    background-attachment: fixed;
-    padding: 10px;
     gap: 10px;
     box-sizing: border-box;
     min-height: 0;
     overflow: hidden;
 
     &__header {
-        padding: $spacing-sm $spacing-md;
+        padding: 5px $spacing-md;
         border: 1px solid $color-stroke;
         border-radius: 10px;
         background-color: transparent;
@@ -40,6 +37,6 @@
         display: flex;
         flex-direction: column;
         justify-content: flex-end;
-        padding: 10px;
+        padding: 10px 10px 0px 10px;
     }
 }
