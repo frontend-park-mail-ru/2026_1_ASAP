@@ -2,9 +2,10 @@ import { ChatDetail, FrontendMessage, User, DialogChat, GroupChat, ChannelChat, 
 import { httpClient } from '../core/utils/httpClient';
 import { wsClient, MessageDto, ChatInformationDto } from '../core/utils/wsClient';
 
-const host = window.location.hostname;
-const BASE_URL = `${window.location.protocol}//${host}:8080`;
-// const BASE_URL = 'http://pulseapp.space:8080';
+// const host = window.location.hostname;
+// const BASE_URL = `${window.location.protocol}//${host}:8080`;
+
+const BASE_URL = 'http://pulseapp.space:8080';
 
 /**
  * @class ChatService
