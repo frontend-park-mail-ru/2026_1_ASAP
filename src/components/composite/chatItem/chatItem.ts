@@ -39,7 +39,7 @@ export class ChatItem extends BaseForm<ChatItemProps> {
     constructor(props: ChatItemProps) {
         super(props);
         this.props.chat = props.chat;
-        this.props.formattedLastMessageTime = props.chat.lastMessage?.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        this.props.formattedLastMessageTime = props.chat.lastMessage?.timestamp.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', hour12: false });
     }
   
     getTemplate() {
@@ -196,7 +196,7 @@ export class ChatItem extends BaseForm<ChatItemProps> {
      */
     public update(newData: ChatType): void {
         this.props.chat = newData;
-        this.props.formattedLastMessageTime = newData.lastMessage?.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        this.props.formattedLastMessageTime = newData.lastMessage?.timestamp.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', hour12: false });
 
         if (!this.element) return;
 

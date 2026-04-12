@@ -30,7 +30,7 @@ export class Message extends BaseComponent<MessageProps> {
 
         this.props.isOwn = props.isOwn;
         this.props.showAuthor = props.showAuthor;
-        this.props.formattedTime = props.message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        this.props.formattedTime = props.message.timestamp.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', hour12: false });
     }
 
     getTemplate() {

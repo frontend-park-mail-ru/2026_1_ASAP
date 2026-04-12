@@ -65,7 +65,7 @@ const MOCK_MY_PROFILE = {
 };
 
 function formatLastSeen(date: Date): string {
-    const time = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    const time = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', hour12: false });
     const dateStr = date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
     return `был(а) в сети в ${time} ${dateStr}`;
 }
