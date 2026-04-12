@@ -6,7 +6,7 @@
 .group-details {
     @include flex-column;
     height: 100%;
-    background-color: $color-background;
+    background-color: transparent;
     color: $color-text;
     overflow-y: auto;
     gap: 10px;

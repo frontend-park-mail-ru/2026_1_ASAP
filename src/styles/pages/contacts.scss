@@ -27,10 +27,15 @@
     &__mainfield {
         flex-grow: 1;
         display: flex;
-        background-color: $color-background;
         justify-content: center;
         align-items: center;
         min-width: 0;
         overflow: hidden;
     }
+}
+
+.empty-field {
+    font: $text-heading1;
+    text-align: center;
+    
 }
