@@ -107,6 +107,17 @@ export class AuthForm extends BaseForm<AuthFormProps> {
             type: "button", 
             onClick: this.props.onNavigateToRegister });
         this.registerButton.mount(this.element.querySelector('.auth__register') as HTMLElement);
+
+        const onInputChange = () => {
+            this.clearFormError();
+            if (this.loginButton) {
+                this.loginButton.disabled = false;
+            }
+        };
+
+        this.element.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', onInputChange);
+        });
     }
 
     /**

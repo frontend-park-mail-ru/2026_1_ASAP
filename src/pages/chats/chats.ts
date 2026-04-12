@@ -374,6 +374,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                             this.rebuildSidebar(); 
                             this.props.router.navigate(`/chats/create-group`);
                             return undefined;
+                        } else if (successRes.code === 'CANT_CREATE_CONTACT_WITH_YOURSELF') {
+                            return "Вы не можете добавить самого себя в контакты";
                         } else if (successRes.status === 409) {
                             return `Пользователь "${login}" уже в контактах!`;
                         } else {

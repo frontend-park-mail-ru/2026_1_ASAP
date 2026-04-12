@@ -379,7 +379,7 @@ export class ContactService {
      * @param {string} login - Логин пользователя для добавления.
      * @returns {Promise<boolean>} true, если контакт успешно добавлен.
      */
-    public async addContact(login: string, id: number): Promise<{success: boolean, status: number}> {
+    public async addContact(login: string, id: number): Promise<{success: boolean, status: number, code: string}> {
         try {
             const response = await httpClient.request(`${BASE_URL}/api/v1/contacts`, {
                 method: 'POST',
@@ -392,18 +392,26 @@ export class ContactService {
                     last_name: ""
                 })
             });
-
-            if (response.status === 409) {
-                return { success: false, status: 409 };
-            }
+            
+            let errorCode = '';
             if (!response.ok) {
-                console.error(`Ошибка при добавлении контакта: ${response.status}`);
-                return { success: false, status: response.status };
+                try {
+                    const data = await response.json();
+                    if (data.errors && data.errors.length > 0) {
+                        errorCode = data.errors[0].code;
+                    }
+                } catch (e) {
+                    console.error("Ошибка при парсинге тела ошибки:", e);
+                }
+                
+                console.error(`Ошибка при добавлении контакта: ${response.status}, code: ${errorCode}`);
+                return { success: false, status: response.status, code: errorCode };
             }
-            return { success: true, status: 200 };
+
+            return { success: true, status: 200, code: '' };
         } catch (error) {
             console.error("Ошибка сети при добавлении контакта:", error);
-            return { success: false, status: 500 };
+            return { success: false, status: 500, code: '' };
         }
     }
 
