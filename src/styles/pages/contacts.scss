@@ -35,5 +35,15 @@
         align-items: center;
         min-width: 0;
         overflow: hidden;
+
+        .empty-field {
+            font: $text-heading1;
+            letter-spacing: $text-heading1-ls;
+            color: $color-text;
+            text-align: center;
+            user-select: none;
+            margin: 0;
+            max-width: min(520px, 90vw);
+        }
     }
 }
