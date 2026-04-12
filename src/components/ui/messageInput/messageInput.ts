@@ -47,6 +47,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             icon: '/assets/images/icons/sticker.svg',
             class: 'message-input__sticker-button',
             type: 'button',
+            title: 'В разработке',
         });
         this.stikerButton.mount(stickerButtonContainer as HTMLElement);
 
@@ -62,6 +63,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             icon: '/assets/images/icons/upload.svg',
             class: 'message-input__upload-button-container',
             type: 'button',
+            title: 'В разработке',
         });
         this.uplodadButton.mount(uploadButtonContainer as HTMLElement);
 

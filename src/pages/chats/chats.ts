@@ -22,8 +22,6 @@ import { contactService } from "../../services/contactService";
 import { ConfirmModal } from "../../components/composite/confirmModal/confirmModal";
 import { wsClient, MessageDto } from "../../core/utils/wsClient";
 
-const CURRENT_USER_LOGIN = 'alice'; 
-const CURRENT_USER: User = { login: CURRENT_USER_LOGIN, avatarUrl: '/assets/images/avatars/myAvatar.svg' };
 
 /**
  * @interface ChatsPageProps
@@ -68,6 +66,9 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private mainContentArea: HTMLElement | null = null;
     private placeholderElement: HTMLElement | null = null;
     private currentUserId: number | null = null;
+    private hasMoreHistory: boolean = false;
+    private nextBeforeId: number | null = null;
+    private currentUserProfile: User | null = null;
 
     /**
      * Ссылка на активный MessageList-компонент.
@@ -118,8 +119,11 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
         try {
             this.currentUserId = await contactService.getMyId();
+            if (this.currentUserId) {
+                this.currentUserProfile = await chatService.getUserProfile(this.currentUserId);
+            }
         } catch (error) {
-            console.error("ChatsPage: Не удалось получить ID пользователя", error);
+            console.error("ChatsPage: Не удалось получить ID или профиль пользователя", error);
         }
 
         // Подключаемся к глобальному WebSocket-хабу
@@ -466,10 +470,26 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 break;
         }
 
+        const fallbackUser: User = { 
+            login: 'me', 
+            avatarUrl: '/assets/images/avatars/myAvatar.svg' 
+        };
+
         const messageListComponent = new MessageList({ 
             messages: [],
-            currentUser: CURRENT_USER,
-            chatType: chatDetail.type
+            currentUser: this.currentUserProfile || fallbackUser,
+            chatType: chatDetail.type,
+            onLoadMore: async () => {
+                if (!this.hasMoreHistory || !this.nextBeforeId || !this.currentUserId || !this.activeChatId) return;
+                
+                const res = await chatService.getMessages(this.activeChatId, this.currentUserId as number, this.nextBeforeId);
+                
+                if (this.activeChatId === chatDetail.id && this.activeMessageList) {
+                    this.hasMoreHistory = res.hasMore;
+                    this.nextBeforeId = res.nextBeforeId;
+                    this.activeMessageList.prependMessages(res.messages);
+                }
+            }
         });
 
         this.activeMessageList = messageListComponent;
@@ -507,11 +527,13 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             this.currentUserId = await contactService.getMyId();
         }
 
-        const history = await chatService.getMessages(chatId, this.currentUserId as any);
+        const res = await chatService.getMessages(chatId, this.currentUserId as number, null);
         
         // Проверяем, что пользователь все еще в этом же чате
         if (this.activeChatId === chatId && this.activeMessageList) {
-            this.activeMessageList.setMessages(history);
+            this.hasMoreHistory = res.hasMore;
+            this.nextBeforeId = res.nextBeforeId;
+            this.activeMessageList.setMessages(res.messages);
         }
     }
 

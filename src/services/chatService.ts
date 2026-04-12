@@ -259,46 +259,47 @@ export class ChatService {
      * 
      * @param chatId - ID чата.
      * @param currentUserId - ID текущего пользователя.
-     * @returns {Promise<FrontendMessage[]>} Промис со списком сообщений.
+     * @param beforeId - ID сообщения, до которого загружать историю (для пагинации).
+     * @returns {Promise<{ messages: FrontendMessage[], hasMore: boolean, nextBeforeId: number | null }>} Промис с объектом, содержащим список сообщений и данные для пагинации.
      */
-    public async getMessages(chatId: string, currentUserId: number): Promise<FrontendMessage[]> {
+    public async getMessages(chatId: string, currentUserId: number, beforeId: number | null = null): Promise<{ messages: FrontendMessage[], hasMore: boolean, nextBeforeId: number | null }> {
         return new Promise((resolve) => {
             const timeoutMs = 5000;
             
-            /**
-             * Временный обработчик для получения истории сообщений.
-             */
             const handleGetMessages = (payload: any) => {
                 clearTimeout(timeout);
                 wsClient.unsubscribe('message.Get', handleGetMessages);
                 
-                // Бэкенд возвращает объект { messages: MessageDto[], has_more: boolean }
+                // Бэкенд возвращает объект { messages: MessageDto[], has_more: boolean, next_before_id: number }
                 const messagesArray = payload && payload.messages ? payload.messages : payload;
 
                 if (Array.isArray(messagesArray)) {
                     const messages = messagesArray.map((msg: MessageDto) => 
                         this.convertWsMessageDto(msg, currentUserId)
                     ).reverse();
-                    resolve(messages);
+                    
+                    resolve({ 
+                        messages, 
+                        hasMore: payload.has_more || false, 
+                        nextBeforeId: payload.next_before_id || null 
+                    });
                 } else {
-                    resolve([]);
+                    resolve({ messages: [], hasMore: false, nextBeforeId: null });
                 }
             };
 
-            // Подписываемся на событие получения истории
             wsClient.subscribe('message.Get', handleGetMessages);
 
-            // Отправляем запрос на получение последних 50 сообщений
             wsClient.send('message.Receive', { 
                 chat_id: Number(chatId),
                 limit: 50,
-                before_id: null 
+                before_id: beforeId 
             });
 
             const timeout = setTimeout(() => {
                 wsClient.unsubscribe('message.Get', handleGetMessages);
                 console.warn(`getMessages: Таймаут ожидания ответа от сервера для чата ${chatId}`);
-                resolve([]);
+                resolve({ messages: [], hasMore: false, nextBeforeId: null });
             }, timeoutMs);
         });
     }
