@@ -58,6 +58,14 @@
         position: relative;
         border-radius: 50%;
         overflow: hidden;
+
+        &--editing {
+            cursor: pointer;
+
+            &:hover .group-details__avatar-overlay {
+                opacity: 1;
+            }
+        }
     }
 
     &__actions-slot {
@@ -83,12 +91,25 @@
         height: 100%;
         background-color: $color-overlay-medium;
         @include flex-center;
+        border-radius: 50%;
         opacity: 0;
         @include hover-transition;
+        pointer-events: none;
+    }
+
+    &__loader {
+        width: 40px;
+        height: 40px;
+        border: 4px solid $color-text-hover2;
+        border-top: 4px solid $color-primary;
+        border-radius: 50%;
+        animation: group-details-spin 1s linear infinite;
     }
 
     &__camera-icon {
-        font-size: 24px;
+        width: 80%;
+        height: 80%;
+        opacity: 0.85;
     }
 
     &__name {
@@ -147,4 +168,13 @@
     @include btn-reset;
     font-size: 16px;
     padding: 4px;
+}
+
+@keyframes group-details-spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
 }

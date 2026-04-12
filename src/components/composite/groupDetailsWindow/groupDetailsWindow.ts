@@ -28,8 +28,10 @@ export interface GroupDetailsWindowProps {
     members: GroupMember[];
     onBack: () => void;
     onLeaveGroup: () => void;
+
     /** @deprecated Заменён на onGroupUpdated. Оставлен для обратной совместимости. */
     onUpdateGroup?: (newName: string, newAvatar?: File) => void;
+
     /** Вызывается после успешного обновления группы на сервере */
     onGroupUpdated?: () => void;
     onRemoveMember: (userId: number) => void;
@@ -44,7 +46,7 @@ export interface GroupDetailsWindowProps {
  * Поддерживает изменение названия и аватарки с клиентской валидацией,
  * использует реальные API-запросы через chatService.
  */
-export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & { isEditing?: boolean }> {
+export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & { isEditing?: boolean; isSaving?: boolean }> {
     private headerComponent: ActionHeader | null = null;
     private avatarComponent: Avatar | null = null;
     private nameInput: Input | null = null;
@@ -54,8 +56,10 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
 
     /** Скрытый input для выбора файла аватарки */
     private fileInput: HTMLInputElement | null = null;
+    
     /** Выбранный файл аватарки (в режиме редактирования) */
     private selectedAvatarFile: File | null = null;
+
     /** URL превью выбранной аватарки (для отображения до отправки) */
     private avatarPreviewUrl: string | null = null;
 
@@ -132,11 +136,17 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
             this.avatarComponent.mount(avatarSlot as HTMLElement);
 
             if (this.props.isEditing) {
+                avatarSlot.classList.add('group-details__avatar-slot--editing');
                 const overlay = document.createElement('div');
                 overlay.className = 'group-details__avatar-overlay';
+                
+                const cameraIcon = document.createElement('img');
+                cameraIcon.src = '../assets/images/icons/photoEdit.svg';
+                cameraIcon.className = 'group-details__camera-icon';
+                overlay.appendChild(cameraIcon);
+                
                 avatarSlot.appendChild(overlay);
 
-                // Создаём скрытый file input для выбора аватарки
                 this.fileInput = document.createElement('input');
                 this.fileInput.type = 'file';
                 this.fileInput.accept = ALLOWED_AVATAR_TYPES.join(',');
@@ -147,7 +157,6 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
                     const file = this.fileInput?.files?.[0];
                     if (!file) return;
 
-                    // Валидация типа файла
                     if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
                         this.showAlert('Недопустимый формат файла. Разрешены: jpeg, jpg, png, webp, gif.', () => {
                             this.setEditing(true);
@@ -155,7 +164,6 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
                         return;
                     }
 
-                    // Валидация размера файла
                     if (file.size > MAX_AVATAR_SIZE) {
                         this.showAlert('Файл слишком большой. Максимальный размер — 5 МБ.', () => {
                             this.setEditing(true);
@@ -165,22 +173,17 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
 
                     this.selectedAvatarFile = file;
 
-                    // Обновляем превью аватарки
                     if (this.avatarPreviewUrl) {
                         URL.revokeObjectURL(this.avatarPreviewUrl);
                     }
                     this.avatarPreviewUrl = URL.createObjectURL(file);
 
-                    // Перемонтируем для обновления превью
-                    const parent = this.element?.parentElement;
-                    if (parent) {
-                        this.props.isEditing = true; // Остаёмся в режиме редактирования
-                        this.unmount();
-                        this.mount(parent);
+                    const avatarImg = this.element?.querySelector('.group-details__avatar img') as HTMLImageElement;
+                    if (avatarImg) {
+                        avatarImg.src = this.avatarPreviewUrl;
                     }
                 });
 
-                // Клик по аватарке открывает диалог выбора файла
                 (avatarSlot as HTMLElement).style.cursor = 'pointer';
                 (avatarSlot as HTMLElement).addEventListener('click', () => {
                     this.fileInput?.click();
@@ -261,6 +264,12 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
         const membersSlot = this.element?.querySelector('[data-component="members-list-slot"]');
         if (!membersSlot) return;
 
+        const membersTitle = this.element?.querySelector('.group-details__members-title');
+        if (membersTitle) {
+            const count = this.props.members.length;
+            membersTitle.textContent = `Участники (${count})`;
+        }
+
         this.membersComponents = [];
 
         this.props.members.forEach(member => {
@@ -301,7 +310,6 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
         const titleChanged = newName !== '' && newName !== this.props.groupName;
         const avatarChanged = this.selectedAvatarFile !== null;
 
-        // Валидация названия
         if (titleChanged) {
             if (newName.length > MAX_TITLE_LENGTH) {
                 this.showAlert(`Название группы не должно превышать ${MAX_TITLE_LENGTH} символов.`, () => {
@@ -311,13 +319,11 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
             }
         }
 
-        // Если ничего не изменилось — просто выходим из режима редактирования
         if (!titleChanged && !avatarChanged) {
             this.setEditing(false);
             return;
         }
 
-        // Собираем промисы для параллельной отправки
         const promises: Promise<boolean>[] = [];
 
         if (titleChanged) {
@@ -327,32 +333,80 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
             promises.push(chatService.updateChatAvatar(this.props.groupId, this.selectedAvatarFile));
         }
 
-        const results = await Promise.all(promises);
-        const allSuccess = results.every(r => r === true);
+        this.setLoadingState(true);
+        try {
+            const results = await Promise.all(promises);
+            const allSuccess = results.every(r => r === true);
 
-        if (allSuccess) {
-            // Обновляем локальное состояние
-            if (titleChanged) {
-                this.props.groupName = newName;
+            if (allSuccess) {
+                if (titleChanged) {
+                    this.props.groupName = newName;
+                }
+
+                this.cleanupAvatarPreview();
+                this.setEditing(false);
+
+                if (this.props.onGroupUpdated) {
+                    this.props.onGroupUpdated();
+                }
+            } else {
+                this.showAlert('Не удалось сохранить изменения. Попробуйте ещё раз.', () => {
+                    this.setEditing(true);
+                });
             }
-
-            this.cleanupAvatarPreview();
-            this.setEditing(false);
-
-            // Уведомляем родительский компонент об успешном обновлении
-            if (this.props.onGroupUpdated) {
-                this.props.onGroupUpdated();
-            }
-        } else {
-            this.showAlert('Не удалось сохранить изменения. Попробуйте ещё раз.', () => {
-                this.setEditing(true);
-            });
+        } catch (error) {
+            console.error("Ошибка при сохранении группы:", error);
+            this.showAlert('Произошла ошибка при сохранении. Проверьте подключение к сети.');
+        } finally {
+            this.setLoadingState(false);
         }
     }
 
+    /**
+     * Устанавливает визуальное состояние загрузки.
+     * @param {boolean} isLoading - Флаг загрузки.
+     * @private
+     */
+    private setLoadingState(isLoading: boolean): void {
+        if (!this.element) return;
+
+        const avatarSlot = this.element.querySelector('.group-details__avatar-slot');
+        const submitBtn = this.actionButtons.find(b => b.props.label === "Готово");
+        const cancelBtn = this.actionButtons.find(b => b.props.label === "Отмена");
+
+        if (isLoading) {
+            avatarSlot?.classList.add('group-details__avatar-slot--loading');
+            if (submitBtn) submitBtn.props.disabled = true;
+            if (cancelBtn) cancelBtn.props.disabled = true;
+            
+            const overlay = avatarSlot?.querySelector('.group-details__avatar-overlay');
+            if (overlay && !overlay.querySelector('.group-details__loader')) {
+                const loader = document.createElement('div');
+                loader.className = 'group-details__loader';
+                overlay.appendChild(loader);
+            }
+        } else {
+            avatarSlot?.classList.remove('group-details__avatar-slot--loading');
+            if (submitBtn) submitBtn.props.disabled = false;
+            if (cancelBtn) cancelBtn.props.disabled = false;
+            
+            const loader = avatarSlot?.querySelector('.group-details__loader');
+            loader?.remove();
+        }
+        this.actionButtons.forEach(btn => {
+            if (btn.element) {
+                (btn.element as HTMLButtonElement).disabled = btn.props.disabled || false;
+            }
+        });
+    }
+
     private confirmLeaveGroup(): void {
+        const displayName = this.props.groupName.length > 20 
+            ? this.props.groupName.substring(0, 20) + '...' 
+            : this.props.groupName;
+
         this.openModal(
-            "Вы точно хотите покинуть группу? Это действие нельзя будет отменить",
+            `Вы действительно хотите покинуть группу "${displayName}"? Это действие нельзя будет отменить`,
             "Выйти",
             () => {
                 this.closeModal();
@@ -417,7 +471,6 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
         this.membersComponents.forEach(c => c.unmount());
         this.closeModal();
 
-        // Очистка file input
         if (this.fileInput) {
             this.fileInput.remove();
             this.fileInput = null;
