@@ -6,8 +6,8 @@
 const hostname = window.location.hostname;
 const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
 
-// const WS_BASE_URL = `${protocol}://${hostname}:8080`;
-const WS_BASE_URL = 'http://pulseapp.space:8080';
+const WS_BASE_URL = `${protocol}://${hostname}:8080`;
+// const WS_BASE_URL = 'http://pulseapp.space:8080';
 const WS_PATH = '/api/v1/ws';
 
 /**
@@ -23,13 +23,15 @@ export interface WsPacket {
 
 /**
  * @interface MessageDto
- * @description DTO входящего сообщения от бэкенда (payload для «message.New»).
+ * @description DTO входящего сообщения от бэкенда.
  * @property {number} id         - Числовой ID сообщения.
  * @property {number} chat_id    - ID чата, к которому относится сообщение.
  * @property {number} sender_id  - ID отправителя.
  * @property {string} text       - Текст сообщения.
  * @property {string} created_at - ISO-строка даты создания.
- * @property {string} [login]    - Логин отправителя (если бэкенд возвращает).
+ * @property {string} [login]      - Логин отправителя.
+ * @property {string} [first_name] - Имя отправителя.
+ * @property {string} [last_name]  - Фамилия отправителя.
  */
 export interface MessageDto {
     id: number;
@@ -38,13 +40,32 @@ export interface MessageDto {
     text: string;
     created_at: string;
     login?: string;
+    first_name?: string;
+    last_name?: string;
+    avatar?: string | null;
 }
 
 /**
- * @typedef WsEventCallback
+ * @interface ChatInformationDto
+ * @description Данные о чате, приходящие через WebSocket.
+ * @property {MessageDto | null} last_message - Последнее сообщение в чате.
+ * @property {string} title                   - Название чата.
+ * @property {string} chat_type               - Тип чата (dialog, group, channel).
+ * @property {string | null} [avatar]         - URL аватара чата.
+ * @property {number} id                      - ID чата.
+ */
+export interface ChatInformationDto {
+    last_message: MessageDto | null;
+    title: string;
+    chat_type: string;
+    avatar?: string | null;
+    id: number;
+}
+
+/**
  * @description Тип коллбэка-подписчика на WS-событие.
  */
-type WsEventCallback = (payload: MessageDto) => void;
+type WsEventCallback<T = any> = (payload: T) => void;
 
 /**
  * @class WebSocketClient
@@ -65,7 +86,7 @@ class WebSocketClient {
     /**
      * Словарь подписчиков: ключ — тип события WS, значение — Set коллбэков.
      */
-    private subscribers: Map<string, Set<WsEventCallback>> = new Map();
+    private subscribers: Map<string, Set<WsEventCallback<any>>> = new Map();
 
     /** Флаг намеренного закрытия. */
     private intentionallyClosed = false;
@@ -112,7 +133,6 @@ class WebSocketClient {
         this.intentionallyClosed = false;
 
         const url = `${WS_BASE_URL}${WS_PATH}`;
-        console.log(`[WS] Подключение к глобальному хабу ${url}...`);
 
         try {
             this.socket = new WebSocket(url);
@@ -136,7 +156,6 @@ class WebSocketClient {
         this.clearReconnectTimer();
         this.socket?.close();
         this.socket = null;
-        console.log('[WS] Соединение закрыто намеренно.');
     }
 
     /**
@@ -157,7 +176,7 @@ class WebSocketClient {
     /**
      * Подписывает коллбэк на события определённого типа.
      */
-    public subscribe(eventType: string, callback: WsEventCallback): void {
+    public subscribe<T = any>(eventType: string, callback: WsEventCallback<T>): void {
         if (!this.subscribers.has(eventType)) {
             this.subscribers.set(eventType, new Set());
         }
@@ -167,7 +186,7 @@ class WebSocketClient {
     /**
      * Отписывает ранее зарегистрированный коллбэк.
      */
-    public unsubscribe(eventType: string, callback: WsEventCallback): void {
+    public unsubscribe<T = any>(eventType: string, callback: WsEventCallback<T>): void {
         this.subscribers.get(eventType)?.delete(callback);
     }
 
@@ -196,7 +215,7 @@ class WebSocketClient {
         if (handlers && handlers.size > 0) {
             handlers.forEach(cb => {
                 try {
-                    cb(packet.payload as MessageDto);
+                    cb(packet.payload);
                 } catch (err) {
                     console.error(`[WS] Ошибка в обработчике события «${packet.type}»:`, err);
                 }
@@ -215,7 +234,6 @@ class WebSocketClient {
      * Вызывается при закрытии соединения.
      */
     private handleClose(event: CloseEvent): void {
-        console.warn(`[WS] Соединение закрыто. Код: ${event.code}, причина: ${event.reason || 'не указана'}.`);
         this.socket = null;
 
         if (!this.intentionallyClosed) {
@@ -233,8 +251,6 @@ class WebSocketClient {
             this.BASE_RECONNECT_DELAY_MS * Math.pow(2, this.reconnectAttempts),
             this.MAX_RECONNECT_DELAY_MS,
         );
-
-        console.log(`[WS] Повторное подключение через ${delay / 1000} с...`);
 
         this.reconnectTimerId = setTimeout(() => {
             this.reconnectAttempts += 1;

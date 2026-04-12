@@ -2,6 +2,8 @@ import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseCompo
 import { FrontendMessage } from '../../../types/chat';
 import template from './message.hbs';
 import { Avatar } from '../../ui/avatar/avatar';
+import { chatService } from "../../../services/chatService";
+import { User } from "../../../types/chat";
 
 /**
  * @interface MessageProps - Свойства компонента сообщения.
@@ -12,7 +14,8 @@ import { Avatar } from '../../ui/avatar/avatar';
 interface MessageProps extends IBaseComponentProps {
     message: FrontendMessage;
     isOwn: boolean;
-    showAuthor: boolean   
+    showAuthor: boolean;
+    senderName?: string | null;
 }
 
 /**
@@ -37,6 +40,60 @@ export class Message extends BaseComponent<MessageProps> {
     private avatarComponent: Avatar | null = null;
 
     /**
+     * Возвращает отображаемое имя отправителя сообщения.
+     * @param {User} user - Объект пользователя.
+     * @returns {string | null} Имя для отображения или null, если требуется загрузка.
+     * @private
+     */
+    private getSenderDisplayName(user: User): string | null {
+        if (this.props.isOwn) return "Вы";
+
+        const { firstName, lastName, login } = user;
+        
+        if ((!login || login.startsWith('user_')) && !firstName && !lastName) {
+            return null;
+        }
+
+        const fullName = `${firstName || ''} ${lastName || ''}`.trim();
+        return fullName || login;
+    }
+
+    /**
+     * Асинхронно загружает профиль отправителя и обновляет DOM.
+     * @param {number} senderId - ID отправителя.
+     * @private
+     */
+    private async fetchAndSetSenderName(senderId: number) {
+        try {
+            const profile = await chatService.getUserProfile(senderId);
+            
+            if (profile) {
+                this.props.message.sender = {
+                    ...this.props.message.sender,
+                    ...profile
+                };
+
+                if (this.avatarComponent && profile.avatarUrl) {
+                    this.avatarComponent.props.src = profile.avatarUrl;
+                    const img = this.avatarComponent.element?.querySelector('img');
+                    if (img) {
+                        img.src = profile.avatarUrl;
+                    }
+                }
+
+                this.props.senderName = this.getSenderDisplayName(this.props.message.sender);
+
+                // Точечно обновляем только имя автора в DOM
+                const authorEl = this.element?.querySelector('.message__author');
+                if (authorEl) {
+                    authorEl.textContent = this.props.senderName || '';
+                }
+            }
+        } catch (error) {
+        }
+    }
+
+    /**
      * @override
      */
     protected afterMount(): void {
@@ -44,9 +101,17 @@ export class Message extends BaseComponent<MessageProps> {
             console.error("message: нет эллемента для монтирования");
             return;
         }
+        this.props.senderName = this.getSenderDisplayName(this.props.message.sender);
 
         if (this.props.isOwn) {
             return;
+        }
+
+        if (this.props.showAuthor && !this.props.senderName) {
+            const senderId = this.props.message.sender.id;
+            if (senderId) {
+                this.fetchAndSetSenderName(senderId);
+            }
         }
 
         const avatarSlot = this.element.querySelector('[data-component="message-avatar-slot"]');
