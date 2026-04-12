@@ -1,7 +1,7 @@
 import { httpClient } from "../core/utils/httpClient";
 
 const host = window.location.hostname;
-const BASE_URL = `${window.location.protocol}//${host}:8080`;
+const BASE_URL = `${window.location.protocol}//${host}`;
 
 /**
  * @interface AuthResult - Результат операции аутентификации.

@@ -4,7 +4,7 @@ import { wsClient, MessageDto, ChatInformationDto } from '../core/utils/wsClient
 import { getFullUrl } from '../core/utils/url';
 
 const host = window.location.hostname;
-const BASE_URL = `${window.location.protocol}//${host}:8080`;
+const BASE_URL = `${window.location.protocol}//${host}`;
 
 /**
  * @class ChatService
