@@ -47,10 +47,18 @@
         height: 100%;
         flex-direction: column;
         justify-content: flex-end;
+        align-items: center;
+        padding-bottom: 20px;
+        box-sizing: border-box;
     }
 
     &__avatar {
-        padding-bottom: 20px;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+        display: block;
+        flex-shrink: 0;
     }
 
     &__author {

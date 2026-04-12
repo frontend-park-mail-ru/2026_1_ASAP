@@ -179,7 +179,7 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
                     }
                     this.avatarPreviewUrl = URL.createObjectURL(file);
 
-                    const avatarImg = this.element?.querySelector('.group-details__avatar img') as HTMLImageElement;
+                    const avatarImg = this.element?.querySelector("img.group-details__avatar") as HTMLImageElement;
                     if (avatarImg) {
                         avatarImg.src = this.avatarPreviewUrl;
                     }
