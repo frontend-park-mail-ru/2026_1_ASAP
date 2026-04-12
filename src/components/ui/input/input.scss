@@ -168,7 +168,20 @@
     );
 }
 
-.settings-name-input {
+.settings-name-input-wrap {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+
+    .ui-input__error-message {
+        line-height: 16px;
+        min-height: 16px;
+    }
+}
+
+.settings-name-input,
+.settings-last-name-input {
+    width: 100%;
     background-color: $color-empty;
     border: none;
     color: $color-text;

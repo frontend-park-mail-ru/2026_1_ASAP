@@ -9,7 +9,8 @@
 .group-details {
     @include flex-column;
     height: 100%;
-    background-color: $color-background;
+    background: $gradient-background-chats;
+    background-attachment: fixed;
     color: $color-text;
     overflow-y: auto;
 

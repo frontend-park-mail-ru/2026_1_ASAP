@@ -1,4 +1,11 @@
 {{#if (eq class "settings-name-input")}}
+    <div class="ui-input-wrapper settings-name-input-wrap">
+        <input class="{{class}}" name="{{name}}" placeholder="{{placeholder}}" value="{{value}}" type="{{type}}" {{#if required}}required{{/if}} {{#if autocomplete}}autocomplete="{{autocomplete}}"{{/if}} />
+        {{#if showErrorText}}
+            <p class="ui-input__error-message">{{_errorMessage}}</p>
+        {{/if}}
+    </div>
+{{else if (eq class "settings-last-name-input")}}
     <input class="{{class}}" name="{{name}}" placeholder="{{placeholder}}" value="{{value}}" type="{{type}}" {{#if required}}required{{/if}} {{#if autocomplete}}autocomplete="{{autocomplete}}"{{/if}} />
 {{else if (eq class "edit-profile__edit-input")}}
     <textarea class="{{class}}" name="{{name}}" placeholder="{{placeholder}}" type="{{type}}" {{#if required}}required{{/if}} {{#if autocomplete}}autocomplete="{{autocomplete}}"{{/if}} >{{value}}</textarea>
