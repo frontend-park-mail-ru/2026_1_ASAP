@@ -40,6 +40,14 @@ p {
 .chanel-name {
     font-size: 18px;
     user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chat-info__group-icon {
+    width: 22px;
+    height: 22px;
 }
 
 .msg-text {

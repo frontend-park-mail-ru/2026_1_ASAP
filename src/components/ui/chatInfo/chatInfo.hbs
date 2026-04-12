@@ -3,7 +3,10 @@
         <p class="user-name">{{name}}</p>
         <p class="msg-text">{{lastMessage}}</p>
     {{else if (eq class "message-group")}}
-        <p class="group-name">{{name}}</p>
+        <p class="group-name">
+            {{name}}
+            <img src="/assets/images/icons/createChatMenuIcons/group.svg" alt="" class="chat-info__group-icon">
+        </p>
         <p class="msg-text">{{#if sender}}<span class="sender-group">{{sender}}: </span>{{/if}}{{lastMessage}}</p>
     {{else if (eq class "message-chanel")}}
         <p class="chanel-name">{{name}}</p>

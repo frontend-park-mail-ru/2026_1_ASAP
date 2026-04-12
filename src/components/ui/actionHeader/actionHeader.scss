@@ -23,5 +23,11 @@
         padding: 10px;
         width: 100%;
         font: $text-secondary;
+        gap: 10px;
+    }
+
+    &__icon {
+        width: 28px;
+        height: 28px;
     }
 }

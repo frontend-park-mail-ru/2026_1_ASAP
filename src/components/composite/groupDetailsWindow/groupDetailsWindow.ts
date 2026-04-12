@@ -116,7 +116,8 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
                     }
                 }
             }),
-            content: this.props.isEditing ? "Изменение группы" : "Информация о группе"
+            content: this.props.isEditing ? "Изменение группы" : "Информация о группе",
+            icon: "/assets/images/icons/createChatMenuIcons/group.svg"
         });
 
         this.headerComponent.mount(headerSlot as HTMLElement);
