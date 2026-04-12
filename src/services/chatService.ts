@@ -5,8 +5,6 @@ import { wsClient, MessageDto, ChatInformationDto } from '../core/utils/wsClient
 const host = window.location.hostname;
 const BASE_URL = `${window.location.protocol}//${host}:8080`;
 
-// const BASE_URL = 'http://pulseapp.space:8080';
-
 /**
  * @class ChatService
  * @description Сервис для управления чатами. Предоставляет методы для получения списка чатов,

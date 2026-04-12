@@ -32,6 +32,14 @@ p {
     font: $text-secondary;
     letter-spacing: $text-secondary-ls;
     color: $color-text;
+    padding-right: 25px;
+    display: flex; // Для консистентности
+}
+
+.name-text {
+    @include text-truncate;
+    flex: 1;
+    min-width: 0;
 }
 
 .sender-group {
@@ -51,6 +59,7 @@ p {
 .chat-info__group-icon {
     width: 22px;
     height: 22px;
+    flex-shrink: 0;
 }
 
 .msg-text {
