@@ -8,7 +8,7 @@
 
 .message-list {
     display: flex;
-    flex-direction: column;
+    flex-direction: column-reverse;
     flex: 1 1 auto;
     min-height: 0;
     width: 100%;
@@ -31,18 +31,10 @@
 
     &__flex-container {
         display: flex;
-        flex-direction: column;
+        flex-direction: column-reverse;
         min-height: 100%; 
         padding: $spacing-md;
         gap: 10px;
-
-        /* Распорка, которая прижимает сообщения к низу, если их мало. 
-           При переполнении она просто сжимается до 0, не мешая скроллу. */
-        &::before {
-            content: "";
-            flex: 1 1 auto; // Занимает всё свободное место сверху
-            min-height: 0;
-        }
     }
 
     &__empty-state {
