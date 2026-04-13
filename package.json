@@ -61,7 +61,8 @@
     "typescript": "^6.0.2",
     "vitest": "^4.1.0",
     "webpack": "^5.105.4",
-    "webpack-cli": "^7.0.2"
+    "webpack-cli": "^7.0.2",
+    "workbox-webpack-plugin": "^7.4.0"
   },
   "dependencies": {
     "express": "^4.22.1",
