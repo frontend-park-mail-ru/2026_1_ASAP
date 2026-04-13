@@ -65,12 +65,22 @@
 
             &:hover {
                 font-weight: 600;
+                opacity: 0.6;
+                transition: 0.2s;
             }
         }
 
         &--cancel {
             min-width: 150px;
             min-height: 42px;
+            background-color: $color-bubble;
+            transition: 0.2s;
+
+            &:hover {
+                font-weight: 600;
+                opacity: 0.6;
+                transition: 0.2s;
+            }
         }
     }
 }

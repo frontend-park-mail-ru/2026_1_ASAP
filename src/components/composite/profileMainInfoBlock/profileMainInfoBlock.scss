@@ -26,6 +26,11 @@
     box-sizing: border-box;
 }
 
+.settings-profile-main-info-block [data-component="full-name-form-slot"] {
+    flex: 1;
+    min-width: 0;
+}
+
 .contact-user-full-name {
     font: 400 24px/30px $font-primary;
 }
