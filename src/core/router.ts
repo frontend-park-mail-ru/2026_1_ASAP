@@ -47,8 +47,9 @@ export class Router {
         
         const isAuth = await authService.checkAuth();
         const isProtectedRoute = protectedRoutes.some(route => path.startsWith(route));
+        const isOffline = !navigator.onLine;
 
-        if (isProtectedRoute && !isAuth) {
+        if (isProtectedRoute && !isAuth && !isOffline) {
             this.navigate('/login');
             return;
         }
