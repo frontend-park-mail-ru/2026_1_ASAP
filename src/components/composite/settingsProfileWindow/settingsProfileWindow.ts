@@ -176,8 +176,51 @@ export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowPr
         this.avatarEditMenu.mount(this.element!);
     };
 
+    /**
+     * Валидирует файл аватарки по размеру и формату.
+     * @param {File} file - Файл для валидации.
+     * @returns {boolean} - true, если файл валиден.
+     * @private
+     */
+    private validateAvatar(file: File): boolean {
+        const MAX_SIZE = 5 * 1024 * 1024;
+        const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+        let errorMessage = '';
+
+        if (!ALLOWED_TYPES.includes(file.type)) {
+            errorMessage = 'Неверный формат файла. Разрешены только JPEG, PNG и WEBP';
+        } else if (file.size > MAX_SIZE) {
+            errorMessage = 'Файл слишком большой. Максимальный размер — 5 МБ';
+        }
+
+        if (errorMessage) {
+            const errorModal = new ConfirmModal({
+                text: errorMessage,
+                confirmButtonText: "Понятно",
+                hideCancel: true,
+                confirmButtonClass: "confirm-modal__button--submit ui-button",
+                onConfirm: () => {
+                    errorModal.unmount();
+                }
+            });
+            errorModal.mount(document.body);
+            return false;
+        }
+
+        return true;
+    }
+
     handleAvatarFile = (file: File) => {
         this.closeAvatarMenu();
+
+        if (!this.validateAvatar(file)) {
+            if (this.avatarFileInput) {
+                this.avatarFileInput.value = '';
+            }
+            return;
+        }
+
         if (this.avatarPreviewUrl?.startsWith('blob:')) {
             URL.revokeObjectURL(this.avatarPreviewUrl);
         }

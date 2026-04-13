@@ -12,7 +12,7 @@ import { chatService } from '../../../services/chatService';
 
 const MAX_TITLE_LENGTH = 100;
 const MAX_AVATAR_SIZE = 5 * 1024 * 1024;
-const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 interface GroupMember {
     id: number;
@@ -158,17 +158,10 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
                     const file = this.fileInput?.files?.[0];
                     if (!file) return;
 
-                    if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
-                        this.showAlert('Недопустимый формат файла. Разрешены: jpeg, jpg, png, webp, gif.', () => {
-                            this.setEditing(true);
-                        });
-                        return;
-                    }
-
-                    if (file.size > MAX_AVATAR_SIZE) {
-                        this.showAlert('Файл слишком большой. Максимальный размер — 5 МБ.', () => {
-                            this.setEditing(true);
-                        });
+                    if (!this.validateAvatar(file)) {
+                        if (this.fileInput) {
+                            this.fileInput.value = '';
+                        }
                         return;
                     }
 
@@ -299,6 +292,41 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
             item.mount(membersSlot as HTMLElement);
             this.membersComponents.push(item);
         });
+    }
+
+    /**
+     * Валидирует файл аватарки по размеру и формату.
+     * @param {File} file - Файл для валидации.
+     * @returns {boolean} - true, если файл валиден.
+     * @private
+     */
+    private validateAvatar(file: File): boolean {
+        const MAX_SIZE = 5 * 1024 * 1024;
+        const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+        let errorMessage = '';
+
+        if (!ALLOWED_TYPES.includes(file.type)) {
+            errorMessage = 'Неверный формат файла. Разрешены только JPEG, PNG и WEBP';
+        } else if (file.size > MAX_SIZE) {
+            errorMessage = 'Файл слишком большой. Максимальный размер — 5 МБ';
+        }
+
+        if (errorMessage) {
+            const errorModal = new ConfirmModal({
+                text: errorMessage,
+                confirmButtonText: "Понятно",
+                hideCancel: true,
+                confirmButtonClass: "confirm-modal__button--submit ui-button",
+                onConfirm: () => {
+                    errorModal.unmount();
+                }
+            });
+            errorModal.mount(document.body);
+            return false;
+        }
+
+        return true;
     }
 
     /**
