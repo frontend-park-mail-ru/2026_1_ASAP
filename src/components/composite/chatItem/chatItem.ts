@@ -19,6 +19,7 @@ interface ChatItemProps extends IBaseFormProps {
     class?: string;
     chat: ChatType;
     onClick?: (item: ChatItem) => void;
+    formattedLastMessageTime?: string;
 }
 
 /**
@@ -40,7 +41,7 @@ export class ChatItem extends BaseForm<ChatItemProps> {
     constructor(props: ChatItemProps) {
         super(props);
         this.props.chat = props.chat;
-        this.props.formattedLastMessageTime = props.chat.lastMessage?.timestamp.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', hour12: false });
+        this.props.formattedLastMessageTime = props.chat.lastMessage ? this.formatTime(props.chat.lastMessage.timestamp) : '';
     }
   
     getTemplate() {
@@ -179,6 +180,23 @@ export class ChatItem extends BaseForm<ChatItemProps> {
     }
 
     /**
+     * Форматирует время последнего сообщения с валидацией.
+     * @param {string | Date} [timestamp] - Временная метка.
+     * @returns {string} Отформатированное время или пустая строка.
+     * @private
+     */
+    private formatTime(timestamp?: string | Date): string {
+        if (!timestamp) return '';
+        
+        const date = new Date(timestamp);
+        if (isNaN(date.getTime()) || date.getFullYear() < 2000) {
+            return '';
+        }
+        
+        return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+
+    /**
      * Обработчик клика по элементу чата.
      * Вызывает колбэк `onClick`, переданный в свойствах.
      * @private
@@ -197,7 +215,7 @@ export class ChatItem extends BaseForm<ChatItemProps> {
      */
     public update(newData: ChatType): void {
         this.props.chat = newData;
-        this.props.formattedLastMessageTime = newData.lastMessage?.timestamp.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', hour12: false });
+        this.props.formattedLastMessageTime = newData.lastMessage ? this.formatTime(newData.lastMessage.timestamp) : '';
 
         if (!this.element) return;
 

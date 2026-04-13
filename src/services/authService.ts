@@ -1,4 +1,5 @@
 import { httpClient } from "../core/utils/httpClient";
+import { contactService } from "./contactService";
 
 const host = window.location.hostname;
 const BASE_URL = `${window.location.protocol}//${host}`;
@@ -140,6 +141,7 @@ class AuthService {
         const result = await this.sendRequest('logout', {});
         httpClient.clearToken();
         this.isAuthStatus = false;
+        contactService.clearCache();
         return result;
     }
 }
