@@ -66,6 +66,7 @@ export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowPr
                 ? String(birthRaw)
                 : undefined;
         return {
+            id: a.id,
             login: a.login,
             email: a.email ?? '',
             birthDate,

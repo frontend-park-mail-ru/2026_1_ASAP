@@ -2,6 +2,8 @@ import { BaseComponent } from '../../../core/base/baseComponent';
 import { FrontendMessage, User, Chat} from '../../../types/chat';
 import { Message } from '../../ui/message/message';
 import template from './messageList.hbs';
+import { wsClient } from '../../../core/utils/wsClient';
+import { getFullUrl } from '../../../core/utils/url';
 
 /**
  * @interface MessageListProps - Свойства компонента списка сообщений.
@@ -54,6 +56,28 @@ export class MessageList extends BaseComponent {
     };
 
     /**
+     * Обработчик события обновления профиля пользователя через WebSocket.
+     * Находит все аватарки этого пользователя в DOM и обновляет их URL.
+     * @param {any} payload - Данные обновленного профиля.
+     * @private
+     */
+    private handleUserUpdate = (payload: any): void => {
+        if (!this.element || !payload.id) return;
+
+        const avatarUrl = payload.avatar_url || payload.avatarUrl || payload.avatar;
+        if (!avatarUrl) return;
+
+        const fullAvatarUrl = getFullUrl(avatarUrl);
+        
+        // находим все аватарки этого пользователя в DOM списка сообщений
+        const avatars = this.element.querySelectorAll(`img[data-user-id="${payload.id}"]`);
+        
+        avatars.forEach((img: Element) => {
+            (img as HTMLImageElement).src = fullAvatarUrl;
+        });
+    };
+
+    /**
      * @override
      */
     afterMount() {
@@ -74,6 +98,8 @@ export class MessageList extends BaseComponent {
 
         this.setMessages(this.props.messages);
         this.scrollToBottom();
+
+        wsClient.subscribe('profile.Updated', this.handleUserUpdate);
     }
 
     /**
@@ -197,5 +223,7 @@ export class MessageList extends BaseComponent {
         }
         this.childMessages.forEach(msg => msg.unmount());
         this.childMessages = [];
+
+        wsClient.unsubscribe('profile.Updated', this.handleUserUpdate);
     }
 }

@@ -9,6 +9,7 @@ import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseCompo
 export interface AvatarProps extends IBaseComponentProps {
     class?: string;
     src?: string;
+    userId?: number | string;
 }
 
 /**
@@ -22,6 +23,7 @@ export class Avatar extends BaseComponent<AvatarProps> {
         super(props);
         this.props.class = props.class;
         this.props.src = props.src;
+        this.props.userId = props.userId;
     }
 
     getTemplate() {
