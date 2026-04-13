@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+    "target": "es2020",
+    "module": "es2020",
+    "strict": false,
+    
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": false,
+    "sourceMap": true,
+    "moduleResolution": "node",
+    "ignoreDeprecations": "6.0"
+    },
+    "include": ["src/**/*.ts", "src/**/*.js", "src/types/**/*.d.ts"],
+    "exclude": ["node_modules"]
+}

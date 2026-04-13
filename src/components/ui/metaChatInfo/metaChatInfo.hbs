@@ -1,6 +1,8 @@
 <div class="meta-chat-info">
-    <p class="time">22:20</p>
-    <div class="msg-bubble">
-        <p class="msg-count">99+</p>
-    </div>
+    {{#if lastMessageTime}}
+        <div class="meta-chat-info__time">{{lastMessageTime}}</div>
+    {{/if}}
+    {{#if unreadCount}}
+        <div class="meta-chat-info__unread-count">{{unreadCount}}</div>
+    {{/if}}
 </div>

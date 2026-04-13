@@ -1,0 +1,130 @@
+@use "variables" as *;
+@use "mixins" as *;
+
+/**
+ * @file profileAdditionalInfoBlock.scss
+ * @description Стили дополнительной информации профиля с поддержкой разворачивания (bio).
+ */
+
+.profile-additional-info-block {
+    @include flex-column;
+    background-color: $color-base-background;
+    border-radius: 10px;
+    padding: 10px;
+    width: 100%;
+    box-sizing: border-box;
+
+    &::-webkit-scrollbar {
+        width: 10px;
+        border: 1px solid $color-border-sidebar;
+        border-radius: 50px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background-color: $color-empty;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: $color-scroll;
+        border-radius: 50px;
+    }
+}
+
+.additional-info-paragraph-default {
+    border-bottom: 0.5px solid $color-border-chats;
+    height: 42px;
+    display: flex;
+    width: 100%;
+    flex-direction: row;
+    gap: 5px;
+    align-items: center;
+}
+
+.additional-title {
+    padding: 10px;
+    white-space: nowrap;
+    display: flex;
+    height: 100%;
+    box-sizing: border-box;
+    align-items: center;
+}
+
+.empty-additional-info {
+    color: $color-half-empty;
+}
+
+.bio-info {
+    border-bottom: 0.5px solid $color-border-chats;
+    display: flex;
+    width: 100%;
+    flex-grow: 1;
+    flex-direction: row;
+    gap: 5px;
+    min-width: 0;
+    min-height: 0;
+    align-items: center;
+    padding: 5px 0;
+    overflow: hidden;
+}
+
+.bio-text {
+    display: block;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+    line-height: 1.5em;
+    overflow-wrap: anywhere;
+    word-wrap: break-word;
+    word-break: break-word;
+}
+
+.bio-container {
+    flex-grow: 1;
+    min-width: 0;
+    min-height: 0;
+    line-height: 1.5em;
+    height: 4.5em;
+    overflow: hidden;
+    overflow-x: hidden;
+    contain: paint;
+
+    &--disclosed {
+        height: auto;
+        max-height: 50vh;
+        contain: none;
+        overflow-x: hidden;
+        overflow-y: auto;
+
+        &::-webkit-scrollbar {
+            width: 10px;
+            border: 1px solid $color-border-sidebar;
+            border-radius: 50px;
+        }
+
+        &::-webkit-scrollbar-track {
+            background-color: $color-empty;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: $color-scroll;
+            border-radius: 50px;
+        }
+    }
+}
+
+.bio-toggle {
+    cursor: pointer;
+    color: $color-bubble;
+    white-space: nowrap;
+
+    &--disclosed {
+        margin-top: 5px;
+        cursor: pointer;
+        color: $color-bubble;
+        white-space: nowrap;
+    }
+}
+
+.settings-additional-info {
+    cursor: pointer;
+}

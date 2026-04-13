@@ -1,0 +1,138 @@
+@use "variables" as *;
+@use "mixins" as *;
+
+/**
+ * @file editProfileOverlay.scss
+ * @description Стили оверлея для редактирования профиля (например, выбор области аватара).
+ */
+
+.edit-profile {
+    position: static;
+
+    &__overlay {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 100%;
+        background-color: $color-overlay-light;
+        z-index: 999;
+    }
+
+    &__edit-container {
+        position: fixed;
+        z-index: 1000;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        background-color: $color-neutral;
+        @include flex-column;
+        align-items: center;
+        gap: 10px;
+        border-radius: 10px;
+        padding: 10px;
+        min-width: 320px;
+        box-sizing: border-box;
+        font-family: $font-secondary;
+        font-size: $font-size-lg;
+        font-weight: 400;
+        line-height: 22px;
+        letter-spacing: $text-secondary-ls;
+        color: $color-text;
+
+        .edit-title {
+            margin: 0;
+            width: 100%;
+            text-align: center;
+            color: $color-scroll;
+            min-height: 30px;
+            font-family: $font-secondary;
+            font-size: $font-size-lg;
+            font-weight: 500;
+            line-height: 22px;
+            letter-spacing: $text-secondary-ls;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    }
+
+    &__bio-block {
+        width: 100%;
+        @include flex-column;
+        align-items: stretch;
+        gap: 4px;
+        box-sizing: border-box;
+        contain: paint;
+        overflow: hidden;
+        border-radius: 10px;
+    }
+
+    &__bio-counter-row {
+        display: flex;
+        justify-content: flex-end;
+        width: 100%;
+        box-sizing: border-box;
+        padding-right: 10px;
+    }
+
+    &__char-count {
+        font: $text-secondary;
+        font-size: 14px;
+        line-height: 1.2;
+        color: $color-scroll;
+        opacity: 0.85;
+    }
+
+    &__validation-error {
+        margin: 0;
+        width: 100%;
+        min-height: 1.25em;
+        font-size: 12px;
+        text-align: center;
+        box-sizing: border-box;
+
+        &[hidden] {
+            display: none;
+        }
+    }
+
+    &__birth-date-field {
+        width: 100%;
+        @include flex-column;
+        align-items: stretch;
+        gap: 8px;
+        box-sizing: border-box;
+    }
+
+    &__birth-date-hint {
+        margin: 0;
+        font: $text-tertiary;
+        letter-spacing: $text-tertiary-ls;
+        color: $color-text-tertiary;
+        text-align: center;
+    }
+
+    &__birth-date-input {
+        width: 100%;
+        height: 48px;
+        background-color: $color-empty;
+        border: 1px solid $color-bubble;
+        border-radius: 10px;
+        color: $color-text;
+        padding: 0 12px;
+        box-sizing: border-box;
+        outline: none;
+        font: $text-tertiary;
+        letter-spacing: $text-tertiary-ls;
+        text-align: center;
+        @include hover-transition;
+
+        &:focus,
+        &:focus-visible {
+            outline: none;
+            border-color: $color-primary;
+            box-shadow: 0 0 0 1px $color-primary;
+        }
+    }
+}

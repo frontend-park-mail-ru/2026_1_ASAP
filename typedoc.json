@@ -1,0 +1,15 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/**/*.ts", "src/**/*.tsx"],
+  "entryPointStrategy": "resolve",
+  "out": "./docs-generated",
+  "exclude": [
+    "**/node_modules/**",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "**/__tests__/**"
+  ],
+  "excludePrivate": true,
+  "name": "Ваш проект",
+  "readme": "README.md"
+}

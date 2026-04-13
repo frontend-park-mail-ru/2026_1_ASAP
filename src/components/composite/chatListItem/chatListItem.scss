@@ -1,0 +1,24 @@
+@use "variables" as *;
+@use "mixins" as *;
+
+/**
+ * @file chatListItem.scss
+ * @description Стили контейнера списка чатов с использованием вложенности и миксинов.
+ */
+
+.chat-list {
+    @include flex-column;
+    height: 100%;
+    width: 100%;
+
+    &--empty {
+        @include flex-center;
+        height: 100%;
+    }
+}
+
+.no-chats {
+    font: $text-heading1;
+    text-align: center;
+    user-select: none;
+}

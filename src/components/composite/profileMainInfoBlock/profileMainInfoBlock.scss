@@ -1,0 +1,63 @@
+@use "variables" as *;
+@use "mixins" as *;
+
+/**
+ * @file profileMainInfoBlock.scss
+ * @description Стили основного блока информации в профиле и настройках.
+ */
+
+.profile-main-info-block {
+    @include flex-column;
+    gap: 10px;
+    padding: 0 5px;
+    align-items: center;
+    width: 100%;
+}
+
+.settings-profile-main-info-block {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    align-items: center;
+    width: 100%;
+    background-color: $color-base-background;
+    border-radius: 10px;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.contact-user-full-name {
+    font: 400 24px/30px $font-primary;
+}
+
+.profile-info {
+    &__avatar-container {
+        position: relative;
+        flex-shrink: 0;
+        width: 62px;
+        height: 62px;
+        border-radius: 50%;
+        overflow: hidden;
+        cursor: pointer;
+
+        &:hover .profile-info__avatar-overlay {
+            opacity: 1;
+        }
+    }
+
+    &__avatar-overlay {
+        position: absolute;
+        inset: 0;
+        background-color: rgba(0, 0, 0, 0.6);
+        @include flex-center;
+        opacity: 0;
+        transition: opacity 0.2s ease-in-out;
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    &__camera-icon {
+        width: 70%;
+        height: 70%;
+    }
+}

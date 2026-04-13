@@ -1,0 +1,20 @@
+@use "variables" as *;
+@use "mixins" as *;
+
+/**
+ * @file base.scss
+ * @description Базовые стили приложения.
+ */
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: $font-primary;
+    background: $color-background;
+    overflow: hidden;
+    color: $color-text;
+}

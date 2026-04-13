@@ -1,0 +1,19 @@
+@use "variables" as *;
+@use "mixins" as *;
+
+/**
+ * @file register.scss
+ * @description Стили страницы регистрации.
+ */
+
+.register-card {
+    background-color: $color-text;
+    border-radius: 10px;
+    @include flex-column;
+    gap: 25px;
+    height: 495px;
+    width: 100%;
+    max-width: 410px;
+    align-items: center;
+    z-index: 1;
+}

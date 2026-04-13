@@ -1,0 +1,111 @@
+@use "variables" as *;
+@use "mixins" as *;
+
+/**
+ * @file messageInput.scss
+ * @description Стили поля ввода сообщения.
+ */
+
+.message-input {
+    display: flex;
+    align-items: flex-end;
+    padding: $spacing-sm;
+    gap: 10px;
+    flex-shrink: 0;
+
+    &__input-container {
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+        min-height: 60px;
+        height: auto;
+        flex-grow: 1;
+        border: 1px solid $color-text;
+        border-radius: 10px;
+        padding: 0 10px;
+        gap: 10px;
+        align-items: flex-end;
+        transition: border-color 0.2s;
+
+        &:focus-within {
+            border-color: $color-text-hover;
+        }
+    }
+
+    &__textarea {
+        width: 100%;
+        height: 60px;
+        padding: 18px 0;
+        background: transparent;
+        font: $text-tertiary;
+        letter-spacing: $text-tertiary-ls;
+        box-sizing: border-box;
+        border: none;
+        color: $color-text;
+        resize: none;
+        max-height: 200px;
+        overflow-y: auto;
+        line-height: 1.5;
+        appearance: none;
+        outline: none;
+
+        &:focus,
+        &:focus-visible {
+            outline: none;
+            box-shadow: none;
+        }
+
+        &::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: $color-scroll;
+            border-radius: 10px;
+        }
+    }
+
+    &__send-button {
+        width: 60px;
+        height: 60px;
+        padding: 0;
+        border-radius: 50%;
+        @include flex-center;
+        background-color: $color-primary;
+        border: none;
+        cursor: pointer;
+        @include hover-transition;
+
+        &:hover {
+            filter: brightness(1.1);
+        }
+
+        & img {
+            width: 30px;
+            height: 30px;
+        }
+    }
+
+
+    &__sticker-button {
+        background: none;
+        margin-bottom: 5px;
+        border: none;
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+    
+    &__upload-button-container {
+        margin-bottom: 5px;
+        @include btn-reset;
+        @include hover-transition;
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+
+        &:hover {
+            opacity: 0.5;
+        }
+    }
+}
