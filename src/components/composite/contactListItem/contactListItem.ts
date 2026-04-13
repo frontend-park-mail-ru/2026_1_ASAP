@@ -142,7 +142,6 @@ export class ContactListItem extends BaseForm<ContactListItemProps> {
                 contactItem.mount(this.element!);
                 if (!onRowClick && contactItem.element) {
                     contactItem.element.style.borderBottom = "none";
-                    contactItem.element.style.cursor = "default";
                 }
                 this.contactItems.push(contactItem);    
             });
