@@ -13,6 +13,7 @@ import template from './input.hbs';
  * @property {Function} [onClick] - Обработчик клика по инпуту.
  * @property {string} [autocomplete] - Атрибут автозаполнения браузером.
  * @property {string} [value] - Начальное значение поля.
+ * @property {number} [maxLength] - Ограничение длины ввода.
  */
 export interface InputProps extends IBaseComponentProps {
     class?: string;
@@ -25,6 +26,7 @@ export interface InputProps extends IBaseComponentProps {
     showErrorText?: boolean;
     onClick?: (event: MouseEvent) => void;
     autocomplete?: string;
+    maxLength?: number;
 }
 
 /**
@@ -52,6 +54,7 @@ export class Input extends BaseComponent<InputProps> {
         this.props.togglePassword = props.togglePassword || false;
         this.props.showErrorText = props.showErrorText !== false;
         this.props.value = props.value || "";
+        this.props.maxLength = props.maxLength;
     }
   
     getTemplate() {
@@ -74,6 +77,10 @@ export class Input extends BaseComponent<InputProps> {
         
         if (this.props.value) {
             this.inputElement.value = this.props.value;
+        }
+
+        if (typeof this.props.maxLength === 'number' && this.props.maxLength > 0) {
+            this.inputElement.maxLength = this.props.maxLength;
         }
 
         if (this.props.showErrorText) {

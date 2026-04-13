@@ -1,5 +1,5 @@
 import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent";
-import { validationService } from "../../../services/validationService";
+import { PROFILE_FULL_NAME_MAX_LENGTH, validationService } from "../../../services/validationService";
 import { Input } from "../../ui/input/input";
 import template from "./settingsFullNameForm.hbs";
 
@@ -28,6 +28,7 @@ export class SettingsFullNameForm extends BaseComponent<SettingsFullNameFormProp
             name: "settings-first-name",
             class: "settings-name-input",
             value: this.props.firstName,
+            maxLength: PROFILE_FULL_NAME_MAX_LENGTH,
         });
         this.firstNameInput.mount(this.element!);
 
@@ -37,6 +38,7 @@ export class SettingsFullNameForm extends BaseComponent<SettingsFullNameFormProp
             class: "settings-last-name-input",
             value: this.props.lastName,
             showErrorText: false,
+            maxLength: PROFILE_FULL_NAME_MAX_LENGTH,
         });
         this.lastNameInput.mount(this.element!);
 

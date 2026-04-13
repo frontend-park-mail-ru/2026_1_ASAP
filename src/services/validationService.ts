@@ -13,6 +13,7 @@ export interface ValidationResult {
 }
 
 export const PROFILE_BIO_MAX_LENGTH = 1000;
+export const PROFILE_FULL_NAME_MAX_LENGTH = 100;
 
 /**
  * Сервис валидации пользовательского ввода: email, пароль, логин, обязательные поля.
@@ -123,9 +124,29 @@ class ValidationService {
         return { isValid: true, message: '' };
     }
 
-    /** Имя в профиле обязательно (не пустая строка после trim). */
     public validateProfileFirstName(firstName: string): ValidationResult {
-        return this.validateRequired((firstName ?? '').trim(), 'Имя');
+        const t = (firstName ?? '').trim();
+        const req = this.validateRequired(t, 'Имя');
+        if (!req.isValid) return req;
+        if (t.length > PROFILE_FULL_NAME_MAX_LENGTH) {
+            return {
+                isValid: false,
+                message: `Имя не длиннее ${PROFILE_FULL_NAME_MAX_LENGTH} символов`,
+            };
+        }
+        return { isValid: true, message: '' };
+    }
+
+    public validateProfileLastName(lastName: string): ValidationResult {
+        const t = (lastName ?? '').trim();
+        if (!t) return { isValid: true, message: '' };
+        if (t.length > PROFILE_FULL_NAME_MAX_LENGTH) {
+            return {
+                isValid: false,
+                message: `Фамилия не длиннее ${PROFILE_FULL_NAME_MAX_LENGTH} символов`,
+            };
+        }
+        return { isValid: true, message: '' };
     }
 
 

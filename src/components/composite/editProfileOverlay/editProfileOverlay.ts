@@ -166,6 +166,9 @@ export class EditProfileOverlay extends BaseComponent<EditProfileOverlayProps> {
                 class: "edit-profile__edit-input",
                 name: "edit-field",
                 placeholder: "",
+                ...(this.props.fieldKey === "bio"
+                    ? { maxLength: PROFILE_BIO_MAX_LENGTH }
+                    : {}),
             });
             this.editInput.mount(inputParent);
         }
