@@ -121,16 +121,25 @@
     }
 
     &__name-input {
-        background-color: $color-chat-sidebar;
-        border: 1px solid $color-border-sidebar;
+        background-color: $color-empty;
+        border: none;
+        border-bottom: 1px solid $color-border-chats;
         color: $color-text;
         border-radius: 8px;
-        padding: 12px;
+        padding: 8px 0;
         text-align: center;
         width: 80%;
         max-width: 300px;
         font: $text-tertiary;
         letter-spacing: $text-tertiary-ls;
+        outline: none;
+        @include hover-transition;
+
+        &:focus,
+        &:focus-visible {
+            outline: none;
+            border-bottom-color: $color-primary;
+        }
     }
 
     &__actions {

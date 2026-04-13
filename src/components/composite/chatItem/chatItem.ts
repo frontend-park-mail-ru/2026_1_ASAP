@@ -203,7 +203,7 @@ export class ChatItem extends BaseForm<ChatItemProps> {
 
         const avatarImg = this.element.querySelector<HTMLImageElement>('.chat-avatar');
         if (avatarImg) {
-            avatarImg.src = newData.avatarUrl || "../../../assets/images/avatars/chatAvatar.svg";
+            avatarImg.src = newData.avatarUrl || "/assets/images/avatars/chatAvatar.svg";
         }
 
         const nameEl = this.element.querySelector('.user-name .name-text, .group-name .name-text, .chanel-name .name-text');
