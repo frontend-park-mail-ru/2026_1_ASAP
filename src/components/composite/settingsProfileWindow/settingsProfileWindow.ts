@@ -291,7 +291,7 @@ export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowPr
                 text: "Изменения успешно сохранены!",
                 confirmButtonText: "Отлично",
                 hideCancel: true,
-                confirmButtonClass: "confirm-modal__button--submit ui-button",
+                confirmButtonClass: "confirm-modal__button--cancel ui-button ui-button-secondary",
                 onConfirm: () => {
                     this.successModal?.unmount();
                     this.successModal = null;

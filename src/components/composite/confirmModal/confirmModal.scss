@@ -61,7 +61,6 @@
         &--submit {
             min-width: 150px;
             min-height: 42px;
-            border-radius: 21px;
             background-color: $color-error-border;
 
             &:hover {
@@ -72,7 +71,6 @@
         &--cancel {
             min-width: 150px;
             min-height: 42px;
-            border-radius: 21px;
         }
     }
 }
