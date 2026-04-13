@@ -2,9 +2,11 @@ import { BaseComponent } from '../../../core/base/baseComponent';
 import { User, DialogChat } from '../../../types/chat';
 import { Avatar } from '../../ui/avatar/avatar';
 import template from './dialogHeader.hbs';
+import { getFullUrl } from '../../../core/utils/url';
 import { Button } from '../../ui/button/button';
 import { DeleteChatMenu } from '../deleteChatMenu/deleteChatMenu';
 import { ConfirmModal } from '../confirmModal/confirmModal';
+import { wsClient, ChatInformationDto } from '../../../core/utils/wsClient';
 
 /**
  * @interface DialogHeaderProps - Свойства компонента шапки диалога.
@@ -92,7 +94,29 @@ export class DialogHeader extends BaseComponent {
             })
             this.settingsButton.mount(settingsSlot as HTMLElement);
         }
+
+        wsClient.subscribe<ChatInformationDto>('chat.Updated', this.handleChatUpdated);
     }
+
+    /**
+     * Обработчик события обновления чата через WebSocket.
+     * Обновляет название и аватарку в шапке, если ID совпадает.
+     * @param {ChatInformationDto} payload - Данные обновленного чата.
+     * @private
+     */
+    private handleChatUpdated = (payload: ChatInformationDto): void => {
+        if (this.props.chat && String(this.props.chat.id) === String(payload.id)) {
+            const nameEl = this.element?.querySelector('.dialog-header__name');
+            if (nameEl) {
+                nameEl.textContent = payload.title;
+            }
+
+            const avatarImg = this.element?.querySelector('.dialog-header__avatar') as HTMLImageElement;
+            if (avatarImg && payload.avatar) {
+                avatarImg.src = getFullUrl(payload.avatar);
+            }
+        }
+    };
 
     /**
      * Обработчик открытия профиля.
@@ -147,5 +171,7 @@ export class DialogHeader extends BaseComponent {
         this.settingsButton?.unmount();
         this.deleteChatMenu?.unmount();
         this.confirmModal?.unmount();
+
+        wsClient.unsubscribe('chat.Updated', this.handleChatUpdated);
     }
 }
