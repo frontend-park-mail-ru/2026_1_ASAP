@@ -45,6 +45,10 @@ p {
 .sender-group {
     color: $color-text-hover;
     user-select: none;
+    max-width: 15ch;
+    display: inline-block;
+    vertical-align: bottom;
+    @include text-truncate;
 }
 
 .group-name,

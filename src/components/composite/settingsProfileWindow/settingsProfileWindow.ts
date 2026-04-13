@@ -32,6 +32,7 @@ export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowPr
     private editProfileOverlay: EditProfileOverlay | null = null;
     private avatarEditMenu: AvatarEditMenuOverlay | null = null;
     private deleteAvatarConfirm: ConfirmModal | null = null;
+    private successModal: ConfirmModal | null = null;
     private avatarFileInput: HTMLInputElement | null = null;
     private avatarPreviewUrl: string | null = null;
     private pendingAvatarFile: File | null = null;
@@ -281,6 +282,19 @@ export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowPr
                 return;
             }
             await this.syncDraftAndBaselineFromServer();
+
+            // Показываем уведомление об успешном сохранении
+            this.successModal = new ConfirmModal({
+                text: "Изменения успешно сохранены!",
+                confirmButtonText: "Отлично",
+                hideCancel: true,
+                confirmButtonClass: "confirm-modal__button--submit ui-button",
+                onConfirm: () => {
+                    this.successModal?.unmount();
+                    this.successModal = null;
+                }
+            });
+            this.successModal.mount(this.element!);
         } finally {
             this.isSavingProfile = false;
             this.setButtonState();
@@ -379,5 +393,6 @@ export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowPr
         this.editProfileOverlay?.unmount();
         this.profileSaveButton?.unmount();
         this.profileAdditionalInfoBlock?.unmount();
+        this.successModal?.unmount();
     };
 };

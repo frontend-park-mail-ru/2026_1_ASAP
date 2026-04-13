@@ -39,6 +39,7 @@
         min-width: 50px;
         height: fit-content;
         padding: 10px 20px;
+        min-width: 0;
     }
 
     &__avatar-container {
@@ -66,6 +67,9 @@
         font: $text-main-style;
         letter-spacing: $text-main-ls;
         font-size: 12px;
+        display: block;
+        max-width: 25ch;
+        @include text-truncate;
     }
 
     &__text {
