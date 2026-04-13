@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
+import { GenerateSW } from 'workbox-webpack-plugin';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -66,7 +67,38 @@ export default {
         }),
         new HtmlWebpackPlugin({
             template: './src/index.html',
-        })
+        }),
+        new GenerateSW({
+            swDest: 'service-worker.js',
+            clientsClaim: true,
+            skipWaiting: true,
+            cleanupOutdatedCaches: true,
+            navigateFallback: '/index.html',
+            runtimeCaching: [
+                {
+                    urlPattern: ({ request }) => request.destination === 'image',
+                    handler: 'CacheFirst',
+                    options: {
+                        cacheName: 'images-cache',
+                        expiration: {
+                            maxEntries: 200,
+                            maxAgeSeconds: 60 * 60 * 24 * 30,
+                        },
+                    },
+                },
+                {
+                    urlPattern: ({ request }) => request.destination === 'style' || request.destination === 'script',
+                    handler: 'StaleWhileRevalidate',
+                    options: {
+                        cacheName: 'static-resources-cache',
+                    },
+                },
+                {
+                    urlPattern: ({ sameOrigin, url }) => sameOrigin && url.pathname.startsWith('/api/'),
+                    handler: 'NetworkOnly',
+                },
+            ],
+        }),
     ],
 
     resolve: {

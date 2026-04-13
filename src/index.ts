@@ -33,4 +33,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     await app.start();
+
+    if ("serviceWorker" in navigator && window.isSecureContext) {
+        window.addEventListener("load", () => {
+            navigator.serviceWorker
+                .register("/service-worker.js")
+                .catch((error) => {
+                    console.error("Service Worker registration failed:", error);
+                });
+        });
+    }
 });
