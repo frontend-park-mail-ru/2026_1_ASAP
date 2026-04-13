@@ -197,6 +197,12 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
                 return;
             }
 
+            chats.sort((a, b) => {
+                const timeA = a.lastMessage?.timestamp ? a.lastMessage.timestamp.getTime() : 0;
+                const timeB = b.lastMessage?.timestamp ? b.lastMessage.timestamp.getTime() : 0;
+                return timeB - timeA;
+            });
+
             chats.forEach(chat => {
                 const item = new ChatItem({
                     class: (chat.id === this.activeChatId) ? 'chat-item--selected' : 'chat-item--default',

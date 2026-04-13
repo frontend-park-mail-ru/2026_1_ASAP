@@ -8,7 +8,10 @@ import { GenerateSW } from 'workbox-webpack-plugin';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default {
-    mode: 'development',
+    mode: 'production',
+    optimization: {
+        minimize: false,
+    },
     entry: './src/index.ts',
     output: {
         path: resolve(__dirname, 'dist'),
@@ -69,10 +72,12 @@ export default {
             template: './src/index.html',
         }),
         new GenerateSW({
+            mode: 'development',
             swDest: 'service-worker.js',
             clientsClaim: true,
             skipWaiting: true,
             cleanupOutdatedCaches: true,
+            disableDevLogs: true,
             navigateFallback: '/index.html',
             runtimeCaching: [
                 {

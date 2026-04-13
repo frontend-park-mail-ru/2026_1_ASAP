@@ -147,7 +147,6 @@ class WebSocketClient {
         try {
             this.socket = new WebSocket(url);
         } catch (err) {
-            console.error('[WS] Не удалось создать WebSocket:', err);
             this.scheduleReconnect();
             return;
         }
@@ -186,7 +185,6 @@ class WebSocketClient {
         const packet: WsPacket = { type, payload };
 
         if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
-            console.warn('[WS] Соединение не готово. Пакет добавлен в очередь:', { type, payload });
             this.sendQueue.push(packet);
             return;
         }
@@ -215,7 +213,6 @@ class WebSocketClient {
      * Вызывается при успешном открытии соединения.
      */
     private handleOpen(): void {
-        console.log('[WS] Соединение установлено.');
         this.reconnectAttempts = 0;
 
         // Отправляем накопившиеся пакеты
