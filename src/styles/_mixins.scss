@@ -113,7 +113,7 @@
         opacity: 0;
         z-index: 0;
         transition: opacity 0.5s;
-        border-radius: inherit;
+        border-radius: 10px;
     }
 
     &:hover:not(:disabled)::after {

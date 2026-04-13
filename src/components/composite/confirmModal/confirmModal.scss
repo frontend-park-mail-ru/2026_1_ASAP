@@ -53,8 +53,8 @@
         padding: 10px;
         height: 100%;
         width: 100%;
-        max-width: 42px;
-        max-height: 150px;
+        max-width: 150px;
+        max-height: 42px;
     }
 
     &__button {
@@ -63,6 +63,10 @@
             min-height: 42px;
             border-radius: 21px;
             background-color: $color-error-border;
+
+            &:hover {
+                font-weight: 600;
+            }
         }
 
         &--cancel {

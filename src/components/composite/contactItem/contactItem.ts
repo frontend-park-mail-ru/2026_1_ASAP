@@ -56,9 +56,7 @@ export class ContactItem extends BaseForm<ContactItemProps> {
         });
         this.avatar.mount(this.element.querySelector('[data-component="contact-item-avatar-slot"]')!);
 
-        if (this.props.onClick) {
-            this.element?.addEventListener('click', this.handleClick);
-        }
+        this.element.addEventListener('click', this.handleClick);
 
         if (this.props.rightSlot) {
             const controlSlot = this.element.querySelector('[data-component="contact-item-control-slot"]');
@@ -70,10 +68,24 @@ export class ContactItem extends BaseForm<ContactItemProps> {
 
     /**
      * Обработчик клика по элементу.
+     * Если внутри есть чекбокс, переключает его состояние.
      * Вызывает колбэк `onClick`, переданный в свойствах.
+     * @param {Event} event - Объект события клика.
      * @private
      */
-    private handleClick = () => {
+    private handleClick = (event: Event) => {
+        const target = event.target as HTMLElement;
+
+        if (target.closest('[data-component="contact-item-control-slot"]')) {
+            return;
+        }
+
+        const checkbox = this.element?.querySelector('input[type="checkbox"]') as HTMLInputElement;
+        if (checkbox) {
+            checkbox.checked = !checkbox.checked;
+            checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
         if (this.props.onClick) {
             this.props.onClick(this);
         }
@@ -85,9 +97,7 @@ export class ContactItem extends BaseForm<ContactItemProps> {
      * @protected
      */
     protected beforeUnmount() {
-        if (this.props.onClick) {
-            this.element?.removeEventListener('click', this.handleClick);
-        }
+        this.element?.removeEventListener('click', this.handleClick);
         this.avatar?.unmount();
     }
-};
+}

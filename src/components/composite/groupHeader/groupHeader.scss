@@ -35,10 +35,15 @@
     }
 
     &__name {
+        cursor: pointer;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         width: 100%;
+
+        &:hover {
+            font-weight: 500;
+        }
     }
 
     &__members {

@@ -55,18 +55,11 @@ export class DialogHeader extends BaseComponent {
                 class: 'dialog-header__avatar',
             });
             this.avatarComponent.mount(avatarSlot as HTMLElement);
-            
-            const avatarContainer = this.element.querySelector('.dialog-header__avatar-container');
-            avatarContainer?.addEventListener('click', () => {
-                this.props.onOpenProfile();
-            });
         }
 
-        const infoBlock = this.element.querySelector('.dialog-header__info');
-        if (infoBlock) {
-            infoBlock.addEventListener('click', () => {
-                this.props.onOpenProfile();
-            });
+        const nameEl = this.element.querySelector('.dialog-header__name');
+        if (nameEl) {
+            nameEl.addEventListener('click', this.handleOpenProfile);
         }
 
         const settingsSlot = this.element.querySelector('[data-component="dialog-settings-slot"]');
@@ -100,6 +93,15 @@ export class DialogHeader extends BaseComponent {
             this.settingsButton.mount(settingsSlot as HTMLElement);
         }
     }
+
+    /**
+     * Обработчик открытия профиля.
+     * @private
+     */
+    private handleOpenProfile = () => {
+        const props = this.props as DialogHeaderProps;
+        props.onOpenProfile();
+    };
 
     public openDeleteMenu() {
         if (!this.element) {
@@ -135,11 +137,12 @@ export class DialogHeader extends BaseComponent {
         }
     }
 
-    public openInfo() {
-        // todo: реализовать отображение информации о чате
-    }
-
     protected beforeUnmount() {
+        const nameEl = this.element?.querySelector('.dialog-header__name');
+        if (nameEl) {
+            nameEl.removeEventListener('click', this.handleOpenProfile);
+        }
+
         this.avatarComponent?.unmount();
         this.settingsButton?.unmount();
         this.deleteChatMenu?.unmount();

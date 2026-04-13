@@ -73,12 +73,13 @@ export class ChatService {
      * @returns {ChatDetail} Объект чата для фронтенда.
      */
     public mapChatDtoToChat(dto: ChatInformationDto, currentUserId: number): ChatDetail {
-        const commonProps = {
+        const commonProps: any = {
             id: dto.id.toString(),
             title: dto.title,
             avatarUrl: getFullUrl(dto.avatar),
             unreadCount: 0,
             type: dto.chat_type as 'dialog' | 'group' | 'channel',
+            owner_id: (dto as any).owner_id,
         };
 
         let chat: ChatDetail;
@@ -94,7 +95,7 @@ export class ChatService {
                 chat = {
                     ...commonProps,
                     members: [],
-                    owner: { login: 'owner', avatarUrl: getFullUrl() },
+                    owner: { id: (dto as any).owner_id || 0, login: 'owner', avatarUrl: getFullUrl() },
                 } as GroupChat;
                 break;
             case 'channel':
@@ -183,7 +184,7 @@ export class ChatService {
                     case 'channel':
                         frontendChat = {
                             ...commonProps,
-                            subscribersCount: 0 
+                            subscribersCount: chat.subscribers_count || 0 
                         } as ChannelChat;
                         break;
                     default:
@@ -229,21 +230,38 @@ export class ChatService {
                     title: chat.title,
                     type: chat.chat_type,
                     avatarUrl: getFullUrl(chat.avatar),
-                    unreadCount: 0
+                    unreadCount: 0,
+                    owner_id: chat.owner_id
                 };
 
-                if (chat.chat_type === 'dialog') {
-                    return {
-                        ...commonProps,
-                        interlocutor: {
-                            id: 0,
-                            login: chat.title,
-                            avatarUrl: commonProps.avatarUrl
-                        }
-                    } as DialogChat;
+                switch (chat.chat_type) {
+                    case 'dialog':
+                        return {
+                            ...commonProps,
+                            interlocutor: {
+                                id: 0,
+                                login: chat.title,
+                                avatarUrl: commonProps.avatarUrl
+                            }
+                        } as DialogChat;
+
+                    case 'group':
+                        return {
+                            ...commonProps,
+                            members: [],
+                            owner: { id: chat.owner_id || 0, login: 'owner', avatarUrl: getFullUrl() },
+                        } as GroupChat;
+
+                    case 'channel':
+                        return {
+                            ...commonProps,
+                            subscribersCount: chat.subscribers_count || 0
+                        } as ChannelChat;
+
+                    default:
+                        console.error(`ChatService: неизвестный тип чата ${chat.chat_type}`);
+                        return undefined;
                 }
-                
-                return commonProps as ChatDetail;
             }
             
             return undefined;
@@ -379,22 +397,40 @@ export class ChatService {
         }
     }
 
-    /**
-     * Позволяет участнику покинуть групповой чат.
-     * @param chatId — Идентификатор чата.
-     * @returns Объект со статусом успеха и HTTP-кодом.
-     */
-    public async leaveGroup(chatId: string): Promise<{ success: boolean; status: number }> {
+    public async leaveChat(chatId: number): Promise<{ success: boolean; status: number; errorCode?: string; errorMessage?: string }> {
         try {
-            const response = await httpClient.request(`${BASE_URL}/api/v1/chats/${chatId}/leave`, {
-                method: 'DELETE',
+            const response = await httpClient.request(`${BASE_URL}/api/v1/chats/${chatId}/quit`, {
+                method: 'POST',
             });
 
-            return { success: response.ok, status: response.status };
+            if (response.ok) {
+                return { success: true, status: response.status };
+            }
+
+            let errorCode = '';
+            let errorMessage = '';
+            try {
+                const data = await response.json();
+                if (data.status === 'error' && data.errors && data.errors.length > 0) {
+                    errorCode = data.errors[0].code;
+                    errorMessage = data.errors[0].message;
+                }
+            } catch (e) {
+                // Игнорируем ошибки парсинга
+            }
+
+            return { success: false, status: response.status, errorCode, errorMessage };
         } catch (error) {
-            console.error("Ошибка сети при выходе из группы:", error);
+            console.error("ChatService: ошибка при выходе из чата:", error);
             return { success: false, status: 500 };
         }
+    }
+
+    /**
+     * @deprecated Используйте leaveChat
+     */
+    public async leaveGroup(chatId: string): Promise<{ success: boolean; status: number; errorCode?: string; errorMessage?: string }> {
+        return this.leaveChat(Number(chatId));
     }
 
     /**

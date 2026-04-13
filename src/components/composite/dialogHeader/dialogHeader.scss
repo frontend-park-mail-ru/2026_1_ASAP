@@ -38,6 +38,11 @@
         overflow: hidden;
         text-overflow: ellipsis;
         width: 100%;
+        cursor: pointer;
+
+        &:hover {
+            font-weight: 600;
+        }
     }
 
     &__settings {
