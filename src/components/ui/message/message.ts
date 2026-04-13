@@ -113,6 +113,7 @@ export class Message extends BaseComponent<MessageProps> {
             this.avatarComponent = new Avatar({
                 src: this.props.message.sender.avatarUrl || '/assets/images/avatars/defaultAvatar.svg',
                 class: 'message__avatar',
+                userId: this.props.message.sender.id,
             });
             this.avatarComponent.mount(avatarSlot as HTMLElement);
         }

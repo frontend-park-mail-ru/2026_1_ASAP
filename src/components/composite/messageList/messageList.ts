@@ -2,6 +2,8 @@ import { BaseComponent } from '../../../core/base/baseComponent';
 import { FrontendMessage, User, Chat} from '../../../types/chat';
 import { Message } from '../../ui/message/message';
 import template from './messageList.hbs';
+import { wsClient } from '../../../core/utils/wsClient';
+import { getFullUrl } from '../../../core/utils/url';
 
 /**
  * @interface MessageListProps - Свойства компонента списка сообщений.
@@ -44,12 +46,35 @@ export class MessageList extends BaseComponent {
     private handleScroll = async () => {
         if (!this.element || this.isLoadingMore) return;
         
-        // Если доскроллили почти до самого верха (с запасом 10px)
-        if (this.element.scrollTop <= 10 && this.props.onLoadMore) {
+
+        const { scrollTop, scrollHeight, clientHeight } = this.element;
+        if (scrollTop + clientHeight >= scrollHeight - 10 && this.props.onLoadMore) {
             this.isLoadingMore = true;
             await this.props.onLoadMore();
             this.isLoadingMore = false;
         }
+    };
+
+    /**
+     * Обработчик события обновления профиля пользователя через WebSocket.
+     * Находит все аватарки этого пользователя в DOM и обновляет их URL.
+     * @param {any} payload - Данные обновленного профиля.
+     * @private
+     */
+    private handleUserUpdate = (payload: any): void => {
+        if (!this.element || !payload.id) return;
+
+        const avatarUrl = payload.avatar_url || payload.avatarUrl || payload.avatar;
+        if (!avatarUrl) return;
+
+        const fullAvatarUrl = getFullUrl(avatarUrl);
+        
+        // находим все аватарки этого пользователя в DOM списка сообщений
+        const avatars = this.element.querySelectorAll(`img[data-user-id="${payload.id}"]`);
+        
+        avatars.forEach((img: Element) => {
+            (img as HTMLImageElement).src = fullAvatarUrl;
+        });
     };
 
     /**
@@ -73,6 +98,8 @@ export class MessageList extends BaseComponent {
 
         this.setMessages(this.props.messages);
         this.scrollToBottom();
+
+        wsClient.subscribe('profile.Updated', this.handleUserUpdate);
     }
 
     /**
@@ -93,6 +120,7 @@ export class MessageList extends BaseComponent {
             if (this.flexContainer) this.flexContainer.style.display = 'flex';
         }
 
+        // В column-reverse новые сообщения должны быть первыми в DOM (визуальный низ).
         messages.forEach(msgData => {
             if (msgData.isOwn && this.props.currentUser?.avatarUrl) {
                 msgData.sender.avatarUrl = this.props.currentUser.avatarUrl;
@@ -103,7 +131,10 @@ export class MessageList extends BaseComponent {
                 showAuthor: showAuthor
             });
             messageComponent.mount(this.flexContainer!);
-            this.childMessages.push(messageComponent);
+            if (messageComponent.element) {
+                this.flexContainer!.prepend(messageComponent.element);
+            }
+            this.childMessages.unshift(messageComponent);
         });
         this.scrollToBottom();
     }
@@ -115,7 +146,6 @@ export class MessageList extends BaseComponent {
     public prependMessages(messages: FrontendMessage[]): void {
         if (!this.element || !this.flexContainer || messages.length === 0) return;
 
-        const oldScrollHeight = this.element.scrollHeight;
         const fragment = document.createDocumentFragment();
         const newComponents: Message[] = [];
 
@@ -127,23 +157,14 @@ export class MessageList extends BaseComponent {
                 isOwn: msgData.isOwn || false, 
                 showAuthor 
             });
-            // Монтируем во временный элемент, чтобы получить comp.element
             const tempDiv = document.createElement('div');
             comp.mount(tempDiv);
             if (comp.element) fragment.appendChild(comp.element);
             newComponents.push(comp);
         });
 
-        this.flexContainer.prepend(fragment);
-        this.childMessages = [...newComponents, ...this.childMessages];
-
-        // Восстанавливаем позицию скролла, чтобы список не прыгал
-        setTimeout(() => {
-            if (this.element) {
-                const newScrollHeight = this.element.scrollHeight;
-                this.element.scrollTop = newScrollHeight - oldScrollHeight;
-            }
-        }, 0);
+        this.flexContainer.appendChild(fragment);
+        this.childMessages = [...this.childMessages, ...newComponents];
     }
 
     /**
@@ -173,8 +194,12 @@ export class MessageList extends BaseComponent {
             showAuthor: showAuthor
         });
         
+        // Новое сообщение всегда в начало DOM (визуальный низ)
         messageComponent.mount(this.flexContainer!);
-        this.childMessages.push(messageComponent);
+        if (messageComponent.element) {
+            this.flexContainer!.prepend(messageComponent.element);
+        }
+        this.childMessages.unshift(messageComponent);
         this.scrollToBottom();
     }
 
@@ -184,11 +209,9 @@ export class MessageList extends BaseComponent {
      * и обновить scrollHeight контейнера.
      */
     public scrollToBottom(): void {
-        setTimeout(() => {
-            if (this.element) {
-                this.element.scrollTop = this.element.scrollHeight;
-            }
-        }, 100);
+        if (this.element) {
+            this.element.scrollTop = 0;
+        }
     }
 
     /**
@@ -200,5 +223,7 @@ export class MessageList extends BaseComponent {
         }
         this.childMessages.forEach(msg => msg.unmount());
         this.childMessages = [];
+
+        wsClient.unsubscribe('profile.Updated', this.handleUserUpdate);
     }
 }
