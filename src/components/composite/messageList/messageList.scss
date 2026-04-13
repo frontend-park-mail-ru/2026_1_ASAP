@@ -1,0 +1,52 @@
+@use "variables" as *;
+@use "mixins" as *;
+
+/**
+ * @file messageList.scss
+ * @description Стили списка сообщений с кастомным скроллбаром.
+ */
+
+.message-list {
+    display: flex;
+    flex-direction: column-reverse;
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative; /* Чтобы дочерние абсолютные элементы не ломали поток */
+
+    &::-webkit-scrollbar {
+        width: 10px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background-color: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: $color-scroll;
+        border-radius: 50px;
+    }
+
+    &__flex-container {
+        display: flex;
+        flex-direction: column-reverse;
+        min-height: 100%; 
+        padding: $spacing-md;
+        gap: 10px;
+    }
+
+    &__empty-state {
+        @include flex-center;
+        height: 100%;
+    }
+
+    &__empty-text {
+        background-color: $color-base-background;
+        color: $color-text-hover;
+        padding: 8px 16px;
+        border-radius: 16px;
+        font-size: 14px;
+    }
+}

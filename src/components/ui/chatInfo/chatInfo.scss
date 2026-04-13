@@ -1,0 +1,79 @@
+@use "variables" as *;
+@use "mixins" as *;
+
+/**
+ * @file chatInfo.scss
+ * @description Стили информационных блоков чата (имя отправителя, текст последнего сообщения).
+ */
+
+.message-personal,
+.message-group,
+.message-chanel {
+    @include flex-column;
+    min-width: 0;
+    flex: 1;
+    color: $color-text;
+    gap: 10px;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+p {
+    margin: 0;
+    padding: 0;
+    @include text-truncate;
+}
+
+.user-name {
+    font-size: 18px;
+    width: 100%;
+    user-select: none;
+    font: $text-secondary;
+    letter-spacing: $text-secondary-ls;
+    color: $color-text;
+    padding-right: 25px;
+    display: flex; // Для консистентности
+}
+
+.name-text {
+    @include text-truncate;
+    flex: 0 1 auto;
+    min-width: 0;
+}
+
+.sender-group {
+    color: $color-text-hover;
+    user-select: none;
+    max-width: 15ch;
+    display: inline-block;
+    vertical-align: bottom;
+    @include text-truncate;
+}
+
+.group-name,
+.chanel-name {
+    font-size: 18px;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chat-info__group-icon {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+}
+
+.msg-text {
+    width: 100%;
+    box-sizing: border-box;
+    user-select: none;
+    font: $text-main-style;
+    font-size: 14px;
+    letter-spacing: $text-main-ls;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

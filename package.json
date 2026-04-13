@@ -6,12 +6,17 @@
   "main": "server/server.js",
   "scripts": {
     "test": "vitest",
-    "start": "npm run precompile && node server/server.js",
-    "dev": "nodemon server/server.js",
+    "start": "npm run start:dev",
+    "start:dev": "concurrently \"npm run watch\" \"nodemon server/server.js\"",
+    "start:prod": "npm run build && node server/server.js",
     "lint": "eslint .",
     "prepare": "husky",
+    "build": "webpack",
+    "watch": "webpack --watch",
     "precompile": "node compileTemp.js",
-    "docs": "npx jsdoc -c jsdoc.json"
+    "docs": "typedoc",
+    "build:ts": "tsc",
+    "watch:ts": "tsc -w"
   },
   "repository": {
     "type": "git",
@@ -27,19 +32,40 @@
     "url": "https://github.com/frontend-park-mail-ru/2026_1_ASAP/issues"
   },
   "homepage": "https://github.com/frontend-park-mail-ru/2026_1_ASAP#readme",
+  "browserslist": [
+    "> 0.5%",
+    "last 2 versions",
+    "not dead"
+  ],
   "devDependencies": {
+    "@babel/core": "^7.28.5",
+    "@babel/preset-env": "^7.28.5",
     "@eslint/js": "^10.0.1",
-    "docdash": "^2.0.2",
+    "babel-loader": "^10.1.1",
+    "concurrently": "^9.2.1",
+    "copy-webpack-plugin": "^14.0.0",
+    "css-loader": "^7.1.4",
     "eslint": "^10.0.2",
     "globals": "^17.4.0",
-    "handlebars": "^4.7.8",
+    "handlebars-loader": "^1.7.3",
+    "html-webpack-plugin": "^5.6.6",
     "husky": "^9.1.7",
-    "jsdoc": "^4.0.5",
     "lint-staged": "^16.3.2",
+    "mini-css-extract-plugin": "^2.10.2",
     "nodemon": "^3.1.14",
-    "vitest": "^4.1.0"
+    "sass": "^1.99.0",
+    "sass-loader": "^16.0.7",
+    "style-loader": "^4.0.0",
+    "ts-loader": "^9.5.4",
+    "typedoc": "^0.28.18",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.0",
+    "webpack": "^5.105.4",
+    "webpack-cli": "^7.0.2",
+    "workbox-webpack-plugin": "^7.4.0"
   },
   "dependencies": {
-    "express": "^4.22.1"
+    "express": "^4.22.1",
+    "handlebars": "^4.7.8"
   }
 }

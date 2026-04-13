@@ -1,0 +1,28 @@
+@use "variables" as *;
+@use "mixins" as *;
+
+/**
+ * @file settingsProfileWindow.scss
+ * @description Стили окна редактирования профиля в настройках.
+ */
+
+.settings-profile-window {
+    @include flex-column;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+    min-height: 0;
+    min-width: 200px;
+    gap: 10px;
+    position: relative;
+}
+
+.settings-profile-save-button-wrapper {
+    display: flex;
+    position: absolute;
+    bottom: 10px;
+    height: 42px;
+    width: 360px;
+}

@@ -1,0 +1,17 @@
+@use "variables" as *;
+@use "mixins" as *;
+
+/**
+ * @file settingsFullNameForm.scss
+ * @description Стили формы смены имени пользователя.
+ */
+
+.full-name-form {
+    @include flex-column;
+    justify-content: center;
+    flex: 1;
+    min-width: 0;
+    min-height: 62px;
+    width: 100%;
+    background-color: $color-empty;
+}

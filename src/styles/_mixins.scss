@@ -1,0 +1,127 @@
+/**
+ * @file _mixins.scss
+ * @description Глобальные миксины для упрощения стилизации.
+ */
+
+/**
+ * Центрирование элементов через Flexbox.
+ */
+@mixin flex-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/**
+ * Колоночный Flexbox.
+ */
+@mixin flex-column {
+    display: flex;
+    flex-direction: column;
+}
+
+/**
+ * Обрезка длинного текста троеточием.
+ */
+@mixin text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/**
+ * Стандартный переход для состояний при наведении.
+ */
+@mixin hover-transition {
+    transition: all 0.2s ease;
+}
+
+/**
+ * Сброс стилей кнопки.
+ */
+@mixin btn-reset {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    outline: none;
+}
+
+/**
+ * Chrome / Safari: :-webkit-autofill — цвет и типографика как у поля.
+ * Явные $font-size / $line-height / $font-weight / $font-family с !important — Chrome иначе подставляет свой размер.
+ */
+@mixin webkit-autofill-override(
+    $text-color,
+    $fill: transparent,
+    $font: null,
+    $letter-spacing: null,
+    $font-size: null,
+    $line-height: null,
+    $font-weight: null,
+    $font-family: null
+) {
+    &:-webkit-autofill,
+    &:-webkit-autofill:hover,
+    &:-webkit-autofill:focus,
+    &:-webkit-autofill:focus-visible,
+    &:-webkit-autofill:active {
+        -webkit-text-fill-color: $text-color;
+        caret-color: $text-color;
+        box-shadow: 0 0 0 1000px $fill inset;
+        transition: background-color 99999s ease-out 0s;
+
+        @if $font != null {
+            font: $font !important;
+        }
+
+        @if $letter-spacing != null {
+            letter-spacing: $letter-spacing !important;
+        }
+
+        @if $font-size != null {
+            font-size: $font-size !important;
+        }
+
+        @if $line-height != null {
+            line-height: $line-height !important;
+        }
+
+        @if $font-weight != null {
+            font-weight: $font-weight !important;
+        }
+
+        @if $font-family != null {
+            font-family: $font-family !important;
+        }
+    }
+}
+
+/**
+ * Сложный эффект наведения с градиентом через :after.
+ */
+@mixin hover-after-gradient($gradient) {
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+
+    &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: $gradient;
+        opacity: 0;
+        z-index: 0;
+        transition: opacity 0.5s;
+        border-radius: 10px;
+    }
+
+    &:hover:not(:disabled)::after {
+        opacity: 1;
+    }
+
+    & > * {
+        position: relative;
+        z-index: 1;
+    }
+}

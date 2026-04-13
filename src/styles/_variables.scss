@@ -1,0 +1,120 @@
+/**
+ * @file _variables.scss
+ * @description Глобальные переменные SCSS для проекта.
+ */
+
+// основные цвета 
+$color-background: #0f102f;
+$color-primary: #455DBA;
+$color-text: rgba(242, 240, 240, 1);
+$color-text-hover: rgba(242, 240, 240, 0.5);
+$color-text-hover2: rgba(242, 240, 240, 0.1);
+$color-neutral: rgba(19, 19, 19, 1);
+$color-background-blur: #5A8A6E;
+$color-border: rgba(255, 255, 255, 0.1);
+
+$color-chat-sidebar: rgba(6, 5, 5, 0.31);
+$color-border-sidebar: rgba(45, 50, 53, 1);
+$color-border-chats: rgba(112, 112, 112, 0.3);
+
+$color-scroll: rgba(112, 112, 112, 1);
+$color-empty: rgba(242, 240, 240, 0);
+$color-half-empty: rgba(242, 240, 240, 0.5);
+
+$color-bubble: rgba(69, 93, 186, 1);
+
+$color-error: #FF0000;
+$color-error-border: #D80000;
+
+$color-stroke: rgba(122, 122, 122, 0.37);
+$color-stroke2: rgba(122, 122, 122, 0.30);
+
+$color-base-background: rgba(6, 5, 5, 0.5);
+
+// доп цвета
+$color-background-default: $color-background;
+$color-background-secondary: rgba(242, 240, 240, 0.05);
+$color-text-inverted: #ffffff;
+$color-text-tertiary: rgba(242, 240, 240, 0.6);
+$color-secondary: rgba(69, 93, 186, 1);
+
+// цвета которые мало используются (в отдельных компонентах)
+$color-checkbox-active: #4f6ef7;
+$color-checkbox-bg: #d1d5db;
+$color-checkbox-hover: #aab0bb;
+$color-input-border: #2A2A2A;
+$color-input-placeholder: #9ca3af;
+$color-auth-text: #1E1E1E;
+$color-auth-hint: #9aa0a6;
+$color-auth-disabled: #d0d0d0;
+
+// затемнения оверлеев
+$color-overlay-light: rgba(0, 0, 0, 0.25);
+$color-overlay-medium: rgba(0, 0, 0, 0.5);
+$color-overlay-dark: rgba(0, 0, 0, 0.75);
+$color-overlay-avatar: rgba(0, 0, 0, 0.35);
+
+// градиенты 
+$gradient-msg: linear-gradient(
+    to right,
+    $color-primary 11%,
+    $color-background-blur 100%
+);
+
+$gradient-msg-reverse: linear-gradient(
+    to right,
+    $color-background-blur 0%,
+    $color-primary 100%
+);
+
+$gradient-button: linear-gradient(
+    to right,
+    #6583FA 0%,
+    $color-background-blur 100%
+);
+
+$gradient-button-hover: linear-gradient(
+    to right,
+    #3D5D4A 0%,
+    #324487 100%
+);
+
+$gradient-background-chats: linear-gradient(
+    to bottom,
+    rgba(15, 16, 47, 1) 0%,
+    rgba(4, 28, 13, 0.88) 140%
+);
+
+$gradient-selected-chat: linear-gradient(
+    to right,
+    $color-bubble 11%,
+    rgba(90, 138, 110, 1) 100%
+);
+
+
+
+// шрифты
+$font-primary: "Inter", sans-serif;
+$font-secondary: "Inter", sans-serif;
+$font-tertiary: "Inter", sans-serif;
+$font-text-main: "Roboto Condensed", sans-serif;
+
+
+$text-heading1: 600 24px/30px $font-primary;
+$text-heading1-ls: 0.4px;
+
+$text-secondary: 400 18px/16px $font-secondary;
+$text-secondary-ls: -0.5px;
+
+$text-tertiary: 400 14px/16px $font-tertiary;
+$text-tertiary-ls: 0.4px;
+
+$text-main-style: 400 14px/22px $font-text-main;
+$text-main-ls: 0px;
+
+// отступы и размеры
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$font-size-base: 14px;
+$font-size-lg: 18px;
+$font-size-xs: 12px;
