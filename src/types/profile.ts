@@ -62,12 +62,14 @@ export interface ProfileMainInfo {
 /**
  * @interface ProfileAdditionalInfo
  * @description Дополнительная, более приватная информация о профиле пользователя.
+ * @property {number} id - Уникальный ID пользователя.
  * @property {string} login - Логин пользователя.
  * @property {string} [email] - Email пользователя (опционально).
  * @property {string} [birthDate] - Дата рождения (опционально).
  * @property {string} [bio] - Краткая биография (опционально).
  */
 export interface ProfileAdditionalInfo {
+    id: number;
     login: string;
     email?: string;
     birthDate?: string;

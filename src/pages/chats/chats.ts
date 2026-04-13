@@ -10,10 +10,11 @@ import { ChatWindow } from "../../components/composite/chatWindow/chatWindow";
 import { DialogHeader } from "../../components/composite/dialogHeader/dialogHeader";
 import { MessageList } from "../../components/composite/messageList/messageList";
 import { MessageInput } from "../../components/ui/messageInput/messageInput";
-import { Chat, FrontendMessage, User, DialogChat, GroupChat, ChannelChat } from '../../types/chat';
+import { Chat, FrontendMessage, DialogChat, GroupChat, ChannelChat } from '../../types/chat';
 import { chatService } from "../../services/chatService";
 import { GroupHeader } from "../../components/composite/groupHeader/groupHeader";
 import { ChannelHeader } from "../../components/composite/channelHeader/channelHeader";
+import { FrontendProfile } from "../../types/profile";
 import { CreateDialogWindow } from "../../components/composite/createDialogWindow/createDialogWindow"; 
 import { CreateGroupWindow } from "../../components/composite/createGroupWindow/createGroupWindow";
 import { GroupDetailsWindow } from "../../components/composite/groupDetailsWindow/groupDetailsWindow";
@@ -68,7 +69,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private currentUserId: number | null = null;
     private hasMoreHistory: boolean = false;
     private nextBeforeId: number | null = null;
-    private currentUserProfile: User | null = null;
+    private currentUserProfile: FrontendProfile | null = null;
 
     /** ID текущего запроса истории (используется для защиты от гонок). */
     private historyRequestId = 0;
@@ -146,12 +147,10 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         this.placeholderElement = this.mainContentArea?.querySelector('.empty-field') || null;
 
         try {
-            this.currentUserId = await contactService.getMyId();
-            if (this.currentUserId) {
-                this.currentUserProfile = await chatService.getUserProfile(this.currentUserId);
-            }
+            this.currentUserProfile = await contactService.getMyProfile();
+            this.currentUserId = this.currentUserProfile.additionalInfo.id;
         } catch (error) {
-            console.error("ChatsPage: Не удалось получить ID или профиль пользователя", error);
+            console.error("ChatsPage: Не удалось получить профиль пользователя", error);
         }
 
         // Подключаемся к глобальному WebSocket-хабу
@@ -329,6 +328,11 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                         }
                     },
                     onSubmitSearch: async (login: string) => {
+                        const targetLogin = login.trim().toLowerCase();
+                        if (this.currentUserProfile && this.currentUserProfile.additionalInfo.login.toLowerCase() === targetLogin) {
+                            return "Вы не можете создать диалог с самим собой!";
+                        }
+
                         const targetUserRes = await contactService.getIdByLogin(login); 
                         const targetUser = {"id": targetUserRes.id, "login": login};
 
@@ -373,6 +377,11 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                         }
                     },
                     onSubmitSearch: async (login: string) => {
+                        const targetLogin = login.trim().toLowerCase();
+                        if (this.currentUserProfile && this.currentUserProfile.additionalInfo.login.toLowerCase() === targetLogin) {
+                            return "Вы не можете добавить самого себя в контакты!";
+                        }
+
                         const targetUserRes = await contactService.getIdByLogin(login); 
                         
                         if (targetUserRes.status === 404 || !targetUserRes.id) {
@@ -508,14 +517,17 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
         const messageListComponent = new MessageList({ 
             messages: [],
-            currentUser: this.currentUserProfile,
+            currentUser: {
+                id: this.currentUserId as number,
+                login: this.currentUserProfile?.additionalInfo.login || "",
+                avatarUrl: this.currentUserProfile?.mainInfo.avatarUrl
+            },
             chatType: chatDetail.type,
             onLoadMore: async () => {
                 if (!this.hasMoreHistory || !this.nextBeforeId || !this.currentUserId || !this.activeChatId) return;
                 
                 const res = await chatService.getMessages(this.activeChatId, this.currentUserId as number, this.nextBeforeId);
                 
-                // Если случился таймаут или ошибка — ничего не делаем
                 if (res === null) return;
 
                 if (this.activeChatId === chatDetail.id && this.activeMessageList) {
@@ -733,6 +745,11 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 }
             },
             onSubmitSearch: async (login: string) => {
+                const targetLogin = login.trim().toLowerCase();
+                if (this.currentUserProfile && this.currentUserProfile.additionalInfo.login.toLowerCase() === targetLogin) {
+                    return "Вы не можете добавить самого себя в чат!";
+                }
+
                 const targetUserRes = await contactService.getIdByLogin(login);
 
                 if (targetUserRes.status === 404 || !targetUserRes.id) {

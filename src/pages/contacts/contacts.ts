@@ -7,6 +7,8 @@ import { ContactListWrapper } from "../../components/composite/contactListWrappe
 import { ProfileWindow } from "../../components/composite/profileWindow/profileWindow";
 import { contactService } from "../../services/contactService";
 import { AddContactWindow } from "../../components/composite/addContactWindow/addContactWindow";
+import { chatService } from "../../services/chatService";
+import { FrontendProfile } from "../../types/profile";
 
 
 /**
@@ -41,6 +43,8 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
     private placeHolder: HTMLElement | null = null;
     private activeContactId: number | null = null;
     private addContactWindow: AddContactWindow | null = null;
+    private currentUserId: number | null = null;
+    private currentUserProfile: FrontendProfile | null = null;
 
     constructor(props: ContactsPageProps = {}) {
         super(props);
@@ -150,6 +154,14 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
             this.placeHolder.style.display = 'block';
         }
 
+        try {
+            this.currentUserProfile = await contactService.getMyProfile();
+            this.currentUserId = this.currentUserProfile.additionalInfo.id;
+        } catch (error) {
+            console.error("ContactsPage: Не удалось получить профиль пользователя", error);
+        }
+
+        window.addEventListener('keyup', this.handleKeyUp);
         await this.handleContactsRoute();
     };
 
@@ -196,6 +208,19 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
     };
 
     /**
+     * Обработчик нажатия клавиш. Закрывает открытый контакт по нажатию Escape.
+     * @param {KeyboardEvent} event - Событие клавиатуры.
+     * @private
+     */
+    private handleKeyUp = (event: KeyboardEvent): void => {
+        if (event.key === 'Escape') {
+            if (this.activeContactId || this.addContactWindow) {
+                this.closeContact();
+            }
+        }
+    };
+
+    /**
      * Отображает окно для добавления нового контакта.
      * @private
      */
@@ -211,6 +236,11 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
                 this.props.router.navigate('/contacts');
             },
             onSubmitSearch: async (login: string) => {
+                const targetLogin = login.trim().toLowerCase();
+                if (this.currentUserProfile && this.currentUserProfile.additionalInfo.login.toLowerCase() === targetLogin) {
+                    return "Вы не можете добавить самого себя в контакты";
+                }
+
                 const targetRes = await contactService.getIdByLogin(login);
                 if (targetRes.status === 404 || !targetRes.id) {
                     return `Пользователь с логином "${login}" не найден!`;
@@ -281,6 +311,7 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
         this.searchForm?.unmount();
         this.menuBar?.unmount();
         this.contactListWrapper?.unmount();
+        window.removeEventListener('keyup', this.handleKeyUp);
         this.activeContactId = null;
         this.profileWindow?.unmount();
         this.profileWindow = null;
