@@ -252,6 +252,9 @@ export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowPr
         if (!validationService.validateProfileFirstName(this.draftProfileMainInfo.firstName).isValid) {
             return;
         }
+        if (!validationService.validateProfileLastName(this.draftProfileMainInfo.lastName ?? '').isValid) {
+            return;
+        }
 
         this.isSavingProfile = true;
         if (this.profileSaveButton) {
