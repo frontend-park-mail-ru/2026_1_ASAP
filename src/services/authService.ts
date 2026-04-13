@@ -53,7 +53,7 @@ class AuthService {
             return this.isAuthStatus;
         } catch (error) {
             console.error("AuthService.checkAuth error:", error);
-            return this.isAuthStatus ?? false;
+            return this.isAuthStatus ?? true;
         }
     }
 
