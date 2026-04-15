@@ -133,6 +133,7 @@ export class EditProfileOverlay extends BaseComponent<EditProfileOverlayProps> {
             this.bioCharCountEl.className = "edit-profile__char-count";
             counterRow.appendChild(this.bioCharCountEl);
             bioBlock.appendChild(counterRow);
+            container.style.minWidth = "480px";
             container.appendChild(bioBlock);
             inputParent = bioBlock;
         }
@@ -171,6 +172,7 @@ export class EditProfileOverlay extends BaseComponent<EditProfileOverlayProps> {
                     : {}),
             });
             this.editInput.mount(inputParent);
+            this.editInput.element.style.height = "270px";
         }
 
         const updateBioCharCount = () => {
