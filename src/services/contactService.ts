@@ -70,7 +70,7 @@ export class ContactService {
         return {
             contact_user_id: backendContact.contact_user_id,
             contact_name: name,
-            avatarURL: backendContact.contact_avatar_url || '/assets/images/avatars/chatAvatar.svg',
+            avatarURL: backendContact.contact_avatar_url || '/assets/images/avatars/defaultAvatar.svg',
         };
     };
 
@@ -83,7 +83,7 @@ export class ContactService {
             mainInfo: {
                 firstName: backendProfile.first_name,
                 lastName: backendProfile.last_name || "",
-                avatarUrl: backendProfile.avatar || "/assets/images/avatars/profileAvatar.svg",
+                avatarUrl: backendProfile.avatar || "/assets/images/avatars/defaultAvatar.svg",
                 lastSeen: backendProfile.last_seen ? formatLastSeen(new Date(backendProfile.last_seen)) : undefined,
             },
             additionalInfo: {

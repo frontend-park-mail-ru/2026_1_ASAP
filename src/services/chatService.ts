@@ -170,7 +170,7 @@ export class ChatService {
                             interlocutor: { 
                                 id: 0, 
                                 login: chat.title, 
-                                avatarUrl: chat.avatar || '/assets/images/avatars/chatAvatar.svg' 
+                                avatarUrl: chat.avatar || '/assets/images/avatars/defaultAvatar.svg' 
                             }, 
                         } as DialogChat;
                         break;

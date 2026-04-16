@@ -453,9 +453,12 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 
                 (chatDetail as DialogChat).interlocutor.id = interlocutorId;
 
+                const interlocutorProfile = await contactService.getProfileInfo(interlocutorId);
+                const interlocutorLogin = interlocutorProfile?.additionalInfo?.login || String(interlocutorId);
+
                 headerComponent = new DialogHeader({ 
                     chat: chatDetail as DialogChat,
-                    onOpenProfile: () => this.props.router.navigate('/contacts/' + interlocutorId),
+                    onOpenProfile: () => this.props.router.navigate('/contacts/' + interlocutorLogin),
                     onDeleteChat: async() => {
                         const res = await chatService.deleteChat(chatId);
                         if (res.success) {
@@ -710,8 +713,10 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             onAddMember: () => {
                 this.openAddMemberWindow(chat);
             },
-            onMemberClick: (userId: number) => {
-                this.props.router.navigate(`/contacts/${userId}`);
+            onMemberClick: async (userId: number) => {
+                const memberProfile = await contactService.getProfileInfo(userId);
+                const memberLogin = memberProfile?.additionalInfo?.login || String(userId);
+                this.props.router.navigate(`/contacts/${memberLogin}`);
             }
         });
 

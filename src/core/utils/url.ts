@@ -16,7 +16,7 @@ const BASE_URL = `${window.location.protocol}//${host}:8080`;
  * @returns {string} Полный URL или путь к дефолтному ресурсу.
  */
 export const getFullUrl = (path?: string, defaultPath: string = '/assets/images/avatars/defaultAvatar.svg'): string => {
-    if (!path || path === '' || path.includes('defaultAvatar.svg') || path.includes('chatAvatar.svg')) {
+    if (!path || path === '' || path.includes('defaultAvatar.svg')) {
         return defaultPath;
     }
 
