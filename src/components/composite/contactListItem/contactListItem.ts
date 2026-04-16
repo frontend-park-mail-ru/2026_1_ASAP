@@ -50,9 +50,10 @@ export class ContactListItem extends BaseForm<ContactListItemProps> {
      * Осуществляет переход на страницу профиля контакта.
      * @param {ContactItem} contactItem - Экземпляр `ContactItem`, по которому кликнули.
      */
-    handleClick = (contactItem: ContactItem) => {
-        const id = contactItem.props.id;
-        this.props.router.navigate(`/contacts/${id}`);
+    handleClick = async (contactItem: ContactItem) => {
+        const profile = await contactService.getProfileInfo(contactItem.props.id);
+        const login = profile?.additionalInfo?.login || String(contactItem.props.id);
+        this.props.router.navigate(`/contacts/${login}`);
     };
 
     /**
@@ -125,8 +126,10 @@ export class ContactListItem extends BaseForm<ContactListItemProps> {
                         });
                         break;
                     default:
-                    onRowClick = () => {
-                        this.props.router.navigate(`/contacts/${contact.contact_user_id}`);
+                    onRowClick = async () => {
+                        const profile = await contactService.getProfileInfo(contact.contact_user_id);
+                        const login = profile?.additionalInfo?.login || String(contact.contact_user_id);
+                        this.props.router.navigate(`/contacts/${login}`);
                     };
                     break;
                 }

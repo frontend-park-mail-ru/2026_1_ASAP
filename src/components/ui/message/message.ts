@@ -120,8 +120,7 @@ export class Message extends BaseComponent<MessageProps> {
 
         const sender = this.props.message.sender;
         const isDefaultAvatar = !sender.avatarUrl || 
-                                sender.avatarUrl.includes('defaultAvatar.svg') || 
-                                sender.avatarUrl.includes('chatAvatar.svg');
+                                sender.avatarUrl.includes('defaultAvatar.svg');
         
         if (!this.props.senderName || isDefaultAvatar) {
             const senderId = sender.id;

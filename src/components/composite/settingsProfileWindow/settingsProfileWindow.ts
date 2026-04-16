@@ -20,7 +20,7 @@ interface SettingsProfileWindowProps extends IBaseComponentProps {
 
 export type EditableField = 'login' | 'email' | 'birthDate' | 'bio';
 
-const DEFAULT_AVATAR_URL = '/assets/images/avatars/profileAvatar.svg';
+const DEFAULT_AVATAR_URL = '/assets/images/avatars/defaultAvatar.svg';
 
 export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowProps> {
     private profileHeader: ProfileHeader | null = null;

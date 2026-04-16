@@ -48,6 +48,7 @@ p {
     max-width: 15ch;
     display: inline-block;
     vertical-align: bottom;
+    margin-right: 3px;
     @include text-truncate;
 }
 

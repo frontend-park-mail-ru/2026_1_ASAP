@@ -280,7 +280,7 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
             const item = new ContactItem({
                 id: member.id,
                 name: member.name,
-                avatarUrl: member.avatarUrl || '/assets/images/avatars/chatAvatar.svg',
+                avatarUrl: member.avatarUrl || '/assets/images/avatars/defaultAvatar.svg',
                 rightSlot: rightControl,
                 onClick: !this.props.isEditing ? () => {
                     if (this.props.onMemberClick) {

@@ -77,8 +77,22 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
             }
             return;
         }
-        const id: number = Number(lastParam);
-        if (isNaN(id)) return;
+        const login: string = String(lastParam).trim();
+        if (login === "") return;
+
+        const response = await contactService.getIdByLogin(login);
+        if (response.status != 200) {
+            this.cleanupMainContent();
+            this.activeContactId = null;
+            this.contactListWrapper?.setActiveContact(null);
+            if (this.placeHolder) {
+                this.placeHolder.style.display = 'block';
+            }
+            this.props.router?.navigate('/contacts');
+            return;
+        }
+
+        const id = response.id;
 
         this.activeContactId = id;
         this.contactListWrapper?.setActiveContact(this.activeContactId);
@@ -275,7 +289,7 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
                     this.menuBar.mount(sidebar as HTMLElement);
                     this.menuBar.setActiveButton('contacts');
                     
-                    this.props.router.navigate(`/contacts/${targetRes.id}`);
+                    this.props.router.navigate(`/contacts/${login}`);
                     return undefined;
                 } else if (successRes.code === 'CANT_CREATE_CONTACT_WITH_YOURSELF') {
                     return "Вы не можете добавить самого себя в контакты";
