@@ -134,17 +134,30 @@ export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowPr
         this.deleteAvatarConfirm = null;
     }
 
-    private applyAvatarDelete(): void {
+    private async applyAvatarDelete(): Promise<void> {
         if (this.avatarPreviewUrl?.startsWith("blob:")) {
             URL.revokeObjectURL(this.avatarPreviewUrl);
         }
+
+        const response = await contactService.deleteAvatar();
+        if (response.status !== 200 || !response.profile) {
+            this.successModal = new ConfirmModal({
+                text: "Не удалось удалить аватар, попробуйте позже :(",
+                confirmButtonText: "Хорошо",
+                hideCancel: true,
+                confirmButtonClass: "confirm-modal__button--cancel ui-button ui-button-secondary",
+                onConfirm: () => {
+                    this.successModal?.unmount();
+                    this.successModal = null;
+                },
+            });
+            this.successModal.mount(this.element!);
+            return;
+        }
+
         this.avatarPreviewUrl = null;
         this.pendingAvatarFile = null;
-        if (this.draftProfileMainInfo) {
-            this.draftProfileMainInfo.avatarUrl = DEFAULT_AVATAR_URL;
-        }
-        this.remountProfileMainInfoBlock();
-        this.setButtonState();
+        await this.syncDraftAndBaselineFromServer();
     }
 
     handleAvatarEditClick = (avatarWrap: HTMLElement): void => {
