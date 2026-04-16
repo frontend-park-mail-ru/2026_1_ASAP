@@ -81,13 +81,24 @@ export default {
             navigateFallback: '/index.html',
             runtimeCaching: [
                 {
-                    urlPattern: ({ request }) => request.destination === 'image',
+                    urlPattern: ({ request, sameOrigin }) => request.destination === 'image' && sameOrigin,
                     handler: 'CacheFirst',
                     options: {
-                        cacheName: 'images-cache',
+                        cacheName: 'local-images-cache',
                         expiration: {
                             maxEntries: 200,
                             maxAgeSeconds: 60 * 60 * 24 * 30,
+                        },
+                    },
+                },
+                {
+                    urlPattern: ({ request, sameOrigin }) => request.destination === 'image' && !sameOrigin,
+                    handler: 'NetworkFirst',
+                    options: {
+                        cacheName: 'remote-images-cache',
+                        expiration: {
+                            maxEntries: 100,
+                            maxAgeSeconds: 60 * 60 * 24 * 7,
                         },
                     },
                 },
