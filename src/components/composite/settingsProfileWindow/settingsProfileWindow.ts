@@ -157,6 +157,7 @@ export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowPr
 
         this.avatarPreviewUrl = null;
         this.pendingAvatarFile = null;
+        contactService.clearCache();
         await this.syncDraftAndBaselineFromServer();
     }
 
