@@ -413,6 +413,23 @@ export class ContactService {
         } catch (error) {
             return { id: null, status: 500 };
         }
+    };
+
+    public async deleteAvatar(): Promise<{status: number, profile: FrontendProfile | null }> {
+        try {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/profiles/me/avatar`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            if (response.status === 404) return { status: 404, profile: null };
+            if (!response.ok) return { status: response.status, profile: null };
+
+            const data: {status: string, body: BackendProfile } = await response.json();
+            return { status: 200, profile: this.convertToFrontendProfile(data.body) };
+        } catch(error) {
+            return { status: 500, profile: null };
+        }
     }
 };
 
