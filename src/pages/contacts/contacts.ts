@@ -207,7 +207,9 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
         this.profileWindow = new ProfileWindow({
             profileMainInfo: profileInfo.mainInfo,
             profileAdditionalInfo: profileInfo.additionalInfo,
-            closeWindow: this.closeContact
+            closeWindow: this.closeContact,
+            router: this.props.router,
+            onContactsChanged: () => this.contactListWrapper?.reload(),
         });
 
         this.profileWindow.mount(this.mainContentArea);

@@ -63,6 +63,13 @@ export class ContactListWrapper extends BaseForm<ContactListWrapperProps> {
     };
 
     /**
+     * Делегирует перезагрузку списка контактов дочернему компоненту `ContactListItem`.
+     */
+    public reload = (): void => {
+        this.contactListItem?.reload();
+    };
+
+    /**
      * Выполняется перед размонтированием компонента.
      * Размонтирует дочерний `ContactListItem` для очистки ресурсов.
      * @protected
