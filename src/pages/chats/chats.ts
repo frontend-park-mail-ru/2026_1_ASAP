@@ -22,6 +22,7 @@ import { AddMemberWindow } from "../../components/composite/addMemberWindow/addM
 import { contactService } from "../../services/contactService";
 import { ConfirmModal } from "../../components/composite/confirmModal/confirmModal";
 import { wsClient, MessageDto } from "../../core/utils/wsClient";
+import { offlineQueue } from "../../services/offlineMessageQueue";
 
 
 /**
@@ -96,12 +97,17 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * Стрелочный обработчик WS-события «message.New».
      * Хранится как поле класса для корректной отписки.
      */
-    private readonly handleNewMessage = (dto: MessageDto): void => {
+    private readonly handleNewMessage = async (dto: MessageDto): Promise<void> => {
         if (!this.activeChatId || dto.chat_id.toString() !== this.activeChatId) {
             return;
         }
 
         if (!this.activeMessageList || this.currentUserId === null) {
+            return;
+        }
+
+        const tempId = await chatService.resolveServerMessage(dto, this.currentUserId);
+        if (tempId && this.activeMessageList.replaceMessageId(tempId, dto.id.toString())) {
             return;
         }
 
@@ -111,14 +117,31 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
     /**
      * Обработчик системного события переподключения WS.
-     * Перезапрашивает историю для активного чата.
+     * Перезапрашивает историю для активного чата и флашит offline-очередь.
      */
     private handleWsConnected = () => {
+        chatService.flushQueue();
         if (this.activeChatId) {
             console.log('[ChatsPage] WS переподключен, запрашиваем свежую историю...');
             this.hasMoreHistory = false;
             this.nextBeforeId = null;
             this.loadHistory(this.activeChatId);
+        }
+    };
+
+    /**
+     * Триггер флаша очереди при восстановлении сети.
+     */
+    private handleOnline = (): void => {
+        chatService.flushQueue();
+    };
+
+    /**
+     * Триггер флаша очереди по сообщению от Service Worker (Background Sync).
+     */
+    private handleSwMessage = (event: MessageEvent): void => {
+        if (event.data?.type === 'flush-messages') {
+            chatService.flushQueue();
         }
     };
 
@@ -163,6 +186,12 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
         // Подписываемся на глобальное нажатие клавиш для выхода по Esc
         document.addEventListener('keydown', this.handleKeyDown);
+
+        // Триггеры флаша оффлайн-очереди сообщений
+        window.addEventListener('online', this.handleOnline);
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('message', this.handleSwMessage);
+        }
     }
 
     /**
@@ -544,11 +573,30 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         this.activeMessageList = messageListComponent;
 
         const messageInputComponent = new MessageInput({
-            onSubmit: (text: string) => {
-                if (this.activeChatId) {
-                    chatService.sendMessage(this.activeChatId, text);
-                }
-            } 
+            onSubmit: async (text: string) => {
+                if (!this.activeChatId || this.currentUserId === null) return;
+
+                const pending = await chatService.sendMessage(
+                    this.activeChatId,
+                    text,
+                    this.currentUserId as number,
+                );
+
+                const optimistic: FrontendMessage = {
+                    id: pending.tempId,
+                    sender: {
+                        id: this.currentUserId as number,
+                        login: this.currentUserProfile?.additionalInfo.login || '',
+                        avatarUrl: this.currentUserProfile?.mainInfo.avatarUrl,
+                        firstName: this.currentUserProfile?.mainInfo.firstName,
+                        lastName: this.currentUserProfile?.mainInfo.lastName,
+                    },
+                    text,
+                    timestamp: new Date(pending.createdAt),
+                    isOwn: true,
+                };
+                this.activeMessageList?.addMessage(optimistic);
+            }
         });
 
         this.chatWindow = new ChatWindow({
@@ -563,7 +611,39 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         wsClient.subscribe('message.New', this.handleNewMessage);
 
         // Загружаем историю через сокеты сразу после открытия чата
-        this.loadHistory(chatId);
+        await this.loadHistory(chatId);
+
+        // Восстанавливаем оптимистичные (offline-pending) сообщения из IndexedDB
+        await this.restorePendingMessages(chatId);
+    }
+
+    /**
+     * Догружает оптимистичные сообщения из IndexedDB (если остались с прошлой офлайн-сессии)
+     * и добавляет их в текущий список сообщений.
+     * @private
+     */
+    private async restorePendingMessages(chatId: string): Promise<void> {
+        if (!this.activeMessageList || this.currentUserId === null) return;
+        if (this.activeChatId !== chatId) return;
+
+        const pending = await offlineQueue.getByChat(chatId);
+        if (pending.length === 0) return;
+
+        pending.forEach((p) => {
+            this.activeMessageList?.addMessage({
+                id: p.tempId,
+                sender: {
+                    id: p.senderId,
+                    login: this.currentUserProfile?.additionalInfo.login || '',
+                    avatarUrl: this.currentUserProfile?.mainInfo.avatarUrl,
+                    firstName: this.currentUserProfile?.mainInfo.firstName,
+                    lastName: this.currentUserProfile?.mainInfo.lastName,
+                },
+                text: p.text,
+                timestamp: new Date(p.createdAt),
+                isOwn: true,
+            });
+        });
     }
 
     /**
@@ -813,9 +893,14 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         
         wsClient.unsubscribe('system.Connected', this.handleWsConnected);
         wsClient.disconnect();
-        
+
         // Отписываемся от глобального события
         document.removeEventListener('keydown', this.handleKeyDown);
+
+        window.removeEventListener('online', this.handleOnline);
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.removeEventListener('message', this.handleSwMessage);
+        }
         
         this.activeChatId = null;
         this.placeholderElement = null; 

@@ -204,6 +204,18 @@ export class MessageList extends BaseComponent {
     }
 
     /**
+     * Заменяет ID ранее добавленного (оптимистичного) сообщения на ID, присланный сервером.
+     * Используется, чтобы при приходе серверного broadcast `message.New` не создавать дубликат DOM.
+     * @returns true, если сообщение с `oldId` было найдено и обновлено.
+     */
+    public replaceMessageId(oldId: string, newId: string): boolean {
+        const target = this.childMessages.find((m) => m.getId() === oldId);
+        if (!target) return false;
+        target.setId(newId);
+        return true;
+    }
+
+    /**
      * Прокручивает список сообщений до конца.
      * Используется setTimeout, чтобы дать браузеру время отрисовать новые элементы
      * и обновить scrollHeight контейнера.

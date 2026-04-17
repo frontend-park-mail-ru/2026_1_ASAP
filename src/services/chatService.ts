@@ -2,6 +2,7 @@ import { ChatDetail, FrontendMessage, User, DialogChat, GroupChat, ChannelChat, 
 import { httpClient } from '../core/utils/httpClient';
 import { wsClient, MessageDto, ChatInformationDto } from '../core/utils/wsClient';
 import { getFullUrl } from '../core/utils/url';
+import { offlineQueue, PendingMessage } from './offlineMessageQueue';
 
 const host = window.location.hostname;
 const BASE_URL = `${window.location.protocol}//${host}`;
@@ -116,17 +117,70 @@ export class ChatService {
     }
 
     /**
-     * Отправляет сообщение в текущий чат через WebSocket.
-     * Формат пакета: `{ type: "message.Send", payload: { text } }`.
+     * Отправляет сообщение в текущий чат через WebSocket с offline-очередью.
+     * Сначала кладёт запись в IndexedDB (persistent), затем пробует отправить через WS.
+     * Если SyncManager доступен — регистрирует `flush-messages`, чтобы SW разбудил флаш при восстановлении сети.
      *
-     * @param chatId - Строковый ID чата (не используется в payload, так как он в URL сокета).
-     * @param text   - Текст отправляемого сообщения.
+     * @param chatId   - Строковый ID чата.
+     * @param text     - Текст отправляемого сообщения.
+     * @param senderId - ID текущего пользователя (нужен для оптимистичной модели и дедупа).
+     * @returns PendingMessage с tempId для привязки оптимистичного DOM-узла.
      */
-    public sendMessage(chatId: string, text: string): void {
+    public async sendMessage(chatId: string, text: string, senderId: number): Promise<PendingMessage> {
+        const pending: PendingMessage = {
+            tempId: `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            chatId,
+            text,
+            senderId,
+            createdAt: Date.now(),
+        };
+
+        await offlineQueue.enqueue(pending);
+
         wsClient.send('message.Send', {
             chat_id: Number(chatId),
             text,
         });
+
+        if ('serviceWorker' in navigator && 'SyncManager' in window) {
+            try {
+                const reg = await navigator.serviceWorker.ready;
+                await (reg as any).sync.register('flush-messages');
+            } catch {
+                // Background Sync недоступен (например, в приватном режиме) — это не ошибка.
+            }
+        }
+
+        return pending;
+    }
+
+    /**
+     * Пере-проталкивает все pending-сообщения в WebSocket.
+     * Вызывается при `online`, `system.Connected` и сообщении от SW.
+     * Элементы удаляются не здесь, а при приходе серверного broadcast `message.New` (см. resolveServerMessage).
+     */
+    public async flushQueue(): Promise<void> {
+        const pending = await offlineQueue.getAll();
+        for (const m of pending) {
+            wsClient.send('message.Send', {
+                chat_id: Number(m.chatId),
+                text: m.text,
+            });
+        }
+    }
+
+    /**
+     * Сопоставляет пришедшее от сервера сообщение с оптимистичным из очереди.
+     * Если совпадение найдено — удаляет запись из IndexedDB и возвращает её tempId
+     * (UI должен заменить DOM-узел вместо добавления дубликата).
+     */
+    public async resolveServerMessage(dto: MessageDto, currentUserId: number): Promise<string | null> {
+        if (dto.sender_id !== currentUserId) return null;
+        const pending = await offlineQueue.getByChat(dto.chat_id.toString());
+        const match = pending.find((m) => m.text === dto.text);
+        if (!match) return null;
+        await offlineQueue.remove(match.tempId);
+        return match.tempId;
     }
 
     /**

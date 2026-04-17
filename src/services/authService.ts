@@ -77,7 +77,7 @@ class AuthService {
             });
 
             if (!response.ok) {
-                let errorMessage = `Ошибка сервера: ${response.status}`;
+                let errorMessage = `Сервис временно недоступен (код ${response.status})`;
 
                 try {
                     const errorData = await response.json();
