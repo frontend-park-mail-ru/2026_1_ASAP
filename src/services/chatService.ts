@@ -15,7 +15,9 @@ const BASE_URL = `${window.location.protocol}//${host}`;
 export class ChatService {
     private profilesCache: Map<number, User> = new Map();
     private pendingProfiles: Map<number, Promise<User | null>> = new Map();
-    
+    private inFlightMessages = new Set<string>(); //сообщения, которые уже отправлены и ждут ответа
+    private isFlushing = false; //блокировка от параллельного запуска 
+
     /**
      * Преобразует BackendMessage (REST) в FrontendMessage.
      * @param backendMessage - «сырой» объект сообщения из REST-ответа.
@@ -136,18 +138,20 @@ export class ChatService {
         };
 
         await offlineQueue.enqueue(pending);
+        if (wsClient.isConnected()) {
+            this.inFlightMessages.add(pending.tempId);
+            wsClient.sendIfOpen('message.Send', {
+                chat_id: Number(chatId),
+                text,
+            });
+        }
 
-        wsClient.send('message.Send', {
-            chat_id: Number(chatId),
-            text,
-        });
-
-        if ('serviceWorker' in navigator && 'SyncManager' in window) {
+        if (!navigator.onLine && 'serviceWorker' in navigator && 'SyncManager' in window) {            
             try {
                 const reg = await navigator.serviceWorker.ready;
                 await (reg as any).sync.register('flush-messages');
-            } catch {
-                // Background Sync недоступен (например, в приватном режиме) — это не ошибка.
+            } catch (e){
+                console.warn('SyncManager failed', e);
             }
         }
 
@@ -160,12 +164,33 @@ export class ChatService {
      * Элементы удаляются не здесь, а при приходе серверного broadcast `message.New` (см. resolveServerMessage).
      */
     public async flushQueue(): Promise<void> {
-        const pending = await offlineQueue.getAll();
-        for (const m of pending) {
-            wsClient.send('message.Send', {
-                chat_id: Number(m.chatId),
-                text: m.text,
-            });
+        if (this.isFlushing) return;
+
+        if (!wsClient.isConnected()) return;
+
+        this.isFlushing = true;
+
+        try {
+            const pending = await offlineQueue.getAll();
+            for (const m of pending) {
+
+                if (this.inFlightMessages.has(m.tempId)) continue;
+                
+                this.inFlightMessages.add(m.tempId);
+                
+                const sent = wsClient.sendIfOpen('message.Send', {
+                    chat_id: Number(m.chatId),
+                    text: m.text,
+                });
+                
+                // Если внезапно сокет закрылся во время цикла
+                if (!sent) {
+                    this.inFlightMessages.delete(m.tempId);
+                    break;
+                }
+            }
+        } finally {
+            this.isFlushing = false;
         }
     }
 
@@ -176,11 +201,24 @@ export class ChatService {
      */
     public async resolveServerMessage(dto: MessageDto, currentUserId: number): Promise<string | null> {
         if (dto.sender_id !== currentUserId) return null;
+
         const pending = await offlineQueue.getByChat(dto.chat_id.toString());
         const match = pending.find((m) => m.text === dto.text);
+
         if (!match) return null;
+
         await offlineQueue.remove(match.tempId);
+        this.inFlightMessages.delete(match.tempId);
+
         return match.tempId;
+    }
+
+    /**
+     * Вызывать при обрыве соединения, чтобы сбросить In-Flight статус.
+     * Иначе при реконнекте flushQueue проигнорирует сообщения, думая, что они все еще летят.
+     */
+    public clearInFlight(): void {
+        this.inFlightMessages.clear();
     }
 
     /**

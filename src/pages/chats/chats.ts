@@ -176,15 +176,16 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             console.error("ChatsPage: Не удалось получить профиль пользователя", error);
         }
 
-        // Подключаемся к глобальному WebSocket-хабу
         wsClient.connect();
 
-        // Подписываемся на системное событие подключения
         wsClient.subscribe('system.Connected', this.handleWsConnected);
+
+        wsClient.subscribe('system.Disconnected', () => {
+            chatService.clearInFlight();
+        });
 
         await this.handleChatRoute();
 
-        // Подписываемся на глобальное нажатие клавиш для выхода по Esc
         document.addEventListener('keydown', this.handleKeyDown);
 
         // Триггеры флаша оффлайн-очереди сообщений
@@ -192,6 +193,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.addEventListener('message', this.handleSwMessage);
         }
+        
     }
 
     /**
