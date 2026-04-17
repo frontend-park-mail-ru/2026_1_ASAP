@@ -47,7 +47,7 @@ export class GroupHeader extends BaseComponent<GroupHeaderProps> {
         const avatarSlot = this.element.querySelector('[data-component="group-avatar-slot"]');
         if (avatarSlot) {
             this.avatarComponent = new Avatar({
-                src: this.props.chat.avatarUrl || '/assets/images/avatars/defaultAvatar.svg',
+                src: this.props.chat.avatarUrl || '/assets/images/avatars/defaultGroup.svg',
                 class: 'group-header__avatar',
             });
             this.avatarComponent.mount(avatarSlot as HTMLElement);

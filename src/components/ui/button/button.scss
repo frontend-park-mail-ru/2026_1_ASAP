@@ -29,6 +29,7 @@
     &__secondary {
         border: 1px solid $color-primary;
         color: $color-primary;
+        background-color: $color-surface-light;
         @include hover-after-gradient($gradient-button-hover);
 
         &:hover:not(:disabled) {
@@ -37,12 +38,13 @@
     }
 
     &__secondary2 {
-        border: 1px solid $color-text;
+        border: 1px solid $color-surface-light;
         background: none;
         color: $color-text;
         @include hover-after-gradient($color-text);
 
         &:hover:not(:disabled) {
+            border: none;
             color: $color-primary;
         }
     }
@@ -78,7 +80,7 @@
     @include flex-center;
     width: 40px;
     height: 40px;
-    border: 2px solid $color-text;
+    border: 3px solid $color-primary;
     border-radius: 10px;
     background-color: $color-empty;
     cursor: pointer;
@@ -92,11 +94,7 @@
     }
 
     &:hover:not(:disabled) {
-        border: 2px solid $color-text-hover;
-
-        & > img {
-            filter: brightness(0.5);
-        }
+        background-color: rgba($color-primary, 0.25);
     }
 
     & > img {
@@ -165,25 +163,27 @@
     @include hover-transition;
 
     &:hover {
-        border: none;
-        color: $color-text;
+        opacity: 0.8;
         background-color: $color-error-border;
+        border-color: $color-error-border;
+        color: $color-text;
     }
 }
 
 .save-field-button {
     width: 100%;
     height: 42px;
-    background-color: $color-text;
+    background-color: $color-surface-light;
     color: $color-primary;
     border-radius: 10px;
     cursor: pointer;
-    border: none;
+    border: 1px solid transparent;
     font: inherit;
     letter-spacing: inherit;
     @include hover-after-gradient($gradient-button-hover);
 
     &:hover:not(:disabled) {
+        border: none;
         color: $color-text;
     }
 }

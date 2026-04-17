@@ -119,7 +119,7 @@ export class SettingsListItem extends BaseComponent<SettingsListItemProps> {
         // this.subscriptionSetting.mount(this.mainContentArea);
 
         this.logoutSetting = new SettingsItem({
-            src: '/assets/images/icons/logoutSettings.svg',
+            src: '/assets/images/icons/logoutSettings__White.svg',
             title: 'Выйти из аккаунта',
             class: "logout-setting",
             onClick: this.handleLogout,

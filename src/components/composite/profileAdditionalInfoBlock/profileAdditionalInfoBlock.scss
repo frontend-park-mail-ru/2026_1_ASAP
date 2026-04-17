@@ -54,7 +54,6 @@
 }
 
 .bio-info {
-    border-bottom: 0.5px solid $color-border-chats;
     display: flex;
     width: 100%;
     flex-grow: 1;
@@ -64,7 +63,7 @@
     min-height: 0;
     align-items: center;
     padding: 5px 0;
-    overflow: hidden;
+    overflow: hidden;;
 }
 
 .bio-text {
@@ -133,7 +132,6 @@
     text-decoration: underline dashed $color-text;
     text-decoration-thickness: 1px;
     text-underline-offset: 3px;
-
     &:hover {
         opacity: 0.6;
         transition: 0.2s;
