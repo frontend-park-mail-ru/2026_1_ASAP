@@ -117,7 +117,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
                 }
                 
                 this.modalComponent = new ConfirmModal({
-                    text: `Сообщение слишком длинное! Максимальная длина — 2000 символов (сейчас ${text.length}).`,
+                    text: `Уменьшите сообщение до 2000 символов (сейчас ${text.length})`,
                     confirmButtonText: "Понятно",
                     hideCancel: true,
                     confirmButtonClass: "confirm-modal__button--submit ui-button",

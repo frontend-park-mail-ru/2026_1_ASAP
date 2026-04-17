@@ -143,7 +143,7 @@ export class EditProfileOverlay extends BaseComponent<EditProfileOverlayProps> {
             wrap.className = "edit-profile__birth-date-field";
             const hint = document.createElement("p");
             hint.className = "edit-profile__birth-date-hint";
-            hint.textContent = "Вводите только цифры; точки расставляются сами (ДД.ММ.ГГГГ).";
+            hint.textContent = "Вводите только цифры; точки расставляются сами (ДД.ММ.ГГГГ)";
             const input = document.createElement("input");
             input.type = "text";
             input.className = "edit-profile__birth-date-input";

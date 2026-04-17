@@ -78,13 +78,37 @@ export class ContactListItem extends BaseForm<ContactListItemProps> {
 
     /**
      * Выполняется после монтирования компонента.
-     * Загружает контакты, создает и монтирует `ContactItem` для каждого.
-     * В зависимости от `listMode` добавляет соответствующие элементы управления
-     * (кнопки или чекбоксы) или устанавливает обработчик для перехода к профилю.
+     * Запускает первичную загрузку списка контактов.
      * @protected
      */
     protected afterMount(): void {
+        this.loadContacts();
+    };
+
+    /**
+     * Перезагружает список контактов: сбрасывает текущие элементы и перезапрашивает данные.
+     * Используется после изменения списка контактов извне (добавление/удаление).
+     */
+    public reload = (): void => {
+        this.loadContacts();
+    };
+
+    /**
+     * Сбрасывает текущий DOM и состояние списка перед рендером.
+     */
+    private resetList(): void {
+        this.emptyContactsList?.remove();
+        this.emptyContactsList = null;
+        this.element?.classList.remove('contact-list--empty');
+        this.contactItems.forEach(contactItem => contactItem.unmount());
         this.contactItems = [];
+    }
+
+    /**
+     * Загружает контакты и рендерит их согласно текущему `listMode`.
+     */
+    private loadContacts(): void {
+        this.resetList();
         contactService.getContacts().then(contacts => {
             if (!this.element) {
                 return;
@@ -103,14 +127,14 @@ export class ContactListItem extends BaseForm<ContactListItemProps> {
                 let rightControl: BaseComponent<any> | undefined = undefined;
                 let onRowClick: ((item: ContactItem) => void) | undefined = undefined;
                 const mode = this.props.listMode || 'default';
-                
+
                 switch (mode) {
                     case 'createDialog':
                         rightControl = new Button({
                             class: "create-dialog-btn",
                             icon: "/assets/images/icons/createChatMenuIcons/createNewChat.svg",
                             onClick: () => {
-                                if (this.props.onAction) { 
+                                if (this.props.onAction) {
                                     this.props.onAction(contact.contact_user_id, true, contact.contact_name);};
                             }
                         });
@@ -146,11 +170,11 @@ export class ContactListItem extends BaseForm<ContactListItemProps> {
                 if (!onRowClick && contactItem.element) {
                     contactItem.element.style.borderBottom = "none";
                 }
-                this.contactItems.push(contactItem);    
+                this.contactItems.push(contactItem);
             });
             this.setActiveContact(this.ActiveContactId);
         });
-    };
+    }
 
     /**
      * Выполняется перед размонтированием компонента.

@@ -40,6 +40,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
         width: 100%;
+        line-height: 1.3;
 
         &:hover {
             font-weight: 500;
@@ -52,6 +53,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
         width: 100%;
+        line-height: 1.3;
     }
 
     &__settings {

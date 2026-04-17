@@ -26,7 +26,7 @@ class ValidationService {
      */
     public validateEmail(email: string): ValidationResult {
         if (!email) {
-            return { isValid: false, message: 'Почта не может быть пустой' };
+            return { isValid: false, message: 'Введите почту' };
         }
 
         const emailRegex = new RegExp(
@@ -38,16 +38,16 @@ class ValidationService {
         );
 
         if (/[\x80-\uFFFF]/.test(email)) {
-            return { isValid: false, message: 'Почта может содержать только латинские буквы, цифры и спецсимволы' };
+            return { isValid: false, message: 'Используйте только латинские буквы, цифры и спецсимволы' };
         }
 
         if (!emailRegex.test(email)) {
-            return { isValid: false, message: 'Неверный формат почты' };
+            return { isValid: false, message: 'Пожалуйста, укажите корректный адрес почты' };
         }
 
         const domain = email.split('@')[1];
         if (ipAddressRegex.test(domain)) {
-             return { isValid: false, message: 'IP-адреса в домене не допускаются' };
+             return { isValid: false, message: 'Используйте доменное имя вместо IP-адреса' };
         }
 
         return { isValid: true, message: '' };
@@ -60,11 +60,11 @@ class ValidationService {
      */
     public validatePassword(password: string): ValidationResult {
         const requirements = [
-            { regex: /.{8,}/, message: 'Минимум 8 символов' },
-            { regex: /[A-Z]/, message: 'Хотя бы одна заглавная буква' },
-            { regex: /[a-z]/, message: 'Хотя бы одна строчная буква' },
-            { regex: /[0-9]/, message: 'Хотя бы одна цифра' },
-            { regex: /[[\]!@#$%^&*()_+=}{';:"\\|,.<>/?]/, message: 'Хотя бы один спецсимвол' },
+            { regex: /.{8,}/, message: 'Используйте не менее 8 символов' },
+            { regex: /[A-Z]/, message: 'Добавьте хотя бы одну заглавную букву' },
+            { regex: /[a-z]/, message: 'Добавьте хотя бы одну строчную букву' },
+            { regex: /[0-9]/, message: 'Добавьте хотя бы одну цифру' },
+            { regex: /[[\]!@#$%^&*()_+=}{';:"\\|,.<>/?]/, message: 'Добавьте хотя бы один спецсимвол' },
         ];
 
         const missing: string[] = [];
@@ -73,7 +73,7 @@ class ValidationService {
         if (!password) {
             return {
                 isValid: false,
-                message: 'Пароль не может быть пустым',
+                message: 'Введите пароль',
                 missing: requirements.map(req => req.message)
             };
         }
@@ -85,7 +85,7 @@ class ValidationService {
             }
         }
 
-        return { isValid, message: isValid ? '' : 'Пароль не соответствует требованиям', missing };
+        return { isValid, message: isValid ? '' : 'Усильте пароль согласно подсказкам', missing };
     }
 
     /**
@@ -95,16 +95,16 @@ class ValidationService {
      */
     public validateLogin(login: string): ValidationResult {
         if (!login) {
-            return { isValid: false, message: 'Логин не может быть пустым' };
+            return { isValid: false, message: 'Введите логин' };
         }
         if (login.length < 3) {
-            return { isValid: false, message: 'Логин должен быть не менее 3 символов' };
+            return { isValid: false, message: 'Используйте не менее 3 символов' };
         }
         if (login.length > 20) {
-            return { isValid: false, message: 'Логин должен быть не более 20 символов' };
+            return { isValid: false, message: 'Используйте не более 20 символов' };
         }
         if (!/^[a-zA-Z0-9_]+$/.test(login)) {
-            return { isValid: false, message: 'Логин может содержать только латинские буквы, цифры и _' };
+            return { isValid: false, message: 'Используйте только латинские буквы, цифры и _' };
         }
 
         return { isValid: true, message: '' };
@@ -118,7 +118,7 @@ class ValidationService {
      */
     public validateRequired(value: string, fieldName: string = 'Поле'): ValidationResult {
         if (!value || value.trim() === '') {
-            return { isValid: false, message: `${fieldName} не может быть пустым` };
+            return { isValid: false, message: `Заполните поле «${fieldName}»` };
         }
 
         return { isValid: true, message: '' };
@@ -131,7 +131,7 @@ class ValidationService {
         if (t.length > PROFILE_FULL_NAME_MAX_LENGTH) {
             return {
                 isValid: false,
-                message: `Имя не длиннее ${PROFILE_FULL_NAME_MAX_LENGTH} символов`,
+                message: `Используйте не более ${PROFILE_FULL_NAME_MAX_LENGTH} символов в имени`,
             };
         }
         return { isValid: true, message: '' };
@@ -143,7 +143,7 @@ class ValidationService {
         if (t.length > PROFILE_FULL_NAME_MAX_LENGTH) {
             return {
                 isValid: false,
-                message: `Фамилия не длиннее ${PROFILE_FULL_NAME_MAX_LENGTH} символов`,
+                message: `Используйте не более ${PROFILE_FULL_NAME_MAX_LENGTH} символов в фамилии`,
             };
         }
         return { isValid: true, message: '' };
@@ -171,21 +171,21 @@ class ValidationService {
         } else {
             return {
                 isValid: false,
-                message: 'Введите дату полностью: ДД.ММ.ГГГГ',
+                message: 'Введите дату в формате ДД.ММ.ГГГГ',
             };
         }
 
         if (year < 1900) {
-            return { isValid: false, message: 'Год не может быть раньше 1900' };
+            return { isValid: false, message: 'Укажите год начиная с 1900' };
         }
 
         if (month < 1 || month > 12) {
-            return { isValid: false, message: 'Некорректный месяц' };
+            return { isValid: false, message: 'Укажите месяц от 01 до 12' };
         }
 
         const dim = new Date(year, month, 0).getDate();
         if (day < 1 || day > dim) {
-            return { isValid: false, message: 'Некорректный день для этого месяца' };
+            return { isValid: false, message: 'Укажите день, подходящий для этого месяца' };
         }
 
         const d = new Date(year, month - 1, day);
@@ -194,13 +194,13 @@ class ValidationService {
             d.getMonth() !== month - 1 ||
             d.getDate() !== day
         ) {
-            return { isValid: false, message: 'Некорректная дата' };
+            return { isValid: false, message: 'Пожалуйста, проверьте правильность даты' };
         }
 
         const today = new Date();
         today.setHours(23, 59, 59, 999);
         if (d > today) {
-            return { isValid: false, message: 'Дата не может быть в будущем' };
+            return { isValid: false, message: 'Выберите дату не позже сегодняшнего дня' };
         }
 
         return { isValid: true, message: '' };
@@ -211,7 +211,7 @@ class ValidationService {
         if (t.length > PROFILE_BIO_MAX_LENGTH) {
             return {
                 isValid: false,
-                message: `Слишком длинный текст (максимум ${PROFILE_BIO_MAX_LENGTH} символов)`,
+                message: `Используйте не более ${PROFILE_BIO_MAX_LENGTH} символов`,
             };
         }
         return { isValid: true, message: '' };
