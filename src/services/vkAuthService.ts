@@ -23,7 +23,7 @@ export class VkAuthService {
 
         oneTap.render({
             container: container,
-            showAlternativeLogin: true,
+            showAlternativeLogin: false,
             styles: {
                 borderRadius: 10,
                 height: 42
