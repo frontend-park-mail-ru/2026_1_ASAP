@@ -341,7 +341,7 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
 
         if (titleChanged) {
             if (newName.length > MAX_TITLE_LENGTH) {
-                this.showAlert(`Название группы не должно превышать ${MAX_TITLE_LENGTH} символов.`, () => {
+                this.showAlert(`Название группы не должно превышать ${MAX_TITLE_LENGTH} символов`, () => {
                     this.setEditing(true);
                 });
                 return;
@@ -379,13 +379,13 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
                     this.props.onGroupUpdated();
                 }
             } else {
-                this.showAlert('Не удалось сохранить изменения. Попробуйте ещё раз.', () => {
+                this.showAlert('Не удалось сохранить изменения. Попробуйте ещё раз', () => {
                     this.setEditing(true);
                 });
             }
         } catch (error) {
             console.error("Ошибка при сохранении группы:", error);
-            this.showAlert('Произошла ошибка при сохранении. Проверьте подключение к сети.');
+            this.showAlert('Произошла ошибка при сохранении. Проверьте подключение к сети');
         } finally {
             this.setLoadingState(false);
         }

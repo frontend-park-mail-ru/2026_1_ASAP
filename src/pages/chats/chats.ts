@@ -662,14 +662,14 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     this.rebuildSidebar();
                     this.props.router.navigate('/chats');
                 } else {
-                    let errorMsg = 'Не удалось покинуть группу.';
-                    
+                    let errorMsg = 'Не удалось покинуть группу';
+
                     if (res.status === 403 || res.errorCode === 'CANT_LEAVE_OWN_CHAT') {
                         errorMsg = 'У вас нет прав для выхода (вы владелец)';
                     } else if (res.status === 400) {
-                        errorMsg = 'Неверный запрос или попытка выхода из личного диалога.';
+                        errorMsg = 'Неверный запрос или попытка выхода из личного диалога';
                     } else if (res.status === 404) {
-                        errorMsg = 'Чат не найден.';
+                        errorMsg = 'Чат не найден';
                     } else if (res.errorMessage) {
                         errorMsg = res.errorMessage;
                     } else if (res.errorCode) {
@@ -696,11 +696,11 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             onRemoveMember: async (userId: number) => {
                 const res = await chatService.removeMember(chat.id, userId);
                 if (!res.success) {
-                    let errorMsg = 'Произошла ошибка при удалении участника.';
+                    let errorMsg = 'Произошла ошибка при удалении участника';
                     if (res.status === 403) {
-                        errorMsg = 'Только владелец может удалять участников.';
+                        errorMsg = 'Только владелец может удалять участников';
                     } else if (res.status === 400) {
-                        errorMsg = 'Невозможно удалить владельца чата.';
+                        errorMsg = 'Невозможно удалить владельца чата';
                     }
                     
                     this.showAlert(errorMsg, () => {
@@ -789,7 +789,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     if (res.status === 400) {
                         return "Неверный запрос (проверьте данные)";
                     }
-                    return 'Не удалось добавить участника.';
+                    return 'Не удалось добавить участника';
                 }
             }
         });
