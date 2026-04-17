@@ -30,7 +30,7 @@
         align-items: center;
         gap: 10px;
         border-radius: 10px;
-        padding: 10px;
+        padding: 50px 20px;
         min-width: 320px;
         box-sizing: border-box;
         font-family: $font-secondary;
@@ -43,14 +43,10 @@
         .edit-title {
             margin: 0;
             width: 100%;
+            margin-bottom: 15px;
             text-align: center;
-            color: $color-scroll;
-            min-height: 30px;
-            font-family: $font-secondary;
-            font-size: $font-size-lg;
-            font-weight: 500;
-            line-height: 22px;
-            letter-spacing: $text-secondary-ls;
+            color: $color-text;
+            font: $text-heading1;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -85,6 +81,8 @@
     }
 
     &__validation-error {
+        color: $color-error;
+        font: $text-tertiary;
         margin: 0;
         width: 100%;
         min-height: 1.25em;
@@ -109,7 +107,7 @@
         margin: 0;
         font: $text-tertiary;
         letter-spacing: $text-tertiary-ls;
-        color: $color-text-tertiary;
+        color: $color-surface-light;
         text-align: center;
     }
 

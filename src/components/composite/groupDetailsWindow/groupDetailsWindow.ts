@@ -127,7 +127,7 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
         if (avatarSlot) {
             const avatarSrc = this.avatarPreviewUrl
                 || this.props.groupAvatarUrl
-                || "/assets/images/avatars/defaultAvatar.svg";
+                || "/assets/images/avatars/defaultGroup.svg";
 
             this.avatarComponent = new Avatar({
                 src: avatarSrc,
@@ -279,7 +279,7 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
             const item = new ContactItem({
                 id: member.id,
                 name: member.name,
-                avatarUrl: member.avatarUrl || '/assets/images/avatars/defaultAvatar.svg',
+                avatarUrl: member.avatarUrl || '/assets/images/avatars/defaultGroup.svg',
                 rightSlot: rightControl,
                 onClick: !this.props.isEditing ? () => {
                     if (this.props.onMemberClick) {

@@ -73,7 +73,7 @@ export class SearchForm extends BaseForm<SearchFormProps> {
         if (addButtonContainer && !this.props.hideAddButton) {
             this.addButton = new Button({ 
                 class: "add-button", 
-                icon: "/assets/images/icons/deleteIcon.svg", 
+                icon: "/assets/images/icons/addIcon.svg", 
                 daughterClass: "add-icon",
                 onClick: () => {
                     if (this.props.onAddClick) {

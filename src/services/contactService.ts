@@ -397,6 +397,33 @@ export class ContactService {
     }
 
     /**
+     * Удаляет пользователя из контактов по ID.
+     * @param {number} contactUserId - ID контакта для удаления.
+     * @returns {Promise<{success: boolean, status: number, code: string}>}
+     */
+    public async deleteContact(contactUserId: number): Promise<{success: boolean, status: number, code: string}> {
+        try {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/contacts/${contactUserId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            let errorCode = '';
+            if (!response.ok) {
+                try {
+                    const data = await response.json();
+                    if (data.errors && data.errors.length > 0) errorCode = data.errors[0].code;
+                } catch {}
+                return { success: false, status: response.status, code: errorCode };
+            }
+
+            return { success: true, status: 200, code: '' };
+        } catch (error) {
+            return { success: false, status: 500, code: '' };
+        }
+    }
+
+    /**
      * Находит ID пользователя по его логину.
      */
     public async getIdByLogin(login: string): Promise<{id: number | null, status: number}> {

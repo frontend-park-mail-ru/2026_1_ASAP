@@ -19,12 +19,13 @@ $color-border-chats: rgba(112, 112, 112, 0.3);
 
 $color-scroll: rgba(112, 112, 112, 1);
 $color-empty: rgba(242, 240, 240, 0);
+$color-surface-light: rgba(242, 240, 240, 0.88);
 $color-half-empty: rgba(242, 240, 240, 0.5);
 
 $color-bubble: rgba(69, 93, 186, 1);
 
-$color-error: #FF0000;
-$color-error-border: #D80000;
+$color-error: #C0392B;
+$color-error-border: #A93226;
 
 $color-stroke: rgba(122, 122, 122, 0.37);
 $color-stroke2: rgba(122, 122, 122, 0.30);
@@ -97,7 +98,7 @@ $gradient-selected-chat: linear-gradient(
 $font-primary: "Inter", sans-serif;
 $font-secondary: "Inter", sans-serif;
 $font-tertiary: "Inter", sans-serif;
-$font-text-main: "Roboto Condensed", sans-serif;
+$font-text-main: "Roboto", sans-serif;
 
 
 $text-heading1: 600 24px/30px $font-primary;
