@@ -2,6 +2,7 @@ import { ChatDetail, FrontendMessage, User, DialogChat, GroupChat, ChannelChat, 
 import { httpClient } from '../core/utils/httpClient';
 import { wsClient, MessageDto, ChatInformationDto } from '../core/utils/wsClient';
 import { getFullUrl } from '../core/utils/url';
+import { offlineQueue, PendingMessage } from './offlineMessageQueue';
 
 const host = window.location.hostname;
 const BASE_URL = `${window.location.protocol}//${host}`;
@@ -14,7 +15,9 @@ const BASE_URL = `${window.location.protocol}//${host}`;
 export class ChatService {
     private profilesCache: Map<number, User> = new Map();
     private pendingProfiles: Map<number, Promise<User | null>> = new Map();
-    
+    private inFlightMessages = new Set<string>(); //сообщения, которые уже отправлены и ждут ответа
+    private isFlushing = false; //блокировка от параллельного запуска 
+
     /**
      * Преобразует BackendMessage (REST) в FrontendMessage.
      * @param backendMessage - «сырой» объект сообщения из REST-ответа.
@@ -116,17 +119,106 @@ export class ChatService {
     }
 
     /**
-     * Отправляет сообщение в текущий чат через WebSocket.
-     * Формат пакета: `{ type: "message.Send", payload: { text } }`.
+     * Отправляет сообщение в текущий чат через WebSocket с offline-очередью.
+     * Сначала кладёт запись в IndexedDB (persistent), затем пробует отправить через WS.
+     * Если SyncManager доступен — регистрирует `flush-messages`, чтобы SW разбудил флаш при восстановлении сети.
      *
-     * @param chatId - Строковый ID чата (не используется в payload, так как он в URL сокета).
-     * @param text   - Текст отправляемого сообщения.
+     * @param chatId   - Строковый ID чата.
+     * @param text     - Текст отправляемого сообщения.
+     * @param senderId - ID текущего пользователя (нужен для оптимистичной модели и дедупа).
+     * @returns PendingMessage с tempId для привязки оптимистичного DOM-узла.
      */
-    public sendMessage(chatId: string, text: string): void {
-        wsClient.send('message.Send', {
-            chat_id: Number(chatId),
+    public async sendMessage(chatId: string, text: string, senderId: number): Promise<PendingMessage> {
+        const pending: PendingMessage = {
+            tempId: `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            chatId,
             text,
-        });
+            senderId,
+            createdAt: Date.now(),
+        };
+
+        await offlineQueue.enqueue(pending);
+        if (wsClient.isConnected()) {
+            this.inFlightMessages.add(pending.tempId);
+            wsClient.sendIfOpen('message.Send', {
+                chat_id: Number(chatId),
+                text,
+            });
+        }
+
+        if (!navigator.onLine && 'serviceWorker' in navigator && 'SyncManager' in window) {            
+            try {
+                const reg = await navigator.serviceWorker.ready;
+                await (reg as any).sync.register('flush-messages');
+            } catch (e){
+                console.warn('SyncManager failed', e);
+            }
+        }
+
+        return pending;
+    }
+
+    /**
+     * Пере-проталкивает все pending-сообщения в WebSocket.
+     * Вызывается при `online`, `system.Connected` и сообщении от SW.
+     * Элементы удаляются не здесь, а при приходе серверного broadcast `message.New` (см. resolveServerMessage).
+     */
+    public async flushQueue(): Promise<void> {
+        if (this.isFlushing) return;
+
+        if (!wsClient.isConnected()) return;
+
+        this.isFlushing = true;
+
+        try {
+            const pending = await offlineQueue.getAll();
+            for (const m of pending) {
+
+                if (this.inFlightMessages.has(m.tempId)) continue;
+                
+                this.inFlightMessages.add(m.tempId);
+                
+                const sent = wsClient.sendIfOpen('message.Send', {
+                    chat_id: Number(m.chatId),
+                    text: m.text,
+                });
+                
+                // Если внезапно сокет закрылся во время цикла
+                if (!sent) {
+                    this.inFlightMessages.delete(m.tempId);
+                    break;
+                }
+            }
+        } finally {
+            this.isFlushing = false;
+        }
+    }
+
+    /**
+     * Сопоставляет пришедшее от сервера сообщение с оптимистичным из очереди.
+     * Если совпадение найдено — удаляет запись из IndexedDB и возвращает её tempId
+     * (UI должен заменить DOM-узел вместо добавления дубликата).
+     */
+    public async resolveServerMessage(dto: MessageDto, currentUserId: number): Promise<string | null> {
+        if (dto.sender_id !== currentUserId) return null;
+
+        const pending = await offlineQueue.getByChat(dto.chat_id.toString());
+        const match = pending.find((m) => m.text === dto.text);
+
+        if (!match) return null;
+
+        await offlineQueue.remove(match.tempId);
+        this.inFlightMessages.delete(match.tempId);
+
+        return match.tempId;
+    }
+
+    /**
+     * Вызывать при обрыве соединения, чтобы сбросить In-Flight статус.
+     * Иначе при реконнекте flushQueue проигнорирует сообщения, думая, что они все еще летят.
+     */
+    public clearInFlight(): void {
+        this.inFlightMessages.clear();
     }
 
     /**

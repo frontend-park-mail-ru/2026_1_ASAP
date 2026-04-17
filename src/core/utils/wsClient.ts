@@ -175,6 +175,25 @@ class WebSocketClient {
 
         this.socket = null;
     }
+    
+/**
+     * Проверяет, открыт ли сокет прямо сейчас.
+     */
+    public isConnected(): boolean {
+        return this.socket !== null && this.socket.readyState === WebSocket.OPEN;
+    }
+
+    /**
+     * Отправляет сообщение только если сокет открыт. 
+     * НЕ кладет в sendQueue (т.к. за очередь отвечает OfflineMessageQueue).
+     */
+    public sendIfOpen(type: string, payload: any): boolean {
+        if (this.isConnected()) {
+            this.socket!.send(JSON.stringify({ type, payload }));
+            return true;
+        }
+        return false;
+    }
 
     /**
      * Формирует и отправляет пакет на сервер.

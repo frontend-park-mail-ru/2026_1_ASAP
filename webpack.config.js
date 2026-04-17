@@ -3,7 +3,7 @@ import { fileURLToPath } from 'url';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
-import { GenerateSW } from 'workbox-webpack-plugin';
+import { InjectManifest } from 'workbox-webpack-plugin';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -71,49 +71,10 @@ export default {
         new HtmlWebpackPlugin({
             template: './src/index.html',
         }),
-        new GenerateSW({
-            mode: 'development',
+        new InjectManifest({
+            swSrc: resolve(__dirname, 'src/service-worker.ts'),
             swDest: 'service-worker.js',
-            clientsClaim: true,
-            skipWaiting: true,
-            cleanupOutdatedCaches: true,
-            disableDevLogs: true,
-            navigateFallback: '/index.html',
-            runtimeCaching: [
-                {
-                    urlPattern: ({ request, sameOrigin }) => request.destination === 'image' && sameOrigin,
-                    handler: 'CacheFirst',
-                    options: {
-                        cacheName: 'local-images-cache',
-                        expiration: {
-                            maxEntries: 200,
-                            maxAgeSeconds: 60 * 60 * 24 * 30,
-                        },
-                    },
-                },
-                {
-                    urlPattern: ({ request, sameOrigin }) => request.destination === 'image' && !sameOrigin,
-                    handler: 'NetworkFirst',
-                    options: {
-                        cacheName: 'remote-images-cache',
-                        expiration: {
-                            maxEntries: 100,
-                            maxAgeSeconds: 60 * 60 * 24 * 7,
-                        },
-                    },
-                },
-                {
-                    urlPattern: ({ request }) => request.destination === 'style' || request.destination === 'script',
-                    handler: 'StaleWhileRevalidate',
-                    options: {
-                        cacheName: 'static-resources-cache',
-                    },
-                },
-                {
-                    urlPattern: ({ sameOrigin, url }) => sameOrigin && url.pathname.startsWith('/api/'),
-                    handler: 'NetworkOnly',
-                },
-            ],
+            maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         }),
     ],
 

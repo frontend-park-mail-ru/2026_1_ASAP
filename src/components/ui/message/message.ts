@@ -39,6 +39,14 @@ export class Message extends BaseComponent<MessageProps> {
 
     private avatarComponent: Avatar | null = null;
 
+    public getId(): string {
+        return this.props.message.id;
+    }
+
+    public setId(newId: string): void {
+        this.props.message.id = newId;
+    }
+
     /**
      * Возвращает отображаемое имя отправителя сообщения.
      * @param {User} user - Объект пользователя.
