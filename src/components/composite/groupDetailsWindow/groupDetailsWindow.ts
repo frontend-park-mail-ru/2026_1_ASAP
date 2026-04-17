@@ -11,7 +11,6 @@ import { chatService } from '../../../services/chatService';
 
 
 const MAX_TITLE_LENGTH = 100;
-const MAX_AVATAR_SIZE = 5 * 1024 * 1024;
 const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 interface GroupMember {
@@ -307,9 +306,9 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
         let errorMessage = '';
 
         if (!ALLOWED_TYPES.includes(file.type)) {
-            errorMessage = 'Неверный формат файла. Разрешены только JPEG, PNG и WEBP';
+            errorMessage = 'Пожалуйста, используйте формат JPEG, PNG или WEBP';
         } else if (file.size > MAX_SIZE) {
-            errorMessage = 'Файл слишком большой. Максимальный размер — 5 МБ';
+            errorMessage = 'Выберите файл размером до 5 МБ';
         }
 
         if (errorMessage) {

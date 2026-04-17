@@ -189,9 +189,9 @@ export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowPr
         let errorMessage = '';
 
         if (!ALLOWED_TYPES.includes(file.type)) {
-            errorMessage = 'Неверный формат файла. Разрешены только JPEG, PNG и WEBP';
+            errorMessage = 'Пожалуйста, используйте формат JPEG, PNG или WEBP';
         } else if (file.size > MAX_SIZE) {
-            errorMessage = 'Файл слишком большой. Максимальный размер — 5 МБ';
+            errorMessage = 'Выберите файл размером до 5 МБ';
         }
 
         if (errorMessage) {

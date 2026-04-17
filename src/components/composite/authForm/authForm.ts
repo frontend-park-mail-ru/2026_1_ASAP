@@ -203,7 +203,7 @@ export class AuthForm extends BaseForm<AuthFormProps> {
         } else {
             this.loginInput.setError(' ');
             this.passwordInput.setError(' ');
-            this.showFormError('Неверный логин или пароль');
+            this.showFormError('Проверьте логин и пароль');
             this.loginButton.disabled = true;
         }
     }
