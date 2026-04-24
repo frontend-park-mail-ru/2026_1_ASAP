@@ -42,6 +42,8 @@
 
 .add-button-cont {
     @include flex-center;
+    position: relative;
+    flex-shrink: 0;
     padding: 0;
 }
 

@@ -193,7 +193,11 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.addEventListener('message', this.handleSwMessage);
         }
-        
+
+        const mobileBack = this.element.querySelector('.chat-page__mobile-back');
+        mobileBack?.addEventListener('click', this.handleMobileBack);
+
+        this.syncMobileLayoutState();
     }
 
     /**
@@ -245,48 +249,83 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * @private
      */
     private async handleChatRoute(): Promise<void> {
-        const path = this.props.currentPath || window.location.pathname;
-        const pathParts = path.split('/');
-        const lastParam = pathParts[pathParts.length - 1];
+        try {
+            const path = this.props.currentPath || window.location.pathname;
+            const pathParts = path.split('/');
+            const lastParam = pathParts[pathParts.length - 1];
 
-        const isValidId = /^\d+$/.test(lastParam);
+            const isValidId = /^\d+$/.test(lastParam);
 
-        // Корень чатов (показываем плейсхолдер)
-        if (path === '/chats') {
-            this.cleanupMainContent();
-            this.activeChatId = null;
-            this.chatWrapper?.setActiveChat(null);
-            
-            if (this.placeholderElement) {
-                this.placeholderElement.style.display = 'block';
-            }
-            return;
-        }
-
-        // Открытие существующего чата
-        if (isValidId) {
-            if (lastParam !== this.activeChatId || !this.chatWindow) {
+            // Корень чатов (показываем плейсхолдер)
+            if (path === '/chats') {
                 this.cleanupMainContent();
-                
-                this.activeChatId = lastParam;
-                this.chatWrapper?.setActiveChat(lastParam);
-                await this.openChat(lastParam);
+                this.activeChatId = null;
+                this.chatWrapper?.setActiveChat(null);
+
+                if (this.placeholderElement) {
+                    this.placeholderElement.style.display = 'block';
+                }
+                return;
             }
-            return;
-        }
-        
-        // Создание нового чата
-        if (path.startsWith('/chats/create-')) {
-            this.cleanupMainContent();
-            
-            this.activeChatId = null;
-            this.chatWrapper?.setActiveChat(null);
-            
-            const chatType = path.replace('/chats/create-', ''); 
-            this.createChat(chatType);
-            return;
+
+            if (isValidId) {
+                if (lastParam !== this.activeChatId || !this.chatWindow) {
+                    this.cleanupMainContent();
+
+                    this.activeChatId = lastParam;
+                    this.chatWrapper?.setActiveChat(lastParam);
+                    await this.openChat(lastParam);
+                }
+                return;
+            }
+
+            if (path.startsWith('/chats/create-')) {
+                this.cleanupMainContent();
+
+                this.activeChatId = null;
+                this.chatWrapper?.setActiveChat(null);
+
+                const chatType = path.replace('/chats/create-', '');
+                await this.createChat(chatType);
+                return;
+            }
+        } finally {
+            this.syncMobileLayoutState();
         }
     }
+
+    /**
+     * На узких экранах переключает вид: список чатов или основная область (чат / создание / детали).
+     */
+    private syncMobileLayoutState(): void {
+        const pageRoot = this.element?.classList.contains('chat-page')
+            ? this.element
+            : this.element?.querySelector('.chat-page');
+        if (!pageRoot) return;
+
+        const mainVisible =
+            this.activeChatId !== null ||
+            this.createChatWindow !== null ||
+            this.groupDetailsWindow !== null ||
+            this.addMemberWindow !== null;
+
+        /** Плавающая ‹ только там, где нет своей кнопки «Назад» в шапке (см. ActionHeader в Create*Window). */
+        const mobileFloatingBackVisible = mainVisible && this.createChatWindow === null;
+
+        pageRoot.classList.toggle('chat-page--main-visible', mainVisible);
+        pageRoot.classList.toggle('chat-page--mobile-floating-back', mobileFloatingBackVisible);
+    }
+
+    private readonly handleMobileBack = (): void => {
+        if (
+            this.activeChatId ||
+            this.createChatWindow ||
+            this.groupDetailsWindow ||
+            this.addMemberWindow
+        ) {
+            this.props.router.navigate('/chats');
+        }
+    };
 
     /**
      * Полностью пересобирает левую панель (сайдбар).
@@ -464,19 +503,20 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private async openChat(chatId: string): Promise<void> {
         if (!this.mainContentArea) return;
 
-        const chatDetail = await chatService.getChatDetail(chatId);
+        try {
+            const chatDetail = await chatService.getChatDetail(chatId);
 
-        if (this.activeChatId !== chatId) {
-            return;
-        }
-        if (!chatDetail) {
-            this.props.router.navigate('/chats');
-            return;
-        }
-        this.cleanupMainContent();
+            if (this.activeChatId !== chatId) {
+                return;
+            }
+            if (!chatDetail) {
+                this.props.router.navigate('/chats');
+                return;
+            }
+            this.cleanupMainContent();
 
-        let headerComponent: BaseComponent;
-        switch (chatDetail.type) {
+            let headerComponent: BaseComponent;
+            switch (chatDetail.type) {
             case 'dialog':
                 const members = await chatService.getChatMembers(chatId);
                 const myId = await contactService.getMyId();
@@ -547,9 +587,9 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     }
                 });
                 break;
-        }
+            }
 
-        const messageListComponent = new MessageList({ 
+            const messageListComponent = new MessageList({ 
             messages: [],
             currentUser: {
                 id: this.currentUserId as number,
@@ -570,11 +610,11 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     this.activeMessageList.prependMessages(res.messages);
                 }
             }
-        });
+            });
 
-        this.activeMessageList = messageListComponent;
+            this.activeMessageList = messageListComponent;
 
-        const messageInputComponent = new MessageInput({
+            const messageInputComponent = new MessageInput({
             onSubmit: async (text: string) => {
                 if (!this.activeChatId || this.currentUserId === null) return;
 
@@ -599,24 +639,27 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 };
                 this.activeMessageList?.addMessage(optimistic);
             }
-        });
+            });
 
-        this.chatWindow = new ChatWindow({
-            headerComponent: headerComponent,
-            messageListComponent: messageListComponent,
-            inputComponent: messageInputComponent
-        });
-        
-        this.chatWindow.mount(this.mainContentArea);
+            this.chatWindow = new ChatWindow({
+                headerComponent: headerComponent,
+                messageListComponent: messageListComponent,
+                inputComponent: messageInputComponent
+            });
 
-        // Подписываемся на новые сообщения (соединение уже установлено в afterMount)
-        wsClient.subscribe('message.New', this.handleNewMessage);
+            this.chatWindow.mount(this.mainContentArea);
 
-        // Загружаем историю через сокеты сразу после открытия чата
-        await this.loadHistory(chatId);
+            // Подписываемся на новые сообщения (соединение уже установлено в afterMount)
+            wsClient.subscribe('message.New', this.handleNewMessage);
 
-        // Восстанавливаем оптимистичные (offline-pending) сообщения из IndexedDB
-        await this.restorePendingMessages(chatId);
+            // Загружаем историю через сокеты сразу после открытия чата
+            await this.loadHistory(chatId);
+
+            // Восстанавливаем оптимистичные (offline-pending) сообщения из IndexedDB
+            await this.restorePendingMessages(chatId);
+        } finally {
+            this.syncMobileLayoutState();
+        }
     }
 
     /**
@@ -732,6 +775,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 if (this.chatWindow?.element) {
                     this.chatWindow.element.style.display = 'flex';
                 }
+                this.syncMobileLayoutState();
             },
             onLeaveGroup: async () => {
                 const res = await chatService.leaveGroup(chat.id);
@@ -803,6 +847,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         });
 
         this.groupDetailsWindow.mount(this.mainContentArea);
+        this.syncMobileLayoutState();
     }
     /**
      * Открывает окно добавления участника в группу по логину.
@@ -830,6 +875,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 if (this.groupDetailsWindow?.element) {
                     this.groupDetailsWindow.element.style.display = 'flex';
                 }
+                this.syncMobileLayoutState();
             },
             onSubmitSearch: async (login: string) => {
                 const targetLogin = login.trim().toLowerCase();
@@ -877,6 +923,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         });
 
         this.addMemberWindow.mount(this.mainContentArea);
+        this.syncMobileLayoutState();
     }
 
     /**
@@ -898,6 +945,9 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
         // Отписываемся от глобального события
         document.removeEventListener('keydown', this.handleKeyDown);
+
+        this.element?.querySelector('.chat-page__mobile-back')
+            ?.removeEventListener('click', this.handleMobileBack);
 
         window.removeEventListener('online', this.handleOnline);
         if ('serviceWorker' in navigator) {
