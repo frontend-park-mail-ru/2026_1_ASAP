@@ -47,10 +47,19 @@ class SupportService {
             : `${BASE_URL}/api/v1/complaints/createUnauthorized`;
 
         const formData = new FormData();
-        formData.append("type", payload.type);
-        formData.append("body", payload.body);
-        formData.append("feedback_name", payload.feedbackName.trim());
-        formData.append("feedback_email", payload.feedbackEmail.trim());
+        const jsonBody = {
+            type: payload.type,
+            body: payload.body,
+            feedback: {
+                feedback_name: payload.feedbackName.trim(),
+                feedback_email: payload.feedbackEmail.trim()
+            }
+        };
+        formData.append(
+            "payload",
+            new Blob([JSON.stringify(jsonBody)], { type: "application/json" }),
+            "payload.json"
+        );
         if (payload.file) {
             formData.append("attachment", payload.file);
         }
