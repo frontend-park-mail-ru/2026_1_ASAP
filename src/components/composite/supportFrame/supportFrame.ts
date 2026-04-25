@@ -1,4 +1,5 @@
 import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent";
+import { PULSE_SUPPORT_CLOSE } from "../../../core/constants/supportIframe";
 import template from "./supportFrame.hbs";
 import "./supportFrame.scss";
 
@@ -31,7 +32,7 @@ export class SupportFrame extends BaseComponent<SupportFrameProps> {
         }
 
         window.addEventListener('message', event => {
-            if (event.data === 'toggleSupportFrame') {
+            if (event.data?.type === PULSE_SUPPORT_CLOSE) {
                 this.hide();
             }
         });
