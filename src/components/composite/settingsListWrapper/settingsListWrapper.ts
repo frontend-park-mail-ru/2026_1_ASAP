@@ -11,6 +11,7 @@ import template from "./settingsListWrapper.hbs";
 interface SettingsListWrapperProps extends IBaseComponentProps {
     router: Router;
     onProfileClick: () => void;
+    onSupportClick: () => void;
 };
 
 /**
@@ -46,6 +47,7 @@ export class SettingsListWrapper extends BaseForm<SettingsListWrapperProps> {
         this.settingsListItem = new SettingsListItem({
             router: this.props.router,
             onProfileClick: this.props.onProfileClick,
+            onSupportClick: this.props.onSupportClick,
         });
         this.settingsListItem.mount(this.element!);
     };

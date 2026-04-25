@@ -5,6 +5,7 @@ import { SearchForm } from "../../components/composite/searchForm/searchForm";
 import { SettingsListWrapper } from "../../components/composite/settingsListWrapper/settingsListWrapper";
 import { contactService } from "../../services/contactService";
 import { SettingsProfileWindow } from "../../components/composite/settingsProfileWindow/settingsProfileWindow";
+import { SupportFrame } from "../../components/composite/supportFrame/supportFrame";
 import { ProfileAdditionalInfo, ProfileMainInfo } from "../../types/profile";
 
 /**
@@ -37,6 +38,7 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
     private placeHolder: HTMLElement | null = null;
     private activeSetting: string | null = null;
     private settingsWindow: SettingsProfileWindow | null = null;
+    private supportFrame: SupportFrame | null = null;
     private cachedUserProfile: {mainInfo: ProfileMainInfo, additionalInfo: ProfileAdditionalInfo} | null = null;
     private openSettingSeq = 0;
 
@@ -65,6 +67,7 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
         this.settingsListWrapper = new SettingsListWrapper({
             router: this.props.router,
             onProfileClick: () => this.openSetting('profile'),
+            onSupportClick: () => this.openSetting('support'),
         });
         this.settingsListWrapper.mount(this.element!.querySelector('.settings-page__sidebar'));
 
@@ -140,6 +143,18 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
             this.settingsWindow = null;
         }
 
+        if (this.supportFrame) {
+            this.supportFrame.unmount();
+            this.supportFrame = null;
+        }
+
+        if (activeSetting === "support") {
+            if (seq !== this.openSettingSeq) return;
+            this.supportFrame = new SupportFrame({ fullsize: true });
+            this.supportFrame.mount(this.mainContentArea!);
+            return;
+        }
+
         if (activeSetting === "profile") {
             const userProfile = await contactService.getMyProfile();
             if (seq !== this.openSettingSeq) {
@@ -184,5 +199,6 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
     protected beforeUnmount(): void {
         this.searchForm?.unmount();
         this.menuBar?.unmount();
+        this.supportFrame?.unmount();
     };
 };

@@ -8,10 +8,12 @@ import template from "./settingsListItem.hbs";
 interface SettingsListItemProps extends IBaseComponentProps {
     router: Router;
     onProfileClick: () => void;
+    onSupportClick: () => void;
 };
 
 export class SettingsListItem extends BaseComponent<SettingsListItemProps> {
     private profileSetting: SettingsItem | null = null;
+    private suportSetting: SettingsItem | null = null;
     private commonSetting: SettingsItem | null = null;
     private privacySetting: SettingsItem | null = null;
     private subscriptionSetting: SettingsItem | null = null;
@@ -85,6 +87,16 @@ export class SettingsListItem extends BaseComponent<SettingsListItemProps> {
         });
         this.profileSetting.mount(this.mainContentArea);
 
+        this.suportSetting = new SettingsItem({
+            src: '/assets/images/icons/Info.svg',
+            title: 'Техподдержка',
+            onClick: () => {
+                this.setActiveSetting(this.suportSetting!);
+                this.props.onSupportClick();
+            },
+        });
+        this.suportSetting.mount(this.mainContentArea);
+
         // this.commonSetting = new SettingsItem({
         //     src: '/assets/images/icons/commonSettings.svg',
         //     title: 'В разработке',
@@ -117,7 +129,6 @@ export class SettingsListItem extends BaseComponent<SettingsListItemProps> {
         //     },
         // });
         // this.subscriptionSetting.mount(this.mainContentArea);
-
         this.logoutSetting = new SettingsItem({
             src: '/assets/images/icons/logoutSettings__White.svg',
             title: 'Выйти из аккаунта',
@@ -129,6 +140,7 @@ export class SettingsListItem extends BaseComponent<SettingsListItemProps> {
 
     protected beforeUnmount(): void {
         this.profileSetting?.unmount();
+        this.suportSetting?.unmount();
         this.commonSetting?.unmount();
         this.privacySetting?.unmount();
         this.subscriptionSetting?.unmount();

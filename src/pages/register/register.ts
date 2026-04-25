@@ -1,6 +1,8 @@
 import { BasePage, IBasePageProps } from '../../core/base/basePage';
 import { RegisterForm } from '../../components/composite/registerForm/registerForm';
 import template from "./register.hbs";
+import { SupportFrame } from '../../components/composite/supportFrame/supportFrame';
+import { Button } from '../../components/ui/button/button';
 
 /**
  * @interface RegisterPageProps - Свойства для страницы регистрации.
@@ -17,6 +19,8 @@ interface RegisterPageProps extends IBasePageProps {}
  */
 export class RegisterPage extends BasePage<RegisterPageProps> {
     private form: RegisterForm | null = null;
+    private supportButton: Button | null = null;
+    private supportFrame: SupportFrame | null = null;
 
     constructor(props: RegisterPageProps = {}) {
         super(props);
@@ -46,9 +50,24 @@ export class RegisterPage extends BasePage<RegisterPageProps> {
             router: this.props.router
         });
         this.form.mount(registerCard as HTMLElement);
+
+        const supportFrameContainer = this.element?.querySelector('[data-component="register-page__support-frame-container"]');
+        this.supportFrame = new SupportFrame({});
+        this.supportFrame.mount(supportFrameContainer as HTMLElement);
+
+        const supportButtonContainer = this.element?.querySelector('[data-component="register-page__support-button-container"]');
+        this.supportButton = new Button({
+            label: "?",
+            class: "login-page__support-button",
+            onClick: () => {
+                this.supportFrame?.show();
+            }
+        });
+        this.supportButton.mount(supportButtonContainer as HTMLElement);
     }
 
     public beforeUnmount(): void {
         this.form?.unmount();
+        this.supportFrame?.unmount();
     }
 }

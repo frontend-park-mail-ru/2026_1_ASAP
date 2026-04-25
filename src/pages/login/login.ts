@@ -1,6 +1,9 @@
 import { BasePage, IBasePageProps } from '../../core/base/basePage';
 import { AuthForm } from '../../components/composite/authForm/authForm';
 import template from "./login.hbs";
+import { SupportFrame } from '../../components/composite/supportFrame/supportFrame';
+import { BaseComponent } from '../../core/base/baseComponent';
+import { Button } from '../../components/ui/button/button';
 
 /**
  * @interface LoginPageProps
@@ -19,6 +22,8 @@ interface LoginPageProps extends IBasePageProps {}
  */
 export class LoginPage extends BasePage<LoginPageProps> {
     private form: AuthForm | null = null;
+    private supportButton: Button | null = null;
+    private supportFrame: SupportFrame | null = null;
 
     constructor(props: LoginPageProps = {}) {
         super(props);
@@ -48,9 +53,25 @@ export class LoginPage extends BasePage<LoginPageProps> {
             router: this.props.router
         });
         this.form.mount(loginCard as HTMLElement);
+
+        const supportFrameContainer = this.element?.querySelector('[data-component="login-page__support-frame-container"]');
+        this.supportFrame = new SupportFrame({});
+        this.supportFrame.mount(supportFrameContainer as HTMLElement);
+
+
+        const supportButton = this.element?.querySelector('[data-component="login-page__support-button-container"]');
+        this.supportButton = new Button({
+            icon: '/assets/images/icons/support/question-mark.svg',
+            class: "login-page__support-button",
+            onClick: () => {
+                this.supportFrame?.show();
+            }
+        });
+        this.supportButton.mount(supportButton as HTMLElement);
     }
 
     public beforeUnmount(): void {
         this.form?.unmount();
+        this.supportFrame?.unmount();
     }
 }
