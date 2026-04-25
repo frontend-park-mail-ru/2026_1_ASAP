@@ -37,6 +37,36 @@ body:has(#rootSupport) {
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
     overflow: hidden;
 
+    &__input {
+        height: 41px;
+        border-radius: 10px;
+        padding: 0 10px;
+        border: 1px solid #2A2A2A;
+        box-shadow: 0 0 0 0 $color-primary;
+        opacity: 0.5;
+        background: rgba(255, 255, 255, 0.05);
+        color: $color-text;
+        width: 100%;
+        box-sizing: border-box;
+        padding-right: 40px;
+        outline: none;
+        font: $text-tertiary;
+        letter-spacing: $text-tertiary-ls;
+        @include hover-transition;
+
+        &:hover {
+            opacity: 0.8;
+            border: 1.5px solid $color-primary;
+        }
+
+        &:focus,
+        &:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 0.5px $color-primary;
+            border-color: $color-primary;
+            opacity: 1;
+        }
+    }
     &__scroll {
         flex: 1;
         min-height: 0;
@@ -98,6 +128,7 @@ body:has(#rootSupport) {
         @include flex-column;
         gap: 8px;
         margin-bottom: 16px;
+        margin-top: 35px;
     }
 
     &__section--grow {
@@ -160,7 +191,7 @@ body:has(#rootSupport) {
 
     &__issue-type-btn {
         flex: 1;
-        min-width: 96px;
+        min-width: 110px;
         justify-content: center;
         padding: 10px 12px;
         border-radius: 10px;
@@ -217,9 +248,43 @@ body:has(#rootSupport) {
         }
     }
 
-    input[type="file"] {
-        font: $text-tertiary;
+    &__file-input--hidden {
+        display: none;
+    }
+
+    &__file-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border-radius: 10px;
+        border: 1px solid $color-border;
+        background: rgba(255, 255, 255, 0.04);
         color: $color-text-tertiary;
+        cursor: pointer;
+        font: $text-tertiary;
+        letter-spacing: $text-tertiary-ls;
+        @include hover-transition;
+
+        &:hover {
+            border-color: $color-primary;
+            background: rgba(69, 93, 186, 0.1);
+            color: $color-text;
+        }
+    }
+
+    &__file-icon {
+        width: 18px;
+        height: 18px;
+        opacity: 0.7;
+        flex-shrink: 0;
+    }
+
+    &__file-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 280px;
     }
 
     &__footer {

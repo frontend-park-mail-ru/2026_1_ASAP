@@ -2,6 +2,7 @@ import { BaseForm, IBaseFormProps } from '../../../core/base/baseForm';
 import { Button } from '../../ui/button/button';
 import { Checkbox } from "../../ui/checkbox/checkbox";
 import { authService } from '../../../services/authService';
+import { contactService } from '../../../services/contactService';
 import { Input } from '../../ui/input/input';
 import { validationService } from '../../../services/validationService';
 import { Router } from '../../../core/router';
@@ -206,7 +207,8 @@ export class AuthForm extends BaseForm<AuthFormProps> {
             } else {
                 localStorage.removeItem('saved_login');
             }
-            this.props.router.navigate('/chats');
+            const isAdmin = await contactService.isAdmin();
+            this.props.router.navigate(isAdmin ? '/admin' : '/chats');
         } else {
             this.loginInput.setError(' ');
             this.passwordInput.setError(' ');

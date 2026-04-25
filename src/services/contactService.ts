@@ -57,6 +57,7 @@ function formatLastSeen(date: Date): string {
 export class ContactService {
     private myProfile: FrontendProfile | null = null;
     private profilePromise: Promise<FrontendProfile> | null = null;
+    private adminStatus: boolean | null = null;
 
     /**
      * Конвертирует данные контакта от бэкенда в формат фронтенда.
@@ -136,6 +137,7 @@ export class ContactService {
         localStorage.removeItem(CACHE_KEY);
         this.myProfile = null;
         this.profilePromise = null;
+        this.adminStatus = null;
     }
 
     /**
@@ -457,6 +459,24 @@ export class ContactService {
         } catch(error) {
             return { status: 500, profile: null };
         }
+    }
+
+    /**
+     * Проверяет, является ли текущий пользователь администратором.
+     * Делает GET /api/v1/complains/all: не 403 → админ, иначе обычный пользователь.
+     * Результат кэшируется до логаута.
+     */
+    public async isAdmin(): Promise<boolean> {
+        if (this.adminStatus !== null) return this.adminStatus;
+        try {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/complains/all`, {
+                ignoreUnauthorized: true,
+            });
+            this.adminStatus = response.status !== 403;
+        } catch {
+            this.adminStatus = false;
+        }
+        return this.adminStatus;
     }
 };
 

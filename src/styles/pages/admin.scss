@@ -1,0 +1,61 @@
+@use "variables" as *;
+@use "mixins" as *;
+
+.admin-page {
+    position: relative;
+    background: $gradient-background-chats;
+    height: 100vh;
+    height: 100dvh;
+    @include flex-column;
+    overflow: hidden;
+
+    &__header {
+        padding: 20px 24px;
+        border-bottom: 1px solid $color-border-sidebar;
+        background-color: $color-chat-sidebar;
+        flex-shrink: 0;
+    }
+
+    &__title {
+        font: $text-heading1;
+        color: $color-text;
+        letter-spacing: $text-heading1-ls;
+        margin: 0;
+    }
+
+    &__content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px 24px;
+
+        &::-webkit-scrollbar {
+            width: 4px;
+        }
+        &::-webkit-scrollbar-thumb {
+            background: $color-scroll;
+            border-radius: 2px;
+        }
+    }
+
+    &__list {
+        @include flex-column;
+        gap: 8px;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    &__loading,
+    &__empty {
+        text-align: center;
+        color: $color-text-tertiary;
+        padding: 40px 0;
+        font: $text-secondary;
+    }
+
+    &__error {
+        text-align: center;
+        color: $color-error;
+        padding: 40px 0;
+        font: $text-secondary;
+    }
+}

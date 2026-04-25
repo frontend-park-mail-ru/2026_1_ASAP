@@ -98,7 +98,7 @@ export class SupportOverlay extends BaseComponent<SupportOverlayProps> {
         this.setIssueType("bug");
 
         this.nameInput = new Input({
-            class: "ui-input",
+            class: "support-overlay__input",
             name: "support_name",
             required: true,
             type: "text",
@@ -107,7 +107,7 @@ export class SupportOverlay extends BaseComponent<SupportOverlayProps> {
         this.nameInput.mount(this.element!.querySelector('.support-overlay__name-input'));
 
         this.emailInput = new Input({
-            class: "ui-input",
+            class: "support-overlay__input",
             name: "support_email",
             required: true,
             type: "email",
@@ -132,6 +132,36 @@ export class SupportOverlay extends BaseComponent<SupportOverlayProps> {
             type: "file"
         });
         this.filesInput.mount(this.element.querySelector(".support-overlay__files-input") as HTMLElement);
+
+        const filesContainer = this.element.querySelector(".support-overlay__files-input") as HTMLElement;
+        const nativeInput = filesContainer?.querySelector("input[type=file]") as HTMLInputElement | null;
+        if (nativeInput) {
+            const wrapper = nativeInput.closest(".ui-input-wrapper") ?? nativeInput;
+            (wrapper as HTMLElement).classList.add("support-overlay__file-input--hidden");
+
+            const label = document.createElement("label");
+            label.className = "support-overlay__file-label";
+            label.htmlFor = "support_files_id";
+            nativeInput.id = "support_files_id";
+
+            const icon = document.createElement("img");
+            icon.src = "/assets/images/icons/upload.svg";
+            icon.alt = "Загрузить файл";
+            icon.className = "support-overlay__file-icon";
+
+            const text = document.createElement("span");
+            text.className = "support-overlay__file-name";
+            text.textContent = "Прикрепить файл";
+
+            label.appendChild(icon);
+            label.appendChild(text);
+            filesContainer.appendChild(label);
+
+            nativeInput.addEventListener("change", () => {
+                const file = nativeInput.files?.[0];
+                text.textContent = file ? file.name : "Прикрепить файл";
+            });
+        }
 
         this.confirmButton = new Button({
             class: "ui-button ui-button__primary support-overlay__submit",

@@ -39,6 +39,8 @@
 @use "../components/composite/editProfileOverlay/editProfileOverlay" as *;
 @use "../components/composite/avatarEditMenuOverlay/avatarEditMenuOverlay" as *;
 @use "../components/composite/supportOverlay/supportOverlay" as *;
+@use "../components/composite/complaintItem/complaintItem" as *;
+@use "../components/composite/complaintStatusModal/complaintStatusModal" as *;
 
 @use "../components/ui/button/button" as *;
 @use "../components/ui/input/input" as *;
@@ -56,3 +58,4 @@
 @use "pages/register" as *;
 @use "pages/contacts" as *;
 @use "pages/settings" as *;
+@use "pages/admin" as *;
