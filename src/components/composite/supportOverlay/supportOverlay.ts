@@ -4,6 +4,7 @@ import { SupportNewTab } from "./supportNewTab";
 import { SupportMyTab } from "./supportMyTab";
 import { SupportStatTab } from "./supportStatTab";
 import template from "./supportOverlay.hbs";
+import { authService } from "../../../services/authService";
 
 interface SupportOverlayProps extends IBaseComponentProps {
     onCloseClick: (event: MouseEvent) => void;
@@ -50,6 +51,17 @@ export class SupportOverlay extends BaseComponent<SupportOverlayProps> {
         });
         this.newButton.mount(navContainer);
 
+        this.setNavSection("new");
+        void this.mountAuthedNavButtons();
+    }
+
+    private async mountAuthedNavButtons(): Promise<void> {
+        const authed = await authService.checkAuth();
+        if (!authed || !this.element?.isConnected) return;
+
+        const navContainer = this.element.querySelector(".support-overlay__nav-buttons") as HTMLElement | null;
+        if (!navContainer) return;
+
         this.myButton = new Button({
             class: "support-overlay__nav-btn",
             label: "Мои",
@@ -66,7 +78,7 @@ export class SupportOverlay extends BaseComponent<SupportOverlayProps> {
         });
         this.statButton.mount(navContainer);
 
-        this.setNavSection("new");
+        this.setNavSection(this.navSection);
     }
 
     private setNavSection(section: SupportNavSection): void {
