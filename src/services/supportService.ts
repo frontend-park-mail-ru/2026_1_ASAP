@@ -62,6 +62,44 @@ export type GetComplaintStatisticsResult =
     | { success: false; error: string; status: number };
 
 class SupportService {
+    private readCount(source: Record<string, unknown> | undefined, ...keys: string[]): number {
+        if (!source) return 0;
+        for (const key of keys) {
+            const value = source[key];
+            if (typeof value === "number" && Number.isFinite(value)) {
+                return value;
+            }
+            if (typeof value === "string" && value.trim() !== "") {
+                const parsed = Number(value);
+                if (Number.isFinite(parsed)) return parsed;
+            }
+        }
+        return 0;
+    }
+
+    private normalizeStatistics(body: unknown): ComplaintAnalytics | null {
+        if (!body || typeof body !== "object") return null;
+
+        const raw = body as {
+            count_status?: Record<string, unknown>;
+            count_type?: Record<string, unknown>;
+        };
+        if (!raw.count_status || !raw.count_type) return null;
+
+        return {
+            count_status: {
+                count_status_opened: this.readCount(raw.count_status, "count_status_opened", "count_status_new"),
+                count_status_in_work: this.readCount(raw.count_status, "count_status_in_work", "count_status_in_progress"),
+                count_status_closed: this.readCount(raw.count_status, "count_status_closed")
+            },
+            count_type: {
+                count_type_bug: this.readCount(raw.count_type, "count_type_bug"),
+                count_type_upgrade: this.readCount(raw.count_type, "count_type_upgrade", "count_type_suggestion", "count_type_idea"),
+                count_type_product: this.readCount(raw.count_type, "count_type_product", "count_type_complaint", "count_type_claim")
+            }
+        };
+    }
+
     public async createComplaint(payload: CreateComplaintPayload): Promise<CreateComplaintResult> {
         const isAuthed = await authService.checkAuth();
         const url = isAuthed
@@ -166,12 +204,12 @@ class SupportService {
                 }
                 return { success: false, error: errorMessage, status: response.status };
             }
-            const data = (await response.json()) as { body?: ComplaintAnalytics; status?: string };
-            const body = data?.body;
-            if (!body || typeof body !== "object" || !("count_status" in body) || !("count_type" in body)) {
+            const data = (await response.json()) as { body?: unknown; status?: string };
+            const statistics = this.normalizeStatistics(data?.body);
+            if (!statistics) {
                 return { success: false, error: "Некорректный ответ сервера", status: response.status };
             }
-            return { success: true, statistics: body };
+            return { success: true, statistics };
         } catch (e: unknown) {
             const message = e instanceof Error ? e.message : "unvailable";
             return { success: false, error: message, status: 500 };
