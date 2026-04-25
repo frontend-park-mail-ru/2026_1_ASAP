@@ -294,7 +294,7 @@ body:has(#rootSupport) {
 
         &--grow {
             flex: 1;
-            min-height: 120px;
+            min-height: 150px;
         }
     }
 
@@ -309,6 +309,11 @@ body:has(#rootSupport) {
         flex-shrink: 0;
         padding: 12px 20px 20px;
         border-top: 1px solid $color-text-hover2;
+    }
+
+    &__issue-type-buttons {
+        gap: 8px;
+        display: flex;
     }
 }
 
