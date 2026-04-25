@@ -39,6 +39,28 @@ export type GetMyComplaintsResult =
     | { success: true; complaints: MyComplaintItem[] }
     | { success: false; error: string; status: number };
 
+/** Ответ /api/v1/analytics/complaint — поле body */
+export interface ComplaintAnalyticsStatus {
+    count_status_opened: number;
+    count_status_in_work: number;
+    count_status_closed: number;
+}
+
+export interface ComplaintAnalyticsType {
+    count_type_bug: number;
+    count_type_upgrade: number;
+    count_type_product: number;
+}
+
+export interface ComplaintAnalytics {
+    count_status: ComplaintAnalyticsStatus;
+    count_type: ComplaintAnalyticsType;
+}
+
+export type GetComplaintStatisticsResult =
+    | { success: true; statistics: ComplaintAnalytics }
+    | { success: false; error: string; status: number };
+
 class SupportService {
     public async createComplaint(payload: CreateComplaintPayload): Promise<CreateComplaintResult> {
         const isAuthed = await authService.checkAuth();
@@ -120,6 +142,36 @@ class SupportService {
             const raw = data?.body?.complaints;
             const complaints = Array.isArray(raw) ? raw : [];
             return { success: true, complaints };
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : "unvailable";
+            return { success: false, error: message, status: 500 };
+        }
+    }
+
+    public async getStatistics(): Promise<GetComplaintStatisticsResult> {
+        const url = `${BASE_URL}/api/v1/analytics/complaint`;
+        try {
+            const response = await httpClient.request(url, { method: "GET" });
+            if (!response.ok) {
+                let errorMessage = `Status ${response.status}`;
+                try {
+                    const errData = (await response.json()) as { message?: string; errors?: { message?: string }[] };
+                    if (errData.errors && Array.isArray(errData.errors)) {
+                        errorMessage = errData.errors.map((e) => e.message).filter(Boolean).join("; ");
+                    } else if (errData.message) {
+                        errorMessage = errData.message;
+                    }
+                } catch {
+                    console.error("Не удалось получить данные о статистике");
+                }
+                return { success: false, error: errorMessage, status: response.status };
+            }
+            const data = (await response.json()) as { body?: ComplaintAnalytics; status?: string };
+            const body = data?.body;
+            if (!body || typeof body !== "object" || !("count_status" in body) || !("count_type" in body)) {
+                return { success: false, error: "Некорректный ответ сервера", status: response.status };
+            }
+            return { success: true, statistics: body };
         } catch (e: unknown) {
             const message = e instanceof Error ? e.message : "unvailable";
             return { success: false, error: message, status: 500 };
