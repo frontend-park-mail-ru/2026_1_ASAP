@@ -12,10 +12,13 @@ export default {
     optimization: {
         minimize: false,
     },
-    entry: './src/index.ts',
+    entry: {
+        main: './src/index.ts',
+        support: './src/support.ts',
+    },
     output: {
         path: resolve(__dirname, 'dist'),
-        filename: 'bundle.[contenthash].js',
+        filename: 'bundle.[name].[contenthash].js',
         clean: true,
         publicPath: '/',
     },
@@ -61,7 +64,7 @@ export default {
 
     plugins: [
         new MiniCssExtractPlugin({
-            filename: 'bundle.css',
+            filename: 'bundle.[name].[contenthash].css',
         }),
         new CopyWebpackPlugin({
             patterns: [
@@ -70,6 +73,13 @@ export default {
         }),
         new HtmlWebpackPlugin({
             template: './src/index.html',
+            filename: 'index.html',
+            chunks: ['main'],
+        }),
+        new HtmlWebpackPlugin({
+            template: './src/support.html',
+            filename: 'support.html',
+            chunks: ['support'],
         }),
         new InjectManifest({
             swSrc: resolve(__dirname, 'src/service-worker.ts'),

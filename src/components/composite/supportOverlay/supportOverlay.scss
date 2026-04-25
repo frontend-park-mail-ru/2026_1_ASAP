@@ -1,0 +1,240 @@
+@use "variables" as *;
+@use "mixins" as *;
+
+
+html:has(#rootSupport),
+body:has(#rootSupport) {
+    height: 100%;
+    max-height: 100dvh;
+    margin: 0;
+    overflow: hidden;
+    background: $gradient-background-chats;
+    font-family: $font-primary;
+}
+
+#rootSupport {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    max-height: 100dvh;
+    box-sizing: border-box;
+    padding: clamp(12px, 4vw, 28px);
+}
+
+.support-overlay {
+    @include flex-column;
+    max-width: 560px;
+    width: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
+    border-radius: 16px;
+    background: $color-base-background;
+    border: 1px solid $color-border;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+
+    &__scroll {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        padding: 24px 20px 12px;
+        @include flex-column;
+        gap: 0;
+    }
+
+    &__header {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid $color-text-hover2;
+    }
+
+    &__header-actions {
+        flex-shrink: 0;
+    }
+
+    &__title {
+        margin: 0;
+        font: $text-heading1;
+        letter-spacing: $text-heading1-ls;
+        background: $gradient-msg;
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    &__close-btn {
+        min-width: 40px;
+        min-height: 40px;
+        padding: 8px;
+        border-radius: 10px;
+        background: $color-text-hover2;
+        border: 1px solid $color-text-hover2;
+        cursor: pointer;
+        @include hover-transition;
+
+        img {
+            width: 18px;
+            height: 18px;
+            opacity: 0.9;
+        }
+
+        &:hover {
+            background: $color-text-hover;
+        }
+    }
+
+    &__section {
+        @include flex-column;
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+
+    &__section--grow {
+        flex: 1;
+        min-height: 120px;
+    }
+
+    &__section-title,
+    &__section-name {
+        margin: 0;
+        font: $text-tertiary;
+        letter-spacing: $text-tertiary-ls;
+        color: $color-text-tertiary;
+    }
+
+    &__nav {
+        margin-bottom: 8px;
+    }
+
+    &__nav-buttons {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    &__nav-btn {
+        flex: 1;
+        min-width: 0;
+        min-height: 40px;
+        justify-content: center;
+        padding: 10px 8px;
+        border-radius: 10px;
+        font: $text-tertiary;
+        color: $color-text;
+        background: $color-text-hover2;
+        border: 1px solid $color-border;
+        cursor: pointer;
+        @include hover-transition;
+
+        &--active {
+            background: rgba(69, 93, 186, 0.35);
+            border-color: $color-primary;
+            color: $color-text;
+            box-shadow: 0 0 0 1px rgba(69, 93, 186, 0.4);
+        }
+
+        &:hover:not(.support-overlay__nav-btn--active) {
+            background: rgba(242, 240, 240, 0.12);
+            border-color: $color-stroke;
+        }
+    }
+
+    &__issue-type-buttons {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    &__issue-type-btn {
+        flex: 1;
+        min-width: 96px;
+        justify-content: center;
+        padding: 10px 12px;
+        border-radius: 10px;
+        font: $text-tertiary;
+        color: $color-text;
+        background: $color-text-hover2;
+        border: 1px solid $color-border;
+        cursor: pointer;
+        @include hover-transition;
+
+        &--active {
+            background: rgba(69, 93, 186, 0.35);
+            border-color: $color-primary;
+            color: $color-text;
+            box-shadow: 0 0 0 1px rgba(69, 93, 186, 0.4);
+        }
+
+        &:hover:not(.support-overlay__issue-type-btn--active) {
+            background: $color-text-hover2;
+            border-color: $color-stroke;
+        }
+    }
+
+    .ui-input-wrapper {
+        width: 100%;
+    }
+
+    &__email-input,
+    &__files-input,
+    &__issue-input {
+        width: 100%;
+    }
+
+    .edit-profile__edit-input {
+        width: 100%;
+        min-height: 140px;
+        padding: 12px 14px;
+        box-sizing: border-box;
+        border-radius: 10px;
+        border: 1px solid $color-input-border;
+        background: rgba(19, 19, 19, 0.6);
+        color: $color-text;
+        font: $text-main-style;
+        resize: vertical;
+        @include hover-transition;
+
+        &:focus {
+            outline: none;
+            border-color: $color-text-hover;
+        }
+
+        &::placeholder {
+            color: $color-input-placeholder;
+        }
+    }
+
+    input[type="file"] {
+        font: $text-tertiary;
+        color: $color-text-tertiary;
+    }
+
+    &__footer {
+        flex-shrink: 0;
+        padding: 12px 20px 20px;
+        border-top: 1px solid $color-text-hover2;
+    }
+
+    &__submit {
+        width: 100%;
+        justify-content: center;
+        min-height: 44px;
+    }
+}
+
+.support-iframe {
+    border: 0.2px solid $color-text-hover;
+}
