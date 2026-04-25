@@ -55,11 +55,7 @@ class SupportService {
             },
             body: payload.body
         };
-        formData.append(
-            "payload",
-            new Blob([JSON.stringify(jsonBody)], { type: "application/json" }),
-            "payload.json"
-        );
+        formData.append("payload", JSON.stringify(jsonBody));
         if (payload.file) {
             formData.append("attachment", payload.file);
         }
