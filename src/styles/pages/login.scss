@@ -55,5 +55,9 @@
     height: 500px;
     border-radius: 10px;
     z-index: 9999;
-    display: block; 
+    display: block;
+
+    &--hidden {
+        display: none;
+    }
 }

@@ -49,7 +49,8 @@ class HttpClient {
             headers.set(this.tokenHeaderName, currentToken);
         }
 
-        options.credentials = 'include';
+        if (!options.credentials)
+            options.credentials = 'include';
         options.headers = headers;
 
         // первый запрос
