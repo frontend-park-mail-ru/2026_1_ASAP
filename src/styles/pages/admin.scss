@@ -10,6 +10,10 @@
     overflow: hidden;
 
     &__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
         padding: 20px 24px;
         border-bottom: 1px solid $color-border-sidebar;
         background-color: $color-chat-sidebar;
@@ -21,6 +25,29 @@
         color: $color-text;
         letter-spacing: $text-heading1-ls;
         margin: 0;
+    }
+
+    &__logout {
+        flex-shrink: 0;
+        min-height: 40px;
+        padding: 0 16px;
+        border: 1px solid rgba(255, 84, 84, 0.35);
+        border-radius: 10px;
+        background: rgba(255, 84, 84, 0.12);
+        color: $color-error;
+        font: $text-tertiary;
+        cursor: pointer;
+        @include hover-transition;
+
+        &:hover:not(:disabled) {
+            background: rgba(255, 84, 84, 0.18);
+            border-color: rgba(255, 84, 84, 0.55);
+        }
+
+        &:disabled {
+            cursor: default;
+            opacity: 0.65;
+        }
     }
 
     &__content {
