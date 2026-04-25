@@ -1,5 +1,6 @@
 import { BasePage, IBasePageProps } from "../../core/base/basePage";
 import { complaintsAdminService, Complaint, ComplaintStatus } from "../../services/complaintsAdminService";
+import { authService } from "../../services/authService";
 import { ComplaintItem } from "../../components/composite/complaintItem/complaintItem";
 import { ComplaintStatusModal } from "../../components/composite/complaintStatusModal/complaintStatusModal";
 import template from "./adminPage.hbs";
@@ -9,6 +10,7 @@ interface AdminPageProps extends IBasePageProps {}
 export class AdminPage extends BasePage<AdminPageProps> {
     private complaintItems: ComplaintItem[] = [];
     private activeModal: ComplaintStatusModal | null = null;
+    private logoutButton: HTMLButtonElement | null = null;
 
     constructor(props: AdminPageProps = {}) {
         super(props);
@@ -19,6 +21,9 @@ export class AdminPage extends BasePage<AdminPageProps> {
     }
 
     protected async afterMount(): Promise<void> {
+        this.logoutButton = this.element?.querySelector<HTMLButtonElement>('[data-component="admin-logout-button"]') ?? null;
+        this.logoutButton?.addEventListener('click', this.handleLogout);
+
         const listContainer = this.element?.querySelector<HTMLElement>('[data-component="admin-complaint-list"]');
         if (!listContainer) return;
 
@@ -77,6 +82,16 @@ export class AdminPage extends BasePage<AdminPageProps> {
         this.activeModal = modal;
     }
 
+    private handleLogout = async (): Promise<void> => {
+        if (!this.logoutButton) return;
+
+        this.logoutButton.disabled = true;
+        this.logoutButton.textContent = 'Выходим...';
+
+        await authService.logout();
+        this.props.router.navigate('/login');
+    };
+
     private showLoading(container: HTMLElement): void {
         container.innerHTML = '<p class="admin-page__loading">Загрузка...</p>';
     }
@@ -89,6 +104,8 @@ export class AdminPage extends BasePage<AdminPageProps> {
     }
 
     protected beforeUnmount(): void {
+        this.logoutButton?.removeEventListener('click', this.handleLogout);
+        this.logoutButton = null;
         this.activeModal?.unmount();
         this.activeModal = null;
         for (const item of this.complaintItems) {
