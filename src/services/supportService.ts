@@ -49,11 +49,11 @@ class SupportService {
         const formData = new FormData();
         const jsonBody = {
             type: payload.type,
-            body: payload.body,
             feedback: {
                 feedback_name: payload.feedbackName.trim(),
                 feedback_email: payload.feedbackEmail.trim()
-            }
+            },
+            body: payload.body
         };
         formData.append(
             "payload",
