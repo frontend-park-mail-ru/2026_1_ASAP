@@ -37,6 +37,36 @@ body:has(#rootSupport) {
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
     overflow: hidden;
 
+    &__input {
+        height: 41px;
+        border-radius: 10px;
+        padding: 0 10px;
+        border: 1px solid #2A2A2A;
+        box-shadow: 0 0 0 0 $color-primary;
+        opacity: 0.5;
+        background: rgba(255, 255, 255, 0.05);
+        color: $color-text;
+        width: 100%;
+        box-sizing: border-box;
+        padding-right: 40px;
+        outline: none;
+        font: $text-tertiary;
+        letter-spacing: $text-tertiary-ls;
+        @include hover-transition;
+
+        &:hover {
+            opacity: 0.8;
+            border: 1.5px solid $color-primary;
+        }
+
+        &:focus,
+        &:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 0.5px $color-primary;
+            border-color: $color-primary;
+            opacity: 1;
+        }
+    }
     &__scroll {
         flex: 1;
         min-height: 0;

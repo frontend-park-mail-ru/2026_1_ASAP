@@ -1,0 +1,97 @@
+@use "variables" as *;
+@use "mixins" as *;
+
+.complaint-item {
+    background-color: $color-background-secondary;
+    border: 1px solid $color-border;
+    border-radius: 10px;
+    padding: 12px 16px;
+    cursor: pointer;
+    @include hover-transition;
+
+    &:hover {
+        background-color: rgba(242, 240, 240, 0.08);
+        border-color: $color-bubble;
+    }
+
+    &__row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 6px;
+    }
+
+    &__left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+    }
+
+    &__type-badge {
+        font-size: $font-size-xs;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        padding: 2px 8px;
+        border-radius: 4px;
+        background-color: $color-bubble;
+        color: $color-text;
+        flex-shrink: 0;
+    }
+
+    &__author {
+        @include text-truncate;
+        color: $color-text;
+        font-size: $font-size-base;
+    }
+
+    &__body {
+        color: $color-text-tertiary;
+        font-size: $font-size-base;
+        line-height: 1.4;
+        margin-bottom: 6px;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    &__footer {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+    }
+
+    &__time {
+        font-size: $font-size-xs;
+        color: $color-text-hover;
+    }
+}
+
+.complaint-status-badge {
+    font-size: $font-size-xs;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+
+    &--new {
+        background-color: rgba(69, 93, 186, 0.25);
+        color: #8fa0f5;
+        border: 1px solid rgba(69, 93, 186, 0.5);
+    }
+
+    &--in_progress {
+        background-color: rgba(204, 153, 0, 0.2);
+        color: #f0c040;
+        border: 1px solid rgba(204, 153, 0, 0.4);
+    }
+
+    &--closed {
+        background-color: rgba(46, 160, 67, 0.2);
+        color: #4caf78;
+        border: 1px solid rgba(46, 160, 67, 0.4);
+    }
+}

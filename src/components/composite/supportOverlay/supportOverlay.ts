@@ -98,7 +98,7 @@ export class SupportOverlay extends BaseComponent<SupportOverlayProps> {
         this.setIssueType("bug");
 
         this.nameInput = new Input({
-            class: "ui-input",
+            class: "support-overlay__input",
             name: "support_name",
             required: true,
             type: "text",
@@ -107,7 +107,7 @@ export class SupportOverlay extends BaseComponent<SupportOverlayProps> {
         this.nameInput.mount(this.element!.querySelector('.support-overlay__name-input'));
 
         this.emailInput = new Input({
-            class: "ui-input",
+            class: "support-overlay__input",
             name: "support_email",
             required: true,
             type: "email",

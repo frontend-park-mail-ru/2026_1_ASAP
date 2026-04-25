@@ -1,11 +1,12 @@
 import { LoginPage } from "../pages/login/login";
-import { ChatsPage } from "../pages/chats/chats"; 
+import { ChatsPage } from "../pages/chats/chats";
 import { RegisterPage } from "../pages/register/register";
 import { Layout } from "./layout/layout";
 import { PageManager } from "./pageManager";
 import { Router } from "./router";
 import { ContactsPage } from "../pages/contacts/contacts";
 import { SettingsPage } from "../pages/settings/settings";
+import { AdminPage } from "../pages/adminPage/adminPage";
 
 const routes = {
     '/': LoginPage,
@@ -14,6 +15,7 @@ const routes = {
     '/chats': ChatsPage,
     '/contacts': ContactsPage,
     '/settings': SettingsPage,
+    '/admin': AdminPage,
 };
 
 /**
