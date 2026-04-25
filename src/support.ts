@@ -4,7 +4,11 @@ import { SupportOverlay } from "./components/composite/supportOverlay/supportOve
 
 
 document.addEventListener("DOMContentLoaded", async () => {
-    const root = document.querySelector('.rootSupport');
-    const overlay = new SupportOverlay({});
-    root.appendChild(overlay.element!);
+    const root = document.getElementById('rootSupport');
+    if (root) {
+        const overlay = new SupportOverlay({});
+        overlay.mount(root);
+    } else {
+        console.error("[support.ts] : Корневой элемент для поддержки не найден");
+    }
 });
