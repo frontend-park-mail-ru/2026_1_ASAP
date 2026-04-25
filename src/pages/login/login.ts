@@ -4,6 +4,7 @@ import template from "./login.hbs";
 import { SupportFrame } from '../../components/composite/supportFrame/supportFrame';
 import { BaseComponent } from '../../core/base/baseComponent';
 import { Button } from '../../components/ui/button/button';
+import { PULSE_SUPPORT_CLOSE } from '../../core/constants/supportIframe';
 
 /**
  * @interface LoginPageProps
@@ -24,6 +25,12 @@ export class LoginPage extends BasePage<LoginPageProps> {
     private form: AuthForm | null = null;
     private supportButton: Button | null = null;
     private supportFrame: SupportFrame | null = null;
+    private supportMessageListener = (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) return;
+        if (event.data?.type !== PULSE_SUPPORT_CLOSE) return;
+        const iframe = this.element?.querySelector<HTMLIFrameElement>(".support-iframe");
+        iframe?.classList.add("support-iframe--hidden");
+    };
 
     constructor(props: LoginPageProps = {}) {
         super(props);
@@ -68,9 +75,11 @@ export class LoginPage extends BasePage<LoginPageProps> {
             }
         });
         this.supportButton.mount(supportButton as HTMLElement);
+        window.addEventListener("message", this.supportMessageListener);
     }
 
     public beforeUnmount(): void {
+        window.removeEventListener("message", this.supportMessageListener);
         this.form?.unmount();
         this.supportFrame?.unmount();
     }

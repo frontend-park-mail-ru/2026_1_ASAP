@@ -77,3 +77,18 @@
     top: 0;
     left: 0;
 }
+
+.support-iframe {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 350px;
+    height: 500px;
+    border-radius: 10px;
+    z-index: 9999;
+    display: block;
+
+    &--hidden {
+        display: none;
+    }
+}

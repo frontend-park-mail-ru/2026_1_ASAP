@@ -7,10 +7,44 @@
  */
 
 .chat-page {
+    position: relative;
     background: $gradient-background-chats;
     height: 100vh;
+    height: 100dvh;
     display: flex;
     overflow: hidden;
+
+    &__mobile-back {
+        display: none;
+        position: fixed;
+        top: max(8px, env(safe-area-inset-top, 0px));
+        left: max(8px, env(safe-area-inset-left, 0px));
+        z-index: 50;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        margin: 0;
+        border: none;
+        border-radius: 10px;
+        background: rgba(6, 5, 5, 0.55);
+        color: $color-text;
+        font-size: 22px;
+        line-height: 1;
+        cursor: pointer;
+        @include hover-transition;
+
+        &::before {
+            content: "‹";
+            display: block;
+            transform: translateX(-1px);
+        }
+
+        &:hover {
+            background: rgba(6, 5, 5, 0.75);
+        }
+    }
 
     &__sidebar {
         flex-shrink: 0;
@@ -45,5 +79,36 @@
         color: $color-text-tertiary;
         font-size: $font-size-lg;
         text-align: center;
+    }
+
+    @media (max-width: $breakpoint-mobile-max) {
+        &__sidebar {
+            min-width: 0;
+            max-width: none;
+            width: 100%;
+            border-right: none;
+        }
+
+        &__mainfield {
+            min-width: 0;
+            width: 100%;
+            padding: 8px;
+        }
+
+        &:not(.chat-page--main-visible) &__mainfield {
+            display: none;
+        }
+
+        &.chat-page--main-visible &__sidebar {
+            display: none;
+        }
+
+        &.chat-page--mobile-floating-back &__mobile-back {
+            display: flex;
+        }
+
+        &.chat-page--mobile-floating-back &__mainfield {
+            padding-top: max(52px, calc(env(safe-area-inset-top, 0px) + 44px));
+        }
     }
 }

@@ -143,6 +143,16 @@ export class Input extends BaseComponent<InputProps> {
     }
 
     /**
+     * Список файлов для `type="file"`.
+     */
+    public get files(): FileList | null {
+        if (this.props.type === "file" && this.inputElement instanceof HTMLInputElement) {
+            return this.inputElement.files;
+        }
+        return null;
+    }
+
+    /**
      * Текущее значение поля ввода.
      * @type {string}
      */
