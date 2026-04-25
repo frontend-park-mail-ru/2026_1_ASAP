@@ -67,25 +67,15 @@ body:has(#rootSupport) {
             opacity: 1;
         }
     }
-    &__scroll {
-        flex: 1;
-        min-height: 0;
-        overflow-y: auto;
-        overflow-x: hidden;
-        -webkit-overflow-scrolling: touch;
-        padding: 24px 20px 12px;
-        @include flex-column;
-        gap: 0;
-    }
 
     &__header {
         display: flex;
         flex-direction: row;
-        align-items: flex-start;
+        align-items: center;
         justify-content: space-between;
         gap: 12px;
-        margin-bottom: 20px;
-        padding-bottom: 16px;
+        flex-shrink: 0;
+        padding: 16px 20px 16px;
         border-bottom: 1px solid $color-text-hover2;
     }
 
@@ -124,63 +114,54 @@ body:has(#rootSupport) {
         }
     }
 
-    &__section {
-        @include flex-column;
-        gap: 8px;
-        margin-bottom: 16px;
-        margin-top: 35px;
-    }
-
-    &__section--grow {
-        flex: 1;
-        min-height: 120px;
-    }
-
-    &__section-title,
-    &__section-name {
-        margin: 0;
-        font: $text-tertiary;
-        letter-spacing: $text-tertiary-ls;
-        color: $color-text-tertiary;
-    }
-
     &__nav {
-        margin-bottom: 8px;
+        flex-shrink: 0;
+        padding: 12px 20px 0;
     }
 
     &__nav-buttons {
         display: flex;
         flex-direction: row;
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 6px;
+        background: $color-text-hover2;
+        border-radius: 12px;
+        padding: 4px;
     }
 
     &__nav-btn {
         flex: 1;
         min-width: 0;
-        min-height: 40px;
+        min-height: 36px;
         justify-content: center;
-        padding: 10px 8px;
-        border-radius: 10px;
+        padding: 8px 10px;
+        border-radius: 9px;
         font: $text-tertiary;
-        color: $color-text;
-        background: $color-text-hover2;
-        border: 1px solid $color-border;
+        color: $color-text-tertiary;
+        background: transparent;
+        border: none;
         cursor: pointer;
         @include hover-transition;
 
         &--active {
-            background: rgba(69, 93, 186, 0.35);
-            border-color: $color-primary;
+            background: $color-base-background;
             color: $color-text;
-            box-shadow: 0 0 0 1px rgba(69, 93, 186, 0.4);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
         }
 
         &:hover:not(.support-overlay__nav-btn--active) {
-            background: rgba(242, 240, 240, 0.12);
-            border-color: $color-stroke;
+            color: $color-text;
         }
     }
+
+    &__tab-content {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    // Shared styles used by tab components
 
     &__issue-type-buttons {
         display: flex;
@@ -216,12 +197,6 @@ body:has(#rootSupport) {
     }
 
     .ui-input-wrapper {
-        width: 100%;
-    }
-
-    &__email-input,
-    &__files-input,
-    &__issue-input {
         width: 100%;
     }
 
@@ -287,16 +262,346 @@ body:has(#rootSupport) {
         max-width: 280px;
     }
 
+    &__submit {
+        width: 100%;
+        justify-content: center;
+        min-height: 44px;
+    }
+}
+
+// --- New Tab ---
+
+.support-new-tab {
+    @include flex-column;
+    flex: 1 1 auto;
+    min-height: 0;
+
+    &__scroll {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        padding: 16px 20px 12px;
+        @include flex-column;
+        gap: 0;
+    }
+
+    &__section {
+        @include flex-column;
+        gap: 8px;
+        margin-bottom: 16px;
+
+        &--grow {
+            flex: 1;
+            min-height: 120px;
+        }
+    }
+
+    &__label {
+        margin: 0;
+        font: $text-tertiary;
+        letter-spacing: $text-tertiary-ls;
+        color: $color-text-tertiary;
+    }
+
     &__footer {
         flex-shrink: 0;
         padding: 12px 20px 20px;
         border-top: 1px solid $color-text-hover2;
     }
+}
 
-    &__submit {
-        width: 100%;
-        justify-content: center;
-        min-height: 44px;
+// --- My Tab ---
+
+.support-my-tab {
+    @include flex-column;
+    flex: 1 1 auto;
+    min-height: 0;
+
+    &__toolbar {
+        flex-shrink: 0;
+        padding: 12px 20px 0;
+        @include flex-column;
+        gap: 10px;
+    }
+
+    &__search-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 12px;
+        height: 40px;
+        border-radius: 10px;
+        border: 1px solid $color-border;
+        background: rgba(255, 255, 255, 0.04);
+        @include hover-transition;
+
+        &:focus-within {
+            border-color: $color-primary;
+        }
+    }
+
+    &__search-icon {
+        width: 16px;
+        height: 16px;
+        opacity: 0.4;
+        flex-shrink: 0;
+    }
+
+    &__search-field {
+        flex: 1;
+        border: none;
+        background: transparent;
+        color: $color-text;
+        font: $text-tertiary;
+        letter-spacing: $text-tertiary-ls;
+        outline: none;
+
+        &::placeholder {
+            color: $color-text-hover;
+        }
+    }
+
+    &__filters {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    &__filter-btn {
+        padding: 5px 12px;
+        border-radius: 20px;
+        border: 1px solid $color-border;
+        background: $color-text-hover2;
+        color: $color-text-tertiary;
+        font: $text-tertiary;
+        letter-spacing: $text-tertiary-ls;
+        cursor: pointer;
+        white-space: nowrap;
+        @include hover-transition;
+
+        &--active {
+            background: rgba(69, 93, 186, 0.25);
+            border-color: $color-primary;
+            color: $color-text;
+            font-weight: 600;
+        }
+
+        &:hover:not(&--active) {
+            border-color: $color-stroke;
+            color: $color-text;
+        }
+    }
+
+    &__filter-count {
+        font-weight: 600;
+    }
+
+    &__list {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 12px 20px 16px;
+        @include flex-column;
+        gap: 8px;
+    }
+
+    &__card {
+        padding: 12px 14px;
+        border-radius: 12px;
+        border: 1px solid $color-border;
+        background: $color-background-secondary;
+        @include flex-column;
+        gap: 6px;
+        @include hover-transition;
+
+        &:hover {
+            background: rgba(242, 240, 240, 0.07);
+            border-color: rgba(69, 93, 186, 0.5);
+        }
+    }
+
+    &__card-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    &__card-meta {
+        font-size: $font-size-xs;
+        color: $color-text-tertiary;
+        font-weight: 500;
+    }
+
+    &__card-body {
+        margin: 0;
+        font: $text-tertiary;
+        color: $color-text;
+        font-weight: 500;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    &__card-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    &__card-time {
+        font-size: $font-size-xs;
+        color: $color-text-hover;
+    }
+
+    &__status-badge {
+        font-size: $font-size-xs;
+        font-weight: 600;
+        padding: 3px 10px;
+        border-radius: 12px;
+        white-space: nowrap;
+        flex-shrink: 0;
+
+        &--new {
+            background-color: rgba(69, 93, 186, 0.25);
+            color: #8fa0f5;
+            border: 1px solid rgba(69, 93, 186, 0.5);
+        }
+
+        &--in_progress {
+            background-color: rgba(204, 153, 0, 0.2);
+            color: #f0c040;
+            border: 1px solid rgba(204, 153, 0, 0.4);
+        }
+
+        &--closed {
+            background-color: rgba(46, 160, 67, 0.2);
+            color: #4caf78;
+            border: 1px solid rgba(46, 160, 67, 0.4);
+        }
+    }
+
+    &__state-msg {
+        margin: 24px auto 0;
+        color: $color-text-tertiary;
+        font: $text-tertiary;
+        text-align: center;
+
+        &--error {
+            color: $color-error;
+        }
+    }
+}
+
+// --- Stat Tab ---
+
+.support-stat-tab {
+    @include flex-column;
+    flex: 1 1 auto;
+    min-height: 0;
+
+    &__scroll {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 16px 20px;
+        @include flex-column;
+        gap: 12px;
+    }
+
+    &__cards-row {
+        display: flex;
+        gap: 12px;
+    }
+
+    &__stat-card {
+        flex: 1;
+        padding: 14px 16px;
+        border-radius: 12px;
+        border: 1px solid $color-border;
+        background: $color-background-secondary;
+        @include flex-column;
+        gap: 8px;
+    }
+
+    &__stat-label {
+        margin: 0;
+        font-size: $font-size-xs;
+        font-weight: 600;
+        letter-spacing: 0.6px;
+        color: $color-text-tertiary;
+        text-transform: uppercase;
+    }
+
+    &__stat-value {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 700;
+        color: $color-text;
+
+        &--accent {
+            color: #4caf78;
+        }
+    }
+
+    &__section {
+        padding: 14px 16px;
+        border-radius: 12px;
+        border: 1px solid $color-border;
+        background: $color-background-secondary;
+        @include flex-column;
+        gap: 12px;
+    }
+
+    &__section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    &__section-title {
+        margin: 0;
+        font: $text-tertiary;
+        font-weight: 600;
+        color: $color-text;
+    }
+
+    &__section-sub {
+        margin: 0;
+        font-size: $font-size-xs;
+        color: $color-text-tertiary;
+    }
+
+    &__placeholder {
+        color: $color-text-tertiary;
+        font: $text-tertiary;
+        text-align: center;
+        padding: 16px 0;
+    }
+
+    &__week-chart {
+        @include flex-column;
+        gap: 8px;
+    }
+
+    &__week-days {
+        display: flex;
+        justify-content: space-between;
+        padding-top: 8px;
+        border-top: 1px solid $color-border;
+
+        span {
+            font-size: $font-size-xs;
+            color: $color-text-tertiary;
+            text-align: center;
+            flex: 1;
+        }
     }
 }
 

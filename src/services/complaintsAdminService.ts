@@ -6,8 +6,6 @@ export type ComplaintStatus = 'new' | 'in_progress' | 'closed';
 export type ComplaintItemType = 'bug' | 'idea' | 'claim' | 'suggestion' | string;
 
 export interface Complaint {
-    // TODO: backend may omit an explicit id field in the response.
-    // If id is absent, status updates cannot be sent to /api/v1/complains/update.
     id?: string | number;
     type: ComplaintItemType;
     status: ComplaintStatus | string;
@@ -29,7 +27,7 @@ interface GetAllComplaintsResponse {
 
 class ComplaintsAdminService {
     async getAllComplaints(): Promise<Complaint[]> {
-        const response = await httpClient.request(`${BASE_URL}/api/v1/complains/all`);
+        const response = await httpClient.request(`${BASE_URL}/api/v1/complaints/all`);
         if (!response.ok) {
             throw new Error(`Ошибка получения обращений: ${response.status}`);
         }
@@ -38,7 +36,7 @@ class ComplaintsAdminService {
     }
 
     async updateStatus(complained: string | number, status: ComplaintStatus | string): Promise<void> {
-        const response = await httpClient.request(`${BASE_URL}/api/v1/complains/update`, {
+        const response = await httpClient.request(`${BASE_URL}/api/v1/complaints/update`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ complained, status }),
