@@ -35,11 +35,14 @@ class ComplaintsAdminService {
         return data.body?.complaints ?? [];
     }
 
-    async updateStatus(complained: string | number, status: ComplaintStatus | string): Promise<void> {
+    async updateStatus(complaint_id: string | number, status: ComplaintStatus | string): Promise<void> {
         const response = await httpClient.request(`${BASE_URL}/api/v1/complaints/update`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ complained, status }),
+            body: JSON.stringify({ 
+                complaint_id, 
+                status 
+            }),
         });
         if (!response.ok) {
             let message = `Ошибка обновления статуса: ${response.status}`;
