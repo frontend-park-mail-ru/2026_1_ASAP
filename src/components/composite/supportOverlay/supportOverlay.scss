@@ -310,6 +310,16 @@ body:has(#rootSupport) {
         padding: 12px 20px 20px;
         border-top: 1px solid $color-text-hover2;
     }
+
+    &__issue-type-buttons {
+        display: flex;
+        flex-direction: row;
+        gap: 10px;
+    }
+
+    &__issue-input {
+        max-height: 650px;
+    }
 }
 
 // --- My Tab ---

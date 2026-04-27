@@ -5,6 +5,7 @@ import "./supportFrame.scss";
 
 interface SupportFrameProps extends IBaseComponentProps {
     fullsize?: boolean;
+    onCloseClick?: () => void;
 }
 
 export class SupportFrame extends BaseComponent<SupportFrameProps> {
@@ -34,6 +35,7 @@ export class SupportFrame extends BaseComponent<SupportFrameProps> {
         window.addEventListener('message', event => {
             if (event.data?.type === PULSE_SUPPORT_CLOSE) {
                 this.hide();
+                this.props.onCloseClick();
             }
         });
 

@@ -60,44 +60,48 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
      * @private
      */
     private async handleContactsRoute(): Promise<void> {
-        const path = this.props.currentPath || window.location.pathname;
-        const pathParts = path.split('/');
-        const lastParam = pathParts[pathParts.length - 1];
-        if (lastParam == 'add') {
-            this.showAddContactWindow();
-            return;
-        }
-
-        if (path == '/contacts' || !lastParam) {
-            this.cleanupMainContent();
-            this.activeContactId = null;
-            this.contactListWrapper?.setActiveContact(null);
-            if (this.placeHolder) {
-                this.placeHolder.style.display = 'block';
+        try {
+            const path = this.props.currentPath || window.location.pathname;
+            const pathParts = path.split('/');
+            const lastParam = pathParts[pathParts.length - 1];
+            if (lastParam == "add") {
+                this.showAddContactWindow();
+                return;
             }
-            return;
-        }
-        const login: string = String(lastParam).trim();
-        if (login === "") return;
 
-        const response = await contactService.getIdByLogin(login);
-        if (response.status != 200) {
-            this.cleanupMainContent();
-            this.activeContactId = null;
-            this.contactListWrapper?.setActiveContact(null);
-            if (this.placeHolder) {
-                this.placeHolder.style.display = 'block';
+            if (path == "/contacts" || !lastParam) {
+                this.cleanupMainContent();
+                this.activeContactId = null;
+                this.contactListWrapper?.setActiveContact(null);
+                if (this.placeHolder) {
+                    this.placeHolder.style.display = "block";
+                }
+                return;
             }
-            this.props.router?.navigate('/contacts');
-            return;
+            const login: string = String(lastParam).trim();
+            if (login === "") return;
+
+            const response = await contactService.getIdByLogin(login);
+            if (response.status != 200) {
+                this.cleanupMainContent();
+                this.activeContactId = null;
+                this.contactListWrapper?.setActiveContact(null);
+                if (this.placeHolder) {
+                    this.placeHolder.style.display = "block";
+                }
+                this.props.router?.navigate("/contacts");
+                return;
+            }
+
+            const id = response.id;
+
+            this.activeContactId = id;
+            this.contactListWrapper?.setActiveContact(this.activeContactId);
+            void this.openContact(this.activeContactId);
+        } finally {
+            this.syncMobileLayoutState();
         }
-
-        const id = response.id;
-
-        this.activeContactId = id;
-        this.contactListWrapper?.setActiveContact(this.activeContactId);
-        this.openContact(this.activeContactId);
-    };
+    }
 
     /**
      * Обновляет свойства компонента и перезапускает внутренний роутер.
@@ -109,7 +113,7 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
     }
 
 
-/**
+    /**
      * Очищает правую контентную область (окно профиля или добавления контакта).
      * @private
      */
@@ -125,7 +129,37 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
             this.addContactWindow.unmount();
             this.addContactWindow = null;
         }
+        this.syncMobileLayoutState();
     }
+
+    /**
+     * На узких экранах: либо список контактов, либо основная область (профиль / добавление).
+     * Плавающая «‹» — пока нет шапки с кнопкой «назад» (загрузка профиля).
+     */
+    private syncMobileLayoutState(): void {
+        const pageRoot = this.element?.classList.contains("contacts-page")
+            ? this.element
+            : this.element?.querySelector(".contacts-page");
+        if (!pageRoot) return;
+
+        const mainVisible =
+            this.activeContactId !== null ||
+            this.addContactWindow !== null ||
+            this.profileWindow !== null;
+
+        const addOrProfileHasBack =
+            this.addContactWindow !== null || this.profileWindow !== null;
+        const mobileFloatingBackVisible = mainVisible && !addOrProfileHasBack;
+
+        pageRoot.classList.toggle("contacts-page--main-visible", mainVisible);
+        pageRoot.classList.toggle("contacts-page--mobile-floating-back", mobileFloatingBackVisible);
+    }
+
+    private readonly handleMobileBack = (): void => {
+        if (this.activeContactId !== null || this.addContactWindow !== null || this.profileWindow !== null) {
+            this.props.router?.navigate("/contacts");
+        }
+    };
 
     /**
      * Выполняется после монтирования страницы.
@@ -175,7 +209,11 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
             console.error("ContactsPage: Не удалось получить профиль пользователя", error);
         }
 
-        window.addEventListener('keyup', this.handleKeyUp);
+        window.addEventListener("keyup", this.handleKeyUp);
+
+        const mobileBack = this.element.querySelector(".contacts-page__mobile-back");
+        mobileBack?.addEventListener("click", this.handleMobileBack);
+
         await this.handleContactsRoute();
     };
 
@@ -201,7 +239,10 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
 
         const profileInfo = await contactService.getProfileInfo(this.activeContactId);
 
-        if (this.activeContactId !== activeId) return;
+        if (this.activeContactId !== activeId) {
+            this.syncMobileLayoutState();
+            return;
+        }
         this.cleanupMainContent();
 
         this.profileWindow = new ProfileWindow({
@@ -213,6 +254,7 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
         });
 
         this.profileWindow.mount(this.mainContentArea);
+        this.syncMobileLayoutState();
     };
 
     /**
@@ -303,6 +345,7 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
             }
         });
         this.addContactWindow.mount(this.mainContentArea);
+        this.syncMobileLayoutState();
     }
 
     /**
@@ -321,13 +364,15 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
         
         this.activeContactId = null;
         this.contactListWrapper?.setActiveContact(null);
+        this.syncMobileLayoutState();
     }
 
     beforeUnmount() {
+        this.element?.querySelector(".contacts-page__mobile-back")?.removeEventListener("click", this.handleMobileBack);
         this.searchForm?.unmount();
         this.menuBar?.unmount();
         this.contactListWrapper?.unmount();
-        window.removeEventListener('keyup', this.handleKeyUp);
+        window.removeEventListener("keyup", this.handleKeyUp);
         this.activeContactId = null;
         this.profileWindow?.unmount();
         this.profileWindow = null;

@@ -150,7 +150,15 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
 
         if (activeSetting === "support") {
             if (seq !== this.openSettingSeq) return;
-            this.supportFrame = new SupportFrame({ fullsize: true });
+            this.supportFrame = new SupportFrame({ 
+                fullsize: true,
+                onCloseClick: () => {
+                    if (this.placeHolder)
+                        this.placeHolder.style.display = "block";
+                    this.activeSetting = null;
+                    this.settingsListWrapper.setActiveByKey("");
+                }
+             });
             this.supportFrame.mount(this.mainContentArea!);
             return;
         }
