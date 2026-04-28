@@ -208,10 +208,11 @@ export class MessageList extends BaseComponent {
      * Используется, чтобы при приходе серверного broadcast `message.New` не создавать дубликат DOM.
      * @returns true, если сообщение с `oldId` было найдено и обновлено.
      */
-    public replaceMessageId(oldId: string, newId: string): boolean {
+    public replaceMessageId(oldId: string, newId: string, newTimestamp?: Date): boolean {
         const target = this.childMessages.find((m) => m.getId() === oldId);
         if (!target) return false;
         target.setId(newId);
+        if (newTimestamp) target.updateTimestamp(newTimestamp);
         return true;
     }
 

@@ -107,7 +107,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         }
 
         const tempId = await chatService.resolveServerMessage(dto, this.currentUserId);
-        if (tempId && this.activeMessageList.replaceMessageId(tempId, dto.id.toString())) {
+        const serverTime = dto.created_at ? new Date(dto.created_at) : undefined;
+        if (tempId && this.activeMessageList.replaceMessageId(tempId, dto.id.toString(), serverTime)) {
             return;
         }
 
