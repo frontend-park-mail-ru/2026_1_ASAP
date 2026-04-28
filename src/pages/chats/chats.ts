@@ -389,12 +389,19 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     router: this.props.router,
                     onSubmit: async (contactId: number, contactName: string) => {
                         const res = await chatService.createChat(
-                            [contactId], 
+                            [contactId],
                             "dialog",
                         );
-                        if (res.success && res.body?.id) {   
-                            this.rebuildSidebar(); 
+                        if (res.success && res.body?.id) {
+                            this.rebuildSidebar();
                             this.props.router.navigate(`/chats/${res.body.id}`);
+                            return;
+                        }
+                        if (res.status === 409) {
+                            const chatId = await chatService.findExistingDialogChatId(contactId);
+                            if (chatId) {
+                                this.props.router.navigate(`/chats/${chatId}`);
+                            }
                         }
                     },
                     onSubmitSearch: async (login: string) => {

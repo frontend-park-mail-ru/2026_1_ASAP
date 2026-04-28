@@ -620,6 +620,24 @@ export class ChatService {
         }
     }
 
+    // TODO: удалить, когда бэк начнёт возвращать chat_id в ответе на 409
+    public async findExistingDialogChatId(targetId: number, targetLogin?: string): Promise<string | undefined> {
+        const chats = await this.getChats();
+        const dialogs = chats.filter(c => c.type === 'dialog');
+
+        if (targetLogin) {
+            const byLogin = dialogs.find(c => (c as any).interlocutor?.login === targetLogin);
+            if (byLogin) return byLogin.id;
+        }
+
+        for (const d of dialogs) {
+            const members = await this.getChatMembers(d.id);
+            if (members.includes(targetId)) return d.id;
+        }
+
+        return undefined;
+    }
+
     /**
      * Получает список ID всех участников чата.
      * @param chatId — Идентификатор чата.

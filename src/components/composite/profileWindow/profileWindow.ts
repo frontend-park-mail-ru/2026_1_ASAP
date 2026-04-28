@@ -175,9 +175,9 @@ export class ProfileWindow extends BaseComponent<ProfileWindowProps> {
         let chatId: string | number | undefined = res.body?.id;
 
         // TODO: бэк на 409 не возвращает chat_id.
-        // когда это появится, удалить findExistingDialogId и читать chatId напрямую из res.body.id.
+        // когда это появится, удалить findExistingDialogChatId и читать chatId напрямую из res.body.id.
         if (!chatId && res.status === 409) {
-            chatId = await this.findExistingDialogId(id, login);
+            chatId = await chatService.findExistingDialogChatId(id, login);
         }
 
         if (chatId && this.props.router) {
@@ -186,22 +186,6 @@ export class ProfileWindow extends BaseComponent<ProfileWindowProps> {
         }
 
         this.messageButton.disabled = false;
-    }
-
-    // TODO: удалить, когда бэк начнёт возвращать chat_id в 409
-    private async findExistingDialogId(targetId: number, targetLogin: string): Promise<string | undefined> {
-        const chats = await chatService.getChats();
-        const dialogs = chats.filter(c => c.type === 'dialog');
-
-        const byLogin = dialogs.find(c => (c as any).interlocutor?.login === targetLogin);
-        if (byLogin) return byLogin.id;
-
-        for (const d of dialogs) {
-            const members = await chatService.getChatMembers(d.id);
-            if (members.includes(targetId)) return d.id;
-        }
-
-        return undefined;
     }
 
     protected beforeUnmount(): void {
