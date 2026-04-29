@@ -11,6 +11,7 @@ import template from './input.hbs';
  * @property {boolean} [togglePassword=false] - Показывать ли кнопку показа/скрытия пароля.
  * @property {boolean} [showErrorText=true] - Показывать ли текст ошибки.
  * @property {Function} [onClick] - Обработчик клика по инпуту.
+ * @property {Function} [onInput] - Обработчик события `input` (каждый ввод символа).
  * @property {string} [autocomplete] - Атрибут автозаполнения браузером.
  * @property {string} [value] - Начальное значение поля.
  * @property {number} [maxLength] - Ограничение длины ввода.
@@ -25,6 +26,7 @@ export interface InputProps extends IBaseComponentProps {
     togglePassword?: boolean;
     showErrorText?: boolean;
     onClick?: (event: MouseEvent) => void;
+    onInput?: (event: Event) => void;
     autocomplete?: string;
     maxLength?: number;
 }
@@ -38,7 +40,7 @@ export class Input extends BaseComponent<InputProps> {
     private inputElement: HTMLInputElement | HTMLTextAreaElement | null = null;
     private errorElement: HTMLElement | null = null;
     private toggleIconElement: HTMLImageElement | null = null;
-    private inputHandler: (() => void) | null = null;
+    private inputHandler: ((ev: Event) => void) | null = null;
     private togglePasswordHandler: (() => void) | null = null;
 
     /**
@@ -87,12 +89,13 @@ export class Input extends BaseComponent<InputProps> {
             this.errorElement = this.element?.querySelector('.ui-input__error-message') || null;
         }
 
-        this.inputHandler = () => {
+        this.inputHandler = (ev: Event) => {
             if (this._error) {
                 this.clearError();
             }
+            this.props.onInput?.(ev);
         };
-        this.inputElement.addEventListener('input', this.inputHandler);
+        this.inputElement.addEventListener("input", this.inputHandler);
 
         if (this.props.type === 'password' && this.props.togglePassword) {
             this.toggleIconElement = this.element?.querySelector('.ui-input__toggle-password img') || null;
