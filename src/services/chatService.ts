@@ -199,11 +199,21 @@ export class ChatService {
      * Если совпадение найдено — удаляет запись из IndexedDB и возвращает её tempId
      * (UI должен заменить DOM-узел вместо добавления дубликата).
      */
+    private unescapeHtml(text: string): string {
+        return text
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&#34;/g, '"')
+            .replace(/&#39;/g, "'");
+    }
+
     public async resolveServerMessage(dto: MessageDto, currentUserId: number): Promise<string | null> {
         if (dto.sender_id !== currentUserId) return null;
 
         const pending = await offlineQueue.getByChat(dto.chat_id.toString());
-        const match = pending.find((m) => m.text === dto.text);
+        const unescapedText = this.unescapeHtml(dto.text ?? '');
+        const match = pending.find((m) => m.text === unescapedText);
 
         if (!match) return null;
 
@@ -618,6 +628,24 @@ export class ChatService {
             console.error('Ошибка сети при обновлении аватарки:', error);
             return false;
         }
+    }
+
+    // TODO: удалить, когда бэк начнёт возвращать chat_id в ответе на 409
+    public async findExistingDialogChatId(targetId: number, targetLogin?: string): Promise<string | undefined> {
+        const chats = await this.getChats();
+        const dialogs = chats.filter(c => c.type === 'dialog');
+
+        if (targetLogin) {
+            const byLogin = dialogs.find(c => (c as any).interlocutor?.login === targetLogin);
+            if (byLogin) return byLogin.id;
+        }
+
+        for (const d of dialogs) {
+            const members = await this.getChatMembers(d.id);
+            if (members.includes(targetId)) return d.id;
+        }
+
+        return undefined;
     }
 
     /**

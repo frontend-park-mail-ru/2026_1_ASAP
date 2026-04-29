@@ -36,7 +36,8 @@
         overflow: hidden;
 
         .empty-field {
-            font: $text-heading1;
+            font: $text-secondary;
+            line-height: normal;
             color: $color-text;
             text-align: center;
             user-select: none;

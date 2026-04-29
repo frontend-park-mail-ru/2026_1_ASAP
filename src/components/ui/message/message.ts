@@ -47,6 +47,13 @@ export class Message extends BaseComponent<MessageProps> {
         this.props.message.id = newId;
     }
 
+    public updateTimestamp(ts: Date): void {
+        this.props.message.timestamp = ts;
+        this.props.formattedTime = ts.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', hour12: false });
+        const el = this.element?.querySelector('.message__time');
+        if (el) el.textContent = this.props.formattedTime as string;
+    }
+
     /**
      * Возвращает отображаемое имя отправителя сообщения.
      * @param {User} user - Объект пользователя.
