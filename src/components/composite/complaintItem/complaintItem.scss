@@ -67,6 +67,20 @@
         font-size: $font-size-xs;
         color: $color-text-hover;
     }
+
+    @media (max-width: $breakpoint-mobile-max) {
+        padding: 10px 12px;
+
+        &__row {
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+
+        &__footer {
+            justify-content: flex-start;
+            width: 100%;
+        }
+    }
 }
 
 .complaint-status-badge {

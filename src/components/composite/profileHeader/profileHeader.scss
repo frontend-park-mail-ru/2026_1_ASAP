@@ -19,6 +19,10 @@
     position: relative;
     min-width: 300px;
 
+    @media (max-width: $breakpoint-mobile-max) {
+        min-width: 0;
+    }
+
     &__title {
         display: flex;
         flex-direction: row;

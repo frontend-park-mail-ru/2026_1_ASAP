@@ -8,6 +8,7 @@
 
 .contacts-page {
     position: relative;
+    isolation: isolate;
     height: 100vh;
     height: 100dvh;
     min-height: 100dvh;
@@ -23,14 +24,14 @@
 
     &__mobile-back {
         display: none;
-        position: fixed;
-        top: max(8px, env(safe-area-inset-top, 0px));
+        position: absolute;
+        top: calc(8px + env(safe-area-inset-top, 0px));
         left: max(8px, env(safe-area-inset-left, 0px));
-        z-index: 50;
+        z-index: 5;
         align-items: center;
         justify-content: center;
         width: 40px;
-        height: 40px;
+        height: 44px;
         padding: 0;
         margin: 0;
         border: none;
@@ -115,10 +116,6 @@
 
         &.contacts-page--mobile-floating-back &__mobile-back {
             display: flex;
-        }
-
-        &.contacts-page--mobile-floating-back &__mainfield {
-            padding-top: max(52px, calc(env(safe-area-inset-top, 0px) + 44px));
         }
     }
 }

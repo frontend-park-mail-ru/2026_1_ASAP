@@ -344,8 +344,15 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             this.groupDetailsWindow !== null ||
             this.addMemberWindow !== null;
 
-        /** Плавающая ‹ только там, где нет своей кнопки «Назад» в шапке (см. ActionHeader в Create*Window). */
-        const mobileFloatingBackVisible = mainVisible && this.createChatWindow === null;
+        /**
+         * Плавающая ‹ только у экрана открытого чата (в шапке чата нет своей «Назад»).
+         * Детали группы / добавление участника / создание чата — своя кнопка в ActionHeader.
+         */
+        const mobileFloatingBackVisible =
+            this.activeChatId !== null &&
+            this.createChatWindow === null &&
+            this.groupDetailsWindow === null &&
+            this.addMemberWindow === null;
 
         pageRoot.classList.toggle('chat-page--main-visible', mainVisible);
         pageRoot.classList.toggle('chat-page--mobile-floating-back', mobileFloatingBackVisible);
