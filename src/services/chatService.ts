@@ -260,12 +260,12 @@ export class ChatService {
                 const commonProps = {
                     id: chat.id.toString(),
                     title: chat.title,
-                    type: chat.chat_type,
+                    type: chat.type,
                     avatarUrl: getFullUrl(chat.avatar),
                     unreadCount: 0,
                 };
 
-                switch (chat.chat_type) {
+                switch (chat.type) {
                     case 'dialog':
                         frontendChat = {
                             ...commonProps,
@@ -330,13 +330,13 @@ export class ChatService {
                 const commonProps = {
                     id: chat.id.toString(),
                     title: chat.title,
-                    type: chat.chat_type,
+                    type: chat.type,
                     avatarUrl: getFullUrl(chat.avatar),
                     unreadCount: 0,
                     owner_id: chat.owner_id
                 };
 
-                switch (chat.chat_type) {
+                switch (chat.type) {
                     case 'dialog':
                         return {
                             ...commonProps,
@@ -361,7 +361,7 @@ export class ChatService {
                         } as ChannelChat;
 
                     default:
-                        console.error(`ChatService: неизвестный тип чата ${chat.chat_type}`);
+                        console.error(`ChatService: неизвестный тип чата ${chat.type}`);
                         return undefined;
                 }
             }
