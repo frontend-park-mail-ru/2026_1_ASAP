@@ -16,6 +16,7 @@ interface createChatMenuProps extends IBaseComponentProps {
     onCreateDialog: () => void;
     onCreateGroup: () => void;
     onCreateChannel: () => void; // пока не используется
+    onContact: () => void;
     onClose: () => void;
 }
 
@@ -34,6 +35,7 @@ export class CreateChatMenu extends BaseComponent<createChatMenuProps> {
     private dialogButton: Button | null = null;
     private groupButton: Button | null = null
     private channelButton: Button | null = null;
+    private contactButton: Button | null = null;
     private overlay: HTMLElement | null = null;
     
     /**
@@ -92,6 +94,14 @@ export class CreateChatMenu extends BaseComponent<createChatMenuProps> {
             title: "В разработке"
         })
         this.channelButton.mount(buttonsContainer as HTMLElement);
+
+        this.contactButton = new Button({
+            label: "Добавить контакт",
+            class: "create-chat-menu__add-button",
+            onClick: this.props.onContact,
+            icon: "/assets/images/icons/createChatMenuIcons/contact.svg"
+        });
+        this.contactButton.mount(buttonsContainer as HTMLElement);
 
         this.overlay = this.element.querySelector('[data-component="create-chat-overlay"]')
         this.overlay.addEventListener("click", this.handleOverlayClick);

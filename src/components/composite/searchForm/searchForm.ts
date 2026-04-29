@@ -60,14 +60,29 @@ export class SearchForm extends BaseForm<SearchFormProps> {
             class: "search-line",
             showErrorText: false,
             autocomplete: "off",
+            onInput: () => {
+                if (this.input!.value !== "") {
+                    if (!this.deleteButton?.element?.isConnected) {
+                        this.deleteButton?.mount(searchPanel as HTMLElement);
+                    }
+                } else {
+                    this.deleteButton?.unmount();
+                }
+            },
         });
         this.input.mount(searchPanel as HTMLElement);
-
+        
         this.deleteButton = new Button({ 
             class: "delete-button", 
             icon: "/assets/images/icons/deleteIcon.svg",
+            onClick: () => {
+                this.input.value = "";
+                this.deleteButton?.unmount();
+            },
         });
-        this.deleteButton.mount(searchPanel as HTMLElement);
+        if (this.input.value !== "") {
+            this.deleteButton?.mount(searchPanel as HTMLElement);
+        }
 
         const addButtonContainer = this.element.querySelector('.add-button-cont');
         if (addButtonContainer && !this.props.hideAddButton) {
@@ -104,7 +119,13 @@ export class SearchForm extends BaseForm<SearchFormProps> {
                                 this.createChatMenu?.unmount();
                                 this.createChatMenu = null;
                                 this.isMenuOpen = false;
-                            },    
+                            },
+                            onContact: () => {
+                                this.props.router.navigate("/contacts/add");
+                                this.createChatMenu?.unmount();
+                                this.createChatMenu = null;
+                                this.isMenuOpen = false;
+                            },
                         })
                         this.createChatMenu.mount(menuContainer as HTMLElement);
                     } else {
