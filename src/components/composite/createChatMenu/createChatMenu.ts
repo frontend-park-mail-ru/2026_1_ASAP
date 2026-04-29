@@ -1,6 +1,7 @@
 import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent";
 import template from './createChatMenu.hbs';
 import { Button } from "../../ui/button/button";
+import { replayAnimation } from "../../../core/utils/replayAnimation";
 
 
 /**
@@ -37,11 +38,9 @@ export class CreateChatMenu extends BaseComponent<createChatMenuProps> {
     private channelButton: Button | null = null;
     private contactButton: Button | null = null;
     private overlay: HTMLElement | null = null;
-    
-    /**
-     * Обработчик клика по оверлею, вызывает закрытие меню.
-     * @private
-     */
+
+    private hoverHandlers: Array<{ el: HTMLElement; enter: () => void; leave: () => void }> = [];
+
     private handleOverlayClick = () => {
         this.props.onClose();
     }
@@ -89,9 +88,7 @@ export class CreateChatMenu extends BaseComponent<createChatMenuProps> {
             label: "Создать канал",
             class: "create-chat-menu__add-button",
             onClick: this.props.onCreateChannel,
-            icon: "/assets/images/icons/createChatMenuIcons/channel.svg",   
-            disabled: true,
-            title: "В разработке"
+            icon: "/assets/images/icons/createChatMenuIcons/channel.svg",
         })
         this.channelButton.mount(buttonsContainer as HTMLElement);
 
@@ -103,6 +100,19 @@ export class CreateChatMenu extends BaseComponent<createChatMenuProps> {
         });
         this.contactButton.mount(buttonsContainer as HTMLElement);
 
+        [this.dialogButton, this.groupButton, this.channelButton, this.contactButton].forEach(btn => {
+            const el = btn?.element;
+            const img = el?.querySelector('img') as HTMLImageElement | null;
+            if (!el || !img) return;
+
+            const enter = () => replayAnimation(img, 'icon-anim--spring-pop');
+            const leave = () => img.classList.remove('icon-anim--spring-pop');
+
+            el.addEventListener('mouseenter', enter);
+            el.addEventListener('mouseleave', leave);
+            this.hoverHandlers.push({ el, enter, leave });
+        });
+
         this.overlay = this.element.querySelector('[data-component="create-chat-overlay"]')
         this.overlay.addEventListener("click", this.handleOverlayClick);
     }
@@ -112,8 +122,13 @@ export class CreateChatMenu extends BaseComponent<createChatMenuProps> {
      * Размонтирует все дочерние кнопки и удаляет обработчик с оверлея.
      * @protected
      */
-    protected beforeUnmount(): void { 
+    protected beforeUnmount(): void {
         super.beforeUnmount();
+        this.hoverHandlers.forEach(({ el, enter, leave }) => {
+            el.removeEventListener('mouseenter', enter);
+            el.removeEventListener('mouseleave', leave);
+        });
+        this.hoverHandlers = [];
         if (!this.element) {
             console.error("createChatMenu: нет эллемента для размонтирования");
             return;
@@ -121,6 +136,7 @@ export class CreateChatMenu extends BaseComponent<createChatMenuProps> {
         this.dialogButton.unmount();
         this.groupButton.unmount();
         this.channelButton.unmount();
+        this.contactButton?.unmount();
         this.overlay.removeEventListener("click", this.handleOverlayClick);
     }
 }

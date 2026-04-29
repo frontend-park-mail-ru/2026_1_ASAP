@@ -3,7 +3,7 @@ import { Input } from '../../ui/input/input';
 import { Button } from '../../ui/button/button';
 import { Avatar } from '../../ui/avatar/avatar';
 import template from "./searchForm.hbs";
-import { CreateChatMenu } from '../createChatMenu/createChatMenu';    
+import { CreateChatMenu } from '../createChatMenu/createChatMenu';
 import { Router } from '../../../core/router';
 
 /**
@@ -25,8 +25,11 @@ export class SearchForm extends BaseForm<SearchFormProps> {
     private input: Input | null = null;
     private deleteButton: Button | null = null;
     private addButton: Button | null = null;
+    private addButtonImg: HTMLImageElement | null = null;
     private createChatMenu: CreateChatMenu | null = null;
     private isMenuOpen: boolean = false;
+    private contactsSpinAnimEnd: (() => void) | null = null;
+    private fabCloseAnimEnd: (() => void) | null = null;
 
     constructor(props: SearchFormProps = {}) {
         props.class = props.class || 'search';
@@ -86,57 +89,95 @@ export class SearchForm extends BaseForm<SearchFormProps> {
 
         const addButtonContainer = this.element.querySelector('.add-button-cont');
         if (addButtonContainer && !this.props.hideAddButton) {
-            this.addButton = new Button({ 
-                class: "add-button", 
-                icon: "/assets/images/icons/addIcon.svg", 
+            this.addButton = new Button({
+                class: "add-button",
+                icon: "/assets/images/icons/addIcon.svg",
                 daughterClass: "add-icon",
                 onClick: () => {
                     if (this.props.onAddClick) {
+                        const img = this.addButtonImg;
+                        if (img) {
+                            if (this.contactsSpinAnimEnd) {
+                                img.removeEventListener('animationend', this.contactsSpinAnimEnd);
+                            }
+                            img.classList.remove('icon-anim--spin-open');
+                            void img.offsetWidth;
+                            img.classList.add('icon-anim--spin-open');
+
+                            this.contactsSpinAnimEnd = () => {
+                                img.classList.remove('icon-anim--spin-open');
+                                this.contactsSpinAnimEnd = null;
+                            };
+                            img.addEventListener('animationend', this.contactsSpinAnimEnd, { once: true });
+                        }
                         this.props.onAddClick();
                         return;
                     }
-                    
+
                     if (!this.isMenuOpen) {
                         this.isMenuOpen = true;
+                        this.animateFab('open');
                         const menuContainer = this.element.querySelector(".add-button-cont");
                         this.createChatMenu = new CreateChatMenu({
                             onCreateDialog: () => {
                                 this.props.router.navigate("/chats/create-dialog");
-                                this.createChatMenu?.unmount();
-                                this.isMenuOpen = false;
+                                this.closeFabMenu();
                             },
                             onCreateGroup: () => {
                                 this.props.router.navigate("/chats/create-group");
-                                this.createChatMenu?.unmount();
-                                this.isMenuOpen = false;
+                                this.closeFabMenu();
                             },
                             onCreateChannel: () => {
                                 this.props.router.navigate("/chats/create-channel");
-                                this.createChatMenu?.unmount();
-                                this.isMenuOpen = false;
+                                this.closeFabMenu();
                             },
                             onClose: () => {
-                                this.createChatMenu?.unmount();
-                                this.createChatMenu = null;
-                                this.isMenuOpen = false;
+                                this.closeFabMenu();
                             },
                             onContact: () => {
                                 this.props.router.navigate("/contacts/add");
-                                this.createChatMenu?.unmount();
-                                this.createChatMenu = null;
-                                this.isMenuOpen = false;
+                                this.closeFabMenu();
                             },
                         })
                         this.createChatMenu.mount(menuContainer as HTMLElement);
                     } else {
-                        this.createChatMenu?.unmount();
-                        this.createChatMenu = null;
-                        this.isMenuOpen = false;
+                        this.closeFabMenu();
                     }
                 }
             });
             this.addButton.mount(addButtonContainer as HTMLElement);
+            this.addButtonImg = this.addButton.element?.querySelector('img') ?? null;
         }
+    }
+
+    private animateFab(direction: 'open' | 'close'): void {
+        const img = this.addButtonImg;
+        if (!img) return;
+        const toRemove = direction === 'open' ? 'icon-anim--spin-close' : 'icon-anim--spin-open';
+        const toAdd    = direction === 'open' ? 'icon-anim--spin-open'  : 'icon-anim--spin-close';
+        if (this.fabCloseAnimEnd) {
+            img.removeEventListener('animationend', this.fabCloseAnimEnd);
+            this.fabCloseAnimEnd = null;
+        }
+
+        img.classList.remove(toRemove);
+        void img.offsetWidth;
+        img.classList.add(toAdd);
+        
+        if (direction === 'close') {
+            this.fabCloseAnimEnd = () => {
+                img.classList.remove('icon-anim--spin-close');
+                this.fabCloseAnimEnd = null;
+            };
+            img.addEventListener('animationend', this.fabCloseAnimEnd, { once: true });
+        }
+    }
+
+    private closeFabMenu(): void {
+        this.createChatMenu?.unmount();
+        this.createChatMenu = null;
+        this.isMenuOpen = false;
+        this.animateFab('close');
     }
 
     protected beforeUnmount(): void {
