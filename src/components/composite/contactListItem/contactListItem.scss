@@ -17,8 +17,9 @@
     }
 
     .no-contacts {
-        font: $text-heading1;
+        font: $text-secondary;
         text-align: center;
+        line-height: normal;
         user-select: none;
     }
 }

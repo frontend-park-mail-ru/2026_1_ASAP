@@ -1,5 +1,6 @@
 import template from "./chats.hbs";
 import { BasePage, IBasePageProps } from "../../core/base/basePage";
+import { OnboardingEmpty } from "../../components/composite/onboardingEmpty/onboardingEmpty";
 import { SearchForm } from "../../components/composite/searchForm/searchForm";
 import { MenuBar, MenuButtonType } from "../../components/composite/menuBar/menuBar";
 import { ChatListWrapper } from "../../components/composite/chatListWrapper/chatListWrapper";
@@ -63,6 +64,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private groupDetailsWindow: GroupDetailsWindow | null = null;
     private addMemberWindow: AddMemberWindow | null = null;
     private modalComponent: ConfirmModal | null = null;
+    private onboardingComponent: OnboardingEmpty | null = null;
     
     public activeChatId: string | null = null;
     private mainContentArea: HTMLElement | null = null;
@@ -240,7 +242,24 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         if (this.placeholderElement) {
             this.placeholderElement.style.display = 'none';
         }
+        if (this.onboardingComponent) {
+            this.onboardingComponent.unmount();
+            this.onboardingComponent = null;
+        }
         this.closeModal();
+    }
+
+    private mountOnboarding(obKey: string): void {
+        if (!this.element || this.onboardingComponent) return;
+        this.onboardingComponent = new OnboardingEmpty({
+            onComplete: () => {
+                sessionStorage.setItem(obKey, '1');
+                this.onboardingComponent?.unmount();
+                this.onboardingComponent = null;
+                this.props.router.navigate('/chats/create-dialog');
+            },
+        });
+        this.onboardingComponent.mount(this.element);
     }
 
     /**
@@ -257,11 +276,26 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
             const isValidId = /^\d+$/.test(lastParam);
 
-            // Корень чатов (показываем плейсхолдер)
+            // Корень чатов (показываем плейсхолдер или онбординг)
             if (path === '/chats') {
                 this.cleanupMainContent();
                 this.activeChatId = null;
                 this.chatWrapper?.setActiveChat(null);
+
+                if (this.currentUserId !== null) {
+                    const obKey = `pulse_ob_closed_${this.currentUserId}`;
+                    if (!sessionStorage.getItem(obKey)) {
+                        try {
+                            const chats = await chatService.getChats(this.currentUserId);
+                            if (chats.length === 0) {
+                                this.mountOnboarding(obKey);
+                                return;
+                            }
+                        } catch {
+                            // не удалось проверить — показываем обычный плейсхолдер
+                        }
+                    }
+                }
 
                 if (this.placeholderElement) {
                     this.placeholderElement.style.display = 'block';
@@ -940,6 +974,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * @protected
      */
     beforeUnmount() {
+        this.onboardingComponent?.unmount();
+        this.onboardingComponent = null;
         this.cleanupMainContent();
         this.closeModal();
         this.logoutWrapper?.remove();

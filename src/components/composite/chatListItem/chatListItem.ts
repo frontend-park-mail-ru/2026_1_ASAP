@@ -1,5 +1,6 @@
 import { BaseForm } from "../../../core/base/baseForm";
 import { ChatItem } from "../chatItem/chatItem";
+import { ChatListEmpty } from "../chatListEmpty/chatListEmpty";
 import { chatService } from "../../../services/chatService";
 import { Router } from '../../../core/router';
 import { wsClient, MessageDto, ChatInformationDto } from '../../../core/utils/wsClient';
@@ -33,7 +34,7 @@ interface ChatListItemProps {
 export class ChatListItem extends BaseForm<ChatListItemProps> {
     private chatItems: ChatItem[] = [];
     private activeChatId: string | null = null;
-    private noChatsElement: HTMLElement | null = null;
+    private emptyComponent: ChatListEmpty | null = null;
 
     /**
      * Стрелочная функция-обработчик WS-события «message.New».
@@ -57,7 +58,8 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
         });
 
         if (this.element) {
-            this.noChatsElement?.remove();
+            this.emptyComponent?.unmount();
+            this.emptyComponent = null;
             this.element.classList.remove('chat-list--empty');
             
             item.mount(this.element);
@@ -102,10 +104,8 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
 
         if (this.chatItems.length === 0 && this.element) {
             this.element.classList.add('chat-list--empty');
-            this.noChatsElement = document.createElement('p');
-            this.noChatsElement.className = "no-chats";
-            this.noChatsElement.innerHTML = "У вас пока нет чатов,<br> скорее напишите кому нибудь!";
-            this.element.appendChild(this.noChatsElement);
+            this.emptyComponent = new ChatListEmpty({});
+            this.emptyComponent.mount(this.element);
         }
 
         if (this.activeChatId === targetId) {
@@ -190,10 +190,8 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
 
             if (chats.length === 0) {
                 this.element.classList.add('chat-list--empty');
-                this.noChatsElement = document.createElement('p');
-                this.noChatsElement.className = "no-chats";
-                this.noChatsElement.innerHTML = "У вас пока нет чатов,<br> скорее напишите кому нибудь!";
-                this.element.appendChild(this.noChatsElement);
+                this.emptyComponent = new ChatListEmpty({});
+                this.emptyComponent.mount(this.element);
                 return;
             }
 
@@ -235,7 +233,8 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
         this.chatItems.forEach(item => item.unmount());
         this.chatItems = [];
         this.activeChatId = null;
-        this.noChatsElement?.remove();
+        this.emptyComponent?.unmount();
+        this.emptyComponent = null;
     }
 
     /**
