@@ -270,6 +270,56 @@ body:has(#rootSupport) {
         justify-content: center;
         min-height: 44px;
     }
+
+    @media (max-width: $breakpoint-mobile-max) {
+        border-radius: 12px;
+
+        &__header {
+            padding: 12px 14px;
+            gap: 8px;
+        }
+
+        &__title {
+            font-size: 18px;
+            line-height: 22px;
+        }
+
+        &__close-btn {
+            min-width: 36px;
+            min-height: 36px;
+            padding: 6px;
+        }
+
+        &__nav {
+            padding: 10px 12px 0;
+        }
+
+        &__nav-buttons {
+            gap: 4px;
+            padding: 3px;
+        }
+
+        &__nav-btn {
+            min-height: 34px;
+            padding: 6px 8px;
+            font-size: 13px;
+        }
+
+        &__issue-type-buttons {
+            gap: 6px;
+        }
+
+        &__issue-type-btn {
+            min-width: 0;
+            flex-basis: calc(50% - 3px);
+            padding: 8px 10px;
+            font-size: 13px;
+        }
+
+        &__file-name {
+            max-width: 180px;
+        }
+    }
 }
 
 // --- New Tab ---
@@ -322,6 +372,16 @@ body:has(#rootSupport) {
 
     &__issue-input {
         max-height: 650px;
+    }
+
+    @media (max-width: $breakpoint-mobile-max) {
+        &__scroll {
+            padding: 12px 14px 8px;
+        }
+
+        &__footer {
+            padding: 10px 14px max(14px, env(safe-area-inset-bottom, 0px));
+        }
     }
 }
 
@@ -507,6 +567,25 @@ body:has(#rootSupport) {
 
         &--error {
             color: $color-error;
+        }
+    }
+
+    @media (max-width: $breakpoint-mobile-max) {
+        &__toolbar {
+            padding: 10px 14px 0;
+        }
+
+        &__list {
+            padding: 10px 14px max(14px, env(safe-area-inset-bottom, 0px));
+        }
+
+        &__filter-btn {
+            padding: 4px 10px;
+            font-size: 12px;
+        }
+
+        &__card {
+            padding: 10px 12px;
         }
     }
 }
@@ -732,6 +811,31 @@ body:has(#rootSupport) {
             color: $color-text-tertiary;
             text-align: center;
             flex: 1;
+        }
+    }
+
+    @media (max-width: $breakpoint-mobile-max) {
+        &__scroll {
+            padding: 12px 14px max(14px, env(safe-area-inset-bottom, 0px));
+        }
+
+        &__cards-row {
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        &__stat-card,
+        &__section {
+            padding: 12px 14px;
+        }
+
+        &__stat-value {
+            font-size: 24px;
+        }
+
+        &__bar-row {
+            grid-template-columns: 8px minmax(72px, 100px) 1fr minmax(20px, max-content);
+            gap: 6px;
         }
     }
 }

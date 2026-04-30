@@ -139,4 +139,29 @@
         font-size: $font-size-base;
         display: none;
     }
+
+    @media (max-width: $breakpoint-mobile-max) {
+        &__container {
+            width: 100%;
+            max-width: calc(100vw - 24px);
+            max-height: calc(100dvh - 24px);
+            padding: 20px 16px;
+            gap: 12px;
+        }
+
+        &__title {
+            font-size: 20px;
+            line-height: 24px;
+        }
+
+        &__status-buttons {
+            gap: 6px;
+        }
+
+        &__status-btn {
+            padding: 8px 14px;
+            flex: 1;
+            min-width: 0;
+        }
+    }
 }

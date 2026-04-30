@@ -19,18 +19,6 @@
     padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px))
         max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
 
-    &__glow {
-        position: absolute;
-        width: 410px;
-        height: 520px;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        background: $color-background-blur;
-        filter: blur(238px);
-        z-index: 0;
-        pointer-events: none;
-    }
     &__support-button-container {
         position: fixed;
         bottom: max(20px, env(safe-area-inset-bottom, 0px));
@@ -48,6 +36,7 @@
         align-items: center;
         justify-content: center;
         padding: 0;
+        border: none;
         cursor: pointer;
         transition: transform 0.2s ease;
 
@@ -64,14 +53,8 @@
     }
 
     @media (max-width: $breakpoint-mobile-max) {
-        align-items: flex-start;
-        padding-top: max(16px, env(safe-area-inset-top, 0px));
-
-        &__glow {
-            width: min(100vw, 320px);
-            height: min(70vh, 420px);
-            filter: blur(120px);
-        }
+        align-items: center;
+        overflow-y: auto;
 
         &__support-button-container {
             bottom: max(16px, env(safe-area-inset-bottom, 0px));
@@ -102,7 +85,6 @@
     @media (max-width: $breakpoint-mobile-max) {
         gap: 18px;
         max-width: 100%;
-        margin-top: max(36px, calc(env(safe-area-inset-top, 0px) + 24px));
     }
 }
 

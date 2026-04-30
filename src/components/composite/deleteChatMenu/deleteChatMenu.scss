@@ -61,4 +61,12 @@
         }
     }
 
+    @media (max-width: $breakpoint-mobile-max) {
+        &__button-container {
+            top: 28px;
+            right: 0;
+            width: min(220px, calc(100vw - 24px));
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+    }
 }
