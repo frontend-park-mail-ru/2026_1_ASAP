@@ -114,6 +114,7 @@ class AuthService {
         if (result.success) {
             this.isAuthStatus = true;
         }
+        contactService.clearCache();
         return result;
     }
 
@@ -129,6 +130,7 @@ class AuthService {
         if (result.success) {
             this.isAuthStatus = true;
         }
+        contactService.clearCache();
         return result;
     }
 

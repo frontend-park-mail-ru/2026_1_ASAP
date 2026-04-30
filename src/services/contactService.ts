@@ -463,16 +463,23 @@ export class ContactService {
 
     /**
      * Проверяет, является ли текущий пользователь администратором.
-     * Делает GET /api/v1/complains/all: не 403 → админ, иначе обычный пользователь.
+     * Администратор в текущем приложении зарезервирован за логином `admin`.
+     * Для него дополнительно проверяется доступность admin endpoint.
      * Результат кэшируется до логаута.
      */
     public async isAdmin(): Promise<boolean> {
         if (this.adminStatus !== null) return this.adminStatus;
         try {
-            const response = await httpClient.request(`${BASE_URL}/api/v1/complains/all`, {
+            const profile = await this.getMyProfile();
+            if (profile.additionalInfo.login !== 'admin') {
+                this.adminStatus = false;
+                return this.adminStatus;
+            }
+
+            const response = await httpClient.request(`${BASE_URL}/api/v1/complaints/all`, {
                 ignoreUnauthorized: true,
             });
-            this.adminStatus = response.status !== 403;
+            this.adminStatus = response.ok;
         } catch {
             this.adminStatus = false;
         }
