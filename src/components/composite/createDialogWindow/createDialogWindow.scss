@@ -51,4 +51,11 @@
         flex-direction: row;
         width: 100%;
     }
+
+    @media (max-width: $breakpoint-mobile-max) {
+        &__back-button,
+        &__search {
+            padding: 8px;
+        }
+    }
 }

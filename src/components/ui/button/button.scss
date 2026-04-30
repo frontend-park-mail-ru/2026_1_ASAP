@@ -77,14 +77,24 @@
 
 .add-button {
     @include flex-center;
-    width: 40px;
-    height: 40px;
-    border: 3px solid $color-primary;
+    width: 42px;
+    height: 42px;
     border-radius: 10px;
-    background-color: $color-empty;
+    background: transparent;
+    border: 1px solid $color-text-hover;
     cursor: pointer;
-    transition: background-color 0.2s, transform 0.1s;
     user-select: none;
+    transition:
+        border-color 200ms ease,
+        background-color 200ms ease,
+        transform 80ms ease;
+
+    &:hover:not(:disabled) {
+        border-color: $color-primary;
+        background-color: rgba(69, 93, 186, 0.12);
+    }
+
+    &:active:not(:disabled) { transform: scale(0.95); }
 
     &:disabled {
         opacity: 0.5;
@@ -92,12 +102,9 @@
         pointer-events: none;
     }
 
-    &:hover:not(:disabled) {
-        background-color: rgba($color-primary, 0.25);
-    }
-
     & > img {
         transform: rotate(45deg);
+        filter: brightness(0) invert(1);
         @include hover-transition;
     }
 }

@@ -40,6 +40,7 @@
 
     .create-group-submit-btn {
         width: 35%;
+        min-width: 200px;
         border-radius: 10px;
         gap: 10px;
         background: $gradient-button;
@@ -63,5 +64,22 @@
         display: flex;
         flex-direction: row;
         width: 100%;
+    }
+
+    @media (max-width: $breakpoint-mobile-max) {
+        &__footer {
+            padding: 8px 8px max(8px, env(safe-area-inset-bottom, 0px));
+        }
+
+        .create-group-submit-btn {
+            width: 100%;
+            min-width: 0;
+            max-width: 320px;
+        }
+
+        &__back-button,
+        &__search {
+            padding: 8px;
+        }
     }
 }

@@ -88,6 +88,29 @@
         max-width: 200px;
     }
 
+    @media (max-width: $breakpoint-mobile-max) {
+        &__actions-slot {
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 10px 8px;
+        }
+
+        &__btn {
+            width: auto;
+            flex: 1;
+            min-width: 140px;
+            max-width: 100%;
+        }
+
+        &__actions {
+            padding: 16px 12px;
+        }
+
+        &__members {
+            padding: 12px;
+        }
+    }
+
     &__avatar-overlay {
         position: absolute;
         inset: 0;

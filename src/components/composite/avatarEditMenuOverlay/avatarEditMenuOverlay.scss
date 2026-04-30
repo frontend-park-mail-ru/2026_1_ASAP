@@ -25,6 +25,7 @@
         @include flex-column;
         align-items: stretch;
         min-width: 220px;
+        max-width: calc(100vw - 16px);
         padding: 8px;
         border-radius: 10px;
         background-color: $color-neutral;

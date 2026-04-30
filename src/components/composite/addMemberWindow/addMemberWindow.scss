@@ -40,4 +40,11 @@
         height: 60px;
         gap: 10px;
     }
+
+    @media (max-width: $breakpoint-mobile-max) {
+        &__footer {
+            padding: 0 8px max(0px, env(safe-area-inset-bottom, 0px));
+            box-sizing: border-box;
+        }
+    }
 }

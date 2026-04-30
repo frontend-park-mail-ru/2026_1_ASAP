@@ -22,4 +22,14 @@
         padding-top: 90px;
         padding-bottom: 10px;
     }
+
+    @media (max-width: $breakpoint-mobile-max) {
+        gap: 16px;
+
+        &__message {
+            font-size: 18px;
+            line-height: 22px;
+            padding: 24px 16px 8px;
+        }
+    }
 }
