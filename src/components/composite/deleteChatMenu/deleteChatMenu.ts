@@ -9,6 +9,7 @@ interface deleteChatMenuProps extends IBaseComponentProps {
     onDelete: () => void;
     onClose: () => void;
     typeChat: "dialog" | "group" | "channel";
+    deleteLabel?: string;
 }
 
 export class DeleteChatMenu extends BaseComponent<deleteChatMenuProps> {
@@ -44,17 +45,19 @@ export class DeleteChatMenu extends BaseComponent<deleteChatMenuProps> {
         });
         this.infoButton.mount(buttonsContainer as HTMLElement);
 
-        let label = "";
-        switch (this.props.typeChat) {
-            case "dialog":
-                label = "Удалить диалог";
-                break;
-            case "group":
-                label = "Удалить группу";
-                break;
-            case "channel":
-                label = "Удалить канал";
-                break;
+        let label = this.props.deleteLabel || "";
+        if (!label) {
+            switch (this.props.typeChat) {
+                case "dialog":
+                    label = "Удалить диалог";
+                    break;
+                case "group":
+                    label = "Удалить группу";
+                    break;
+                case "channel":
+                    label = "Удалить канал";
+                    break;
+            }
         }
 
         this.deleteButton = new Button({

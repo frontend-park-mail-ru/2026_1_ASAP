@@ -119,11 +119,15 @@ export interface GroupChat extends BaseChat {
  * @property {'channel'} type - Тип чата.
  * @property {number} subscribersCount - Количество подписчиков.
  * @property {string} [description] - Описание канала (опционально).
+ * @property {number} [owner_id] - ID владельца (приходит с бэкенда).
+ * @property {'owner' | 'participant'} [currentUserRole] - Роль текущего пользователя.
  */
 export interface ChannelChat extends BaseChat {
     type: 'channel';
     subscribersCount: number;
     description?: string;
+    owner_id?: number;
+    currentUserRole?: 'owner' | 'participant';
 }
 
 /**
