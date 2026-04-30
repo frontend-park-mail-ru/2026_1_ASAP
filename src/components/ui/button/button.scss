@@ -192,3 +192,23 @@
         color: $color-text;
     }
 }
+
+.edit-msg-overlay__buttons-container {
+    &-edit-button {
+        color: $color-text;
+        display: flex;
+        flex-direction: row;
+        gap: 8px;
+        padding: 10px;
+        background-color: $color-neutral;
+    }
+
+    &-delete-button {
+        color: $color-error;
+        display: flex;
+        flex-direction: row;
+        gap: 8px;
+        padding: 10px;
+        background-color: $color-neutral;
+    }
+}
