@@ -4,6 +4,7 @@ import template from './message.hbs';
 import { Avatar } from '../../ui/avatar/avatar';
 import { chatService } from "../../../services/chatService";
 import { User } from "../../../types/chat";
+import { EditMsgOverlay } from '../../composite/editMsgOverlay/editMsgOverlay';
 
 /**
  * @interface MessageProps - Свойства компонента сообщения.
@@ -16,6 +17,8 @@ interface MessageProps extends IBaseComponentProps {
     isOwn: boolean;
     showAuthor: boolean;
     senderName?: string | null;
+    onEdit?: (id: string) => void;
+    onDelete?: (id: string) => void;
 }
 
 /**
@@ -38,6 +41,7 @@ export class Message extends BaseComponent<MessageProps> {
     }
 
     private avatarComponent: Avatar | null = null;
+    private editMsgOverlay: EditMsgOverlay | null = null;
 
     public getId(): string {
         return this.props.message.id;
@@ -111,7 +115,30 @@ export class Message extends BaseComponent<MessageProps> {
 
     handleRightClick = (e: { preventDefault: () => void; }) => {
         e.preventDefault();
+        if (!this.props.isOwn) return;
+        this.openEditOverlay();
     };
+
+    private openEditOverlay(): void {
+        this.closeEditOverlay();
+        this.editMsgOverlay = new EditMsgOverlay({
+            onEdit: () => {
+                this.props.onEdit?.(this.getId());
+                this.closeEditOverlay();
+            },
+            onDelete: () => {
+                this.props.onDelete?.(this.getId());
+                this.closeEditOverlay();
+            },
+            onClose: () => this.closeEditOverlay(),
+        });
+        this.editMsgOverlay.mount(document.body);
+    }
+
+    private closeEditOverlay(): void {
+        this.editMsgOverlay?.unmount();
+        this.editMsgOverlay = null;
+    }
 
     /**
      * @override
@@ -122,6 +149,7 @@ export class Message extends BaseComponent<MessageProps> {
             return;
         }
         this.props.senderName = this.getSenderDisplayName(this.props.message.sender);
+        this.element!.addEventListener('contextmenu', this.handleRightClick);
 
         if (this.props.isOwn) {
             return;
@@ -147,7 +175,6 @@ export class Message extends BaseComponent<MessageProps> {
                 this.fetchAndSetSenderName(senderId);
             }
         }
-        this.element!.addEventListener('contextmenu', this.handleRightClick);
     }
 
     /**
@@ -155,5 +182,6 @@ export class Message extends BaseComponent<MessageProps> {
      */
     protected beforeUnmount(): void {
         this.element!.removeEventListener('contextmenu', this.handleRightClick);
+        this.closeEditOverlay();
     }
 }
