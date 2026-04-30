@@ -69,6 +69,7 @@ export default {
         new CopyWebpackPlugin({
             patterns: [
                 {from: 'src/assets', to: 'assets'},
+                {from: 'src/manifest.json', to: 'manifest.json'},
             ]
         }),
         new HtmlWebpackPlugin({
