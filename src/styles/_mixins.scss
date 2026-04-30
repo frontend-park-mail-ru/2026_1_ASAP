@@ -98,6 +98,33 @@
 }
 
 /**
+ * Кнопка закрытия модального окна (крестик, position: absolute, top-right).
+ */
+@mixin modal-close-btn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 32px;
+    height: 32px;
+    @include flex-center;
+    @include btn-reset;
+    border-radius: 6px;
+    opacity: 0.55;
+    @include hover-transition;
+
+    &:hover {
+        opacity: 1;
+        background-color: $color-text-hover2;
+    }
+
+    img {
+        width: 17px;
+        height: 17px;
+        display: block;
+    }
+}
+
+/**
  * Сложный эффект наведения с градиентом через :after.
  */
 @mixin hover-after-gradient($gradient) {
