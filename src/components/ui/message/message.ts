@@ -109,6 +109,10 @@ export class Message extends BaseComponent<MessageProps> {
         }
     }
 
+    handleRightClick = (e: { preventDefault: () => void; }) => {
+        e.preventDefault();
+    };
+
     /**
      * @override
      */
@@ -143,11 +147,13 @@ export class Message extends BaseComponent<MessageProps> {
                 this.fetchAndSetSenderName(senderId);
             }
         }
+        this.element!.addEventListener('contextmenu', this.handleRightClick);
     }
 
     /**
      * @override
      */
     protected beforeUnmount(): void {
+        this.element!.removeEventListener('contextmenu', this.handleRightClick);
     }
 }

@@ -77,6 +77,8 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             type: 'submit',
         });
         this.sendButton.mount(sendButtonContainer as HTMLElement);
+
+        this.textarea?.focus({ preventScroll: true });
     }
 
     /**
