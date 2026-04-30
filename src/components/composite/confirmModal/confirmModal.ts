@@ -31,6 +31,7 @@ interface ConfirmModalProps extends IBaseComponentProps {
 export class ConfirmModal extends BaseComponent<ConfirmModalProps> {
     private cancelButton: Button | null = null;
     private confirmButton: Button | null = null;
+    private closeButton: Button | null = null;
 
     constructor(props: ConfirmModalProps) {
         super(props);
@@ -57,6 +58,13 @@ export class ConfirmModal extends BaseComponent<ConfirmModalProps> {
 
         const mainContainer = this.element.querySelector('[data-component="confirm-modal__container"]');
         if (!mainContainer) return;
+
+        this.closeButton = new Button({
+            icon: "/assets/images/icons/deleteIcon.svg",
+            class: "confirm-modal__close-btn",
+            onClick: () => this.props.onCancel?.(),
+        });
+        this.closeButton.mount(mainContainer as HTMLElement);
 
         const textContainer = mainContainer.querySelector('[data-component="confirm-modal-info-container"]');
         if (textContainer) {
@@ -100,6 +108,7 @@ export class ConfirmModal extends BaseComponent<ConfirmModalProps> {
 
     protected beforeUnmount(): void {
         document.removeEventListener('keydown', this.handleKeyDown);
+        this.closeButton?.unmount();
         this.cancelButton?.unmount();
         this.confirmButton?.unmount();
     }

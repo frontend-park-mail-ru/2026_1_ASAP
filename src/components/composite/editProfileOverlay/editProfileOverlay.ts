@@ -20,6 +20,7 @@ interface EditProfileOverlayProps extends IBaseComponentProps {
 
 export class EditProfileOverlay extends BaseComponent<EditProfileOverlayProps> {
     private saveButton: Button | null = null;
+    private closeButton: Button | null = null;
     private editInput: Input | null = null;
     private birthDateInputEl: HTMLInputElement | null = null;
     private overlay: HTMLElement | null = null;
@@ -117,6 +118,13 @@ export class EditProfileOverlay extends BaseComponent<EditProfileOverlayProps> {
     protected afterMount(): void {
         const container = this.element!.querySelector(".edit-profile__edit-container") as HTMLElement | null;
         if (!container) return;
+
+        this.closeButton = new Button({
+            icon: "/assets/images/icons/deleteIcon.svg",
+            class: "edit-profile__close-btn",
+            onClick: () => this.props.onClose(),
+        });
+        this.closeButton.mount(container);
 
         const titleEl = container.querySelector(".edit-title");
         if (titleEl) {
@@ -231,6 +239,7 @@ export class EditProfileOverlay extends BaseComponent<EditProfileOverlayProps> {
             this.birthDateInputEl = null;
         }
         this.editInput?.unmount();
+        this.closeButton?.unmount();
         this.saveButton?.unmount();
         this.overlay?.removeEventListener("click", this.props.onClose);
     }

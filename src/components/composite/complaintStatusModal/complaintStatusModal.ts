@@ -1,4 +1,5 @@
 import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent";
+import { Button } from "../../ui/button/button";
 import { Complaint, ComplaintStatus, complaintsAdminService } from "../../../services/complaintsAdminService";
 import { statusToLabel, statusToClass } from "../complaintItem/complaintItem";
 import template from "./complaintStatusModal.hbs";
@@ -18,6 +19,7 @@ const STATUS_OPTIONS: { value: ComplaintStatus; label: string }[] = [
 export class ComplaintStatusModal extends BaseComponent<ComplaintStatusModalProps> {
     private isUpdating = false;
     private statusButtons: HTMLButtonElement[] = [];
+    private closeButton: Button | null = null;
 
     constructor(props: ComplaintStatusModalProps) {
         super(props);
@@ -34,6 +36,16 @@ export class ComplaintStatusModal extends BaseComponent<ComplaintStatusModalProp
         overlay?.addEventListener('click', () => this.props.onClose());
 
         document.addEventListener('keydown', this.handleKeyDown);
+
+        const container = this.element.querySelector('[data-component="csm-container"]');
+        if (container) {
+            this.closeButton = new Button({
+                icon: "/assets/images/icons/deleteIcon.svg",
+                class: "complaint-status-modal__close-btn",
+                onClick: () => this.props.onClose(),
+            });
+            this.closeButton.mount(container as HTMLElement);
+        }
 
         this.renderMeta();
         this.renderBody();
@@ -152,6 +164,7 @@ export class ComplaintStatusModal extends BaseComponent<ComplaintStatusModalProp
 
     protected beforeUnmount(): void {
         document.removeEventListener('keydown', this.handleKeyDown);
+        this.closeButton?.unmount();
         this.statusButtons = [];
     }
 }
