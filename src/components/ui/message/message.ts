@@ -119,9 +119,21 @@ export class Message extends BaseComponent<MessageProps> {
         this.openEditOverlay();
     };
 
+    public updateText(newText: string, edited = true): void {
+        this.props.message.text = newText;
+        const textEl = this.element?.querySelector('.message__text');
+        if (textEl) textEl.textContent = newText;
+        const editedEl = this.element?.querySelector<HTMLElement>('.message__edited');
+        if (editedEl) {
+            editedEl.hidden = !edited;
+        }
+    }
+
     private openEditOverlay(): void {
+        if (!this.element) return;
         this.closeEditOverlay();
         this.editMsgOverlay = new EditMsgOverlay({
+            anchorRect: this.element.getBoundingClientRect(),
             onEdit: () => {
                 this.props.onEdit?.(this.getId());
                 this.closeEditOverlay();

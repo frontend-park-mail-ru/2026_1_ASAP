@@ -158,6 +158,23 @@ export class ChatService {
     }
 
     /**
+     * Отправляет команду для редактирования чообщения через WebSocket.
+     * Сервер обработает и разошлёт всем участникам чата broadcast `message.Edited`.
+     * 
+     * @param messageId 
+     * @param newText 
+     * @returns 
+     */
+    public editMessage(chatId: string, messageId: string, text: string): boolean {
+        if (!wsClient.isConnected()) return false;
+        return wsClient.sendIfOpen('message.Edit', {
+            chat_id: Number(chatId),
+            message_id: Number(messageId),
+            text: text,
+        });
+    };
+
+    /**
      * Пере-проталкивает все pending-сообщения в WebSocket.
      * Вызывается при `online`, `system.Connected` и сообщении от SW.
      * Элементы удаляются не здесь, а при приходе серверного broadcast `message.New` (см. resolveServerMessage).
