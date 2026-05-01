@@ -541,22 +541,15 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             case 'channel':
                 this.createChatWindow = new CreateChannelWindow({
                     router: this.props.router,
-                    onSubmit: async (title: string, description: string, avatar?: File) => {
+                    onSubmit: async (title: string, description: string, _avatar?: File) => {
+                        // TODO: avatar при создании не передаётся на бэк, ставить через "Изменить" после создания
                         const res = await channelService.createChannel(
-                            { title, description, avatar },
+                            { title, description },
                             myId
                         );
                         if (res.success && res.channelId) {
                             this.rebuildSidebar();
                             this.props.router.navigate(`/chats/${res.channelId}`);
-                            return;
-                        }
-                        if (res.errorCode === 'AVATAR_UPLOAD_FAILED' && res.channelId) {
-                            this.rebuildSidebar();
-                            this.showAlert(
-                                'Канал создан, но не удалось загрузить аватар. Попробуйте изменить аватар позже',
-                                () => this.props.router.navigate(`/chats/${res.channelId}`)
-                            );
                             return;
                         }
 
@@ -588,10 +581,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         if (!this.mainContentArea) return;
 
         try {
-            const isMockChannel = channelService.isMockChannel(chatId);
-            const chatDetail = isMockChannel
-                ? channelService.getMockChannelChat(chatId)
-                : await chatService.getChatDetail(chatId);
+            const chatDetail = await chatService.getChatDetail(chatId);
 
             if (this.activeChatId !== chatId) {
                 return;
@@ -768,16 +758,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             // Подписываемся на новые сообщения (соединение уже установлено в afterMount)
             wsClient.subscribe('message.New', this.handleNewMessage);
 
-            if (!isMockChannel) {
-                // Загружаем историю через сокеты сразу после открытия чата
-                await this.loadHistory(chatId);
-
-                // Восстанавливаем оптимистичные (offline-pending) сообщения из IndexedDB
-                await this.restorePendingMessages(chatId);
-            } else {
-                this.hasMoreHistory = false;
-                this.nextBeforeId = null;
-            }
+            await this.loadHistory(chatId);
+            await this.restorePendingMessages(chatId);
         } finally {
             this.syncMobileLayoutState();
         }

@@ -501,7 +501,7 @@ export class ChatService {
     public async leaveChat(chatId: number): Promise<{ success: boolean; status: number; errorCode?: string; errorMessage?: string }> {
         try {
             const response = await httpClient.request(`${BASE_URL}/api/v1/chats/${chatId}/quit`, {
-                method: 'POST',
+                method: 'DELETE',
             });
 
             if (response.ok) {
@@ -682,12 +682,8 @@ export class ChatService {
      */
     public async removeMember(chatId: string, userId: number): Promise<{ success: boolean; status: number }> {
         try {
-            const response = await httpClient.request(`${BASE_URL}/api/v1/chats/${chatId}/members`, {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/chats/${chatId}/members/${userId}`, {
                 method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ member_id: userId })
             });
 
             if (response.ok) {

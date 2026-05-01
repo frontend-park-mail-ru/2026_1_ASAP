@@ -1,6 +1,4 @@
 import { chatService } from './chatService';
-import { contactService } from './contactService';
-import { ChannelChat } from '../types/chat';
 
 export type ChannelRole = 'owner' | 'participant';
 
@@ -15,12 +13,11 @@ export interface ChannelDetail {
     id: string;
     title: string;
     avatarUrl?: string;
-    // TODO: нет бэкенд-эндпоинта, пока замокано
+    // TODO: нет бэкенд-поля, хранится локально в extraData
     description: string;
-    // TODO: нет бэкенд-эндпоинта, пока замокано
+    // TODO: нет бэкенд-эндпоинта для инвайт-ссылок
     inviteUrl: string;
     members: ChannelMember[];
-    // TODO: уточнить у бэкенда, возвращает ли поле subscribers_count корректно (сейчас fallback на members.length)
     subscribersCount: number;
     currentUserRole: ChannelRole;
     ownerId: number;
@@ -29,7 +26,7 @@ export interface ChannelDetail {
 export interface CreateChannelInput {
     title: string;
     description?: string;
-    avatar?: File;
+    // avatar?: File; // TODO: бэк не принимает аватар при создании, ставить через updateChannel после
 }
 
 export interface UpdateChannelInput {
@@ -43,16 +40,8 @@ interface ChannelExtraData {
     inviteUrl: string;
 }
 
-interface MockChannelData extends ChannelExtraData {
-    id: string;
-    title: string;
-    avatarUrl?: string;
-    ownerId: number;
-    members: ChannelMember[];
-}
-
 class ChannelService {
-    private mockData: Map<string, MockChannelData> = new Map();
+    // Хранит description и inviteUrl локально, пока бэк не поддерживает эти поля в API
     private extraData: Map<string, ChannelExtraData> = new Map();
 
     private generateInviteUrl(channelId: string): string {
@@ -62,74 +51,30 @@ class ChannelService {
 
     async createChannel(
         input: CreateChannelInput,
-        myId: number
+        _myId: number
     ): Promise<{ success: boolean; channelId?: string; errorCode?: string; status?: number }> {
-        const channelId = Date.now().toString();
-        const profile = await contactService.getMyProfile().catch(() => null);
-        const displayName = profile
-            ? [profile.mainInfo.firstName, profile.mainInfo.lastName].filter(Boolean).join(' ')
-                || profile.additionalInfo.login
-            : 'Вы';
+        const res = await chatService.createChat(
+            [],        // members_id — бэк добавляет owner автоматически
+            'channel',
+            input.title,
+            // description и avatar: бэк не принимает при создании
+        );
 
-        this.mockData.set(channelId, {
-            id: channelId,
-            title: input.title,
-            avatarUrl: input.avatar ? URL.createObjectURL(input.avatar) : undefined,
-            description: input.description || '',
-            inviteUrl: this.generateInviteUrl(channelId),
-            ownerId: myId,
-            members: [{
-                id: myId,
-                name: displayName,
-                avatarUrl: profile?.mainInfo.avatarUrl,
-                isOwner: true,
-            }],
-        });
-
-        return { success: true, channelId };
-    }
-
-    isMockChannel(channelId: string): boolean {
-        return this.mockData.has(channelId);
-    }
-
-    getMockChannelChat(channelId: string): ChannelChat | null {
-        const mock = this.mockData.get(channelId);
-        if (!mock) return null;
-
-        return {
-            id: mock.id,
-            title: mock.title,
-            type: 'channel',
-            avatarUrl: mock.avatarUrl,
-            unreadCount: 0,
-            subscribersCount: mock.members.length,
-            description: mock.description,
-            owner_id: mock.ownerId,
-            currentUserRole: 'owner',
-        };
-    }
-
-    /**
-     * Возвращает полную информацию о канале включая роль текущего пользователя.
-     * Обогащает данные chatService mock-данными (description, inviteUrl).
-     */
-    async getChannel(channelId: string, myId: number): Promise<ChannelDetail | null> {
-        const mock = this.mockData.get(channelId);
-        if (mock) {
-            return {
-                id: mock.id,
-                title: mock.title,
-                avatarUrl: mock.avatarUrl,
-                description: mock.description,
-                inviteUrl: mock.inviteUrl,
-                members: mock.members,
-                subscribersCount: mock.members.length,
-                currentUserRole: mock.ownerId === myId ? 'owner' : 'participant',
-                ownerId: mock.ownerId,
-            };
+        if (!res.success || !res.body?.id) {
+            return { success: false, status: res.status };
         }
 
+        const channelId = res.body.id.toString();
+
+        this.extraData.set(channelId, {
+            description: input.description ?? '',
+            inviteUrl: this.generateInviteUrl(channelId),
+        });
+
+        return { success: true, channelId, status: res.status };
+    }
+
+    async getChannel(channelId: string, myId: number): Promise<ChannelDetail | null> {
         const chatDetail = await chatService.getChatDetail(channelId);
         if (!chatDetail || chatDetail.type !== 'channel') return null;
 
@@ -168,42 +113,17 @@ class ChannelService {
             description: extra.description,
             inviteUrl: extra.inviteUrl,
             members,
-            // TODO: subscribersCount — fallback на members.length, пока бэк не возвращает достоверное значение
             subscribersCount: (chatDetail as any).subscribersCount || memberIds.length,
             currentUserRole,
             ownerId,
         };
     }
 
-    /**
-     * Обновляет параметры канала.
-     * Ограничения прав (YOU_CANT_CHANGE_TITLE / YOU_CANT_CHANGE_AVATAR) эмулируются mock-ом,
-     * реальный бэкенд тоже их проверяет (HTTP 403).
-     */
     async updateChannel(
         channelId: string,
         input: UpdateChannelInput,
         myId: number
     ): Promise<{ success: boolean; errorCode?: string }> {
-        const mock = this.mockData.get(channelId);
-        if (mock) {
-            if (mock.ownerId !== myId) {
-                if (input.title !== undefined) return { success: false, errorCode: 'YOU_CANT_CHANGE_TITLE' };
-                if (input.avatar !== undefined) return { success: false, errorCode: 'YOU_CANT_CHANGE_AVATAR' };
-            }
-
-            if (input.title !== undefined) mock.title = input.title;
-            if (input.description !== undefined) mock.description = input.description;
-            if (input.avatar) {
-                if (mock.avatarUrl?.startsWith('blob:')) {
-                    URL.revokeObjectURL(mock.avatarUrl);
-                }
-                mock.avatarUrl = URL.createObjectURL(input.avatar);
-            }
-
-            return { success: true };
-        }
-
         const detail = await this.getChannel(channelId, myId);
         if (!detail) return { success: false, errorCode: 'CHANNEL_NOT_FOUND' };
 
@@ -243,40 +163,19 @@ class ChannelService {
     }
 
     async leaveChannel(channelId: string): Promise<{ success: boolean }> {
-        if (this.mockData.has(channelId)) {
-            this.mockData.delete(channelId);
-            return { success: true };
-        }
-
         const res = await chatService.leaveChat(Number(channelId));
         return { success: res.success };
     }
 
     async deleteChannel(channelId: string): Promise<{ success: boolean; errorCode?: string }> {
-        const mock = this.mockData.get(channelId);
-        if (mock) {
-            if (mock.avatarUrl?.startsWith('blob:')) {
-                URL.revokeObjectURL(mock.avatarUrl);
-            }
-            this.mockData.delete(channelId);
-            return { success: true };
-        }
-
         const res = await chatService.deleteChat(channelId);
         if (res.success) {
-            this.mockData.delete(channelId);
             this.extraData.delete(channelId);
         }
         return { success: res.success, errorCode: res.errorCode };
     }
 
     async removeMember(channelId: string, userId: number): Promise<{ success: boolean }> {
-        const mock = this.mockData.get(channelId);
-        if (mock) {
-            mock.members = mock.members.filter(member => member.id !== userId || member.isOwner);
-            return { success: true };
-        }
-
         const res = await chatService.removeMember(channelId, userId);
         return { success: res.success };
     }
