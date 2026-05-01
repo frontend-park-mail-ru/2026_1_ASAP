@@ -3,8 +3,7 @@
  * @description Утилиты для работы с URL и путями к ресурсам.
  */
 
-const host = window.location.hostname;
-const BASE_URL = `${window.location.protocol}//${host}:8080`;
+import { BASE_URL } from './apiBase';
 
 /**
  * Преобразует относительный путь от бэкенда в полный URL.

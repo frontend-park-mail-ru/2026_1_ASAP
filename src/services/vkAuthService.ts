@@ -3,7 +3,7 @@ import { generateCodeVerifier, generateState } from "../utils/pkce";
 import * as VKID from '@vkid/sdk';
 import { authService } from "./authService";
 
-const BASE_URL = `${window.location.protocol}//${window.location.hostname}`;
+import { BASE_URL } from '../core/utils/apiBase';
 
 export class VkAuthService {
     init(container: HTMLElement, onSuccess: () => void) {

@@ -58,8 +58,23 @@
 
     &__settings {
         @include btn-reset;
+        @include flex-center;
         flex-shrink: 0;
-        max-width: 50px;
-        max-height: 50px;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        @include hover-transition;
+
+        img {
+            width: 34px;
+            height: 34px;
+            display: block;
+            object-fit: contain;
+            pointer-events: none;
+        }
+
+        &:hover {
+            background-color: $color-text-hover2;
+        }
     }
 }

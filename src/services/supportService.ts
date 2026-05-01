@@ -1,8 +1,7 @@
 import { httpClient } from "../core/utils/httpClient";
 import { authService } from "./authService";
 
-const host = window.location.hostname;
-const BASE_URL = `${window.location.protocol}//${host}`;
+import { BASE_URL } from '../core/utils/apiBase';
 
 export type ComplaintType = "bug" | "suggestion" | "complaint";
 
@@ -176,8 +175,8 @@ class SupportService {
                 }
                 return { success: false, error: errorMessage, status: response.status };
             }
-            const data = (await response.json()) as { body?: { complaints?: MyComplaintItem[] } };
-            const raw = data?.body?.complaints;
+            const data = (await response.json()) as { body?: MyComplaintItem[] };
+            const raw = data?.body;
             const complaints = Array.isArray(raw) ? raw : [];
             return { success: true, complaints };
         } catch (e: unknown) {
