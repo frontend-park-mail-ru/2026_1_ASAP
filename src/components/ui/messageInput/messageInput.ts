@@ -89,19 +89,35 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         this.exitEditMode();
     };
 
-    private showEditIndicator(): void {
+    private showEditIndicator(currentText: string): void {
         if (!this.element || this.editIndicator) return;
 
         this.editIndicator = document.createElement('div');
         this.editIndicator.className = 'message-input__edit-indicator';
         this.editIndicator.innerHTML = `
-            <span>Редактирование сообщения</span>
-            <button type="button" class="message-input__edit-cancel" aria-label="Отменить редактирование">×</button>
+            <img class="message-input__edit-indicator-icon" src="/assets/images/icons/editMsgOverlayIcons/editPencil.svg" alt="" aria-hidden="true">
+            <div class="message-input__edit-indicator-text">
+                <span class="message-input__edit-indicator-title">Редактирование</span>
+                <span class="message-input__edit-indicator-preview"></span>
+            </div>
+            <button type="button" class="message-input__edit-cancel" aria-label="Отменить редактирование">
+                <img src="/assets/images/icons/editMsgOverlayIcons/cnacelEditBtn.svg" alt="" aria-hidden="true">
+            </button>
         `;
+
+        // textContent — защита от XSS, текст пользовательский
+        const previewEl = this.editIndicator.querySelector('.message-input__edit-indicator-preview');
+        if (previewEl) previewEl.textContent = currentText;
+
         this.element.prepend(this.editIndicator);
 
         this.cancelEditButton = this.editIndicator.querySelector('.message-input__edit-cancel');
         this.cancelEditButton?.addEventListener('click', this.handleCancelEdit);
+    }
+
+    private setSendButtonIcon(src: string): void {
+        const img = this.sendButton?.element?.querySelector('img');
+        if (img) img.src = src;
     }
 
     private hideEditIndicator(): void {
@@ -119,7 +135,8 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             this.textarea.style.height = '';
             this.textarea.style.height = `${this.textarea.scrollHeight}px`;
         }
-        this.showEditIndicator();
+        this.setSendButtonIcon('/assets/images/icons/editMsgOverlayIcons/editMsgBtn.svg');
+        this.showEditIndicator(currentText);
     };
 
     public exitEditMode(): void {
@@ -128,6 +145,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             this.textarea.value = '';
             this.textarea.style.height = '';
         }
+        this.setSendButtonIcon('/assets/images/icons/sendIcon.svg');
         this.hideEditIndicator();
     };
 

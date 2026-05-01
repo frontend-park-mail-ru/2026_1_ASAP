@@ -228,7 +228,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      */
     private cleanupMainContent(): void {
         wsClient.unsubscribe('message.New', this.handleNewMessage);
-        wsClient.unsubscribe('message.Edited', this.handleMessageEdited);
+        wsClient.unsubscribe('message.Update', this.handleMessageEdited);
         this.activeMessageList = null;
         this.activeMessageInput = null;
 
@@ -720,7 +720,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
             // Подписываемся на новые сообщения (соединение уже установлено в afterMount)
             wsClient.subscribe('message.New', this.handleNewMessage);
-            wsClient.subscribe('message.Edited', this.handleMessageEdited);
+            wsClient.subscribe('message.Update', this.handleMessageEdited);
 
             // Загружаем историю через сокеты сразу после открытия чата
             await this.loadHistory(chatId);
