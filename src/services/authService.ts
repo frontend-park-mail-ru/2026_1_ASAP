@@ -1,8 +1,7 @@
 import { httpClient } from "../core/utils/httpClient";
 import { contactService } from "./contactService";
 
-const host = window.location.hostname;
-const BASE_URL = `${window.location.protocol}//${host}`;
+import { BASE_URL } from '../core/utils/apiBase';
 
 /**
  * @interface AuthResult - Результат операции аутентификации.

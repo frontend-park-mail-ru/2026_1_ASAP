@@ -1,8 +1,7 @@
 import { httpClient } from "../core/utils/httpClient";
 import { authService } from "./authService";
 
-const host = window.location.hostname;
-const BASE_URL = `${window.location.protocol}//${host}`;
+import { BASE_URL } from '../core/utils/apiBase';
 
 export type ComplaintType = "bug" | "suggestion" | "complaint";
 

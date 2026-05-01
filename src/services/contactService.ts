@@ -3,8 +3,7 @@ import { BackendProfile, FrontendProfile, ProfileAdditionalInfo, ProfileMainInfo
 import { httpClient } from "../core/utils/httpClient";
 import { sanitizeBioText } from "../utils/sanitizeBioText";
 
-const host = window.location.hostname;
-const BASE_URL = `${window.location.protocol}//${host}`;
+import { BASE_URL } from '../core/utils/apiBase';
 
 const CACHE_KEY = 'current_user_profile';
 const CACHE_VERSION = 1;

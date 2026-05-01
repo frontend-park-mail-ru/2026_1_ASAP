@@ -1,5 +1,6 @@
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import webpack from 'webpack';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
@@ -63,6 +64,9 @@ export default {
     },
 
     plugins: [
+        new webpack.DefinePlugin({
+            __LOCAL_API__: JSON.stringify(process.env.LOCAL_API === 'true'),
+        }),
         new MiniCssExtractPlugin({
             filename: 'bundle.[name].[contenthash].css',
         }),

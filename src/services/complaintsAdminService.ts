@@ -1,6 +1,6 @@
 import { httpClient } from "../core/utils/httpClient";
 
-const BASE_URL = `${window.location.protocol}//${window.location.hostname}`;
+import { BASE_URL } from '../core/utils/apiBase';
 
 export type ComplaintStatus = 'new' | 'in_progress' | 'closed';
 export type ComplaintItemType = 'bug' | 'idea' | 'claim' | 'suggestion' | string;

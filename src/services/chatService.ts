@@ -4,8 +4,7 @@ import { wsClient, MessageDto, ChatInformationDto } from '../core/utils/wsClient
 import { getFullUrl } from '../core/utils/url';
 import { offlineQueue, PendingMessage } from './offlineMessageQueue';
 
-const host = window.location.hostname;
-const BASE_URL = `${window.location.protocol}//${host}`;
+import { BASE_URL } from '../core/utils/apiBase';
 
 /**
  * @class ChatService
