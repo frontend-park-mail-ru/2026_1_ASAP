@@ -14,8 +14,11 @@
 
 import { App } from "./core/app";
 import { authService } from "./services/authService";
+import { themeService } from "./services/themeService";
 import "./styles/main.scss";
 import "./core/handlebars";
+
+themeService.init();
 
 /**
  * @function
