@@ -82,6 +82,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * Хранится отдельно для доступа из WS-обработчика сообщений.
      */
     private activeMessageList: MessageList | null = null;
+    private activeMessageInput: MessageInput | null = null;
 
     /**
      * Обработчик глобальных нажатий клавиш.
@@ -116,6 +117,12 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
         const frontendMsg = chatService.convertWsMessageDto(dto, this.currentUserId);
         this.activeMessageList.addMessage(frontendMsg);
+    };
+
+    private readonly handleMessageEdited = (dto: MessageDto): void => {
+        if (!this.activeChatId || dto.chat_id.toString() !== this.activeChatId) return;
+        if (!this.activeMessageList) return;
+        this.activeMessageList.updateMessage(dto.id.toString(), dto.text);
     };
 
     /**
@@ -221,7 +228,9 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      */
     private cleanupMainContent(): void {
         wsClient.unsubscribe('message.New', this.handleNewMessage);
+        wsClient.unsubscribe('message.Edited', this.handleMessageEdited);
         this.activeMessageList = null;
+        this.activeMessageInput = null;
 
         if (this.chatWindow) {
             this.chatWindow.unmount();
@@ -658,7 +667,10 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     this.nextBeforeId = res.nextBeforeId;
                     this.activeMessageList.prependMessages(res.messages);
                 }
-            }
+            },
+            onRequestEdit: (messageId, currentText) => {
+                this.activeMessageInput?.enterEditMode(messageId, currentText);
+            },
             });
 
             this.activeMessageList = messageListComponent;
@@ -687,8 +699,16 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     isOwn: true,
                 };
                 this.activeMessageList?.addMessage(optimistic);
-            }
+            },
+            onSubmitEdit: (messageId, newText) => {
+                if (!this.activeChatId) return;
+                const ok = chatService.editMessage(this.activeChatId, messageId, newText);
+                if (!ok) {
+                    this.showAlert?.('No connection, try later');
+                }
+            },
             });
+            this.activeMessageInput = messageInputComponent;
 
             this.chatWindow = new ChatWindow({
                 headerComponent: headerComponent,
@@ -700,6 +720,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
             // Подписываемся на новые сообщения (соединение уже установлено в afterMount)
             wsClient.subscribe('message.New', this.handleNewMessage);
+            wsClient.subscribe('message.Edited', this.handleMessageEdited);
 
             // Загружаем историю через сокеты сразу после открытия чата
             await this.loadHistory(chatId);

@@ -9,12 +9,16 @@ import template from './messageInput.hbs';
  */
 interface MessageInputProps extends IBaseFormProps { 
     onSubmit: (text: string) => void;
+    onSubmitEdit?: (messageId: string, text: string) => void;
 }
 
 /**
  * Компонент формы для ввода и отправки текстовых сообщений.
  */
 export class MessageInput extends BaseForm<MessageInputProps> { 
+    private editingMessageId: string | null = null;
+    private editIndicator: HTMLElement | null = null;
+    private cancelEditButton: HTMLButtonElement | null = null;
     private textarea: HTMLTextAreaElement | null = null;
     private uplodadButton: Button | null = null;
     private stikerButton: Button | null = null;
@@ -81,6 +85,52 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         this.textarea?.focus({ preventScroll: true });
     }
 
+    private handleCancelEdit = (): void => {
+        this.exitEditMode();
+    };
+
+    private showEditIndicator(): void {
+        if (!this.element || this.editIndicator) return;
+
+        this.editIndicator = document.createElement('div');
+        this.editIndicator.className = 'message-input__edit-indicator';
+        this.editIndicator.innerHTML = `
+            <span>Редактирование сообщения</span>
+            <button type="button" class="message-input__edit-cancel" aria-label="Отменить редактирование">×</button>
+        `;
+        this.element.prepend(this.editIndicator);
+
+        this.cancelEditButton = this.editIndicator.querySelector('.message-input__edit-cancel');
+        this.cancelEditButton?.addEventListener('click', this.handleCancelEdit);
+    }
+
+    private hideEditIndicator(): void {
+        this.cancelEditButton?.removeEventListener('click', this.handleCancelEdit);
+        this.cancelEditButton = null;
+        this.editIndicator?.remove();
+        this.editIndicator = null;
+    }
+
+    public enterEditMode(messageId: string, currentText: string): void {
+        this.editingMessageId = messageId;
+        if (this.textarea) {
+            this.textarea.value = currentText;
+            this.textarea.focus({ preventScroll: true });
+            this.textarea.style.height = '';
+            this.textarea.style.height = `${this.textarea.scrollHeight}px`;
+        }
+        this.showEditIndicator();
+    };
+
+    public exitEditMode(): void {
+        this.editingMessageId = null;
+        if (this.textarea) {
+            this.textarea.value = '';
+            this.textarea.style.height = '';
+        }
+        this.hideEditIndicator();
+    };
+
     /**
      * Обработчик нажатия клавиш в текстовой области.
      * @param {KeyboardEvent} event - Событие клавиатуры.
@@ -111,35 +161,36 @@ export class MessageInput extends BaseForm<MessageInputProps> {
      */
     protected async onSubmit(data: { messageText: string }): Promise<void> { 
         const text = data.messageText?.trim();
-        
-        if (text) {
-            if (text.length > 2000) {
-                if (this.modalComponent) {
-                    this.modalComponent.unmount();
-                }
-                
-                this.modalComponent = new ConfirmModal({
-                    text: `Уменьшите сообщение до 2000 символов (сейчас ${text.length})`,
-                    confirmButtonText: "Понятно",
-                    hideCancel: true,
-                    confirmButtonClass: "confirm-modal__button--submit ui-button",
-                    onConfirm: () => {
-                        this.modalComponent?.unmount();
-                        this.modalComponent = null;
-                    },
-                    onCancel: () => {
-                        this.modalComponent?.unmount();
-                        this.modalComponent = null;
-                    }
-                });
-                this.modalComponent.mount(document.body);
-                return;
-            }
+        if (!text) return;
 
+        if (text.length > 2000) {
+            if (this.modalComponent) this.modalComponent.unmount();
+            this.modalComponent = new ConfirmModal({
+                text: `Уменьшите сообщение до 2000 символов (сейчас ${text.length})`,
+                confirmButtonText: "Понятно",
+                hideCancel: true,
+                confirmButtonClass: "confirm-modal__button--submit ui-button",
+                onConfirm: () => {
+                    this.modalComponent?.unmount();
+                    this.modalComponent = null;
+                },
+                onCancel: () => {
+                    this.modalComponent?.unmount();
+                    this.modalComponent = null;
+                }
+            });
+            this.modalComponent.mount(document.body);
+            return;
+        }
+
+        if (this.editingMessageId) {
+            this.props.onSubmitEdit?.(this.editingMessageId, text);
+            this.exitEditMode();
+        } else {
             this.props.onSubmit(text);
             if (this.textarea) {
                 this.textarea.value = '';
-                this.textarea.style.height = ''; // Сброс высоты после отправки
+                this.textarea.style.height = '';
             }
         }
     }
@@ -148,6 +199,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
      * @override
      */
     protected beforeUnmount(): void { 
+        this.exitEditMode();
         if (this.textarea) {
             this.textarea.removeEventListener('keydown', this.handleKeyDown);
             this.textarea.removeEventListener('input', this.handleInput);
