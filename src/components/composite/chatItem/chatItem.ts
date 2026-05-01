@@ -59,7 +59,7 @@ export class ChatItem extends BaseForm<ChatItemProps> {
             case 'group':
                 return 'message-group';
             case 'channel':
-                return 'message-channel';
+                return 'message-chanel';
             default:
                 return 'message-personal';
         }
