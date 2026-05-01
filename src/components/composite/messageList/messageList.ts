@@ -17,6 +17,7 @@ interface MessageListProps {
     currentUser: User;
     chatType: Chat['type'];
     onLoadMore?: () => Promise<void>;
+    onRequestEdit?: (messageId: string, currentText: string) => void;
 }
 
 /**
@@ -27,6 +28,7 @@ export class MessageList extends BaseComponent {
     private flexContainer: HTMLElement | null = null;
     private emptyStateElement: HTMLElement | null = null;
     private isLoadingMore = false;
+    private messages: Map<string, Message> = new Map();
 
     /**
      * @param {MessageListProps} props - Свойства компонента.
@@ -54,6 +56,14 @@ export class MessageList extends BaseComponent {
             this.isLoadingMore = false;
         }
     };
+
+    public updateMessage(id: string, text: string): boolean {
+        const msg = this.messages.get(id);
+        if (!msg) return false;
+
+        msg.updateText(text, true);
+        return true;
+    }
 
     /**
      * Обработчик события обновления профиля пользователя через WebSocket.
@@ -109,6 +119,7 @@ export class MessageList extends BaseComponent {
     public setMessages(messages: FrontendMessage[]): void {
         this.childMessages.forEach(msg => msg.unmount());
         this.childMessages = [];
+        this.messages.clear();
 
         const showAuthor = this.props.chatType === 'group';
 
@@ -128,9 +139,11 @@ export class MessageList extends BaseComponent {
             const messageComponent = new Message({
                 message: msgData, 
                 isOwn: msgData.isOwn || false,
-                showAuthor: showAuthor
+                showAuthor: showAuthor,
+                onEdit: (id) => this.props.onRequestEdit?.(id, msgData.text),
             });
             messageComponent.mount(this.flexContainer!);
+            this.messages.set(msgData.id, messageComponent);
             if (messageComponent.element) {
                 this.flexContainer!.prepend(messageComponent.element);
             }
@@ -155,10 +168,12 @@ export class MessageList extends BaseComponent {
             const comp = new Message({ 
                 message: msgData, 
                 isOwn: msgData.isOwn || false, 
-                showAuthor 
+                showAuthor,
+                onEdit: (id) => this.props.onRequestEdit?.(id, msgData.text),
             });
             const tempDiv = document.createElement('div');
             comp.mount(tempDiv);
+            this.messages.set(msgData.id, comp)
             if (comp.element) fragment.appendChild(comp.element);
             newComponents.push(comp);
         });
@@ -191,11 +206,13 @@ export class MessageList extends BaseComponent {
         const messageComponent = new Message({
             message: newMessage, 
             isOwn: newMessage.isOwn || false,
-            showAuthor: showAuthor
+            showAuthor: showAuthor,
+            onEdit: (id) => this.props.onRequestEdit?.(id, newMessage.text),
         });
         
         // Новое сообщение всегда в начало DOM (визуальный низ)
         messageComponent.mount(this.flexContainer!);
+        this.messages.set(newMessage.id, messageComponent);
         if (messageComponent.element) {
             this.flexContainer!.prepend(messageComponent.element);
         }
@@ -211,7 +228,9 @@ export class MessageList extends BaseComponent {
     public replaceMessageId(oldId: string, newId: string, newTimestamp?: Date): boolean {
         const target = this.childMessages.find((m) => m.getId() === oldId);
         if (!target) return false;
+        this.messages.delete(oldId);
         target.setId(newId);
+        this.messages.set(newId, target);
         if (newTimestamp) target.updateTimestamp(newTimestamp);
         return true;
     }
@@ -236,6 +255,7 @@ export class MessageList extends BaseComponent {
         }
         this.childMessages.forEach(msg => msg.unmount());
         this.childMessages = [];
+        this.messages.clear();
 
         wsClient.unsubscribe('profile.Updated', this.handleUserUpdate);
     }

@@ -30,43 +30,39 @@ export class OnboardingEmpty extends BaseComponent<OnboardingEmptyProps> {
 
     protected afterMount(): void {
         if (!this._element) return;
-
-        this._element.querySelector('.onboarding__skip')
-            ?.addEventListener('click', this.handleSkip);
-
-        this._element.querySelectorAll('.onboarding__dot').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const target = e.currentTarget as HTMLElement;
-                const goto = parseInt(target.dataset.goto ?? '0', 10);
-                this.goTo(goto);
-            });
-        });
-
-        this._element.querySelectorAll('.onboarding__cta').forEach((btn, idx) => {
-            btn.addEventListener('click', () => {
-                if (idx === TOTAL_STEPS - 1) {
-                    this.handleComplete();
-                } else {
-                    this.goTo(idx + 1);
-                }
-            });
-        });
+        this._element.addEventListener('click', this.handleClick);
     }
 
     protected beforeUnmount(): void {
         this.checkTimers.forEach(t => clearTimeout(t));
         this.checkTimers = [];
-        this._element?.querySelector('.onboarding__skip')
-            ?.removeEventListener('click', this.handleSkip);
+        this._element?.removeEventListener('click', this.handleClick);
     }
 
-    private readonly handleSkip = (): void => {
-        this._props.onComplete();
+    private readonly handleClick = (e: Event): void => {
+        const target = e.target as HTMLElement | null;
+        if (!target) return;
+
+        if (target.closest('.onboarding__skip')) {
+            this._props.onComplete();
+            return;
+        }
+
+        const dot = target.closest<HTMLElement>('.onboarding__dot');
+        if (dot) {
+            const goto = parseInt(dot.dataset.goto ?? '0', 10);
+            this.goTo(goto);
+            return;
+        }
+
+        if (target.closest('.onboarding__cta')) {
+            if (this.step === TOTAL_STEPS - 1) {
+                this._props.onComplete();
+            } else {
+                this.goTo(this.step + 1);
+            }
+        }
     };
-
-    private handleComplete(): void {
-        this._props.onComplete();
-    }
 
     private goTo(next: number): void {
         if (this.transitioning || next === this.step || !this._element) return;

@@ -3,6 +3,7 @@ import { Button } from "../../ui/button/button";
 import template from "./editMsgOverlay.hbs"
 
 interface EditMsgOverlayProps extends IBaseComponentProps {
+    anchorRect: DOMRect;
     onEdit: () => void;
     onDelete: () => void;
     onClose: () => void;
@@ -26,7 +27,7 @@ export class EditMsgOverlay extends BaseComponent<EditMsgOverlayProps> {
         this.overlay = this.element!.querySelector('.edit-msg-overlay__overlay');
         this.overlay?.addEventListener('click', this.handleOverlayClick);
 
-        const buttonsContainer = this.element!.querySelector('.edit-msg-overlay__buttons-container');
+        const buttonsContainer = this.element!.querySelector<HTMLElement>('.edit-msg-overlay__buttons-container');
         this.editButton = new Button({
             label: "Изменить сообщение",
             icon: "/assets/images/icons/editMsgOverlayIcons/edit.svg",
@@ -42,7 +43,33 @@ export class EditMsgOverlay extends BaseComponent<EditMsgOverlayProps> {
             onClick: () => this.props.onDelete(),
         });
         this.deleteButton.mount(buttonsContainer as HTMLElement);
+
+        if (buttonsContainer) {
+            requestAnimationFrame(() => this.positionPanel(buttonsContainer));
+        }
     };
+
+    private positionPanel(panel: HTMLElement): void {
+        const { anchorRect } = this.props;
+        const margin = 8;
+        const w = panel.offsetWidth || 220;
+        const h = panel.offsetHeight || 100;
+
+        let left = anchorRect.right - w;
+        let top = anchorRect.top - h - margin;
+
+        if (top < margin) {
+            top = anchorRect.bottom + margin;
+        }
+        if (top + h > window.innerHeight - margin) {
+            top = window.innerHeight - h - margin;
+        }
+        left = Math.max(margin, Math.min(left, window.innerWidth - w - margin));
+        top = Math.max(margin, top);
+
+        panel.style.left = `${left}px`;
+        panel.style.top = `${top}px`;
+    }
 
     protected beforeUnmount(): void {
         this.overlay?.removeEventListener('click', this.handleOverlayClick);

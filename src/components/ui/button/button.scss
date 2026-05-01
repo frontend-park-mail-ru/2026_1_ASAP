@@ -195,20 +195,38 @@
 
 .edit-msg-overlay__buttons-container {
     &-edit-button {
+        width: 100%;
         color: $color-text;
         display: flex;
         flex-direction: row;
+        align-items: center;
         gap: 8px;
+        border: none;
         padding: 10px;
-        background-color: $color-neutral;
+        background-color: $color-empty;
+        @include hover-transition;
+        &:hover:not(:disabled) {
+            background-color: $color-text-hover2;
+            cursor: pointer;
+            border-radius: 10px;
+        }
     }
 
     &-delete-button {
+        width: 100%;
+        border: none;
         color: $color-error;
         display: flex;
+        align-items: center;
         flex-direction: row;
         gap: 8px;
         padding: 10px;
-        background-color: $color-neutral;
+        background-color: $color-empty;
+        @include hover-transition;
+        &:hover:not(:disabled) {
+            background-color: $color-text-hover2;
+            cursor: pointer;
+            border-radius: 10px;
+        }
     }
 }
