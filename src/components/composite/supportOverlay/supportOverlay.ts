@@ -78,12 +78,10 @@ export class SupportOverlay extends BaseComponent<SupportOverlayProps> {
         });
         this.statButton.mount(navContainer);
 
-        this.setNavSection(this.navSection);
+        this.updateNavActiveStates(this.navSection);
     }
 
-    private setNavSection(section: SupportNavSection): void {
-        this.navSection = section;
-
+    private updateNavActiveStates(section: SupportNavSection): void {
         const navMap: { btn: Button | null; value: SupportNavSection }[] = [
             { btn: this.newButton, value: "new" },
             { btn: this.myButton, value: "my" },
@@ -92,7 +90,11 @@ export class SupportOverlay extends BaseComponent<SupportOverlayProps> {
         for (const { btn, value } of navMap) {
             btn?.element?.classList.toggle("support-overlay__nav-btn--active", value === section);
         }
+    }
 
+    private setNavSection(section: SupportNavSection): void {
+        this.navSection = section;
+        this.updateNavActiveStates(section);
         this.mountTab(section);
     }
 
