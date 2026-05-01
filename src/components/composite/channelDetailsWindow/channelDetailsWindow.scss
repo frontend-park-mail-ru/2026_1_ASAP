@@ -148,6 +148,7 @@
 
     &__info-label {
         font-size: 14px;
+        font: $text-secondary;
         color: $color-text-hover;
         white-space: nowrap;
         flex-shrink: 0;
@@ -186,6 +187,7 @@
         flex-direction: row;
         align-items: center;
         gap: 10px;
+        justify-content: center;
         padding: 12px 16px;
         background-color: $color-base-background;
         border-radius: 12px;
@@ -205,7 +207,8 @@
     }
 
     &__invite-content {
-        @include flex-column;
+        display: flex;
+        flex-direction: row;
         gap: 2px;
         min-width: 0;
     }
