@@ -171,9 +171,10 @@ export class ChannelDetailsWindow extends BaseComponent<ChannelDetailsWindowProp
         if (!buttonsSlot) return;
 
         this.actionButtons = [];
-        const isOwner = this.props.channel.currentUserRole === 'owner';
+        const role = this.props.channel.currentUserRole;
+        const isOwner = role === 'owner';
 
-        if (this.props.isEditing) {
+        if (this.props.isEditing && isOwner) {
             const cancelBtn = new Button({
                 label: 'Отмена',
                 class: 'channel-details__btn ui-button ui-button__secondary2',
@@ -205,7 +206,7 @@ export class ChannelDetailsWindow extends BaseComponent<ChannelDetailsWindowProp
             });
             deleteBtn.mount(buttonsSlot as HTMLElement);
             this.actionButtons.push(deleteBtn);
-        } else {
+        } else if (role === 'participant') {
             const leaveBtn = new Button({
                 label: 'Выйти',
                 class: 'channel-details__btn ui-button exit-button',

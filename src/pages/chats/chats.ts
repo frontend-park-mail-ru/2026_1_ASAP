@@ -13,9 +13,10 @@ import { MessageList } from "../../components/composite/messageList/messageList"
 import { MessageInput } from "../../components/ui/messageInput/messageInput";
 import { Chat, FrontendMessage, DialogChat, GroupChat, ChannelChat } from '../../types/chat';
 import { chatService } from "../../services/chatService";
-import { channelService } from "../../services/channelService";
+import { channelService, type ChannelRole } from "../../services/channelService";
 import { GroupHeader } from "../../components/composite/groupHeader/groupHeader";
 import { ChannelHeader } from "../../components/composite/channelHeader/channelHeader";
+import { ChannelJoinFooter } from "../../components/composite/channelJoinFooter/channelJoinFooter";
 import { FrontendProfile } from "../../types/profile";
 import { CreateDialogWindow } from "../../components/composite/createDialogWindow/createDialogWindow";
 import { CreateGroupWindow } from "../../components/composite/createGroupWindow/createGroupWindow";
@@ -87,6 +88,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      */
     private activeMessageList: MessageList | null = null;
     private activeMessageInput: MessageInput | null = null;
+    private activeChannelRole: ChannelRole | null = null;
 
     /**
      * Обработчик глобальных нажатий клавиш.
@@ -235,6 +237,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         wsClient.unsubscribe('message.Update', this.handleMessageEdited);
         this.activeMessageList = null;
         this.activeMessageInput = null;
+        this.activeChannelRole = null;
 
         if (this.chatWindow) {
             this.chatWindow.unmount();
@@ -602,6 +605,10 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             this.cleanupMainContent();
 
             let headerComponent: BaseComponent;
+            let footerComponent: BaseComponent | undefined;
+            let canWriteActiveChat = chatDetail.type !== 'channel';
+            let canJoinActiveChat = false;
+
             switch (chatDetail.type) {
             case 'dialog':
                 const members = await chatService.getChatMembers(chatId);
@@ -656,7 +663,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 break;
 
             case 'channel': {
-                if (this.currentUserId === null) break;
+                if (this.currentUserId === null) return;
                 const channelDetail = await channelService.getChannel(chatId, this.currentUserId);
                 if (!channelDetail) {
                     this.props.router.navigate('/chats');
@@ -664,6 +671,9 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 }
                 (chatDetail as ChannelChat).currentUserRole = channelDetail.currentUserRole;
                 (chatDetail as ChannelChat).subscribersCount = channelDetail.subscribersCount;
+                this.activeChannelRole = channelDetail.currentUserRole;
+                canWriteActiveChat = channelDetail.currentUserRole === 'owner';
+                canJoinActiveChat = channelDetail.currentUserRole === 'guest';
 
                 headerComponent = new ChannelHeader({
                     chat: chatDetail as ChannelChat,
@@ -682,6 +692,10 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                         }
                     },
                     onLeaveChannel: async () => {
+                        if (channelDetail.currentUserRole !== 'participant') {
+                            this.showAlert('Вы не подписаны на этот канал');
+                            return;
+                        }
                         const res = await channelService.leaveChannel(chatId);
                         if (res.success) {
                             this.activeChatId = null;
@@ -725,45 +739,54 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
             this.activeMessageList = messageListComponent;
 
-            const messageInputComponent = new MessageInput({
-            onSubmit: async (text: string) => {
-                if (!this.activeChatId || this.currentUserId === null) return;
+            if (canWriteActiveChat) {
+                const messageInputComponent = new MessageInput({
+                    onSubmit: async (text: string) => {
+                        if (!this.activeChatId || this.currentUserId === null) return;
+                        if (chatDetail.type === 'channel' && this.activeChannelRole !== 'owner') return;
 
-                const pending = await chatService.sendMessage(
-                    this.activeChatId,
-                    text,
-                    this.currentUserId as number,
-                );
+                        const pending = await chatService.sendMessage(
+                            this.activeChatId,
+                            text,
+                            this.currentUserId as number,
+                        );
 
-                const optimistic: FrontendMessage = {
-                    id: pending.tempId,
-                    sender: {
-                        id: this.currentUserId as number,
-                        login: this.currentUserProfile?.additionalInfo.login || '',
-                        avatarUrl: this.currentUserProfile?.mainInfo.avatarUrl,
-                        firstName: this.currentUserProfile?.mainInfo.firstName,
-                        lastName: this.currentUserProfile?.mainInfo.lastName,
+                        const optimistic: FrontendMessage = {
+                            id: pending.tempId,
+                            sender: {
+                                id: this.currentUserId as number,
+                                login: this.currentUserProfile?.additionalInfo.login || '',
+                                avatarUrl: this.currentUserProfile?.mainInfo.avatarUrl,
+                                firstName: this.currentUserProfile?.mainInfo.firstName,
+                                lastName: this.currentUserProfile?.mainInfo.lastName,
+                            },
+                            text,
+                            timestamp: new Date(pending.createdAt),
+                            isOwn: true,
+                        };
+                        this.activeMessageList?.addMessage(optimistic);
                     },
-                    text,
-                    timestamp: new Date(pending.createdAt),
-                    isOwn: true,
-                };
-                this.activeMessageList?.addMessage(optimistic);
-            },
-            onSubmitEdit: (messageId, newText) => {
-                if (!this.activeChatId) return;
-                const ok = chatService.editMessage(this.activeChatId, messageId, newText);
-                if (!ok) {
-                    this.showAlert?.('No connection, try later');
-                }
-            },
-            });
-            this.activeMessageInput = messageInputComponent;
+                    onSubmitEdit: (messageId, newText) => {
+                        if (!this.activeChatId) return;
+                        if (chatDetail.type === 'channel' && this.activeChannelRole !== 'owner') return;
+                        const ok = chatService.editMessage(this.activeChatId, messageId, newText);
+                        if (!ok) {
+                            this.showAlert?.('No connection, try later');
+                        }
+                    },
+                });
+                this.activeMessageInput = messageInputComponent;
+                footerComponent = messageInputComponent;
+            } else if (canJoinActiveChat) {
+                footerComponent = new ChannelJoinFooter({
+                    onJoin: () => this.handleJoinChannel(chatId),
+                });
+            }
 
             this.chatWindow = new ChatWindow({
                 headerComponent: headerComponent,
                 messageListComponent: messageListComponent,
-                inputComponent: messageInputComponent
+                inputComponent: footerComponent
             });
 
             this.chatWindow.mount(this.mainContentArea);
@@ -773,9 +796,32 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             wsClient.subscribe('message.Update', this.handleMessageEdited);
 
             await this.loadHistory(chatId);
-            await this.restorePendingMessages(chatId);
+            if (canWriteActiveChat) {
+                await this.restorePendingMessages(chatId);
+            }
         } finally {
             this.syncMobileLayoutState();
+        }
+    }
+
+    private async handleJoinChannel(chatId: string): Promise<void> {
+        const res = await channelService.joinChannel(chatId);
+        if (!res.success) {
+            let errorMsg = 'Не удалось подписаться на канал';
+            if (res.status === 404) {
+                errorMsg = 'Канал не найден';
+            } else if (res.status === 409) {
+                errorMsg = 'Вы уже подписаны на этот канал';
+            } else if (res.errorMessage) {
+                errorMsg = res.errorMessage;
+            }
+            this.showAlert(errorMsg);
+            return;
+        }
+
+        this.rebuildSidebar();
+        if (this.activeChatId === chatId) {
+            await this.openChat(chatId);
         }
     }
 
@@ -1005,6 +1051,12 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 this.syncMobileLayoutState();
             },
             onLeaveChannel: async () => {
+                if (channelDetail.currentUserRole !== 'participant') {
+                    this.showAlert('Вы не подписаны на этот канал', () => {
+                        this.openChannelDetails(chat);
+                    });
+                    return;
+                }
                 const res = await channelService.leaveChannel(chat.id);
                 if (res.success) {
                     if (this.channelDetailsWindow) {

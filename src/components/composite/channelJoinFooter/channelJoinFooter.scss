@@ -1,0 +1,11 @@
+.channel-join-footer {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    &__button {
+        width: 100%;
+        min-height: 42px;
+    }
+}

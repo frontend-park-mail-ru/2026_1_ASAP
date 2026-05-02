@@ -67,7 +67,7 @@ export class ChannelHeader extends BaseComponent<ChannelHeaderProps> {
         }
 
         const settingsSlot = this.element.querySelector('[data-component="channel-settings-slot"]');
-        if (settingsSlot) {
+        if (settingsSlot && this.props.currentUserRole !== 'guest') {
             this.settingsButton = new Button({
                 label: '',
                 class: 'channel-header__settings-btn',
