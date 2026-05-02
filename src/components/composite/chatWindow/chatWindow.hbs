@@ -1,11 +1,6 @@
 <div class="chat-window">
-    <div class="chat-window__header" data-component="chat-header-slot">
-        {{!-- Здесь будет монтироваться компонент шапки (DialogHeader/GroupHeader/ChannelHeader) --}}
-    </div>
-    <div class="chat-window__main" data-component="message-list-slot">
-        {{!-- Здесь будет монтироваться компонент списка сообщений (MessageList) --}}
-    </div>
-    <div class="chat-window__footer" data-component="message-input-slot">
-        {{!-- Здесь будет монтироваться компонент ввода сообщения (MessageInput) --}}
-    </div>
+    <div class="chat-window__header" data-component="chat-header-slot"></div>
+    <div class="chat-window__search" data-component="chat-search-slot"></div>
+    <div class="chat-window__main" data-component="message-list-slot"></div>
+    <div class="chat-window__footer" data-component="message-input-slot"></div>
 </div>

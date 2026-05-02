@@ -26,6 +26,10 @@
         align-items: center;
     }
 
+    &__search {
+        &:empty { display: none; }
+    }
+
     &__main {
         flex-grow: 1;
         min-height: 0;
@@ -38,5 +42,11 @@
         flex-direction: column;
         justify-content: flex-end;
         padding: 10px 10px 0px 10px;
+    }
+
+    @media (max-width: $breakpoint-mobile-max) {
+        &__footer {
+            padding-bottom: max(4px, env(safe-area-inset-bottom, 0px));
+        }
     }
 }

@@ -24,6 +24,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
     private stikerButton: Button | null = null;
     private sendButton: Button | null = null;
     private modalComponent: ConfirmModal | null = null;
+    private readonly mobileQuery = '(max-width: 767px)';
 
     /**
      * @param {MessageInputProps} props - Свойства компонента.
@@ -82,7 +83,11 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         });
         this.sendButton.mount(sendButtonContainer as HTMLElement);
 
-        this.textarea?.focus({ preventScroll: true });
+        document.addEventListener('pointerdown', this.handleDocumentPointerDown, true);
+
+        if (!this.isMobileViewport()) {
+            this.textarea?.focus({ preventScroll: true });
+        }
     }
 
     private handleCancelEdit = (): void => {
@@ -172,6 +177,23 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         }
     };
 
+    private isMobileViewport(): boolean {
+        return window.matchMedia(this.mobileQuery).matches;
+    }
+
+    private handleDocumentPointerDown = (event: PointerEvent): void => {
+        if (!this.isMobileViewport() || !this.textarea || document.activeElement !== this.textarea) {
+            return;
+        }
+
+        const target = event.target;
+        if (target instanceof Node && this.element?.contains(target)) {
+            return;
+        }
+
+        this.textarea.blur();
+    };
+
     /**
      * Переопределяем метод onSubmit из BaseForm.
      * @param {{messageText: string}} data - Данные формы.
@@ -222,6 +244,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             this.textarea.removeEventListener('keydown', this.handleKeyDown);
             this.textarea.removeEventListener('input', this.handleInput);
         }
+        document.removeEventListener('pointerdown', this.handleDocumentPointerDown, true);
         
         this.modalComponent?.unmount();
         

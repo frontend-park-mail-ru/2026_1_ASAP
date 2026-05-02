@@ -16,6 +16,7 @@ interface DialogHeaderProps {
     chat: DialogChat;
     onDeleteChat?: () => void;
     onOpenProfile: () => void;
+    onOpenSearch?: () => void;
 }
 
 /**
@@ -24,6 +25,7 @@ interface DialogHeaderProps {
  */
 export class DialogHeader extends BaseComponent {
     private avatarComponent: Avatar | null = null;
+    private searchButton: Button | null = null;
     private settingsButton: Button | null = null;
     private deleteChatMenu: DeleteChatMenu | null = null;
     private confirmModal: ConfirmModal | null = null;
@@ -62,6 +64,17 @@ export class DialogHeader extends BaseComponent {
         const nameEl = this.element.querySelector('.dialog-header__name');
         if (nameEl) {
             nameEl.addEventListener('click', this.handleOpenProfile);
+        }
+
+        const searchSlot = this.element.querySelector('[data-component="dialog-search-slot"]');
+        if (searchSlot) {
+            this.searchButton = new Button({
+                class: 'dialog-header__search-btn',
+                icon: '/assets/images/icons/searchIcon.svg',
+                title: 'Поиск',
+                onClick: () => this.props.onOpenSearch?.(),
+            });
+            this.searchButton.mount(searchSlot as HTMLElement);
         }
 
         const settingsSlot = this.element.querySelector('[data-component="dialog-settings-slot"]');
@@ -168,6 +181,7 @@ export class DialogHeader extends BaseComponent {
         }
 
         this.avatarComponent?.unmount();
+        this.searchButton?.unmount();
         this.settingsButton?.unmount();
         this.deleteChatMenu?.unmount();
         this.confirmModal?.unmount();

@@ -1,4 +1,5 @@
 import { ChatDetail, FrontendMessage, User, DialogChat, GroupChat, ChannelChat, BackendChat, BackendMessage } from '../types/chat';
+import { SearchMessageHit, SearchMessagesResult } from '../types/search';
 import { httpClient } from '../core/utils/httpClient';
 import { wsClient, MessageDto, ChatInformationDto } from '../core/utils/wsClient';
 import { getFullUrl } from '../core/utils/url';
@@ -763,6 +764,42 @@ export class ChatService {
 
         this.pendingProfiles.set(userId, profilePromise);
         return profilePromise;
+    }
+
+    public async searchMessages(
+        chatId: string,
+        query: string,
+        beforeId: number | null = null,
+        limit = 20,
+    ): Promise<SearchMessagesResult | null> {
+        const q = query.trim();
+        if (!q || [...q].length > 256) {
+            return { items: [], nextBeforeId: null };
+        }
+
+        try {
+            let url = `${BASE_URL}/api/v1/search/messages?chat_id=${chatId}&q=${encodeURIComponent(q)}&limit=${limit}`;
+            if (beforeId) url += `&before_id=${beforeId}`;
+
+            const response = await httpClient.request(url, { method: 'GET' });
+            if (!response.ok) return null;
+
+            const data = await response.json();
+            if (data.status !== 'success' || !data.body) return null;
+
+            const items: SearchMessageHit[] = (data.body.items || []).map((m: any) => ({
+                messageId: String(m.message_id),
+                chatId: String(m.chat_id),
+                senderId: Number(m.sender_id),
+                textPreview: m.text_preview || '',
+                createdAt: new Date(m.created_at),
+            }));
+
+            const nextBeforeId = data.body.next_before_id ? Number(data.body.next_before_id) : null;
+            return { items, nextBeforeId };
+        } catch {
+            return null;
+        }
     }
 }
 

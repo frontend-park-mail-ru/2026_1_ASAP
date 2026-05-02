@@ -1,4 +1,4 @@
-<div class="message {{#if isOwn}}message--own{{/if}}">
+<div class="message {{#if isOwn}}message--own{{/if}}" data-message-id="{{message.id}}">
     {{#unless isOwn}}
         <div class="message__avatar-container" data-component="message-avatar-slot"></div>
     {{/unless}}
