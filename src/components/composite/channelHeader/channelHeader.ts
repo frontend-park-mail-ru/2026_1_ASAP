@@ -67,7 +67,10 @@ export class ChannelHeader extends BaseComponent<ChannelHeaderProps> {
         }
 
         const settingsSlot = this.element.querySelector('[data-component="channel-settings-slot"]');
-        if (settingsSlot && this.props.currentUserRole !== 'guest') {
+        if (settingsSlot) {
+            const isOwner = this.props.currentUserRole === 'owner';
+            const isGuest = this.props.currentUserRole === 'guest';
+
             this.settingsButton = new Button({
                 label: '',
                 class: 'channel-header__settings-btn',
@@ -76,11 +79,10 @@ export class ChannelHeader extends BaseComponent<ChannelHeaderProps> {
                 onClick: () => {
                     if (this.isDeleteMenuOpen) return;
 
-                    const isOwner = this.props.currentUserRole === 'owner';
-
                     this.deleteChatMenu = new DeleteChatMenu({
                         typeChat: 'channel',
                         deleteLabel: isOwner ? 'Удалить канал' : 'Покинуть канал',
+                        infoOnly: isGuest,
                         onInfo: () => {
                             this.props.onOpenChannelInfo?.();
                             this.closeChatMenu();
@@ -118,7 +120,7 @@ export class ChannelHeader extends BaseComponent<ChannelHeaderProps> {
     };
 
     private async loadSubscribersCount(): Promise<void> {
-        if (!this.element) return;
+        if (!this.element || this.props.currentUserRole === 'guest') return;
         const el = this.element.querySelector('.channel-header__subscribers');
         if (!el) return;
 

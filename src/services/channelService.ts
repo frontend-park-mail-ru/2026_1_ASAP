@@ -45,8 +45,7 @@ class ChannelService {
     private extraData: Map<string, ChannelExtraData> = new Map();
 
     private generateInviteUrl(channelId: string): string {
-        // TODO: заменить на реальный эндпоинт приглашений, когда появится на бэкенде
-        return `https://pulseapp.space/invite/${channelId}`;
+        return `https://pulseapp.space/chats/${channelId}`;
     }
 
     async createChannel(

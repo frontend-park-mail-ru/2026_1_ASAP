@@ -10,6 +10,7 @@ interface deleteChatMenuProps extends IBaseComponentProps {
     onClose: () => void;
     typeChat: "dialog" | "group" | "channel";
     deleteLabel?: string;
+    infoOnly?: boolean;
 }
 
 export class DeleteChatMenu extends BaseComponent<deleteChatMenuProps> {
@@ -60,13 +61,15 @@ export class DeleteChatMenu extends BaseComponent<deleteChatMenuProps> {
             }
         }
 
-        this.deleteButton = new Button({
-            label: label,
-            class: "delete-chat-menu__button delete-chat-menu__button-red",
-            onClick: this.props.onDelete,
-            icon: "/assets/images/icons/deleteAvatar.svg"
-        });
-        this.deleteButton.mount(buttonsContainer as HTMLElement);
+        if (!this.props.infoOnly) {
+            this.deleteButton = new Button({
+                label: label,
+                class: "delete-chat-menu__button delete-chat-menu__button-red",
+                onClick: this.props.onDelete,
+                icon: "/assets/images/icons/deleteAvatar.svg"
+            });
+            this.deleteButton.mount(buttonsContainer as HTMLElement);
+        }
 
         const infoImg = this.infoButton.element?.querySelector('img') as HTMLImageElement | null;
         if (infoImg) {
@@ -76,12 +79,14 @@ export class DeleteChatMenu extends BaseComponent<deleteChatMenuProps> {
             this.infoButton.element!.addEventListener('mouseleave', this.infoLeave);
         }
 
-        const delImg = this.deleteButton.element?.querySelector('img') as HTMLImageElement | null;
-        if (delImg) {
-            this.deleteEnter = () => replayAnimation(delImg, 'icon-anim--danger-shake');
-            this.deleteLeave = () => delImg.classList.remove('icon-anim--danger-shake');
-            this.deleteButton.element!.addEventListener('mouseenter', this.deleteEnter);
-            this.deleteButton.element!.addEventListener('mouseleave', this.deleteLeave);
+        if (this.deleteButton) {
+            const delImg = this.deleteButton.element?.querySelector('img') as HTMLImageElement | null;
+            if (delImg) {
+                this.deleteEnter = () => replayAnimation(delImg, 'icon-anim--danger-shake');
+                this.deleteLeave = () => delImg.classList.remove('icon-anim--danger-shake');
+                this.deleteButton.element!.addEventListener('mouseenter', this.deleteEnter);
+                this.deleteButton.element!.addEventListener('mouseleave', this.deleteLeave);
+            }
         }
 
         this.overlay = this.element.querySelector('[data-component="delete-chat-overlay"]');
