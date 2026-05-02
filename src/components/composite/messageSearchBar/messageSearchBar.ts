@@ -3,7 +3,8 @@ import { Input } from '../../ui/input/input';
 import { Button } from '../../ui/button/button';
 import { SearchResultItem } from '../searchResultItem/searchResultItem';
 import { chatService } from '../../../services/chatService';
-import { SearchMessageHit } from '../../../types/search';
+import { SearchMessageHit, SearchMessagesResult } from '../../../types/search';
+import { FrontendMessage } from '../../../types/chat';
 import template from './messageSearchBar.hbs';
 import './messageSearchBar.scss';
 
@@ -14,6 +15,8 @@ interface MessageSearchBarProps extends IBaseComponentProps {
     onClose: () => void;
     onResults: (query: string, hits: SearchMessageHit[]) => void;
     onJumpTo: (messageId: string) => void;
+    // TODO: workaround — PG FTS не поддерживает emoji; при emoji-запросе ищем локально
+    getLoadedMessages: () => FrontendMessage[];
 }
 
 export class MessageSearchBar extends BaseComponent<MessageSearchBarProps> {
@@ -89,13 +92,32 @@ export class MessageSearchBar extends BaseComponent<MessageSearchBarProps> {
         this.debounceTimer = setTimeout(() => this.runSearch(value, true), 300);
     }
 
+    // TODO: костыль, тк бек не ищет смайлики, сделал поиск локально по загруженым сообщениям,
+    // надо убрать как починят бек
+    private searchLocally(q: string): SearchMessagesResult {
+        const lq = q.toLowerCase();
+        const items: SearchMessageHit[] = this.props.getLoadedMessages()
+            .filter(m => m.text.toLowerCase().includes(lq))
+            .map(m => ({
+                messageId: m.id,
+                chatId: this.props.chatId,
+                senderId: m.sender.id,
+                textPreview: m.text.slice(0, 100),
+                createdAt: m.timestamp,
+            }));
+        return { items, nextBeforeId: null };
+    }
+
     private async runSearch(q: string, reset: boolean): Promise<void> {
         this.requestId += 1;
         const myId = this.requestId;
 
         this.setLoading(true);
 
-        const result = await chatService.searchMessages(this.props.chatId, q, reset ? null : undefined);
+        const hasEmoji = /\p{Extended_Pictographic}/u.test(q);
+        const result = hasEmoji
+            ? this.searchLocally(q)
+            : await chatService.searchMessages(this.props.chatId, q, reset ? null : undefined);
 
         if (myId !== this.requestId) return;
 

@@ -258,6 +258,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 this.activeMessageList?.setHighlightQuery(query);
             },
             onJumpTo: (messageId) => this.jumpToMessage(messageId),
+            getLoadedMessages: () => this.activeMessageList?.getLoadedMessages() ?? [],
         });
         this.messageSearchBar.mount(slot as HTMLElement);
     }
