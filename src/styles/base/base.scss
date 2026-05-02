@@ -18,3 +18,10 @@ body {
     overflow: hidden;
     color: $color-text;
 }
+
+.search-highlight {
+    background: var(--search-highlight-bg);
+    color: var(--search-highlight-text);
+    border-radius: 2px;
+    padding: 0 1px;
+}

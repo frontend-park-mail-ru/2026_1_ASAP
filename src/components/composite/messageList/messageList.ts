@@ -29,6 +29,7 @@ export class MessageList extends BaseComponent {
     private emptyStateElement: HTMLElement | null = null;
     private isLoadingMore = false;
     private messages: Map<string, Message> = new Map();
+    private currentHighlightQuery = '';
 
     /**
      * @param {MessageListProps} props - Свойства компонента.
@@ -147,6 +148,7 @@ export class MessageList extends BaseComponent {
             if (messageComponent.element) {
                 this.flexContainer!.prepend(messageComponent.element);
             }
+            if (this.currentHighlightQuery) messageComponent.applyHighlight(this.currentHighlightQuery);
             this.childMessages.unshift(messageComponent);
         });
         this.scrollToBottom();
@@ -174,6 +176,7 @@ export class MessageList extends BaseComponent {
             const tempDiv = document.createElement('div');
             comp.mount(tempDiv);
             this.messages.set(msgData.id, comp)
+            if (this.currentHighlightQuery) comp.applyHighlight(this.currentHighlightQuery);
             if (comp.element) fragment.appendChild(comp.element);
             newComponents.push(comp);
         });
@@ -212,6 +215,7 @@ export class MessageList extends BaseComponent {
         
         // Новое сообщение всегда в начало DOM (визуальный низ)
         messageComponent.mount(this.flexContainer!);
+        if (this.currentHighlightQuery) messageComponent.applyHighlight(this.currentHighlightQuery);
         this.messages.set(newMessage.id, messageComponent);
         if (messageComponent.element) {
             this.flexContainer!.prepend(messageComponent.element);
@@ -225,6 +229,21 @@ export class MessageList extends BaseComponent {
      * Используется, чтобы при приходе серверного broadcast `message.New` не создавать дубликат DOM.
      * @returns true, если сообщение с `oldId` было найдено и обновлено.
      */
+    public setHighlightQuery(query: string): void {
+        this.currentHighlightQuery = query;
+        this.childMessages.forEach(m => m.applyHighlight(query));
+    }
+
+    public scrollToMessage(messageId: string): boolean {
+        const msg = this.messages.get(messageId);
+        if (!msg?.element) return false;
+
+        msg.element.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        msg.element.classList.add('message--flash');
+        setTimeout(() => msg.element?.classList.remove('message--flash'), 1500);
+        return true;
+    }
+
     public replaceMessageId(oldId: string, newId: string, newTimestamp?: Date): boolean {
         const target = this.childMessages.find((m) => m.getId() === oldId);
         if (!target) return false;

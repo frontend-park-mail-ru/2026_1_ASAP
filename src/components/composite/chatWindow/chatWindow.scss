@@ -26,6 +26,10 @@
         align-items: center;
     }
 
+    &__search {
+        &:empty { display: none; }
+    }
+
     &__main {
         flex-grow: 1;
         min-height: 0;

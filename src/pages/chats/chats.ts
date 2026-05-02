@@ -27,6 +27,7 @@ import { contactService } from "../../services/contactService";
 import { ConfirmModal } from "../../components/composite/confirmModal/confirmModal";
 import { wsClient, MessageDto } from "../../core/utils/wsClient";
 import { offlineQueue } from "../../services/offlineMessageQueue";
+import { MessageSearchBar } from "../../components/composite/messageSearchBar/messageSearchBar";
 
 
 /**
@@ -71,6 +72,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private onboardingComponent: OnboardingEmpty | null = null;
     
     public activeChatId: string | null = null;
+    private messageSearchBar: MessageSearchBar | null = null;
     private mainContentArea: HTMLElement | null = null;
     private placeholderElement: HTMLElement | null = null;
     private currentUserId: number | null = null;
@@ -94,6 +96,10 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      */
     private handleKeyDown = (event: KeyboardEvent): void => {
         if (event.key === 'Escape') {
+            if (this.messageSearchBar) {
+                this.closeMessageSearch();
+                return;
+            }
             if (this.activeChatId || this.createChatWindow || this.groupDetailsWindow || this.channelDetailsWindow || this.addMemberWindow) {
                 this.props.router.navigate('/chats');
             }
@@ -230,11 +236,69 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * чтобы избежать наложения интерфейсов и утечек памяти.
      * @private
      */
+    private toggleMessageSearch(chat: Chat): void {
+        if (this.messageSearchBar) {
+            this.closeMessageSearch();
+        } else {
+            this.openMessageSearch(chat);
+        }
+    }
+
+    private openMessageSearch(chat: Chat): void {
+        if (!this.chatWindow?.element || this.currentUserId === null) return;
+        const slot = this.chatWindow.element.querySelector('[data-component="chat-search-slot"]');
+        if (!slot) return;
+
+        this.messageSearchBar = new MessageSearchBar({
+            chatId: chat.id,
+            chatType: chat.type,
+            currentUserId: this.currentUserId,
+            onClose: () => this.closeMessageSearch(),
+            onResults: (query) => {
+                this.activeMessageList?.setHighlightQuery(query);
+            },
+            onJumpTo: (messageId) => this.jumpToMessage(messageId),
+        });
+        this.messageSearchBar.mount(slot as HTMLElement);
+    }
+
+    private closeMessageSearch(): void {
+        this.messageSearchBar?.unmount();
+        this.messageSearchBar = null;
+        this.activeMessageList?.setHighlightQuery('');
+    }
+
+    private async jumpToMessage(messageId: string): Promise<void> {
+        if (!this.activeMessageList) return;
+
+        if (this.activeMessageList.scrollToMessage(messageId)) return;
+
+        let iterations = 0;
+        const MAX_ITERATIONS = 5;
+
+        while (iterations < MAX_ITERATIONS && this.hasMoreHistory && this.nextBeforeId && this.activeChatId && this.currentUserId) {
+            const res = await chatService.getMessages(this.activeChatId, this.currentUserId, this.nextBeforeId);
+            if (!res) break;
+
+            this.hasMoreHistory = res.hasMore;
+            this.nextBeforeId = res.nextBeforeId;
+            this.activeMessageList.prependMessages(res.messages);
+
+            if (this.activeMessageList.scrollToMessage(messageId)) return;
+            iterations++;
+        }
+    }
+
     private cleanupMainContent(): void {
         wsClient.unsubscribe('message.New', this.handleNewMessage);
         wsClient.unsubscribe('message.Update', this.handleMessageEdited);
         this.activeMessageList = null;
         this.activeMessageInput = null;
+
+        if (this.messageSearchBar) {
+            this.messageSearchBar.unmount();
+            this.messageSearchBar = null;
+        }
 
         if (this.chatWindow) {
             this.chatWindow.unmount();
@@ -613,9 +677,10 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 const interlocutorProfile = await contactService.getProfileInfo(interlocutorId);
                 const interlocutorLogin = interlocutorProfile?.additionalInfo?.login || String(interlocutorId);
 
-                headerComponent = new DialogHeader({ 
+                headerComponent = new DialogHeader({
                     chat: chatDetail as DialogChat,
                     onOpenProfile: () => this.props.router.navigate('/contacts/' + interlocutorLogin),
+                    onOpenSearch: () => this.toggleMessageSearch(chatDetail),
                     onDeleteChat: async() => {
                         const res = await chatService.deleteChat(chatId);
                         if (res.success) {
@@ -633,8 +698,9 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 break;
 
             case 'group':
-                headerComponent = new GroupHeader({ 
+                headerComponent = new GroupHeader({
                     chat: chatDetail as GroupChat,
+                    onOpenSearch: () => this.toggleMessageSearch(chatDetail),
                     onDeleteChat: async () => {
                         const res = await chatService.deleteChat(chatId);
                         if (res.success) {
@@ -692,6 +758,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                         }
                     },
                     onOpenChannelInfo: () => this.openChannelDetails(chatDetail as ChannelChat),
+                    onOpenSearch: () => this.toggleMessageSearch(chatDetail),
                 });
                 break;
             }

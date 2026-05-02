@@ -4,5 +4,8 @@
         <div class="group-header__name">{{chat.title}}</div>
         <div class="group-header__members">{{chat.members.length}} участника(ов)</div>
     </div>
-    <div class="group-header__settings" data-component="group-settings-slot"></div>
+    <div class="group-header__actions">
+        <div data-component="group-search-slot"></div>
+        <div class="group-header__settings" data-component="group-settings-slot"></div>
+    </div>
 </div>

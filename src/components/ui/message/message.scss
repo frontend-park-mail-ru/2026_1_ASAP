@@ -99,4 +99,14 @@
 
         &[hidden] { display: none; }
     }
+
+    &--flash .message__content-wrapper {
+        animation: message-flash 1.5s ease-out forwards;
+    }
+}
+
+@keyframes message-flash {
+    0%   { box-shadow: 0 0 0 3px var(--search-highlight-bg); }
+    60%  { box-shadow: 0 0 0 3px var(--search-highlight-bg); }
+    100% { box-shadow: 0 0 0 0px transparent; }
 }

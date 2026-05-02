@@ -119,6 +119,35 @@ export class Message extends BaseComponent<MessageProps> {
         this.openEditOverlay();
     };
 
+    public applyHighlight(query: string): void {
+        const textEl = this.element?.querySelector('.message__text');
+        if (!textEl) return;
+
+        const rawText = this.props.message.text;
+        textEl.textContent = '';
+
+        if (!query) {
+            textEl.textContent = rawText;
+            return;
+        }
+
+        const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`(${escapedQuery})`, 'gi');
+        const parts = rawText.split(regex);
+
+        parts.forEach(part => {
+            if (regex.test(part)) {
+                const mark = document.createElement('span');
+                mark.className = 'search-highlight';
+                mark.textContent = part;
+                textEl.appendChild(mark);
+            } else {
+                textEl.appendChild(document.createTextNode(part));
+            }
+            regex.lastIndex = 0;
+        });
+    }
+
     public updateText(newText: string, edited = true): void {
         this.props.message.text = newText;
         const textEl = this.element?.querySelector('.message__text');
