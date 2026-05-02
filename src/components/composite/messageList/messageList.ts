@@ -30,6 +30,7 @@ export class MessageList extends BaseComponent {
     private isLoadingMore = false;
     private messages: Map<string, Message> = new Map();
     private currentHighlightQuery = '';
+    private selectedMessageEl: HTMLElement | null = null;
 
     /**
      * @param {MessageListProps} props - Свойства компонента.
@@ -232,15 +233,22 @@ export class MessageList extends BaseComponent {
     public setHighlightQuery(query: string): void {
         this.currentHighlightQuery = query;
         this.childMessages.forEach(m => m.applyHighlight(query));
+        if (!query && this.selectedMessageEl) {
+            this.selectedMessageEl.classList.remove('message--flash');
+            this.selectedMessageEl = null;
+        }
     }
 
     public scrollToMessage(messageId: string): boolean {
         const msg = this.messages.get(messageId);
         if (!msg?.element) return false;
 
+        if (this.selectedMessageEl && this.selectedMessageEl !== msg.element) {
+            this.selectedMessageEl.classList.remove('message--flash');
+        }
+        this.selectedMessageEl = msg.element;
         msg.element.scrollIntoView({ block: 'center', behavior: 'smooth' });
         msg.element.classList.add('message--flash');
-        setTimeout(() => msg.element?.classList.remove('message--flash'), 1500);
         return true;
     }
 
