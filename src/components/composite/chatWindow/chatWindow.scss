@@ -46,7 +46,7 @@
 
     @media (max-width: $breakpoint-mobile-max) {
         &__footer {
-            padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+            padding-bottom: max(4px, env(safe-area-inset-bottom, 0px));
         }
     }
 }
