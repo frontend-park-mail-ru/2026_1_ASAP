@@ -374,7 +374,8 @@ export class ChatService {
                     case 'channel':
                         return {
                             ...commonProps,
-                            subscribersCount: chat.subscribers_count || 0
+                            subscribersCount: chat.subscribers_count || 0,
+                            description: chat.description ?? ''
                         } as ChannelChat;
 
                     default:
@@ -605,6 +606,28 @@ export class ChatService {
             return true;
         } catch (error) {
             console.error('Ошибка сети при обновлении названия чата:', error);
+            return false;
+        }
+    }
+
+    public async updateChatDescription(chatId: string, description: string): Promise<boolean> {
+        try {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/chats/${chatId}/description`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ description })
+            });
+
+            if (!response.ok) {
+                console.error(`Ошибка при обновлении описания чата: ${response.status}`);
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Ошибка сети при обновлении описания чата:', error);
             return false;
         }
     }

@@ -1,4 +1,5 @@
 import { chatService } from './chatService';
+import type { ChannelChat } from '../types/chat';
 
 export type ChannelRole = 'owner' | 'participant' | 'guest';
 
@@ -13,9 +14,7 @@ export interface ChannelDetail {
     id: string;
     title: string;
     avatarUrl?: string;
-    // TODO: нет бэкенд-поля, хранится локально в extraData
     description: string;
-    // TODO: нет бэкенд-эндпоинта для инвайт-ссылок
     inviteUrl: string;
     members: ChannelMember[];
     subscribersCount: number;
@@ -35,15 +34,7 @@ export interface UpdateChannelInput {
     avatar?: File;
 }
 
-interface ChannelExtraData {
-    description: string;
-    inviteUrl: string;
-}
-
 class ChannelService {
-    // Хранит description и inviteUrl локально, пока бэк не поддерживает эти поля в API
-    private extraData: Map<string, ChannelExtraData> = new Map();
-
     private generateInviteUrl(channelId: string): string {
         return `https://pulseapp.space/chats/${channelId}`;
     }
@@ -56,7 +47,6 @@ class ChannelService {
             [],        // members_id — бэк добавляет owner автоматически
             'channel',
             input.title,
-            // description и avatar: бэк не принимает при создании
         );
 
         if (!res.success || !res.body?.id) {
@@ -65,10 +55,9 @@ class ChannelService {
 
         const channelId = res.body.id.toString();
 
-        this.extraData.set(channelId, {
-            description: input.description ?? '',
-            inviteUrl: this.generateInviteUrl(channelId),
-        });
+        if (input.description) {
+            await chatService.updateChatDescription(channelId, input.description);
+        }
 
         return { success: true, channelId, status: res.status };
     }
@@ -77,6 +66,7 @@ class ChannelService {
         const chatDetail = await chatService.getChatDetail(channelId);
         if (!chatDetail || chatDetail.type !== 'channel') return null;
 
+        const channelDetail = chatDetail as ChannelChat;
         const memberIds = await chatService.getChatMembers(channelId);
         const ownerId: number = (chatDetail as any).owner_id || 0;
         const currentUserRole: ChannelRole =
@@ -104,17 +94,12 @@ class ChannelService {
             })
             .filter((m) => m !== null) as ChannelMember[];
 
-        const extra = this.extraData.get(channelId) ?? {
-            description: '',
-            inviteUrl: this.generateInviteUrl(channelId),
-        };
-
         return {
             id: channelId,
             title: chatDetail.title,
             avatarUrl: chatDetail.avatarUrl,
-            description: extra.description,
-            inviteUrl: extra.inviteUrl,
+            description: channelDetail.description ?? '',
+            inviteUrl: this.generateInviteUrl(channelId),
             members,
             subscribersCount: (chatDetail as any).subscribersCount || memberIds.length,
             currentUserRole,
@@ -143,13 +128,8 @@ class ChannelService {
         if (input.avatar) {
             promises.push(chatService.updateChatAvatar(channelId, input.avatar));
         }
-
         if (input.description !== undefined) {
-            const existing = this.extraData.get(channelId);
-            this.extraData.set(channelId, {
-                description: input.description,
-                inviteUrl: existing?.inviteUrl ?? this.generateInviteUrl(channelId),
-            });
+            promises.push(chatService.updateChatDescription(channelId, input.description));
         }
 
         if (promises.length > 0) {
@@ -171,9 +151,6 @@ class ChannelService {
 
     async deleteChannel(channelId: string): Promise<{ success: boolean; errorCode?: string }> {
         const res = await chatService.deleteChat(channelId);
-        if (res.success) {
-            this.extraData.delete(channelId);
-        }
         return { success: res.success, errorCode: res.errorCode };
     }
 
