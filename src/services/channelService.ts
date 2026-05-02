@@ -1,6 +1,6 @@
 import { chatService } from './chatService';
 
-export type ChannelRole = 'owner' | 'participant';
+export type ChannelRole = 'owner' | 'participant' | 'guest';
 
 export interface ChannelMember {
     id: number;
@@ -45,8 +45,7 @@ class ChannelService {
     private extraData: Map<string, ChannelExtraData> = new Map();
 
     private generateInviteUrl(channelId: string): string {
-        // TODO: заменить на реальный эндпоинт приглашений, когда появится на бэкенде
-        return `https://pulseapp.space/invite/${channelId}`;
+        return `https://pulseapp.space/chats/${channelId}`;
     }
 
     async createChannel(
@@ -78,10 +77,14 @@ class ChannelService {
         const chatDetail = await chatService.getChatDetail(channelId);
         if (!chatDetail || chatDetail.type !== 'channel') return null;
 
-        const ownerId: number = (chatDetail as any).owner_id || 0;
-        const currentUserRole: ChannelRole = ownerId !== 0 && ownerId === myId ? 'owner' : 'participant';
-
         const memberIds = await chatService.getChatMembers(channelId);
+        const ownerId: number = (chatDetail as any).owner_id || 0;
+        const currentUserRole: ChannelRole =
+            ownerId !== 0 && ownerId === myId
+                ? 'owner'
+                : memberIds.includes(myId)
+                    ? 'participant'
+                    : 'guest';
 
         const memberProfiles = await Promise.all(
             memberIds.map(id => chatService.getUserProfile(id))
@@ -157,9 +160,8 @@ class ChannelService {
         return { success: true };
     }
 
-    /** TODO: нет ручки для вступления по инвайт-ссылке */
-    async joinChannel(_inviteToken: string): Promise<{ success: boolean; channelId?: string }> {
-        return { success: false };
+    async joinChannel(channelId: string): Promise<{ success: boolean; status: number; errorCode?: string; errorMessage?: string }> {
+        return chatService.joinChat(channelId);
     }
 
     async leaveChannel(channelId: string): Promise<{ success: boolean }> {

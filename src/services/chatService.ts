@@ -545,6 +545,35 @@ export class ChatService {
         }
     }
 
+    public async joinChat(chatId: string | number): Promise<{ success: boolean; status: number; errorCode?: string; errorMessage?: string }> {
+        try {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/chats/${chatId}/join`, {
+                method: 'POST',
+            });
+
+            if (response.ok) {
+                return { success: true, status: response.status };
+            }
+
+            let errorCode = '';
+            let errorMessage = '';
+            try {
+                const data = await response.json();
+                if (data.status === 'error' && data.errors && data.errors.length > 0) {
+                    errorCode = data.errors[0].code;
+                    errorMessage = data.errors[0].message;
+                }
+            } catch (e) {
+                // Игнорируем ошибки парсинга
+            }
+
+            return { success: false, status: response.status, errorCode, errorMessage };
+        } catch (error) {
+            console.error("ChatService: ошибка при вступлении в чат:", error);
+            return { success: false, status: 500 };
+        }
+    }
+
     /**
      * @deprecated Используйте leaveChat
      */
