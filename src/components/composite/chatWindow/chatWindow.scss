@@ -43,4 +43,10 @@
         justify-content: flex-end;
         padding: 10px 10px 0px 10px;
     }
+
+    @media (max-width: $breakpoint-mobile-max) {
+        &__footer {
+            padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+        }
+    }
 }
