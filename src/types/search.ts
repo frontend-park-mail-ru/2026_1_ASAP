@@ -25,3 +25,17 @@ export interface SearchChatsResult {
     items: SearchChatHit[];
     nextBeforeId: number | null;
 }
+
+export interface SearchContactHit {
+    userId: number;
+    displayName: string;
+    login?: string;
+    avatarUrl?: string;
+    isOnline: boolean;
+    lastSeenAt?: Date;
+}
+
+export interface SearchContactsResult {
+    items: SearchContactHit[];
+    nextBeforeId: number | null;
+}

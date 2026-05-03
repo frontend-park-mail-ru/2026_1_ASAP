@@ -82,6 +82,9 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private currentUserProfile: FrontendProfile | null = null;
     private searchDebounce: ReturnType<typeof setTimeout> | null = null;
     private searchRequestId = 0;
+    private searchType: '' | 'group' | 'channel' = '';
+    private searchTabsEl: HTMLElement | null = null;
+    private currentQuery: string = '';
 
     /** ID текущего запроса истории (используется для защиты от гонок). */
     private historyRequestId = 0;
@@ -349,24 +352,54 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         this.closeModal();
     }
 
-    private async runChatSearch(query: string) {
+    private async runChatSearch(query: string): Promise<void> {
         this.searchRequestId += 1;
         const myId = this.searchRequestId;
-        const result = await chatService.searchChats(query);
+        const result = await chatService.searchChats(query, this.searchType);
         if (myId !== this.searchRequestId) return;
         if (!result) return;
         this.chatWrapper?.showSearchResults(result.items);
-    };
+    }
+
+    private buildSearchTabs(): HTMLElement {
+        const wrap = document.createElement('div');
+        wrap.className = 'chats-search-tabs';
+        wrap.innerHTML = `
+            <button type="button" class="chats-search-tabs__btn chats-search-tabs__btn--active" data-type="">Чаты</button>
+            <button type="button" class="chats-search-tabs__btn" data-type="group">Группы</button>
+            <button type="button" class="chats-search-tabs__btn" data-type="channel">Каналы</button>
+        `;
+        wrap.style.display = 'none';
+        wrap.addEventListener('click', (e) => {
+            const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.chats-search-tabs__btn');
+            if (!btn) return;
+            const type = (btn.dataset.type ?? '') as '' | 'group' | 'channel';
+            if (type === this.searchType) return;
+            this.searchType = type;
+
+            wrap.querySelectorAll('.chats-search-tabs__btn').forEach(b =>
+                b.classList.toggle('chats-search-tabs__btn--active', b === btn)
+            );
+
+            if (this.currentQuery.trim()) {
+                this.runChatSearch(this.currentQuery);
+            }
+        });
+        return wrap;
+    }
 
     private handleSearchInput = (query: string): void => {
         if (this.searchDebounce !== null) clearTimeout(this.searchDebounce);
+        this.currentQuery = query;
 
         if (!query.trim()) {
             this.searchRequestId += 1;
+            if (this.searchTabsEl) this.searchTabsEl.style.display = 'none';
             this.chatWrapper?.restoreChatList();
             return;
         }
 
+        if (this.searchTabsEl) this.searchTabsEl.style.display = 'flex';
         this.searchDebounce = setTimeout(() => this.runChatSearch(query), 300);
     };
 
@@ -515,6 +548,9 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             onSearch: this.handleSearchInput,
          });
         this.searchForm.mount(sidebar as HTMLElement);
+
+        this.searchTabsEl = this.buildSearchTabs();
+        sidebar.appendChild(this.searchTabsEl);
 
         this.chatWrapper = new ChatListWrapper({ 
             router: this.props.router,
