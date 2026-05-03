@@ -139,7 +139,13 @@ export class ChannelHeader extends BaseComponent<ChannelHeaderProps> {
 
     private handleMembersUpdated = (payload: ChatUpdatedMembersDto): void => {
         if (!this.isTargetChat(payload.chat_id)) return;
-        // обновим счётчик подписчиков (если у канала меняется состав)
+
+        const delta = payload.updated_members_id.length;
+        const current = this.props.chat.subscribersCount || 0;
+        this.props.chat.subscribersCount = payload.type === 'added'
+            ? current + delta
+            : Math.max(0, current - delta);
+
         this.loadSubscribersCount();
     };
 
