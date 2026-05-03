@@ -212,6 +212,18 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
         target.update(updatedChat);
     }
 
+    public updateChatLastMessageIfMatches(chatId: string, messageId: string, newText: string): void {
+        const target = this.chatItems.find(item => String(item.props.chat.id) === chatId);
+        if (!target) return;
+        if (String(target.props.chat.lastMessage?.id) !== messageId) return;
+
+        const updatedChat = { ...target.props.chat };
+        if (updatedChat.lastMessage) {
+            updatedChat.lastMessage = { ...updatedChat.lastMessage, text: newText };
+        }
+        target.update(updatedChat);
+    }
+
     private hitToChat(hit: SearchChatHit): Chat {
         const lastMessage = hit.lastMessagePreview ? {
             id: '',

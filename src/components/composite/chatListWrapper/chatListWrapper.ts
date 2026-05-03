@@ -40,6 +40,10 @@ export class ChatListWrapper extends BaseForm<ChatListWrapperProps> {
         this.chatList?.updateChatLastMessage(chatId, lastMessage);
     }
 
+    public updateChatLastMessageIfMatches(chatId: string, messageId: string, newText: string): void {
+        this.chatList?.updateChatLastMessageIfMatches(chatId, messageId, newText);
+    }
+
     /**
      * Выполняется после монтирования компонента.
      * Инициализирует и монтирует дочерний компонент `ChatListItem`.
