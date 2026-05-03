@@ -236,7 +236,7 @@ export class ChannelDetailsWindow extends BaseComponent<ChannelDetailsWindowProp
                 infoRow.appendChild(this.descriptionTextarea);
             }
         } else {
-            descriptionSlot.textContent = this.props.channel.description || '—';
+            descriptionSlot.textContent = this.props.channel.description || '';
         }
     }
 

@@ -147,9 +147,8 @@
     }
 
     &__info-label {
-        font-size: 14px;
-        font: $text-secondary;
-        color: $color-text-hover;
+        font: $text-tertiary;
+        color: $color-text;
         white-space: nowrap;
         flex-shrink: 0;
     }
@@ -238,6 +237,8 @@
     }
 
     &__members-title {
+        font: $text-tertiary;
+        color: $color-text;
         margin: 0;
         font-weight: 500;
     }
