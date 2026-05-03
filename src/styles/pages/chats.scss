@@ -118,3 +118,31 @@
     }
 }
 
+.chats-search-tabs {
+    display: flex;
+    flex-direction: row;
+    gap: 18px;
+    padding: 4px 16px 10px;
+
+    &__btn {
+        background: transparent;
+        border: none;
+        border-bottom: 2px solid transparent; 
+        padding: 0 0 5px; 
+        cursor: pointer;
+        color: $color-text-hover;
+        font: $text-tertiary;
+        letter-spacing: $text-tertiary-ls;
+        @include hover-transition;
+
+        &:hover:not(&--active) {
+            color: $color-text;
+        }
+
+        &--active {
+            color: $color-text;
+            font-weight: 600;
+            border-bottom: 2px solid $color-bubble;
+        }
+    }
+}

@@ -7,7 +7,6 @@ import { ContactListWrapper } from "../../components/composite/contactListWrappe
 import { ProfileWindow } from "../../components/composite/profileWindow/profileWindow";
 import { contactService } from "../../services/contactService";
 import { AddContactWindow } from "../../components/composite/addContactWindow/addContactWindow";
-import { chatService } from "../../services/chatService";
 import { FrontendProfile } from "../../types/profile";
 
 
@@ -45,6 +44,11 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
     private addContactWindow: AddContactWindow | null = null;
     private currentUserId: number | null = null;
     private currentUserProfile: FrontendProfile | null = null;
+    private searchDebounce: ReturnType<typeof setTimeout> | null = null;
+    private searchScope: 'contacts' | 'local' = 'contacts';
+    private searchTabsEl: HTMLElement | null = null;
+    private currentQuery: string = '';
+    private searchRequestId = 0;
 
     constructor(props: ContactsPageProps = {}) {
         super(props);
@@ -53,6 +57,32 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
     getTemplate() {
         return template;
     };
+
+    private buildSearchTabs(): HTMLElement {
+        const wrap = document.createElement('div');
+        wrap.className = 'contacts-search-tabs';
+        wrap.innerHTML = `
+            <button type="button" class="contacts-search-tabs__btn contacts-search-tabs__btn--active" data-scope="contacts">Контакты</button>
+            <button type="button" class="contacts-search-tabs__btn" data-scope="local">Глобальный поиск</button>
+        `;
+        wrap.style.display = 'none';
+        wrap.addEventListener('click', (e) => {
+            const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.contacts-search-tabs__btn');
+            if (!btn) return;
+            const scope = btn.dataset.scope as 'contacts' | 'local';
+            if (scope === this.searchScope) return;
+            this.searchScope = scope;
+
+            wrap.querySelectorAll('.contacts-search-tabs__btn').forEach(b => 
+                b.classList.toggle('contacts-search-tabs__btn--active', b === btn)
+            );
+
+            if (this.currentQuery.trim()) {
+                this.runContactSearch(this.currentQuery);
+            }
+        });
+        return wrap;
+    }
 
     /**
      * Обрабатывает внутренний роутинг на странице контактов.
@@ -101,6 +131,30 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
         } finally {
             this.syncMobileLayoutState();
         }
+    }
+
+    private handleSearchInput = (query: string): void => {
+        if (this.searchDebounce !== null) clearTimeout(this.searchDebounce);
+        this.currentQuery = query;
+
+        if (!query.trim()) {
+            this.searchRequestId += 1;
+            if (this.searchTabsEl) this.searchTabsEl.style.display = 'none';
+            this.contactListWrapper?.restoreContactList();
+            return;
+        }
+
+        if (this.searchTabsEl) this.searchTabsEl.style.display = 'flex';
+        this.searchDebounce = setTimeout(() => this.runContactSearch(query), 300);
+    };
+
+    private async runContactSearch(query: string): Promise<void> {
+        this.searchRequestId += 1;
+        const myId = this.searchRequestId;
+        const result = await contactService.searchContacts(query, this.searchScope);
+        if (myId !== this.searchRequestId) return;
+        if (!result) return;
+        this.contactListWrapper?.showSearchResults(result.items);
     }
 
     /**
@@ -172,23 +226,29 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
             return;
         }
 
-        this.searchForm = new SearchForm({ 
+        const sidebar = this.element.querySelector('.contacts-page__sidebar')!;
+
+        this.searchForm = new SearchForm({
             router: this.props.router,
-            onAddClick: () => this.props.router.navigate('/contacts/add')
+            onAddClick: () => this.props.router.navigate('/contacts/add'),
+            onSearch: this.handleSearchInput,
         });
-        this.searchForm.mount(this.element.querySelector('.contacts-page__sidebar')!);
+        this.searchForm.mount(sidebar as HTMLElement);
+
+        this.searchTabsEl = this.buildSearchTabs();
+        sidebar.appendChild(this.searchTabsEl);
 
         this.contactListWrapper = new ContactListWrapper({
             router: this.props.router,
         });
-        this.contactListWrapper.mount(this.element.querySelector('.contacts-page__sidebar')!);
+        this.contactListWrapper.mount(sidebar as HTMLElement);
 
         this.menuBar = new MenuBar({
             onSettingsClick: () => this.props.router.navigate('/settings'),
             onContactsClick: () => this.props.router.navigate('/contacts'),
             onMessagesClick: () => this.props.router.navigate('/chats'),
         });
-        this.menuBar.mount(this.element.querySelector('.contacts-page__sidebar')!);
+        this.menuBar.mount(sidebar as HTMLElement);
         this.menuBar.setActiveButton('contacts');
 
         this.mainContentArea = this.element.querySelector('.contacts-page__mainfield') || null;
@@ -318,9 +378,13 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
 
                     this.searchForm = new SearchForm({ 
                         router: this.props.router,
-                        onAddClick: () => this.props.router.navigate('/contacts/add')
+                        onAddClick: () => this.props.router.navigate('/contacts/add'),
+                        onSearch: this.handleSearchInput,
                     });
                     this.searchForm.mount(sidebar as HTMLElement);
+
+                    this.searchTabsEl = this.buildSearchTabs();
+                    sidebar.appendChild(this.searchTabsEl);
 
                     this.contactListWrapper = new ContactListWrapper({ router: this.props.router });
                     this.contactListWrapper.mount(sidebar as HTMLElement);
@@ -378,5 +442,12 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
         this.profileWindow = null;
         this.addContactWindow?.unmount();
         this.addContactWindow = null;
+        if (this.searchDebounce !== null) {
+            clearTimeout(this.searchDebounce);
+            this.searchDebounce = null;
+        }
+        this.searchRequestId += 1;
+        this.searchTabsEl = null;
+        this.searchScope = 'contacts';
     };
 };

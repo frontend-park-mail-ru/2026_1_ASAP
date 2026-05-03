@@ -185,6 +185,7 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
             this.element.classList.add('chat-list--empty');
             this.emptyComponent = new ChatListEmpty({
                 text: this.isSearchAlive ? "Ничего не найдено" : undefined,
+                iconAfter: this.isSearchAlive ? "/assets/images/icons/noResultsSearch.svg" : undefined,
             });
             this.emptyComponent.mount(this.element);
             return;

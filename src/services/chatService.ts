@@ -160,16 +160,18 @@ export class ChatService {
 
     public async searchChats(
         query: string,
+        type: '' | 'group' | 'channel' = '',
         beforeId: number | null = null,
-        limit = 20
+        limit = 20,
     ): Promise<SearchChatsResult | null> {
         const q = query.trim();
         if (!q || [...q].length > 256) {
-            return { items: [], nextBeforeId: null};
+            return { items: [], nextBeforeId: null };
         }
 
         try {
             let url = `${BASE_URL}/api/v1/search/chats?q=${encodeURIComponent(q)}&limit=${limit}`;
+            if (type) url += `&type=${type}`;
             if (beforeId) url += `&before_id=${beforeId}`;
 
             const response = await httpClient.request(url, { method: "GET" });

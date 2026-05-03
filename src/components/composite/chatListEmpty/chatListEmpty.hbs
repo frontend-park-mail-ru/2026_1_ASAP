@@ -31,5 +31,8 @@
         <span class="ob-wave__bar" style="--ob-h:0.5"></span>
         <span class="ob-wave__bar" style="--ob-h:0.3"></span>
     </div>
-    <p class="chat-list-empty__hint">Начните общение — напишите первыми!</p>
+    <p class="chat-list-empty__hint">
+        <span>{{#if text}}{{text}}{{else}}Начните общение — напишите первыми!{{/if}}</span>
+        {{#if iconAfter}}<img class="chat-list-empty__hint-icon" src="{{iconAfter}}" alt="" aria-hidden="true">{{/if}}
+    </p>
 </div>
