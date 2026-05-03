@@ -60,10 +60,6 @@ export class MessageList extends BaseComponent {
         }
     };
 
-    public getLatestMessageData(): FrontendMessage | null {
-        return this.childMessages[0]?.props.message ?? null;
-    }
-
     public updateMessage(id: string, text: string): boolean {
         const msg = this.messages.get(id);
         if (!msg) return false;

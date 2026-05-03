@@ -64,6 +64,7 @@ export class ChatService {
             text: dto.text || '',
             timestamp: new Date(dto.created_at || Date.now()),
             isOwn: String(dto.sender_id) === String(currentUserId) || dto.login === currentUserId,
+            isEdited: Boolean((dto as any).edited),
         };
     }
 
