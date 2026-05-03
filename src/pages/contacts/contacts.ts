@@ -6,7 +6,6 @@ import { MenuBar } from "../../components/composite/menuBar/menuBar";
 import { ContactListWrapper } from "../../components/composite/contactListWrapper/contactListWrapper";
 import { ProfileWindow } from "../../components/composite/profileWindow/profileWindow";
 import { contactService } from "../../services/contactService";
-import { AddContactWindow } from "../../components/composite/addContactWindow/addContactWindow";
 import { FrontendProfile } from "../../types/profile";
 
 
@@ -30,7 +29,6 @@ interface ContactsPageProps extends IBasePageProps {
  * @property {ContactListWrapper | null} contactListWrapper - Обертка списка контактов.
  * @property {MenuBar | null} menuBar - Нижнее меню навигации.
  * @property {ProfileWindow | null} profileWindow - Окно с профилем выбранного контакта.
- * @property {AddContactWindow | null} addContactWindow - Окно добавления нового контакта.
  * @property {number | null} activeContactId - ID активного (выбранного) контакта.
  */
 export class ContactsPage extends BasePage<ContactsPageProps> {
@@ -41,7 +39,6 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
     private profileWindow: ProfileWindow | null = null;
     private placeHolder: HTMLElement | null = null;
     private activeContactId: number | null = null;
-    private addContactWindow: AddContactWindow | null = null;
     private currentUserId: number | null = null;
     private currentUserProfile: FrontendProfile | null = null;
     private searchDebounce: ReturnType<typeof setTimeout> | null = null;
@@ -94,11 +91,6 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
             const path = this.props.currentPath || window.location.pathname;
             const pathParts = path.split('/');
             const lastParam = pathParts[pathParts.length - 1];
-            if (lastParam == "add") {
-                this.showAddContactWindow();
-                return;
-            }
-
             if (path == "/contacts" || !lastParam) {
                 this.cleanupMainContent();
                 this.activeContactId = null;
@@ -167,10 +159,21 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
     }
 
 
-    /**
-     * Очищает правую контентную область (окно профиля или добавления контакта).
-     * @private
-     */
+    private activateGlobalSearch(): void {
+        this.searchScope = 'local';
+        if (this.searchTabsEl) {
+            this.searchTabsEl.style.display = 'flex';
+            this.searchTabsEl.querySelectorAll('.contacts-search-tabs__btn').forEach(btn => {
+                const b = btn as HTMLElement;
+                b.classList.toggle('contacts-search-tabs__btn--active', b.dataset.scope === 'local');
+            });
+        }
+        this.searchForm?.focusInput();
+        if (this.currentQuery.trim()) {
+            void this.runContactSearch(this.currentQuery);
+        }
+    }
+
     private cleanupMainContent(): void {
         if (this.placeHolder) {
             this.placeHolder.style.display = "none";
@@ -178,10 +181,6 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
         if (this.profileWindow) {
             this.profileWindow.unmount();
             this.profileWindow = null;
-        }
-        if (this.addContactWindow) {
-            this.addContactWindow.unmount();
-            this.addContactWindow = null;
         }
         this.syncMobileLayoutState();
     }
@@ -198,19 +197,16 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
 
         const mainVisible =
             this.activeContactId !== null ||
-            this.addContactWindow !== null ||
             this.profileWindow !== null;
 
-        const addOrProfileHasBack =
-            this.addContactWindow !== null || this.profileWindow !== null;
-        const mobileFloatingBackVisible = mainVisible && !addOrProfileHasBack;
+        const mobileFloatingBackVisible = mainVisible && this.profileWindow === null;
 
         pageRoot.classList.toggle("contacts-page--main-visible", mainVisible);
         pageRoot.classList.toggle("contacts-page--mobile-floating-back", mobileFloatingBackVisible);
     }
 
     private readonly handleMobileBack = (): void => {
-        if (this.activeContactId !== null || this.addContactWindow !== null || this.profileWindow !== null) {
+        if (this.activeContactId !== null || this.profileWindow !== null) {
             this.props.router?.navigate("/contacts");
         }
     };
@@ -230,7 +226,7 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
 
         this.searchForm = new SearchForm({
             router: this.props.router,
-            onAddClick: () => this.props.router.navigate('/contacts/add'),
+            onAddClick: () => this.activateGlobalSearch(),
             onSearch: this.handleSearchInput,
         });
         this.searchForm.mount(sidebar as HTMLElement);
@@ -332,104 +328,11 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
      */
     private handleKeyUp = (event: KeyboardEvent): void => {
         if (event.key === 'Escape') {
-            if (this.activeContactId || this.addContactWindow) {
+            if (this.activeContactId) {
                 this.closeContact();
             }
         }
     };
-
-    /**
-     * Отображает окно для добавления нового контакта.
-     * @private
-     */
-    private showAddContactWindow(): void {
-        if (!this.mainContentArea) return;
-
-        this.activeContactId = null;
-        this.contactListWrapper?.setActiveContact(null); 
-        this.cleanupMainContent();
-
-        this.addContactWindow = new AddContactWindow({
-            onBack: () => {
-                this.props.router.navigate('/contacts');
-            },
-            onSubmitSearch: async (login: string) => {
-                const targetLogin = login.trim().toLowerCase();
-                if (this.currentUserProfile && this.currentUserProfile.additionalInfo.login.toLowerCase() === targetLogin) {
-                    return "Вы не можете добавить самого себя в контакты";
-                }
-
-                const targetRes = await contactService.getIdByLogin(login);
-                if (targetRes.status === 404 || !targetRes.id) {
-                    return `Пользователь с логином "${login}" не найден!`;
-                }
-                const successRes = await contactService.addContact(login, targetRes.id);
-                
-                if (successRes.success) {
-                    this.closeAddContactWindow();
-                    
-                    const sidebar = this.element!.querySelector('.contacts-page__sidebar');
-                    if (!sidebar) return;
-
-                    this.searchForm?.unmount();
-                    this.contactListWrapper?.unmount();
-                    this.menuBar?.unmount();
-                    sidebar.innerHTML = '';
-
-                    this.searchForm = new SearchForm({ 
-                        router: this.props.router,
-                        onAddClick: () => this.props.router.navigate('/contacts/add'),
-                        onSearch: this.handleSearchInput,
-                    });
-                    this.searchForm.mount(sidebar as HTMLElement);
-
-                    this.searchTabsEl = this.buildSearchTabs();
-                    sidebar.appendChild(this.searchTabsEl);
-
-                    this.contactListWrapper = new ContactListWrapper({ router: this.props.router });
-                    this.contactListWrapper.mount(sidebar as HTMLElement);
-
-                    this.menuBar = new MenuBar({
-                        onSettingsClick: () => this.props.router.navigate('/settings'),
-                        onContactsClick: () => this.props.router.navigate('/contacts'),
-                        onMessagesClick: () => this.props.router.navigate('/chats'),
-                    });
-                    this.menuBar.mount(sidebar as HTMLElement);
-                    this.menuBar.setActiveButton('contacts');
-                    
-                    this.props.router.navigate(`/contacts/${login}`);
-                    return undefined;
-                } else if (successRes.code === 'CANT_CREATE_CONTACT_WITH_YOURSELF') {
-                    return "Вы не можете добавить самого себя в контакты";
-                } else if (successRes.status === 409) {
-                    return `Пользователь "${login}" уже в контактах!`;
-                } else {
-                    return `Ошибка сервера: ${successRes.status}`;
-                }
-            }
-        });
-        this.addContactWindow.mount(this.mainContentArea);
-        this.syncMobileLayoutState();
-    }
-
-    /**
-     * Закрывает окно добавления контакта и возвращает плейсхолдер.
-     * @private
-     */
-    private closeAddContactWindow(): void {
-        if (!this.addContactWindow) return;
-        
-        this.addContactWindow.unmount();
-        this.addContactWindow = null;
-        
-        if (this.placeHolder) {
-            this.placeHolder.style.display = 'block';
-        }
-        
-        this.activeContactId = null;
-        this.contactListWrapper?.setActiveContact(null);
-        this.syncMobileLayoutState();
-    }
 
     beforeUnmount() {
         this.element?.querySelector(".contacts-page__mobile-back")?.removeEventListener("click", this.handleMobileBack);
@@ -440,8 +343,6 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
         this.activeContactId = null;
         this.profileWindow?.unmount();
         this.profileWindow = null;
-        this.addContactWindow?.unmount();
-        this.addContactWindow = null;
         if (this.searchDebounce !== null) {
             clearTimeout(this.searchDebounce);
             this.searchDebounce = null;
