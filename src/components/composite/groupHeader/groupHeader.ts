@@ -6,7 +6,12 @@ import template from './groupHeader.hbs'
 import { DeleteChatMenu } from '../deleteChatMenu/deleteChatMenu';
 import { ConfirmModal } from '../confirmModal/confirmModal';
 import { chatService } from '../../../services/chatService';
-import { wsClient, ChatInformationDto } from '../../../core/utils/wsClient';
+import {
+    wsClient,
+    ChatUpdatedAvatarDto,
+    ChatUpdatedTitleDto,
+    ChatUpdatedMembersDto,
+} from '../../../core/utils/wsClient';
 import { getFullUrl } from '../../../core/utils/url';
 
 interface GroupHeaderProps extends IBaseComponentProps {
@@ -103,27 +108,37 @@ export class GroupHeader extends BaseComponent<GroupHeaderProps> {
         // Загружаем количество участников, если это группа
         this.loadMemberCount();
 
-        wsClient.subscribe<ChatInformationDto>('chat.Updated', this.handleChatUpdated);
+        wsClient.subscribe<ChatUpdatedAvatarDto>('chat.Updated.Avatar', this.handleAvatarUpdated);
+        wsClient.subscribe<ChatUpdatedTitleDto>('chat.Updated.Title', this.handleTitleUpdated);
+        wsClient.subscribe<ChatUpdatedMembersDto>('chat.Updated.Members', this.handleMembersUpdated);
     }
 
-    /**
-     * Обработчик события обновления чата через WebSocket.
-     * Обновляет название и аватарку в шапке, если ID совпадает.
-     * @param {ChatInformationDto} payload - Данные обновленного чата.
-     * @private
-     */
-    private handleChatUpdated = (payload: ChatInformationDto): void => {
-        if (this.props.chat && String(this.props.chat.id) === String(payload.id)) {
-            const nameEl = this.element?.querySelector('.group-header__name');
-            if (nameEl) {
-                nameEl.textContent = payload.title;
-            }
+    private isTargetChat(chatId: number): boolean {
+        return !!this.props.chat && String(this.props.chat.id) === String(chatId);
+    }
 
-            const avatarImg = this.element?.querySelector('.group-header__avatar') as HTMLImageElement;
-            if (avatarImg && payload.avatar) {
-                avatarImg.src = getFullUrl(payload.avatar);
-            }
+    private handleAvatarUpdated = (payload: ChatUpdatedAvatarDto): void => {
+        if (!this.isTargetChat(payload.chat_id)) return;
+        const avatarImg = this.element?.querySelector('.group-header__avatar') as HTMLImageElement;
+        if (avatarImg) {
+            avatarImg.src = payload.avatar_url
+                ? getFullUrl(payload.avatar_url)
+                : '/assets/images/avatars/defaultGroup.svg';
         }
+        this.props.chat.avatarUrl = payload.avatar_url;
+    };
+
+    private handleTitleUpdated = (payload: ChatUpdatedTitleDto): void => {
+        if (!this.isTargetChat(payload.chat_id)) return;
+        const nameEl = this.element?.querySelector('.group-header__name');
+        if (nameEl) nameEl.textContent = payload.title;
+        this.props.chat.title = payload.title;
+    };
+
+    private handleMembersUpdated = (payload: ChatUpdatedMembersDto): void => {
+        if (!this.isTargetChat(payload.chat_id)) return;
+        // подгрузим актуальное количество — список участников мог измениться
+        this.loadMemberCount();
     };
 
     /**
@@ -211,6 +226,8 @@ export class GroupHeader extends BaseComponent<GroupHeaderProps> {
         this.deleteChatMenu?.unmount();
         this.confirmModal?.unmount();
 
-        wsClient.unsubscribe('chat.Updated', this.handleChatUpdated);
+        wsClient.unsubscribe('chat.Updated.Avatar', this.handleAvatarUpdated);
+        wsClient.unsubscribe('chat.Updated.Title', this.handleTitleUpdated);
+        wsClient.unsubscribe('chat.Updated.Members', this.handleMembersUpdated);
     }
 }

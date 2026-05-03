@@ -35,6 +35,7 @@ export interface MessageDto {
     sender_id: number;
     text: string;
     created_at: string;
+    edited: boolean;
     login?: string;
     first_name?: string;
     last_name?: string;
@@ -42,20 +43,102 @@ export interface MessageDto {
 }
 
 /**
- * @interface ChatInformationDto
- * @description Данные о чате, приходящие через WebSocket.
- * @property {MessageDto | null} last_message - Последнее сообщение в чате.
- * @property {string} title                   - Название чата.
- * @property {string} chat_type               - Тип чата (dialog, group, channel).
- * @property {string | null} [avatar]         - URL аватара чата.
- * @property {number} id                      - ID чата.
+ * Краткая инфа о last_message чата (используется в ChatInformationDto,
+ * MessageUpdateDto, MessageClearDto). Без id.
+ */
+export interface LastMessageDto {
+    sender_id: number;
+    text: string;
+    created_at: string;
+}
+
+/**
+ * Ответ на `message.Get` — пагинация истории чата.
+ */
+export interface MessageGetResponse {
+    messages: MessageDto[];
+    next_before_id: number | null;
+    has_more: boolean;
+}
+
+/**
+ * DTO события `message.Update` — отредактированное сообщение.
+ */
+export interface MessageUpdateDto {
+    id: number;
+    chat_id: number;
+    sender_id: number;
+    text: string;
+    created_at: string;
+    edited: boolean;
+    last_message_edited: boolean;
+    last_message?: LastMessageDto;
+}
+
+/**
+ * DTO события `message.Clear` — удалённое сообщение.
+ */
+export interface MessageClearDto {
+    id: number;
+    chat_id: number;
+    sender_id: number;
+    last_message_edited: boolean;
+    last_message?: LastMessageDto;
+}
+
+/**
+ * DTO события `chat.New` — новый чат, доступный пользователю.
+ * Тот же формат используется при первичной загрузке списка.
  */
 export interface ChatInformationDto {
-    last_message: MessageDto | null;
-    title: string;
-    chat_type: string;
-    avatar?: string | null;
     id: number;
+    chat_type: 'dialog' | 'group' | 'channel';
+    title: string;
+    description?: string | null;
+    avatar?: string | null;
+    owner_id?: number;
+    last_message?: LastMessageDto;
+}
+
+/**
+ * DTO события `chat.Deleted`.
+ */
+export interface ChatDeletedDto {
+    id: number;
+}
+
+/**
+ * DTO события `chat.Updated.Avatar`.
+ */
+export interface ChatUpdatedAvatarDto {
+    chat_id: number;
+    avatar_url: string;
+}
+
+/**
+ * DTO события `chat.Updated.Title`.
+ */
+export interface ChatUpdatedTitleDto {
+    chat_id: number;
+    title: string;
+}
+
+/**
+ * DTO события `chat.Updated.Description`.
+ */
+export interface ChatUpdatedDescriptionDto {
+    chat_id: number;
+    description?: string;
+}
+
+/**
+ * DTO события `chat.Updated.Members` — изменение состава участников.
+ */
+export interface ChatUpdatedMembersDto {
+    chat_id: number;
+    type: 'added' | 'deleted';
+    updated_members_id: number[];
+    name?: string;
 }
 
 /**

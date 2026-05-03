@@ -11,7 +11,7 @@ import { ChatWindow } from "../../components/composite/chatWindow/chatWindow";
 import { DialogHeader } from "../../components/composite/dialogHeader/dialogHeader";
 import { MessageList } from "../../components/composite/messageList/messageList";
 import { MessageInput } from "../../components/ui/messageInput/messageInput";
-import { Chat, FrontendMessage, DialogChat, GroupChat, ChannelChat } from '../../types/chat';
+import { Chat, FrontendMessage, DialogChat, GroupChat, ChannelChat, User } from '../../types/chat';
 import { chatService } from "../../services/chatService";
 import { channelService, type ChannelRole } from "../../services/channelService";
 import { GroupHeader } from "../../components/composite/groupHeader/groupHeader";
@@ -26,7 +26,9 @@ import { ChannelDetailsWindow } from "../../components/composite/channelDetailsW
 import { AddMemberWindow } from "../../components/composite/addMemberWindow/addMemberWindow";
 import { contactService } from "../../services/contactService";
 import { ConfirmModal } from "../../components/composite/confirmModal/confirmModal";
-import { wsClient, MessageDto } from "../../core/utils/wsClient";
+import {
+    wsClient, MessageDto, MessageUpdateDto, MessageClearDto, ChatUpdatedMembersDto,
+} from "../../core/utils/wsClient";
 import { offlineQueue } from "../../services/offlineMessageQueue";
 import { MessageSearchBar } from "../../components/composite/messageSearchBar/messageSearchBar";
 
@@ -136,16 +138,51 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         this.activeMessageList.addMessage(frontendMsg);
     };
 
-    private readonly handleMessageEdited = (dto: MessageDto): void => {
+    private readonly handleMessageEdited = (dto: MessageUpdateDto): void => {
+        if (dto.last_message_edited) {
+            this.chatWrapper?.updateChatLastMessageText(dto.chat_id.toString(), dto.text);
+        }
+
         if (!this.activeChatId || dto.chat_id.toString() !== this.activeChatId) return;
         if (!this.activeMessageList) return;
         this.activeMessageList.updateMessage(dto.id.toString(), dto.text);
     };
 
-    private readonly handleMessageDeleted = (dto: MessageDto): void => {
-        if (!this.activeChatId || dto.chat_id.toString() !== this.activeChatId) return;
+    private readonly handleMessageDeleted = (dto: MessageClearDto): void => {
+        const dtoChatId = dto.chat_id.toString();
+        const isActiveChat = this.activeChatId === dtoChatId;
+
+        if (isActiveChat && this.activeMessageList) {
+            this.activeMessageList.deleteMessage(dto.id.toString());
+        }
+
+        if (dto.last_message_edited) {
+            const newLast: FrontendMessage | undefined = dto.last_message
+                ? {
+                    id: '',
+                    text: dto.last_message.text,
+                    timestamp: new Date(dto.last_message.created_at),
+                    sender: { id: dto.last_message.sender_id } as User,
+                    isOwn: this.currentUserId !== null
+                        && Number(dto.last_message.sender_id) === Number(this.currentUserId),
+                }
+                : undefined;
+            this.chatWrapper?.setChatLastMessage(dtoChatId, newLast);
+        }
+    };
+
+    /**
+     * Обработчик `chat.Updated.Members` — добавляет системное сообщение в открытый чат
+     * вида «Иван Петров добавлен в чат» / «Иван Петров удалён из чата».
+     * Только для активного чата; сайдбар-логика отдельно живёт в ChatListItem.
+     */
+    private readonly handleActiveChatMembersUpdated = (payload: ChatUpdatedMembersDto): void => {
+        if (!this.activeChatId || String(payload.chat_id) !== this.activeChatId) return;
         if (!this.activeMessageList) return;
-        this.activeMessageList.deleteMessage(dto.id.toString());
+
+        const name = payload.name?.trim() || 'Пользователь';
+        const verb = payload.type === 'added' ? 'добавлен в чат' : 'удалён из чата';
+        this.activeMessageList.addSystemMessage(`${name} ${verb}`);
     };
 
     /**
@@ -307,6 +344,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         wsClient.unsubscribe('message.New', this.handleNewMessage);
         wsClient.unsubscribe('message.Update', this.handleMessageEdited);
         wsClient.unsubscribe('message.Clear', this.handleMessageDeleted);
+        wsClient.unsubscribe('chat.Updated.Members', this.handleActiveChatMembersUpdated);
         this.activeMessageList = null;
         this.activeMessageInput = null;
         this.activeChannelRole = null;
@@ -945,6 +983,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             wsClient.subscribe('message.New', this.handleNewMessage);
             wsClient.subscribe('message.Update', this.handleMessageEdited);
             wsClient.subscribe('message.Clear', this.handleMessageDeleted);
+            wsClient.subscribe('chat.Updated.Members', this.handleActiveChatMembersUpdated);
 
             await this.loadHistory(chatId);
             if (canWriteActiveChat) {

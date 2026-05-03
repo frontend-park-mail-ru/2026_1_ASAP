@@ -64,7 +64,7 @@ export class ChatService {
             text: dto.text || '',
             timestamp: new Date(dto.created_at || Date.now()),
             isOwn: String(dto.sender_id) === String(currentUserId) || dto.login === currentUserId,
-            isEdited: Boolean((dto as any).edited),
+            isEdited: Boolean(dto.edited),
         };
     }
 
@@ -112,8 +112,14 @@ export class ChatService {
                 chat = { ...commonProps } as any;
         }
 
-        if (dto.last_message && dto.last_message.id !== 0 && (dto.last_message.id !== undefined || dto.last_message.created_at)) {
-            chat.lastMessage = this.convertWsMessageDto(dto.last_message, currentUserId);
+        if (dto.last_message) {
+            chat.lastMessage = {
+                id: '',
+                text: dto.last_message.text,
+                timestamp: new Date(dto.last_message.created_at),
+                sender: { id: dto.last_message.sender_id } as User,
+                isOwn: Number(dto.last_message.sender_id) === Number(currentUserId),
+            };
         }
 
         return chat;

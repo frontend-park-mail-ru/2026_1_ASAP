@@ -3,10 +3,19 @@ import { ChatItem } from "../chatItem/chatItem";
 import { ChatListEmpty } from "../chatListEmpty/chatListEmpty";
 import { chatService } from "../../../services/chatService";
 import { Router } from '../../../core/router';
-import { wsClient, MessageDto, ChatInformationDto } from '../../../core/utils/wsClient';
+import { 
+    wsClient, 
+    MessageDto, 
+    ChatInformationDto,
+    ChatUpdatedAvatarDto,
+    ChatUpdatedTitleDto,
+    ChatUpdatedDescriptionDto,
+    ChatUpdatedMembersDto,
+    ChatDeletedDto,
+} from '../../../core/utils/wsClient';
 import { contactService } from "../../../services/contactService";
 import template from "./chatListItem.hbs";
-import { Chat, User } from "../../../types/chat";
+import { Chat, FrontendMessage, User } from "../../../types/chat";
 import { SearchChatHit } from "../../../types/search";
 
 
@@ -72,35 +81,14 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
         }
     };
 
-    /**
-     * Обработчик события «chat.Updated»: обновление данных чата.
-     * Перемещает чат наверх только если пришло новое сообщение.
-     */
-    private readonly handleChatUpdated = (payload: ChatInformationDto): void => {
-        if (!this.myId) return;
-
-        const targetItem = this.chatItems.find(item => String(item.props.chat.id) === String(payload.id));
-        if (!targetItem) return;
-
-        const oldLastMessageId = targetItem.props.chat.lastMessage?.id;
-        const newLastMessageId = payload.last_message?.id?.toString();
-
-        const updatedChat = chatService.mapChatDtoToChat(payload, this.myId);
-        targetItem.update(updatedChat);
-
-        if (newLastMessageId && oldLastMessageId !== newLastMessageId) {
-            this.moveChatToTop(String(payload.id));
-        }
-    };
 
     /**
      * Обработчик события «chat.Deleted»: удаление чата из списка.
      * Если удален текущий открытый чат, выполняется переход на страницу «Выберите чат».
      */
-    private readonly handleChatDeleted = (payload: any): void => {
-        const targetId = String(payload.id || payload);
+    private readonly handleChatDeleted = (payload: ChatDeletedDto): void => {
+        const targetId = String(payload.id);
         const index = this.chatItems.findIndex(item => String(item.props.chat.id) === targetId);
-
         if (index === -1) return;
 
         const [item] = this.chatItems.splice(index, 1);
@@ -132,6 +120,53 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
 
             targetItem.update(updatedChat);
             this.moveChatToTop(targetId);
+        }
+    };
+
+    private readonly handleChatAvatarUpdated = (payload: ChatUpdatedAvatarDto): void => {
+        const target = this.chatItems.find(item => String(item.props.chat.id) === String(payload.chat_id));
+        if (!target) return;
+
+        const updatedChat = { ...target.props.chat, avatarUrl: payload.avatar_url };
+        target.update(updatedChat);
+    };
+
+    private readonly handleChatTitleUpdated = (payload: ChatUpdatedTitleDto): void => {
+        const target = this.chatItems.find(item => String(item.props.chat.id) === String(payload.chat_id));
+        if (!target) return;
+
+        const updatedChat = { ...target.props.chat, title: payload.title };
+        target.update(updatedChat);
+    };
+
+    private readonly handleChatDescriptionUpdated = (payload: ChatUpdatedDescriptionDto): void => {
+        const target = this.chatItems.find(item => String(item.props.chat.id) === String(payload.chat_id));
+        if (!target) return;
+
+        const updatedChat = { ...target.props.chat, description: payload.description } as Chat;
+        target.update(updatedChat);
+    };
+
+    private readonly handleChatMembersUpdated = (payload: ChatUpdatedMembersDto): void => {
+        if (!this.myId) return;
+
+        if (payload.type === 'deleted' && payload.updated_members_id.includes(this.myId)) {
+            const targetId = String(payload.chat_id);
+            const index = this.chatItems.findIndex(item => String(item.props.chat.id) === targetId);
+            if (index === -1) return;
+
+            const [item] = this.chatItems.splice(index, 1);
+            item.unmount();
+
+            if (this.chatItems.length === 0 && this.element) {
+                this.element.classList.add('chat-list--empty');
+                this.emptyComponent = new ChatListEmpty({});
+                this.emptyComponent.mount(this.element);
+            }
+
+            if (this.activeChatId === targetId) {
+                this.props.router.navigate('/chats');
+            }
         }
     };
 
@@ -223,6 +258,25 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
         } as unknown as Chat;
     }
 
+    public updateChatLastMessageText(chatId: string, newText: string): void {
+        const target = this.chatItems.find(item => String(item.props.chat.id) === chatId);
+        if (!target) return;
+        if (!target.props.chat.lastMessage) return;
+
+        const updatedChat = { ...target.props.chat };
+        updatedChat.lastMessage = { ...updatedChat.lastMessage!, text: newText };
+        target.update(updatedChat);
+    }
+
+    public setChatLastMessage(chatId: string, lastMessage: FrontendMessage | undefined): void {
+        const target = this.chatItems.find(item => String(item.props.chat.id) === chatId);
+        if (!target) return;
+
+        const updatedChat = { ...target.props.chat };
+        updatedChat.lastMessage = lastMessage;
+        target.update(updatedChat);
+    }
+
     public showSearchResults(hits: SearchChatHit[]): void {
         this.isSearchAlive = true;
         const chats = hits.map(hit => this.hitToChat(hit));
@@ -264,8 +318,11 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
         });
 
         wsClient.subscribe<ChatInformationDto>('chat.New', this.handleChatNew);
-        wsClient.subscribe<ChatInformationDto>('chat.Updated', this.handleChatUpdated);
-        wsClient.subscribe<any>('chat.Deleted', this.handleChatDeleted);
+        wsClient.subscribe<ChatDeletedDto>('chat.Deleted', this.handleChatDeleted);
+        wsClient.subscribe<ChatUpdatedAvatarDto>('chat.Updated.Avatar', this.handleChatAvatarUpdated);
+        wsClient.subscribe<ChatUpdatedTitleDto>('chat.Updated.Title', this.handleChatTitleUpdated);
+        wsClient.subscribe<ChatUpdatedDescriptionDto>('chat.Updated.Description', this.handleChatDescriptionUpdated);
+        wsClient.subscribe<ChatUpdatedMembersDto>('chat.Updated.Members', this.handleChatMembersUpdated);
         wsClient.subscribe<MessageDto>('message.New', this.handleMessageNew);
     }
 
@@ -276,8 +333,11 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
      */
     beforeUnmount() {
         wsClient.unsubscribe('chat.New', this.handleChatNew);
-        wsClient.unsubscribe('chat.Updated', this.handleChatUpdated);
         wsClient.unsubscribe('chat.Deleted', this.handleChatDeleted);
+        wsClient.unsubscribe('chat.Updated.Avatar', this.handleChatAvatarUpdated);
+        wsClient.unsubscribe('chat.Updated.Title', this.handleChatTitleUpdated);
+        wsClient.unsubscribe('chat.Updated.Description', this.handleChatDescriptionUpdated);
+        wsClient.unsubscribe('chat.Updated.Members', this.handleChatMembersUpdated);
         wsClient.unsubscribe('message.New', this.handleMessageNew);
 
         this.chatItems.forEach(item => item.unmount());
