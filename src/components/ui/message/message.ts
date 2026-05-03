@@ -5,6 +5,7 @@ import { Avatar } from '../../ui/avatar/avatar';
 import { chatService } from "../../../services/chatService";
 import { User } from "../../../types/chat";
 import { EditMsgOverlay } from '../../composite/editMsgOverlay/editMsgOverlay';
+import { ConfirmModal } from "../../composite/confirmModal/confirmModal";
 
 /**
  * @interface MessageProps - Свойства компонента сообщения.
@@ -115,6 +116,7 @@ export class Message extends BaseComponent<MessageProps> {
 
     handleRightClick = (e: { preventDefault: () => void; }) => {
         e.preventDefault();
+        if (!/^\d+$/.test(this.getId())) return;
         if (!this.props.isOwn) return;
         this.openEditOverlay();
     };
@@ -158,6 +160,22 @@ export class Message extends BaseComponent<MessageProps> {
         }
     }
 
+    private handleDelete = () => {
+        const modal = new ConfirmModal({
+            text: "Вы уверены, что хотите удалить это сообщение у всех?",
+            confirmButtonText: "Удалить",
+            cancelButtonText: "Оставить",
+            onConfirm: () => {
+                this.props.onDelete(this.getId());
+                modal.unmount();
+            },
+            onCancel: () => {
+                modal.unmount();
+            }
+        });
+        modal.mount(document.body);
+    };
+
     private openEditOverlay(): void {
         if (!this.element) return;
         this.closeEditOverlay();
@@ -167,10 +185,7 @@ export class Message extends BaseComponent<MessageProps> {
                 this.props.onEdit?.(this.getId());
                 this.closeEditOverlay();
             },
-            onDelete: () => {
-                this.props.onDelete?.(this.getId());
-                this.closeEditOverlay();
-            },
+            onDelete: this.handleDelete,
             onClose: () => this.closeEditOverlay(),
         });
         this.editMsgOverlay.mount(document.body);

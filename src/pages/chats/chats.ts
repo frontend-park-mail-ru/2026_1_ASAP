@@ -137,6 +137,12 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         this.activeMessageList.updateMessage(dto.id.toString(), dto.text);
     };
 
+    private readonly handleMessageDeleted = (dto: MessageDto): void => {
+        if (!this.activeChatId || dto.chat_id.toString() !== this.activeChatId) return;
+        if (!this.activeMessageList) return;
+        this.activeMessageList.deleteMessage(dto.id.toString());
+    };
+
     /**
      * Обработчик системного события переподключения WS.
      * Перезапрашивает историю для активного чата и флашит offline-очередь.
@@ -294,6 +300,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private cleanupMainContent(): void {
         wsClient.unsubscribe('message.New', this.handleNewMessage);
         wsClient.unsubscribe('message.Update', this.handleMessageEdited);
+        wsClient.unsubscribe('message.Clear', this.handleMessageDeleted);
         this.activeMessageList = null;
         this.activeMessageInput = null;
         this.activeChannelRole = null;
@@ -802,6 +809,13 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             onRequestEdit: (messageId, currentText) => {
                 this.activeMessageInput?.enterEditMode(messageId, currentText);
             },
+            onRequestDelete: (messageId) => {
+                if (!this.activeChatId) return;
+                const ok = chatService.deleteMessage(this.activeChatId, messageId);
+                if (!ok) {
+                    this.showAlert?.('No connection, try later');
+                }
+            },
             });
 
             this.activeMessageList = messageListComponent;
@@ -861,6 +875,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             // Подписываемся на новые сообщения (соединение уже установлено в afterMount)
             wsClient.subscribe('message.New', this.handleNewMessage);
             wsClient.subscribe('message.Update', this.handleMessageEdited);
+            wsClient.subscribe('message.Clear', this.handleMessageDeleted);
 
             await this.loadHistory(chatId);
             if (canWriteActiveChat) {
