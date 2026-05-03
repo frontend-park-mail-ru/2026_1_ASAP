@@ -7,6 +7,9 @@ import template from "./profileAdditionalInfoBlock.hbs"
 interface ProfileAdditionalInfoBlockProps extends IBaseComponentProps {
     profileAdditionalInfo: ProfileAdditionalInfo;
     class?: string;
+    bioOnly?: boolean;
+    bioLabel?: string;
+    emptyBioText?: string;
     onEditOverlay?: (fieldKey: EditableField, value: string) => void;
 };
 
@@ -96,6 +99,7 @@ export class ProfileAdditionalInfoBlock extends BaseComponent<ProfileAdditionalI
 
         const field = editable.dataset.field;
         if (!field || !['login', 'email', 'birthDate', 'bio'].includes(field)) return;
+        if (!this.props.onEditOverlay) return;
 
         // Редактирование логина и почты временно отключено
         if (field === 'login' || field === 'email') return;
@@ -117,7 +121,7 @@ export class ProfileAdditionalInfoBlock extends BaseComponent<ProfileAdditionalI
         this.bioText = this.element.querySelector('.bio-text');
         this.bioContainer = this.element.querySelector('.bio-container');
         this.bioInfo = this.element.querySelector('.bio-info');
-        if (this.props.class === "settings-additional-info")
+        if (this.props.onEditOverlay)
             this.element!.addEventListener("click", this.handleFieldClick);
 
         this.resizeObserver = new ResizeObserver(() => {
@@ -131,7 +135,7 @@ export class ProfileAdditionalInfoBlock extends BaseComponent<ProfileAdditionalI
 
     protected beforeUnmount(): void {
         this.resizeObserver?.disconnect();
-        if (this.props.class === "settings-additional-info")
+        if (this.props.onEditOverlay)
             this.element!.removeEventListener("click", this.handleFieldClick);
     };
 };

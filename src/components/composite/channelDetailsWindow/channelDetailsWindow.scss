@@ -136,49 +136,35 @@
         }
     }
 
-    &__info-row {
-        display: flex;
-        flex-direction: row;
-        align-items: flex-start;
-        gap: 8px;
-        padding: 35px 16px;
+    &__description-slot {
+        padding: 18px 16px;
         background-color: $color-base-background;
         border-radius: 12px;
+
+        .additional-title {
+            min-width: 96px;
+            padding: 0;
+            font: $text-tertiary;
+            color: $color-text;
+        }
+
+        .bio-info {
+            align-items: flex-start;
+            padding: 0;
+        }
+
+        .bio-container {
+            height: 4.5em;
+        }
     }
 
-    &__info-label {
-        font: $text-tertiary;
-        color: $color-text;
-        white-space: nowrap;
-        flex-shrink: 0;
-    }
-
-    &__info-value {
+    &__description-text {
         font-size: 14px;
         color: $color-text;
     }
 
-    &__info-textarea {
-        background-color: $color-base-background;
-        border: none;
-        border-bottom: 1px solid $color-border-chats;
-        color: $color-text;
-        border-radius: 4px;
-        padding: 4px 0;
-        width: 100%;
-        resize: none;
+    &__description-editable {
         font-size: 14px;
-        font-family: inherit;
-        outline: none;
-        @include hover-transition;
-
-        &:focus {
-            border-bottom-color: $color-primary;
-        }
-
-        &::placeholder {
-            color: $color-text-hover;
-        }
     }
 
     &__invite-row {

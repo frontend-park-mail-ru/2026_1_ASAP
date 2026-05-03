@@ -693,10 +693,10 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             case 'channel':
                 this.createChatWindow = new CreateChannelWindow({
                     router: this.props.router,
-                    onSubmit: async (title: string, description: string, _avatar?: File) => {
+                    onSubmit: async (title: string, _avatar?: File) => {
                         // TODO: avatar при создании не передаётся на бэк, ставить через "Изменить" после создания
                         const res = await channelService.createChannel(
-                            { title, description },
+                            { title },
                             myId
                         );
                         if (res.success && res.channelId) {

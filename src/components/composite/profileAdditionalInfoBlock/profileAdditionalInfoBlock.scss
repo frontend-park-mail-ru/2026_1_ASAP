@@ -28,6 +28,12 @@
         background: $color-scroll;
         border-radius: 50px;
     }
+
+    &--bio-only {
+        padding: 0;
+        background-color: transparent;
+        border-radius: 0;
+    }
 }
 
 .additional-info-paragraph-default {
@@ -141,4 +147,3 @@
         transition: 0.2s;
     }
 }
-

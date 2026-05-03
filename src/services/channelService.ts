@@ -24,7 +24,6 @@ export interface ChannelDetail {
 
 export interface CreateChannelInput {
     title: string;
-    description?: string;
     // avatar?: File; // TODO: бэк не принимает аватар при создании, ставить через updateChannel после
 }
 
@@ -54,10 +53,6 @@ class ChannelService {
         }
 
         const channelId = res.body.id.toString();
-
-        if (input.description) {
-            await chatService.updateChatDescription(channelId, input.description);
-        }
 
         return { success: true, channelId, status: res.status };
     }

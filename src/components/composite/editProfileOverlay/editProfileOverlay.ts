@@ -14,7 +14,8 @@ interface EditProfileOverlayProps extends IBaseComponentProps {
     fieldKey: "login" | "email" | "birthDate" | "bio";
     value?: string;
     inputType: "text" | "email" | "date" | "textarea";
-    onSave: (newValue: string) => void;
+    title?: string;
+    onSave: (newValue: string) => void | Promise<void>;
     onClose: () => void;
 }
 
@@ -64,6 +65,8 @@ export class EditProfileOverlay extends BaseComponent<EditProfileOverlayProps> {
     };
 
     private getEditTitle(): string {
+        if (this.props.title) return this.props.title;
+
         switch (this.props.fieldKey) {
             case "login":
                 return "Редактирование логина";
