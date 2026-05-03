@@ -18,6 +18,7 @@ interface MessageProps extends IBaseComponentProps {
     isOwn: boolean;
     showAuthor: boolean;
     senderName?: string | null;
+    chatAvatarUrl?: string;
     onEdit?: (id: string) => void;
     onDelete?: (id: string) => void;
 }
@@ -253,17 +254,22 @@ export class Message extends BaseComponent<MessageProps> {
         const avatarSlot = this.element.querySelector('[data-component="message-avatar-slot"]');
         if (avatarSlot) {
             this.avatarComponent = new Avatar({
-                src: this.props.message.sender.avatarUrl || '/assets/images/avatars/defaultAvatar.svg',
+                src: this.props.chatAvatarUrl || this.props.message.sender.avatarUrl || '/assets/images/avatars/defaultAvatar.svg',
                 class: 'message__avatar',
                 userId: this.props.message.sender.id,
             });
             this.avatarComponent.mount(avatarSlot as HTMLElement);
         }
 
+        // Для постов канала аватар зафиксирован — профиль отправителя не грузим
+        if (this.props.chatAvatarUrl) {
+            return;
+        }
+
         const sender = this.props.message.sender;
-        const isDefaultAvatar = !sender.avatarUrl || 
+        const isDefaultAvatar = !sender.avatarUrl ||
                                 sender.avatarUrl.includes('defaultAvatar.svg');
-        
+
         if (!this.props.senderName || isDefaultAvatar) {
             const senderId = sender.id;
             if (senderId) {

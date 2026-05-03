@@ -900,6 +900,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 avatarUrl: this.currentUserProfile?.mainInfo.avatarUrl
             },
             chatType: chatDetail.type,
+            chatAvatarUrl: chatDetail.type === 'channel' ? (chatDetail.avatarUrl || undefined) : undefined,
             onLoadMore: async () => {
                 if (!this.hasMoreHistory || !this.nextBeforeId || !this.currentUserId || !this.activeChatId) return;
 
