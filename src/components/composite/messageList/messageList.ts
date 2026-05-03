@@ -85,6 +85,24 @@ export class MessageList extends BaseComponent {
     }
 
     /**
+     * Добавляет системное сообщение (центрированный текст без автора/времени).
+     * Используется для уведомлений типа «X добавлен в чат» / «X удалён из чата».
+     * Эфемерное — не сохраняется в истории, видно только в текущей сессии.
+     */
+    public addSystemMessage(text: string): void {
+        if (!this.element || !this.flexContainer) return;
+
+        if (this.emptyStateElement) this.emptyStateElement.style.display = 'none';
+        this.flexContainer.style.display = 'flex';
+
+        const node = document.createElement('div');
+        node.className = 'message-system';
+        node.textContent = text;
+        this.flexContainer.prepend(node);
+        this.scrollToBottom();
+    }
+
+    /**
      * Обработчик события обновления профиля пользователя через WebSocket.
      * Находит все аватарки этого пользователя в DOM и обновляет их URL.
      * @param {any} payload - Данные обновленного профиля.

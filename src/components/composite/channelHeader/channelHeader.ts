@@ -5,7 +5,12 @@ import { Avatar } from '../../ui/avatar/avatar';
 import { Button } from '../../ui/button/button';
 import { ConfirmModal } from '../confirmModal/confirmModal';
 import { DeleteChatMenu } from '../deleteChatMenu/deleteChatMenu';
-import { wsClient, ChatInformationDto } from '../../../core/utils/wsClient';
+import {
+    wsClient,
+    ChatUpdatedAvatarDto,
+    ChatUpdatedTitleDto,
+    ChatUpdatedMembersDto,
+} from '../../../core/utils/wsClient';
 import { getFullUrl } from '../../../core/utils/url';
 import template from './channelHeader.hbs';
 import './channelHeader.scss';
@@ -105,19 +110,37 @@ export class ChannelHeader extends BaseComponent<ChannelHeaderProps> {
             this.settingsButton.mount(settingsSlot as HTMLElement);
         }
 
-        wsClient.subscribe<ChatInformationDto>('chat.Updated', this.handleChatUpdated);
+        wsClient.subscribe<ChatUpdatedAvatarDto>('chat.Updated.Avatar', this.handleAvatarUpdated);
+        wsClient.subscribe<ChatUpdatedTitleDto>('chat.Updated.Title', this.handleTitleUpdated);
+        wsClient.subscribe<ChatUpdatedMembersDto>('chat.Updated.Members', this.handleMembersUpdated);
     }
 
-    private handleChatUpdated = (payload: ChatInformationDto): void => {
-        if (!this.element || String(this.props.chat.id) !== String(payload.id)) return;
+    private isTargetChat(chatId: number): boolean {
+        return !!this.element && String(this.props.chat.id) === String(chatId);
+    }
 
-        const nameEl = this.element.querySelector('.channel-header__name');
-        if (nameEl) nameEl.textContent = payload.title;
-
-        const avatarImg = this.element.querySelector('.channel-header__avatar') as HTMLImageElement;
-        if (avatarImg && payload.avatar) {
-            avatarImg.src = getFullUrl(payload.avatar);
+    private handleAvatarUpdated = (payload: ChatUpdatedAvatarDto): void => {
+        if (!this.isTargetChat(payload.chat_id)) return;
+        const avatarImg = this.element!.querySelector('.channel-header__avatar') as HTMLImageElement;
+        if (avatarImg) {
+            avatarImg.src = payload.avatar_url
+                ? getFullUrl(payload.avatar_url)
+                : '/assets/images/avatars/defaultGroup.svg';
         }
+        this.props.chat.avatarUrl = payload.avatar_url;
+    };
+
+    private handleTitleUpdated = (payload: ChatUpdatedTitleDto): void => {
+        if (!this.isTargetChat(payload.chat_id)) return;
+        const nameEl = this.element!.querySelector('.channel-header__name');
+        if (nameEl) nameEl.textContent = payload.title;
+        this.props.chat.title = payload.title;
+    };
+
+    private handleMembersUpdated = (payload: ChatUpdatedMembersDto): void => {
+        if (!this.isTargetChat(payload.chat_id)) return;
+        // обновим счётчик подписчиков (если у канала меняется состав)
+        this.loadSubscribersCount();
     };
 
     private async loadSubscribersCount(): Promise<void> {
@@ -193,6 +216,8 @@ export class ChannelHeader extends BaseComponent<ChannelHeaderProps> {
         this.settingsButton?.unmount();
         this.closeChatMenu();
         this.closeConfirm();
-        wsClient.unsubscribe('chat.Updated', this.handleChatUpdated);
+        wsClient.unsubscribe('chat.Updated.Avatar', this.handleAvatarUpdated);
+        wsClient.unsubscribe('chat.Updated.Title', this.handleTitleUpdated);
+        wsClient.unsubscribe('chat.Updated.Members', this.handleMembersUpdated);
     }
 }
