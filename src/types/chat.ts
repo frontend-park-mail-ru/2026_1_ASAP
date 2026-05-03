@@ -50,6 +50,7 @@ export interface FrontendMessage {
     text: string;
     timestamp: Date; // Конвертируем created_at в Date
     isOwn: boolean;
+    isEdited?: boolean;
 }
 
 /**

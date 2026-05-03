@@ -11,7 +11,7 @@
         <div class="message__text">{{message.text}}</div>
         <div class="message__meta">
             <span class="message__time">{{formattedTime}}</span>
-            <span class="message__edited" hidden>(изм.)</span>
+            <span class="message__edited" {{#unless message.isEdited}}hidden{{/unless}}>(изм.)</span>
             {{#if isOwn}}
                 <span class="message__status">{{message.status}}</span>
             {{/if}}
