@@ -71,6 +71,7 @@ export class SearchForm extends BaseForm<SearchFormProps> {
                 } else {
                     this.deleteButton?.unmount();
                 }
+                this.props.onSearch?.(this.input!.value);
             },
         });
         this.input.mount(searchPanel as HTMLElement);
@@ -81,6 +82,7 @@ export class SearchForm extends BaseForm<SearchFormProps> {
             onClick: () => {
                 this.input.value = "";
                 this.deleteButton?.unmount();
+                this.props.onSearch?.("");
             },
         });
         if (this.input.value !== "") {

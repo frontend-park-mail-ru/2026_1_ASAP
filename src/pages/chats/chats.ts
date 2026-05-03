@@ -80,6 +80,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private hasMoreHistory: boolean = false;
     private nextBeforeId: number | null = null;
     private currentUserProfile: FrontendProfile | null = null;
+    private searchDebounce: ReturnType<typeof setTimeout> | null = null;
+    private searchRequestId = 0;
 
     /** ID текущего запроса истории (используется для защиты от гонок). */
     private historyRequestId = 0;
@@ -306,6 +308,12 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         this.activeMessageInput = null;
         this.activeChannelRole = null;
 
+        if (this.searchDebounce !== null) {
+            clearTimeout(this.searchDebounce);
+            this.searchDebounce = null;
+        }
+        this.searchRequestId += 1;
+
         if (this.messageSearchBar) {
             this.messageSearchBar.unmount();
             this.messageSearchBar = null;
@@ -340,6 +348,27 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         }
         this.closeModal();
     }
+
+    private async runChatSearch(query: string) {
+        this.searchRequestId += 1;
+        const myId = this.searchRequestId;
+        const result = await chatService.searchChats(query);
+        if (myId !== this.searchRequestId) return;
+        if (!result) return;
+        this.chatWrapper?.showSearchResults(result.items);
+    };
+
+    private handleSearchInput = (query: string): void => {
+        if (this.searchDebounce !== null) clearTimeout(this.searchDebounce);
+
+        if (!query.trim()) {
+            this.searchRequestId += 1;
+            this.chatWrapper?.restoreChatList();
+            return;
+        }
+
+        this.searchDebounce = setTimeout(() => this.runChatSearch(query), 300);
+    };
 
     private mountOnboarding(obKey: string): void {
         if (!this.element || this.onboardingComponent) return;
@@ -481,7 +510,10 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
         sidebar.innerHTML = '';
 
-        this.searchForm = new SearchForm({ router: this.props.router });
+        this.searchForm = new SearchForm({ 
+            router: this.props.router,
+            onSearch: this.handleSearchInput,
+         });
         this.searchForm.mount(sidebar as HTMLElement);
 
         this.chatWrapper = new ChatListWrapper({ 
