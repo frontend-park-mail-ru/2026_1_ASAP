@@ -1,8 +1,4 @@
 <div class="meta-chat-info">
-    {{#if lastMessageTime}}
-        <div class="meta-chat-info__time">{{lastMessageTime}}</div>
-    {{/if}}
-    {{#if unreadCount}}
-        <div class="meta-chat-info__unread-count">{{unreadCount}}</div>
-    {{/if}}
+    <div class="meta-chat-info__time">{{lastMessageTime}}</div>
+    <div class="meta-chat-info__unread-count" {{#unless unreadCount}}style="display:none"{{/unless}}>{{unreadCount}}</div>
 </div>
