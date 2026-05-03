@@ -826,9 +826,13 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 });
                 break;
 
-            case 'group':
+            case 'group': {
+                const groupRole = (this.currentUserId !== null && (chatDetail as GroupChat).owner_id === this.currentUserId)
+                    ? 'owner' : 'member';
+                (chatDetail as GroupChat).currentUserRole = groupRole;
                 headerComponent = new GroupHeader({
                     chat: chatDetail as GroupChat,
+                    currentUserRole: groupRole,
                     onOpenSearch: () => this.toggleMessageSearch(chatDetail),
                     onDeleteChat: async () => {
                         const res = await chatService.deleteChat(chatId);
@@ -846,9 +850,20 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                             });
                         }
                     },
+                    onLeaveGroup: async () => {
+                        const res = await chatService.leaveChat(Number(chatId));
+                        if (res.success) {
+                            this.activeChatId = null;
+                            this.rebuildSidebar();
+                            this.props.router.navigate('/chats');
+                        } else {
+                            this.showAlert("Не удалось выйти из группы");
+                        }
+                    },
                     onOpenGroupInfo: () => this.openGroupDetails(chatDetail as GroupChat)
                 });
                 break;
+            }
 
             case 'channel': {
                 if (this.currentUserId === null) return;
@@ -1122,14 +1137,13 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             avatarUrl: p.mainInfo.avatarUrl || '/assets/images/avatars/defaultAvatar.svg'
         }));
 
-        const myId = await contactService.getMyId();
-
+        const groupDetailsRole = (this.currentUserId !== null && chat.owner_id === this.currentUserId)
+            ? 'owner' : 'member';
         this.groupDetailsWindow = new GroupDetailsWindow({
             groupId: chat.id,
             groupName: chat.title,
             groupAvatarUrl: chat.avatarUrl || '/assets/images/avatars/defaultAvatar.svg',
-            // Оставляем owner, чтобы кнопки были доступны; сервер проверит права при действии
-            currentUserRole: 'owner',
+            currentUserRole: groupDetailsRole,
             members: members,
             initialIsEditing: initialIsEditing,
             onBack: () => {

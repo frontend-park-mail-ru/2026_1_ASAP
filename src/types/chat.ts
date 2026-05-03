@@ -111,6 +111,8 @@ export interface GroupChat extends BaseChat {
     members: User[];
     owner: User;
     description?: string;
+    owner_id?: number;
+    currentUserRole?: 'owner' | 'member';
 }
 
 /**
