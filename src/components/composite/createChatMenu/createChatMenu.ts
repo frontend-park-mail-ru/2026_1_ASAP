@@ -16,8 +16,7 @@ import { replayAnimation } from "../../../core/utils/replayAnimation";
 interface createChatMenuProps extends IBaseComponentProps {
     onCreateDialog: () => void;
     onCreateGroup: () => void;
-    onCreateChannel: () => void; // пока не используется
-    onContact: () => void;
+    onCreateChannel: () => void;
     onClose: () => void;
 }
 
@@ -34,9 +33,8 @@ interface createChatMenuProps extends IBaseComponentProps {
  */
 export class CreateChatMenu extends BaseComponent<createChatMenuProps> {
     private dialogButton: Button | null = null;
-    private groupButton: Button | null = null
+    private groupButton: Button | null = null;
     private channelButton: Button | null = null;
-    private contactButton: Button | null = null;
     private overlay: HTMLElement | null = null;
 
     private hoverHandlers: Array<{ el: HTMLElement; enter: () => void; leave: () => void }> = [];
@@ -89,18 +87,10 @@ export class CreateChatMenu extends BaseComponent<createChatMenuProps> {
             class: "create-chat-menu__add-button",
             onClick: this.props.onCreateChannel,
             icon: "/assets/images/icons/createChatMenuIcons/channel.svg",
-        })
+        });
         this.channelButton.mount(buttonsContainer as HTMLElement);
 
-        this.contactButton = new Button({
-            label: "Добавить контакт",
-            class: "create-chat-menu__add-button",
-            onClick: this.props.onContact,
-            icon: "/assets/images/icons/createChatMenuIcons/contact.svg"
-        });
-        this.contactButton.mount(buttonsContainer as HTMLElement);
-
-        [this.dialogButton, this.groupButton, this.channelButton, this.contactButton].forEach(btn => {
+        [this.dialogButton, this.groupButton, this.channelButton].forEach(btn => {
             const el = btn?.element;
             const img = el?.querySelector('img') as HTMLImageElement | null;
             if (!el || !img) return;
@@ -136,7 +126,6 @@ export class CreateChatMenu extends BaseComponent<createChatMenuProps> {
         this.dialogButton.unmount();
         this.groupButton.unmount();
         this.channelButton.unmount();
-        this.contactButton?.unmount();
         this.overlay.removeEventListener("click", this.handleOverlayClick);
     }
 }

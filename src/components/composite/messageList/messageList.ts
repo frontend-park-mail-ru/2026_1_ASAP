@@ -16,6 +16,7 @@ interface MessageListProps {
     messages: FrontendMessage[];
     currentUser: User;
     chatType: Chat['type'];
+    chatAvatarUrl?: string;
     onLoadMore?: () => Promise<void>;
     onRequestEdit?: (messageId: string, currentText: string) => void;
     onRequestDelete?: (messageId: string) => void;
@@ -174,9 +175,10 @@ export class MessageList extends BaseComponent {
                 msgData.sender.avatarUrl = this.props.currentUser.avatarUrl;
             }
             const messageComponent = new Message({
-                message: msgData, 
+                message: msgData,
                 isOwn: msgData.isOwn || false,
                 showAuthor: showAuthor,
+                chatAvatarUrl: this.props.chatAvatarUrl,
                 onEdit: (id) => this.props.onRequestEdit?.(id, msgData.text),
                 onDelete: (id) => this.props.onRequestDelete?.(id),
             });
@@ -204,10 +206,11 @@ export class MessageList extends BaseComponent {
         const showAuthor = this.props.chatType === 'group';
 
         messages.forEach(msgData => {
-            const comp = new Message({ 
-                message: msgData, 
-                isOwn: msgData.isOwn || false, 
+            const comp = new Message({
+                message: msgData,
+                isOwn: msgData.isOwn || false,
                 showAuthor,
+                chatAvatarUrl: this.props.chatAvatarUrl,
                 onEdit: (id) => this.props.onRequestEdit?.(id, msgData.text),
                 onDelete: (id) => this.props.onRequestDelete?.(id),
             });
@@ -245,9 +248,10 @@ export class MessageList extends BaseComponent {
             newMessage.sender.avatarUrl = this.props.currentUser.avatarUrl;
         }
         const messageComponent = new Message({
-            message: newMessage, 
+            message: newMessage,
             isOwn: newMessage.isOwn || false,
             showAuthor: showAuthor,
+            chatAvatarUrl: this.props.chatAvatarUrl,
             onEdit: (id) => this.props.onRequestEdit?.(id, newMessage.text),
             onDelete: (id) => this.props.onRequestDelete?.(id),
         });

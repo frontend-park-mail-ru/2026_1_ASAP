@@ -16,7 +16,9 @@ import { getFullUrl } from '../../../core/utils/url';
 
 interface GroupHeaderProps extends IBaseComponentProps {
     chat: GroupChat;
+    currentUserRole: 'owner' | 'member';
     onDeleteChat?: () => void;
+    onLeaveGroup?: () => void;
     onOpenGroupInfo?: () => void;
     onOpenSearch?: () => void;
 }
@@ -81,15 +83,24 @@ export class GroupHeader extends BaseComponent<GroupHeaderProps> {
                 onClick: () => {
                     if (!this.isDeleteMenuOpen) {
                         console.log("Открытие меню настроек диалога");
+                        const isOwner = this.props.currentUserRole === 'owner';
                         this.deleteChatMenu = new DeleteChatMenu({
                             typeChat: "group",
+                            deleteLabel: isOwner ? "Удалить группу" : "Выйти из группы",
                             onInfo: () => {
                                 this.openInfo();
                                 this.deleteChatMenu?.unmount();
                                 this.isDeleteMenuOpen = false;
                             },
                             onDelete: () => {
-                                this.openDeleteMenu();
+                                this.deleteChatMenu?.unmount();
+                                this.deleteChatMenu = null;
+                                this.isDeleteMenuOpen = false;
+                                if (isOwner) {
+                                    this.openDeleteMenu();
+                                } else {
+                                    this.props.onLeaveGroup?.();
+                                }
                             },
                             onClose: () => {
                                 this.isDeleteMenuOpen = false;

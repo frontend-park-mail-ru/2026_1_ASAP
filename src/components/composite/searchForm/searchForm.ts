@@ -13,9 +13,9 @@ interface SearchFormProps extends IBaseFormProps {
     router?: Router;
     hideAddButton?: boolean;
     class?: string;
-    onSearch?: (query: string) => void; // для поиска
-    onAddClick?: () => void; // для открытия меню создания контакта
-}   
+    onSearch?: (query: string) => void;
+    onAddClick?: () => void;
+}
 
 /**
  * Панель поиска с полем ввода, иконкой поиска и кнопкой добавления.
@@ -28,7 +28,6 @@ export class SearchForm extends BaseForm<SearchFormProps> {
     private addButtonImg: HTMLImageElement | null = null;
     private createChatMenu: CreateChatMenu | null = null;
     private isMenuOpen: boolean = false;
-    private contactsSpinAnimEnd: (() => void) | null = null;
     private fabCloseAnimEnd: (() => void) | null = null;
 
     constructor(props: SearchFormProps = {}) {
@@ -97,21 +96,6 @@ export class SearchForm extends BaseForm<SearchFormProps> {
                 daughterClass: "add-icon",
                 onClick: () => {
                     if (this.props.onAddClick) {
-                        const img = this.addButtonImg;
-                        if (img) {
-                            if (this.contactsSpinAnimEnd) {
-                                img.removeEventListener('animationend', this.contactsSpinAnimEnd);
-                            }
-                            img.classList.remove('icon-anim--spin-open');
-                            void img.offsetWidth;
-                            img.classList.add('icon-anim--spin-open');
-
-                            this.contactsSpinAnimEnd = () => {
-                                img.classList.remove('icon-anim--spin-open');
-                                this.contactsSpinAnimEnd = null;
-                            };
-                            img.addEventListener('animationend', this.contactsSpinAnimEnd, { once: true });
-                        }
                         this.props.onAddClick();
                         return;
                     }
@@ -136,11 +120,7 @@ export class SearchForm extends BaseForm<SearchFormProps> {
                             onClose: () => {
                                 this.closeFabMenu();
                             },
-                            onContact: () => {
-                                this.props.router.navigate("/contacts/add");
-                                this.closeFabMenu();
-                            },
-                        })
+                        });
                         this.createChatMenu.mount(menuContainer as HTMLElement);
                     } else {
                         this.closeFabMenu();
@@ -150,6 +130,13 @@ export class SearchForm extends BaseForm<SearchFormProps> {
             this.addButton.mount(addButtonContainer as HTMLElement);
             this.addButtonImg = this.addButton.element?.querySelector('img') ?? null;
         }
+    }
+
+    public focusInput(): void {
+        const el = this.input?.element;
+        if (!el) return;
+        const inputEl = (el.tagName === 'INPUT' ? el : el.querySelector('input')) as HTMLInputElement | null;
+        inputEl?.focus();
     }
 
     private animateFab(direction: 'open' | 'close'): void {

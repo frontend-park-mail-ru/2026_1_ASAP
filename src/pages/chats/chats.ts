@@ -90,6 +90,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
     /** ID текущего запроса истории (используется для защиты от гонок). */
     private historyRequestId = 0;
+    /** ID текущего вызова openChat (защита от race condition при быстром переключении чатов). */
+    private openChatRequestId = 0;
 
     /**
      * Ссылка на активный MessageList-компонент.
@@ -770,10 +772,13 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private async openChat(chatId: string): Promise<void> {
         if (!this.mainContentArea) return;
 
+        const reqId = ++this.openChatRequestId;
+        const isCancelled = () => reqId !== this.openChatRequestId || this.activeChatId !== chatId;
+
         try {
             const chatDetail = await chatService.getChatDetail(chatId);
 
-            if (this.activeChatId !== chatId) {
+            if (isCancelled()) {
                 return;
             }
             if (!chatDetail) {
@@ -790,12 +795,15 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             switch (chatDetail.type) {
             case 'dialog':
                 const members = await chatService.getChatMembers(chatId);
+                if (isCancelled()) return;
                 const myId = await contactService.getMyId();
+                if (isCancelled()) return;
                 const interlocutorId = members.find(id => id !== myId) || members[0] || 0;
-                
+
                 (chatDetail as DialogChat).interlocutor.id = interlocutorId;
 
                 const interlocutorProfile = await contactService.getProfileInfo(interlocutorId);
+                if (isCancelled()) return;
                 const interlocutorLogin = interlocutorProfile?.additionalInfo?.login || String(interlocutorId);
 
                 headerComponent = new DialogHeader({
@@ -818,9 +826,13 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 });
                 break;
 
-            case 'group':
+            case 'group': {
+                const groupRole = (this.currentUserId !== null && (chatDetail as GroupChat).owner_id === this.currentUserId)
+                    ? 'owner' : 'member';
+                (chatDetail as GroupChat).currentUserRole = groupRole;
                 headerComponent = new GroupHeader({
                     chat: chatDetail as GroupChat,
+                    currentUserRole: groupRole,
                     onOpenSearch: () => this.toggleMessageSearch(chatDetail),
                     onDeleteChat: async () => {
                         const res = await chatService.deleteChat(chatId);
@@ -838,13 +850,25 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                             });
                         }
                     },
+                    onLeaveGroup: async () => {
+                        const res = await chatService.leaveChat(Number(chatId));
+                        if (res.success) {
+                            this.activeChatId = null;
+                            this.rebuildSidebar();
+                            this.props.router.navigate('/chats');
+                        } else {
+                            this.showAlert("Не удалось выйти из группы");
+                        }
+                    },
                     onOpenGroupInfo: () => this.openGroupDetails(chatDetail as GroupChat)
                 });
                 break;
+            }
 
             case 'channel': {
                 if (this.currentUserId === null) return;
                 const channelDetail = await channelService.getChannel(chatId, this.currentUserId);
+                if (isCancelled()) return;
                 if (!channelDetail) {
                     this.props.router.navigate('/chats');
                     return;
@@ -900,6 +924,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 avatarUrl: this.currentUserProfile?.mainInfo.avatarUrl
             },
             chatType: chatDetail.type,
+            chatAvatarUrl: chatDetail.type === 'channel' ? (chatDetail.avatarUrl || undefined) : undefined,
             onLoadMore: async () => {
                 if (!this.hasMoreHistory || !this.nextBeforeId || !this.currentUserId || !this.activeChatId) return;
 
@@ -970,6 +995,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     onJoin: () => this.handleJoinChannel(chatId),
                 });
             }
+
+            if (isCancelled()) return;
 
             this.chatWindow = new ChatWindow({
                 headerComponent: headerComponent,
@@ -1110,14 +1137,13 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             avatarUrl: p.mainInfo.avatarUrl || '/assets/images/avatars/defaultAvatar.svg'
         }));
 
-        const myId = await contactService.getMyId();
-
+        const groupDetailsRole = (this.currentUserId !== null && chat.owner_id === this.currentUserId)
+            ? 'owner' : 'member';
         this.groupDetailsWindow = new GroupDetailsWindow({
             groupId: chat.id,
             groupName: chat.title,
             groupAvatarUrl: chat.avatarUrl || '/assets/images/avatars/defaultAvatar.svg',
-            // Оставляем owner, чтобы кнопки были доступны; сервер проверит права при действии
-            currentUserRole: 'owner',
+            currentUserRole: groupDetailsRole,
             members: members,
             initialIsEditing: initialIsEditing,
             onBack: () => {

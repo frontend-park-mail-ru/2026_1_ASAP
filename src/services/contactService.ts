@@ -415,9 +415,9 @@ export class ContactService {
             const response = await httpClient.request(`${BASE_URL}/api/v1/contacts`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     contact_user_id: id,
-                    first_name: login,
+                    first_name: "",
                     last_name: ""
                 })
             });
