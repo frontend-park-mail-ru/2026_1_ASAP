@@ -48,7 +48,7 @@ export class Router {
         const path = window.location.pathname;
 
         const isAuth = await authService.checkAuth();
-        const isProtectedRoute = protectedRoutes.some(route => path.startsWith(route));
+        const isProtectedRoute = protectedRoutes.some(route => path === route || path.startsWith(route + '/'));
         const isOffline = !navigator.onLine;
 
         if (isProtectedRoute && !isAuth && !isOffline) {
@@ -83,11 +83,13 @@ export class Router {
         } else if (path.startsWith('/admin') || path === '/admin') {
             PageClass = this.routes['/admin'];
         } else {
-            PageClass = this.routes[path] || this.routes['/'];
+            PageClass = this.routes[path] ?? null;
         }
 
         if (PageClass) {
             await this.pageManager.open(PageClass, { currentPath: path });
+        } else {
+            this.navigate(isAuth ? '/chats' : '/login');
         }
     }
 
