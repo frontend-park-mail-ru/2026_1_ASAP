@@ -18,7 +18,7 @@
     &__mobile-back {
         display: none;
         position: absolute;
-        top: calc(8px + env(safe-area-inset-top, 0px));
+        top: calc(16px + env(safe-area-inset-top, 0px));
         left: max(8px, env(safe-area-inset-left, 0px));
         z-index: 5;
         align-items: center;
