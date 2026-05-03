@@ -6,7 +6,7 @@ import { Router } from '../../../core/router';
 import { wsClient, MessageDto, ChatInformationDto } from '../../../core/utils/wsClient';
 import { contactService } from "../../../services/contactService";
 import template from "./chatListItem.hbs";
-import { Chat, User } from "../../../types/chat";
+import { Chat, FrontendMessage, User } from "../../../types/chat";
 import { SearchChatHit } from "../../../types/search";
 
 
@@ -202,6 +202,14 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
             item.mount(this.element!);
             this.chatItems.push(item);
         });
+    }
+
+    public updateChatLastMessage(chatId: string, lastMessage: FrontendMessage | undefined): void {
+        const target = this.chatItems.find(item => String(item.props.chat.id) === chatId);
+        if (!target) return;
+        const updatedChat = { ...target.props.chat };
+        updatedChat.lastMessage = lastMessage;
+        target.update(updatedChat);
     }
 
     private hitToChat(hit: SearchChatHit): Chat {

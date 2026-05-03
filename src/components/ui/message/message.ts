@@ -26,6 +26,10 @@ interface MessageProps extends IBaseComponentProps {
  * Компонент для отображения одного сообщения в диалоге.
  */
 export class Message extends BaseComponent<MessageProps> {
+    private longPressTimer: ReturnType<typeof setTimeout> | null = null;
+    private touchStartX = 0;
+    private touchStartY = 0;
+
     /**
      * @param {MessageProps} props - Свойства компонента.
      */
@@ -43,6 +47,37 @@ export class Message extends BaseComponent<MessageProps> {
 
     private avatarComponent: Avatar | null = null;
     private editMsgOverlay: EditMsgOverlay | null = null;
+
+    private readonly handleTouchStart = (e: TouchEvent): void => {
+        if (e.touches.length !== 1) return;
+        const t = e.touches[0];
+        this.touchStartX = t.clientX;
+        this.touchStartY = t.clientY;
+
+        this.longPressTimer = setTimeout(() => {
+            if (!/^\d+$/.test(this.getId())) return;
+            if (!this.props.isOwn) return;
+            this.openEditOverlay();
+        }, 500);
+    };
+
+    private readonly handleTouchMove = (e: TouchEvent): void => {
+        if (!this.longPressTimer || e.touches.length !== 1) return;
+        const t = e.touches[0];
+        const dx = Math.abs(t.clientX - this.touchStartX);
+        const dy = Math.abs(t.clientY - this.touchStartY);
+        if (dx > 8 || dy > 8) {
+            clearTimeout(this.longPressTimer);
+            this.longPressTimer = null;
+        }
+    }
+
+    private readonly handleTouchEnd = (): void => {
+        if (this.longPressTimer) {
+            clearTimeout(this.longPressTimer);
+            this.longPressTimer = null;
+        }
+    }
 
     public getId(): string {
         return this.props.message.id;
@@ -206,6 +241,10 @@ export class Message extends BaseComponent<MessageProps> {
         }
         this.props.senderName = this.getSenderDisplayName(this.props.message.sender);
         this.element!.addEventListener('contextmenu', this.handleRightClick);
+        this.element!.addEventListener('touchstart', this.handleTouchStart, { passive: true });
+        this.element!.addEventListener('touchmove', this.handleTouchMove, { passive: true });
+        this.element!.addEventListener('touchend', this.handleTouchEnd);
+        this.element!.addEventListener('touchcancel', this.handleTouchEnd);
 
         if (this.props.isOwn) {
             return;
@@ -238,6 +277,11 @@ export class Message extends BaseComponent<MessageProps> {
      */
     protected beforeUnmount(): void {
         this.element!.removeEventListener('contextmenu', this.handleRightClick);
+        this.element!.removeEventListener('touchstart', this.handleTouchStart);
+        this.element!.removeEventListener('touchmove', this.handleTouchMove);
+        this.element!.removeEventListener('touchend', this.handleTouchEnd);
+        this.element!.removeEventListener('touchcancel', this.handleTouchEnd);
+        if (this.longPressTimer) clearTimeout(this.longPressTimer);
         this.closeEditOverlay();
     }
 }
