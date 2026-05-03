@@ -13,10 +13,12 @@ interface GroupHeaderProps extends IBaseComponentProps {
     chat: GroupChat;
     onDeleteChat?: () => void;
     onOpenGroupInfo?: () => void;
+    onOpenSearch?: () => void;
 }
 
 export class GroupHeader extends BaseComponent<GroupHeaderProps> {
     private avatarComponent: Avatar | null = null;
+    private searchButton: Button | null = null;
     private settingsButton: Button | null = null;
     private deleteChatMenu: DeleteChatMenu | null = null;
     private confirmModal: ConfirmModal | null = null;
@@ -51,6 +53,17 @@ export class GroupHeader extends BaseComponent<GroupHeaderProps> {
                 class: 'group-header__avatar',
             });
             this.avatarComponent.mount(avatarSlot as HTMLElement);
+        }
+
+        const searchSlot = this.element.querySelector('[data-component="group-search-slot"]');
+        if (searchSlot) {
+            this.searchButton = new Button({
+                class: 'group-header__search-btn',
+                icon: '/assets/images/icons/searchIcon.svg',
+                title: 'Поиск',
+                onClick: () => this.props.onOpenSearch?.(),
+            });
+            this.searchButton.mount(searchSlot as HTMLElement);
         }
 
         const settingsSlot = this.element.querySelector('[data-component="group-settings-slot"]');
@@ -193,10 +206,11 @@ export class GroupHeader extends BaseComponent<GroupHeaderProps> {
 
     protected beforeUnmount(): void {
         this.avatarComponent?.unmount();
+        this.searchButton?.unmount();
         this.settingsButton?.unmount();
         this.deleteChatMenu?.unmount();
         this.confirmModal?.unmount();
 
         wsClient.unsubscribe('chat.Updated', this.handleChatUpdated);
-    }   
+    }
 }

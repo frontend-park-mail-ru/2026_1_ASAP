@@ -28,6 +28,7 @@ import { contactService } from "../../services/contactService";
 import { ConfirmModal } from "../../components/composite/confirmModal/confirmModal";
 import { wsClient, MessageDto } from "../../core/utils/wsClient";
 import { offlineQueue } from "../../services/offlineMessageQueue";
+import { MessageSearchBar } from "../../components/composite/messageSearchBar/messageSearchBar";
 
 
 /**
@@ -72,12 +73,18 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private onboardingComponent: OnboardingEmpty | null = null;
     
     public activeChatId: string | null = null;
+    private messageSearchBar: MessageSearchBar | null = null;
     private mainContentArea: HTMLElement | null = null;
     private placeholderElement: HTMLElement | null = null;
     private currentUserId: number | null = null;
     private hasMoreHistory: boolean = false;
     private nextBeforeId: number | null = null;
     private currentUserProfile: FrontendProfile | null = null;
+    private searchDebounce: ReturnType<typeof setTimeout> | null = null;
+    private searchRequestId = 0;
+    private searchType: '' | 'group' | 'channel' = '';
+    private searchTabsEl: HTMLElement | null = null;
+    private currentQuery: string = '';
 
     /** ID текущего запроса истории (используется для защиты от гонок). */
     private historyRequestId = 0;
@@ -96,6 +103,10 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      */
     private handleKeyDown = (event: KeyboardEvent): void => {
         if (event.key === 'Escape') {
+            if (this.messageSearchBar) {
+                this.closeMessageSearch();
+                return;
+            }
             if (this.activeChatId || this.createChatWindow || this.groupDetailsWindow || this.channelDetailsWindow || this.addMemberWindow) {
                 this.props.router.navigate('/chats');
             }
@@ -129,6 +140,12 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         if (!this.activeChatId || dto.chat_id.toString() !== this.activeChatId) return;
         if (!this.activeMessageList) return;
         this.activeMessageList.updateMessage(dto.id.toString(), dto.text);
+    };
+
+    private readonly handleMessageDeleted = (dto: MessageDto): void => {
+        if (!this.activeChatId || dto.chat_id.toString() !== this.activeChatId) return;
+        if (!this.activeMessageList) return;
+        this.activeMessageList.deleteMessage(dto.id.toString());
     };
 
     /**
@@ -232,12 +249,78 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * чтобы избежать наложения интерфейсов и утечек памяти.
      * @private
      */
+    private toggleMessageSearch(chat: Chat): void {
+        if (this.messageSearchBar) {
+            this.closeMessageSearch();
+        } else {
+            this.openMessageSearch(chat);
+        }
+    }
+
+    private openMessageSearch(chat: Chat): void {
+        if (!this.chatWindow?.element || this.currentUserId === null) return;
+        const slot = this.chatWindow.element.querySelector('[data-component="chat-search-slot"]');
+        if (!slot) return;
+
+        this.messageSearchBar = new MessageSearchBar({
+            chatId: chat.id,
+            chatType: chat.type,
+            currentUserId: this.currentUserId,
+            onClose: () => this.closeMessageSearch(),
+            onResults: (query) => {
+                this.activeMessageList?.setHighlightQuery(query);
+            },
+            onJumpTo: (messageId) => this.jumpToMessage(messageId),
+            getLoadedMessages: () => this.activeMessageList?.getLoadedMessages() ?? [],
+        });
+        this.messageSearchBar.mount(slot as HTMLElement);
+    }
+
+    private closeMessageSearch(): void {
+        this.messageSearchBar?.unmount();
+        this.messageSearchBar = null;
+        this.activeMessageList?.setHighlightQuery('');
+    }
+
+    private async jumpToMessage(messageId: string): Promise<void> {
+        if (!this.activeMessageList) return;
+
+        if (this.activeMessageList.scrollToMessage(messageId)) return;
+
+        let iterations = 0;
+        const MAX_ITERATIONS = 5;
+
+        while (iterations < MAX_ITERATIONS && this.hasMoreHistory && this.nextBeforeId && this.activeChatId && this.currentUserId) {
+            const res = await chatService.getMessages(this.activeChatId, this.currentUserId, this.nextBeforeId);
+            if (!res) break;
+
+            this.hasMoreHistory = res.hasMore;
+            this.nextBeforeId = res.nextBeforeId;
+            this.activeMessageList.prependMessages(res.messages);
+
+            if (this.activeMessageList.scrollToMessage(messageId)) return;
+            iterations++;
+        }
+    }
+
     private cleanupMainContent(): void {
         wsClient.unsubscribe('message.New', this.handleNewMessage);
         wsClient.unsubscribe('message.Update', this.handleMessageEdited);
+        wsClient.unsubscribe('message.Clear', this.handleMessageDeleted);
         this.activeMessageList = null;
         this.activeMessageInput = null;
         this.activeChannelRole = null;
+
+        if (this.searchDebounce !== null) {
+            clearTimeout(this.searchDebounce);
+            this.searchDebounce = null;
+        }
+        this.searchRequestId += 1;
+
+        if (this.messageSearchBar) {
+            this.messageSearchBar.unmount();
+            this.messageSearchBar = null;
+        }
 
         if (this.chatWindow) {
             this.chatWindow.unmount();
@@ -268,6 +351,57 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         }
         this.closeModal();
     }
+
+    private async runChatSearch(query: string): Promise<void> {
+        this.searchRequestId += 1;
+        const myId = this.searchRequestId;
+        const result = await chatService.searchChats(query, this.searchType);
+        if (myId !== this.searchRequestId) return;
+        if (!result) return;
+        this.chatWrapper?.showSearchResults(result.items);
+    }
+
+    private buildSearchTabs(): HTMLElement {
+        const wrap = document.createElement('div');
+        wrap.className = 'chats-search-tabs';
+        wrap.innerHTML = `
+            <button type="button" class="chats-search-tabs__btn chats-search-tabs__btn--active" data-type="">Чаты</button>
+            <button type="button" class="chats-search-tabs__btn" data-type="group">Группы</button>
+            <button type="button" class="chats-search-tabs__btn" data-type="channel">Каналы</button>
+        `;
+        wrap.style.display = 'none';
+        wrap.addEventListener('click', (e) => {
+            const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.chats-search-tabs__btn');
+            if (!btn) return;
+            const type = (btn.dataset.type ?? '') as '' | 'group' | 'channel';
+            if (type === this.searchType) return;
+            this.searchType = type;
+
+            wrap.querySelectorAll('.chats-search-tabs__btn').forEach(b =>
+                b.classList.toggle('chats-search-tabs__btn--active', b === btn)
+            );
+
+            if (this.currentQuery.trim()) {
+                this.runChatSearch(this.currentQuery);
+            }
+        });
+        return wrap;
+    }
+
+    private handleSearchInput = (query: string): void => {
+        if (this.searchDebounce !== null) clearTimeout(this.searchDebounce);
+        this.currentQuery = query;
+
+        if (!query.trim()) {
+            this.searchRequestId += 1;
+            if (this.searchTabsEl) this.searchTabsEl.style.display = 'none';
+            this.chatWrapper?.restoreChatList();
+            return;
+        }
+
+        if (this.searchTabsEl) this.searchTabsEl.style.display = 'flex';
+        this.searchDebounce = setTimeout(() => this.runChatSearch(query), 300);
+    };
 
     private mountOnboarding(obKey: string): void {
         if (!this.element || this.onboardingComponent) return;
@@ -409,8 +543,14 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
         sidebar.innerHTML = '';
 
-        this.searchForm = new SearchForm({ router: this.props.router });
+        this.searchForm = new SearchForm({ 
+            router: this.props.router,
+            onSearch: this.handleSearchInput,
+         });
         this.searchForm.mount(sidebar as HTMLElement);
+
+        this.searchTabsEl = this.buildSearchTabs();
+        sidebar.appendChild(this.searchTabsEl);
 
         this.chatWrapper = new ChatListWrapper({ 
             router: this.props.router,
@@ -620,9 +760,10 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 const interlocutorProfile = await contactService.getProfileInfo(interlocutorId);
                 const interlocutorLogin = interlocutorProfile?.additionalInfo?.login || String(interlocutorId);
 
-                headerComponent = new DialogHeader({ 
+                headerComponent = new DialogHeader({
                     chat: chatDetail as DialogChat,
                     onOpenProfile: () => this.props.router.navigate('/contacts/' + interlocutorLogin),
+                    onOpenSearch: () => this.toggleMessageSearch(chatDetail),
                     onDeleteChat: async() => {
                         const res = await chatService.deleteChat(chatId);
                         if (res.success) {
@@ -640,8 +781,9 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 break;
 
             case 'group':
-                headerComponent = new GroupHeader({ 
+                headerComponent = new GroupHeader({
                     chat: chatDetail as GroupChat,
+                    onOpenSearch: () => this.toggleMessageSearch(chatDetail),
                     onDeleteChat: async () => {
                         const res = await chatService.deleteChat(chatId);
                         if (res.success) {
@@ -706,6 +848,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                         }
                     },
                     onOpenChannelInfo: () => this.openChannelDetails(chatDetail as ChannelChat),
+                    onOpenSearch: () => this.toggleMessageSearch(chatDetail),
                 });
                 break;
             }
@@ -734,6 +877,13 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             },
             onRequestEdit: (messageId, currentText) => {
                 this.activeMessageInput?.enterEditMode(messageId, currentText);
+            },
+            onRequestDelete: (messageId) => {
+                if (!this.activeChatId) return;
+                const ok = chatService.deleteMessage(this.activeChatId, messageId);
+                if (!ok) {
+                    this.showAlert?.('No connection, try later');
+                }
             },
             });
 
@@ -794,6 +944,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             // Подписываемся на новые сообщения (соединение уже установлено в afterMount)
             wsClient.subscribe('message.New', this.handleNewMessage);
             wsClient.subscribe('message.Update', this.handleMessageEdited);
+            wsClient.subscribe('message.Clear', this.handleMessageDeleted);
 
             await this.loadHistory(chatId);
             if (canWriteActiveChat) {

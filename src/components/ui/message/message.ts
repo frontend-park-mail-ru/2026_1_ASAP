@@ -5,6 +5,7 @@ import { Avatar } from '../../ui/avatar/avatar';
 import { chatService } from "../../../services/chatService";
 import { User } from "../../../types/chat";
 import { EditMsgOverlay } from '../../composite/editMsgOverlay/editMsgOverlay';
+import { ConfirmModal } from "../../composite/confirmModal/confirmModal";
 
 /**
  * @interface MessageProps - Свойства компонента сообщения.
@@ -115,9 +116,39 @@ export class Message extends BaseComponent<MessageProps> {
 
     handleRightClick = (e: { preventDefault: () => void; }) => {
         e.preventDefault();
+        if (!/^\d+$/.test(this.getId())) return;
         if (!this.props.isOwn) return;
         this.openEditOverlay();
     };
+
+    public applyHighlight(query: string): void {
+        const textEl = this.element?.querySelector('.message__text');
+        if (!textEl) return;
+
+        const rawText = this.props.message.text;
+        textEl.textContent = '';
+
+        if (!query) {
+            textEl.textContent = rawText;
+            return;
+        }
+
+        const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`(${escapedQuery})`, 'gi');
+        const parts = rawText.split(regex);
+
+        parts.forEach(part => {
+            if (regex.test(part)) {
+                const mark = document.createElement('span');
+                mark.className = 'search-highlight';
+                mark.textContent = part;
+                textEl.appendChild(mark);
+            } else {
+                textEl.appendChild(document.createTextNode(part));
+            }
+            regex.lastIndex = 0;
+        });
+    }
 
     public updateText(newText: string, edited = true): void {
         this.props.message.text = newText;
@@ -129,6 +160,22 @@ export class Message extends BaseComponent<MessageProps> {
         }
     }
 
+    private handleDelete = () => {
+        const modal = new ConfirmModal({
+            text: "Вы уверены, что хотите удалить это сообщение у всех?",
+            confirmButtonText: "Удалить",
+            cancelButtonText: "Оставить",
+            onConfirm: () => {
+                this.props.onDelete(this.getId());
+                modal.unmount();
+            },
+            onCancel: () => {
+                modal.unmount();
+            }
+        });
+        modal.mount(document.body);
+    };
+
     private openEditOverlay(): void {
         if (!this.element) return;
         this.closeEditOverlay();
@@ -138,10 +185,7 @@ export class Message extends BaseComponent<MessageProps> {
                 this.props.onEdit?.(this.getId());
                 this.closeEditOverlay();
             },
-            onDelete: () => {
-                this.props.onDelete?.(this.getId());
-                this.closeEditOverlay();
-            },
+            onDelete: this.handleDelete,
             onClose: () => this.closeEditOverlay(),
         });
         this.editMsgOverlay.mount(document.body);

@@ -6,6 +6,8 @@ import { Router } from '../../../core/router';
 import { wsClient, MessageDto, ChatInformationDto } from '../../../core/utils/wsClient';
 import { contactService } from "../../../services/contactService";
 import template from "./chatListItem.hbs";
+import { Chat, User } from "../../../types/chat";
+import { SearchChatHit } from "../../../types/search";
 
 
 
@@ -35,6 +37,8 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
     private chatItems: ChatItem[] = [];
     private activeChatId: string | null = null;
     private emptyComponent: ChatListEmpty | null = null;
+    private originalChats: Chat[] = [];
+    private isSearchAlive: boolean = false;
 
     /**
      * Стрелочная функция-обработчик WS-события «message.New».
@@ -169,6 +173,67 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
         });
     }
 
+    private renderChats(chats: Chat[]): void {
+        if (!this.element) return;
+
+        this.chatItems.forEach(item => item.unmount());
+        this.chatItems = [];
+        this.emptyComponent?.unmount();
+        this.emptyComponent = null;
+
+        if (chats.length === 0) {
+            this.element.classList.add('chat-list--empty');
+            this.emptyComponent = new ChatListEmpty({
+                text: this.isSearchAlive ? "Ничего не найдено" : undefined,
+                iconAfter: this.isSearchAlive ? "/assets/images/icons/noResultsSearch.svg" : undefined,
+            });
+            this.emptyComponent.mount(this.element);
+            return;
+        }
+
+        this.element.classList.remove('chat-list--empty');
+
+        chats.forEach(chat => {
+            const item = new ChatItem({
+                class: (chat.id === this.activeChatId) ? 'chat-item--selected' : 'chat-item--default',
+                chat: chat,
+                onClick: (clickedItem: ChatItem) => this.handleChatClick(clickedItem),
+            });
+            item.mount(this.element!);
+            this.chatItems.push(item);
+        });
+    }
+
+    private hitToChat(hit: SearchChatHit): Chat {
+        const lastMessage = hit.lastMessagePreview ? {
+            id: '',
+            text: hit.lastMessagePreview,
+            timestamp: hit.lastMessageAt ?? new Date(),
+            sender: { id: 0 } as User,
+            isOwn: false,
+        } : undefined;
+
+        return {
+            id: hit.chatId,
+            title: hit.title,
+            type: hit.type,
+            avatarUrl: hit.avatarUrl,
+            unreadCount: hit.unreadCount,
+            lastMessage
+        } as unknown as Chat;
+    }
+
+    public showSearchResults(hits: SearchChatHit[]): void {
+        this.isSearchAlive = true;
+        const chats = hits.map(hit => this.hitToChat(hit));
+        this.renderChats(chats);
+    };
+
+    public restoreChatList(): void {
+        this.isSearchAlive = false;
+        this.renderChats(this.originalChats);
+    };
+
     /**
      * Выполняется после монтирования компонента.
      * Загружает список чатов с помощью `chatService`, создает и монтирует
@@ -188,29 +253,14 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
                 return;
             }
 
-            if (chats.length === 0) {
-                this.element.classList.add('chat-list--empty');
-                this.emptyComponent = new ChatListEmpty({});
-                this.emptyComponent.mount(this.element);
-                return;
-            }
-
             chats.sort((a, b) => {
                 const timeA = a.lastMessage?.timestamp ? a.lastMessage.timestamp.getTime() : 0;
                 const timeB = b.lastMessage?.timestamp ? b.lastMessage.timestamp.getTime() : 0;
                 return timeB - timeA;
             });
 
-            chats.forEach(chat => {
-                const item = new ChatItem({
-                    class: (chat.id === this.activeChatId) ? 'chat-item--selected' : 'chat-item--default',
-                    chat: chat,
-                    onClick: (clickedItem: ChatItem) => this.handleChatClick(clickedItem)
-                });
-
-                item.mount(this.element!);
-                this.chatItems.push(item);
-            });
+            this.originalChats = chats;
+            this.renderChats(chats);
         });
 
         wsClient.subscribe<ChatInformationDto>('chat.New', this.handleChatNew);

@@ -25,8 +25,8 @@
     &__mobile-back {
         display: none;
         position: absolute;
-        top: calc(8px + env(safe-area-inset-top, 0px));
-        left: max(8px, env(safe-area-inset-left, 0px));
+        top: calc(16px + env(safe-area-inset-top, 0px));
+        left: max(13px, env(safe-area-inset-left, 0px));
         z-index: 5;
         align-items: center;
         justify-content: center;
@@ -34,9 +34,9 @@
         height: 44px;
         padding: 0;
         margin: 0;
-        border: none;
+        border: 1px solid $color-stroke;
         border-radius: 10px;
-        background: rgba(6, 5, 5, 0.55);
+        background: transparent;
         color: $color-text;
         font-size: 22px;
         line-height: 1;
@@ -50,7 +50,7 @@
         }
 
         &:hover {
-            background: rgba(6, 5, 5, 0.75);
+            background: $color-text-hover2;
         }
     }
 
@@ -126,4 +126,34 @@
     line-height: normal;
     color: $color-text;
     
+}
+
+.contacts-search-tabs {
+    display: flex;
+    flex-direction: row;
+    gap: 18px;
+    padding: 4px 16px 10px;
+
+    &__btn {
+        background: transparent;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        color: $color-text-hover;
+        border-bottom: 2px solid transparent; 
+        padding: 0 0 5px; 
+        font: $text-tertiary;
+        letter-spacing: $text-tertiary-ls;
+        @include hover-transition;
+
+        &:hover:not(&--active) {
+            color: $color-text;
+        }
+
+        &--active {
+            color: $color-text;
+            font-weight: 600;
+            border-bottom: 2px solid $color-bubble;
+        }
+    }
 }

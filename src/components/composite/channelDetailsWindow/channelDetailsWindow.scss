@@ -223,6 +223,8 @@
     }
 
     &__members-title {
+        font: $text-tertiary;
+        color: $color-text;
         margin: 0;
         font-weight: 500;
     }

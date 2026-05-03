@@ -16,6 +16,7 @@ interface ChannelHeaderProps extends IBaseComponentProps {
     onDeleteChat?: () => void;
     onLeaveChannel?: () => void;
     onOpenChannelInfo?: () => void;
+    onOpenSearch?: () => void;
 }
 
 export class ChannelHeader extends BaseComponent<ChannelHeaderProps> {
@@ -61,7 +62,7 @@ export class ChannelHeader extends BaseComponent<ChannelHeaderProps> {
                 class: 'channel-header__search-btn',
                 icon: '/assets/images/icons/searchIcon.svg',
                 title: 'Поиск',
-                onClick: () => {},
+                onClick: () => this.props.onOpenSearch?.(),
             });
             this.searchButton.mount(searchSlot as HTMLElement);
         }

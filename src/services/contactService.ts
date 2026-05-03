@@ -2,6 +2,7 @@ import { BackendContact, FrontendContact } from "../types/contact";
 import { BackendProfile, FrontendProfile, ProfileAdditionalInfo, ProfileMainInfo } from "../types/profile";
 import { httpClient } from "../core/utils/httpClient";
 import { sanitizeBioText } from "../utils/sanitizeBioText";
+import { SearchContactHit, SearchContactsResult } from '../types/search';
 
 import { BASE_URL } from '../core/utils/apiBase';
 
@@ -47,6 +48,7 @@ function formatLastSeen(date: Date): string {
     const dateStr = date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
     return `был(а) в сети в ${time} ${dateStr}`;
 }
+
 
 /**
  * @class ContactService
@@ -95,6 +97,44 @@ export class ContactService {
             }
         };
     };
+
+    public async searchContacts(
+        query: string,
+        scope: 'contacts' | 'local' = 'contacts',
+        beforeId: number | null = null,
+        limit = 20,
+    ): Promise<SearchContactsResult | null> {
+        const q = query.trim();
+        if (!q || [...q].length > 256) {
+            return { items: [], nextBeforeId: null };
+        }
+
+        try {
+            let url = `${BASE_URL}/api/v1/search/users?q=${encodeURIComponent(q)}&scope=${scope}&limit=${limit}`;
+            if (beforeId) url += `&before_id=${beforeId}`;
+
+            const response = await httpClient.request(url, { method: 'GET' });
+            if (!response.ok) return null;
+
+            const data = await response.json();
+            if (data.status !== 'success' || !data.body) return null;
+
+            const items: SearchContactHit[] = (data.body.items || []).map((c: any) => ({
+                userId: Number(c.user_id),
+                displayName: c.display_name || '',
+                login: c.login ?? undefined,
+                avatarUrl: c.avatar_url ?? undefined,
+                isOnline: Boolean(c.is_online),
+                lastSeenAt: c.last_seen_at ? new Date(c.last_seen_at) : undefined,
+            }));
+
+            const nextBeforeId = data.body.next_before_id ? Number(data.body.next_before_id) : null;
+            return { items, nextBeforeId };
+        } catch (e) {
+            console.warn('searchContacts failed', e);
+            return null;
+        }
+    }
 
     private saveToCache(profile: FrontendProfile): void {
         try {

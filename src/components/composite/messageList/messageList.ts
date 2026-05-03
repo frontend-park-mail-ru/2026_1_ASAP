@@ -18,6 +18,7 @@ interface MessageListProps {
     chatType: Chat['type'];
     onLoadMore?: () => Promise<void>;
     onRequestEdit?: (messageId: string, currentText: string) => void;
+    onRequestDelete?: (messageId: string) => void;
 }
 
 /**
@@ -29,6 +30,8 @@ export class MessageList extends BaseComponent {
     private emptyStateElement: HTMLElement | null = null;
     private isLoadingMore = false;
     private messages: Map<string, Message> = new Map();
+    private currentHighlightQuery = '';
+    private selectedMessageEl: HTMLElement | null = null;
 
     /**
      * @param {MessageListProps} props - Свойства компонента.
@@ -62,6 +65,22 @@ export class MessageList extends BaseComponent {
         if (!msg) return false;
 
         msg.updateText(text, true);
+        return true;
+    }
+
+    public deleteMessage(id: string): boolean {
+        const msg = this.messages.get(id);
+        if (!msg) return false;
+
+        msg.unmount();
+        this.messages.delete(id);
+        this.childMessages = this.childMessages.filter(m => m !== msg);
+
+        if (this.childMessages.length === 0) {
+            if (this.emptyStateElement) this.emptyStateElement.style.display = 'flex';
+            if (this.flexContainer) this.flexContainer.style.display = 'none';
+        }
+
         return true;
     }
 
@@ -141,12 +160,14 @@ export class MessageList extends BaseComponent {
                 isOwn: msgData.isOwn || false,
                 showAuthor: showAuthor,
                 onEdit: (id) => this.props.onRequestEdit?.(id, msgData.text),
+                onDelete: (id) => this.props.onRequestDelete?.(id),
             });
             messageComponent.mount(this.flexContainer!);
             this.messages.set(msgData.id, messageComponent);
             if (messageComponent.element) {
                 this.flexContainer!.prepend(messageComponent.element);
             }
+            if (this.currentHighlightQuery) messageComponent.applyHighlight(this.currentHighlightQuery);
             this.childMessages.unshift(messageComponent);
         });
         this.scrollToBottom();
@@ -170,10 +191,12 @@ export class MessageList extends BaseComponent {
                 isOwn: msgData.isOwn || false, 
                 showAuthor,
                 onEdit: (id) => this.props.onRequestEdit?.(id, msgData.text),
+                onDelete: (id) => this.props.onRequestDelete?.(id),
             });
             const tempDiv = document.createElement('div');
             comp.mount(tempDiv);
             this.messages.set(msgData.id, comp)
+            if (this.currentHighlightQuery) comp.applyHighlight(this.currentHighlightQuery);
             if (comp.element) fragment.appendChild(comp.element);
             newComponents.push(comp);
         });
@@ -208,10 +231,12 @@ export class MessageList extends BaseComponent {
             isOwn: newMessage.isOwn || false,
             showAuthor: showAuthor,
             onEdit: (id) => this.props.onRequestEdit?.(id, newMessage.text),
+            onDelete: (id) => this.props.onRequestDelete?.(id),
         });
         
         // Новое сообщение всегда в начало DOM (визуальный низ)
         messageComponent.mount(this.flexContainer!);
+        if (this.currentHighlightQuery) messageComponent.applyHighlight(this.currentHighlightQuery);
         this.messages.set(newMessage.id, messageComponent);
         if (messageComponent.element) {
             this.flexContainer!.prepend(messageComponent.element);
@@ -225,6 +250,32 @@ export class MessageList extends BaseComponent {
      * Используется, чтобы при приходе серверного broadcast `message.New` не создавать дубликат DOM.
      * @returns true, если сообщение с `oldId` было найдено и обновлено.
      */
+    public getLoadedMessages(): FrontendMessage[] {
+        return Array.from(this.messages.values()).map(m => m.props.message);
+    }
+
+    public setHighlightQuery(query: string): void {
+        this.currentHighlightQuery = query;
+        this.childMessages.forEach(m => m.applyHighlight(query));
+        if (!query && this.selectedMessageEl) {
+            this.selectedMessageEl.classList.remove('message--flash');
+            this.selectedMessageEl = null;
+        }
+    }
+
+    public scrollToMessage(messageId: string): boolean {
+        const msg = this.messages.get(messageId);
+        if (!msg?.element) return false;
+
+        if (this.selectedMessageEl && this.selectedMessageEl !== msg.element) {
+            this.selectedMessageEl.classList.remove('message--flash');
+        }
+        this.selectedMessageEl = msg.element;
+        msg.element.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        msg.element.classList.add('message--flash');
+        return true;
+    }
+
     public replaceMessageId(oldId: string, newId: string, newTimestamp?: Date): boolean {
         const target = this.childMessages.find((m) => m.getId() === oldId);
         if (!target) return false;

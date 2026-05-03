@@ -42,6 +42,14 @@
     --color-auth-disabled: #d0d0d0;
     --color-input-placeholder: #9ca3af;
 
+    // search highlight (одинаково в обеих темах — зелёный акцент)
+    --search-highlight-bg: rgba(90, 138, 110, 0.55);
+    --search-highlight-text: #ffffff;
+
+    // search jump-to-message border (одинаково в обеих темах)
+    --color-search-selected-own: #8EC0A3;
+    --color-search-selected-other: #879FFF;
+
     // тёмная тема (default)
     --color-background: #0f102f;
     --color-neutral: rgba(19, 19, 19, 1);
@@ -152,6 +160,9 @@ $color-stroke2: var(--color-stroke2);
 $color-base-background: var(--color-base-background);
 $color-background-secondary: var(--color-background-secondary);
 $color-input-border: var(--color-input-border);
+
+$color-search-selected-own: var(--color-search-selected-own);
+$color-search-selected-other: var(--color-search-selected-other);
 
 
 // ═══════════ ГРАДИЕНТЫ ═══════════

@@ -46,7 +46,15 @@
         }
     }
 
-    &__settings {
+    &__actions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-shrink: 0;
+    }
+
+    &__settings,
+    &__search-btn {
         @include btn-reset;
         @include flex-center;
         flex-shrink: 0;
@@ -56,8 +64,8 @@
         @include hover-transition;
 
         img {
-            width: 34px;
-            height: 34px;
+            width: 22px;
+            height: 22px;
             display: block;
             object-fit: contain;
             pointer-events: none;
@@ -66,5 +74,10 @@
         &:hover {
             background-color: $color-text-hover2;
         }
+    }
+
+    &__settings img {
+        width: 34px;
+        height: 34px;
     }
 }

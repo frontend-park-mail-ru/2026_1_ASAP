@@ -1,4 +1,5 @@
 import { ChatDetail, FrontendMessage, User, DialogChat, GroupChat, ChannelChat, BackendChat, BackendMessage } from '../types/chat';
+import { SearchChatHit, SearchChatsResult, SearchMessageHit, SearchMessagesResult } from '../types/search';
 import { httpClient } from '../core/utils/httpClient';
 import { wsClient, MessageDto, ChatInformationDto } from '../core/utils/wsClient';
 import { getFullUrl } from '../core/utils/url';
@@ -157,6 +158,45 @@ export class ChatService {
         return pending;
     }
 
+    public async searchChats(
+        query: string,
+        type: '' | 'group' | 'channel' = '',
+        beforeId: number | null = null,
+        limit = 20,
+    ): Promise<SearchChatsResult | null> {
+        const q = query.trim();
+        if (!q || [...q].length > 256) {
+            return { items: [], nextBeforeId: null };
+        }
+
+        try {
+            let url = `${BASE_URL}/api/v1/search/chats?q=${encodeURIComponent(q)}&limit=${limit}`;
+            if (type) url += `&type=${type}`;
+            if (beforeId) url += `&before_id=${beforeId}`;
+
+            const response = await httpClient.request(url, { method: "GET" });
+            if (!response.ok) return null;
+
+            const data = await response.json();
+            if (data.status !== 'success' || !data.body) return null;
+
+            const items: SearchChatHit[] = (data.body.items || []).map((c: any) => ({
+                chatId: String(c.chat_id),
+                type: c.type,
+                title: c.title || '',
+                avatarUrl: c.avatar_url ?? undefined,
+                lastMessagePreview: c.last_message_preview ?? undefined,
+                lastMessageAt: c.last_message_at ? new Date(c.last_message_at) : undefined,
+                unreadCount: Number(c.unread_count ?? 0),
+            }));
+
+            const nextBeforeId = data.body.next_before_id ? Number(data.body.next_before_id) : null;
+            return { items, nextBeforeId };
+        } catch (e) {
+            return null;
+        }
+    };
+
     /**
      * Отправляет команду для редактирования чообщения через WebSocket.
      * Сервер обработает и разошлёт всем участникам чата broadcast `message.Edited`.
@@ -171,6 +211,14 @@ export class ChatService {
             chat_id: Number(chatId),
             message_id: Number(messageId),
             text: text,
+        });
+    };
+
+    public deleteMessage(chatId: string, messageId: string): boolean {
+        if (!wsClient.isConnected()) return false;
+        return wsClient.sendIfOpen('message.Delete', {
+            chat_id: Number(chatId),
+            message_id: Number(messageId),
         });
     };
 
@@ -815,6 +863,42 @@ export class ChatService {
 
         this.pendingProfiles.set(userId, profilePromise);
         return profilePromise;
+    }
+
+    public async searchMessages(
+        chatId: string,
+        query: string,
+        beforeId: number | null = null,
+        limit = 20,
+    ): Promise<SearchMessagesResult | null> {
+        const q = query.trim();
+        if (!q || [...q].length > 256) {
+            return { items: [], nextBeforeId: null };
+        }
+
+        try {
+            let url = `${BASE_URL}/api/v1/search/messages?chat_id=${chatId}&q=${encodeURIComponent(q)}&limit=${limit}`;
+            if (beforeId) url += `&before_id=${beforeId}`;
+
+            const response = await httpClient.request(url, { method: 'GET' });
+            if (!response.ok) return null;
+
+            const data = await response.json();
+            if (data.status !== 'success' || !data.body) return null;
+
+            const items: SearchMessageHit[] = (data.body.items || []).map((m: any) => ({
+                messageId: String(m.message_id),
+                chatId: String(m.chat_id),
+                senderId: Number(m.sender_id),
+                textPreview: m.text_preview || '',
+                createdAt: new Date(m.created_at),
+            }));
+
+            const nextBeforeId = data.body.next_before_id ? Number(data.body.next_before_id) : null;
+            return { items, nextBeforeId };
+        } catch {
+            return null;
+        }
     }
 }
 
