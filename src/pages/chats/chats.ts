@@ -90,6 +90,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
     /** ID текущего запроса истории (используется для защиты от гонок). */
     private historyRequestId = 0;
+    /** ID текущего вызова openChat (защита от race condition при быстром переключении чатов). */
+    private openChatRequestId = 0;
 
     /**
      * Ссылка на активный MessageList-компонент.
@@ -770,10 +772,13 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private async openChat(chatId: string): Promise<void> {
         if (!this.mainContentArea) return;
 
+        const reqId = ++this.openChatRequestId;
+        const isCancelled = () => reqId !== this.openChatRequestId || this.activeChatId !== chatId;
+
         try {
             const chatDetail = await chatService.getChatDetail(chatId);
 
-            if (this.activeChatId !== chatId) {
+            if (isCancelled()) {
                 return;
             }
             if (!chatDetail) {
@@ -790,12 +795,15 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             switch (chatDetail.type) {
             case 'dialog':
                 const members = await chatService.getChatMembers(chatId);
+                if (isCancelled()) return;
                 const myId = await contactService.getMyId();
+                if (isCancelled()) return;
                 const interlocutorId = members.find(id => id !== myId) || members[0] || 0;
-                
+
                 (chatDetail as DialogChat).interlocutor.id = interlocutorId;
 
                 const interlocutorProfile = await contactService.getProfileInfo(interlocutorId);
+                if (isCancelled()) return;
                 const interlocutorLogin = interlocutorProfile?.additionalInfo?.login || String(interlocutorId);
 
                 headerComponent = new DialogHeader({
@@ -845,6 +853,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             case 'channel': {
                 if (this.currentUserId === null) return;
                 const channelDetail = await channelService.getChannel(chatId, this.currentUserId);
+                if (isCancelled()) return;
                 if (!channelDetail) {
                     this.props.router.navigate('/chats');
                     return;
@@ -971,6 +980,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     onJoin: () => this.handleJoinChannel(chatId),
                 });
             }
+
+            if (isCancelled()) return;
 
             this.chatWindow = new ChatWindow({
                 headerComponent: headerComponent,
