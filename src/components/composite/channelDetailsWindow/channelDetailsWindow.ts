@@ -5,6 +5,8 @@ import { Button } from '../../ui/button/button';
 import { Input } from '../../ui/input/input';
 import { ContactItem } from '../contactItem/contactItem';
 import { ConfirmModal } from '../confirmModal/confirmModal';
+import { EditProfileOverlay } from '../editProfileOverlay/editProfileOverlay';
+import { ProfileAdditionalInfoBlock } from '../profileAdditionalInfoBlock/profileAdditionalInfoBlock';
 import { ChannelDetail } from '../../../services/channelService';
 import template from './channelDetailsWindow.hbs';
 import './channelDetailsWindow.scss';
@@ -36,7 +38,8 @@ export class ChannelDetailsWindow extends BaseComponent<ChannelDetailsWindowProp
     private fileInput: HTMLInputElement | null = null;
     private selectedAvatarFile: File | null = null;
     private avatarPreviewUrl: string | null = null;
-    private descriptionTextarea: HTMLTextAreaElement | null = null;
+    private descriptionBlock: ProfileAdditionalInfoBlock | null = null;
+    private descriptionOverlay: EditProfileOverlay | null = null;
 
     constructor(props: ChannelDetailsWindowProps) {
         super({ ...props, isEditing: props.initialIsEditing || false });
@@ -69,7 +72,6 @@ export class ChannelDetailsWindow extends BaseComponent<ChannelDetailsWindowProp
 
         const headerSlot = this.element.querySelector('[data-component="header-slot"]');
         if (headerSlot) {
-            const isOwner = this.props.channel.currentUserRole === 'owner';
             const headerTitle = this.props.isEditing ? 'Изменение канала' : 'Информация о канале';
 
             this.headerComponent = new ActionHeader({
@@ -218,26 +220,76 @@ export class ChannelDetailsWindow extends BaseComponent<ChannelDetailsWindowProp
     }
 
     private mountDescriptionRow(): void {
-        const descriptionSlot = this.element?.querySelector('[data-component="description-slot"]');
+        const descriptionSlot = this.element?.querySelector('[data-component="description-slot"]') as HTMLElement | null;
         if (!descriptionSlot) return;
 
-        if (this.props.isEditing) {
-            const infoRow = this.element?.querySelector('.channel-details__info-row');
-            if (infoRow) {
-                const label = infoRow.querySelector('.channel-details__info-label');
-                if (label) label.textContent = 'Информация о канале:';
-                infoRow.removeChild(descriptionSlot);
+        const canEditDescription = this.props.isEditing && this.props.channel.currentUserRole === 'owner';
 
-                this.descriptionTextarea = document.createElement('textarea');
-                this.descriptionTextarea.className = 'channel-details__info-textarea';
-                this.descriptionTextarea.value = this.props.channel.description || '';
-                this.descriptionTextarea.placeholder = 'Описание канала';
-                this.descriptionTextarea.rows = 3;
-                infoRow.appendChild(this.descriptionTextarea);
-            }
-        } else {
-            descriptionSlot.textContent = this.props.channel.description || '—';
+        this.descriptionBlock = new ProfileAdditionalInfoBlock({
+            profileAdditionalInfo: {
+                id: Number(this.props.channel.id) || 0,
+                login: '',
+                bio: this.props.channel.description || '',
+            },
+            class: canEditDescription
+                ? 'settings-additional-info channel-details__description-editable'
+                : 'channel-details__description-text',
+            bioOnly: true,
+            bioLabel: 'Описание:',
+            emptyBioText: 'Описание не указано',
+            onEditOverlay: canEditDescription
+                ? (_fieldKey, value) => this.openDescriptionOverlay(value)
+                : undefined,
+        });
+        this.descriptionBlock.mount(descriptionSlot);
+    }
+
+    private openDescriptionOverlay(value: string): void {
+        this.closeDescriptionOverlay();
+        this.descriptionOverlay = new EditProfileOverlay({
+            fieldKey: 'bio',
+            value,
+            inputType: 'textarea',
+            title: 'Редактирование описания канала',
+            onSave: (newValue: string) => {
+                void this.handleDescriptionSave(newValue);
+            },
+            onClose: () => this.closeDescriptionOverlay(),
+        });
+        this.descriptionOverlay.mount(document.body);
+    }
+
+    private closeDescriptionOverlay(): void {
+        this.descriptionOverlay?.unmount();
+        this.descriptionOverlay = null;
+    }
+
+    private remountDescriptionBlock(): void {
+        const descriptionSlot = this.element?.querySelector('[data-component="description-slot"]') as HTMLElement | null;
+        if (!descriptionSlot) return;
+        this.descriptionBlock?.unmount();
+        this.descriptionBlock = null;
+        descriptionSlot.replaceChildren();
+        this.mountDescriptionRow();
+    }
+
+    private async handleDescriptionSave(newValue: string): Promise<void> {
+        if (newValue === this.props.channel.description) {
+            this.closeDescriptionOverlay();
+            return;
         }
+
+        const res = await this.props.onUpdateChannel(undefined, newValue, undefined);
+        if (res.success) {
+            this.props.channel.description = newValue;
+            this.closeDescriptionOverlay();
+            this.remountDescriptionBlock();
+            return;
+        }
+
+        this.showAlert('Не удалось сохранить описание. Попробуйте ещё раз', () => {
+            this.openDescriptionOverlay(newValue);
+        });
     }
 
     private mountInviteRow(): void {
@@ -330,15 +382,13 @@ export class ChannelDetailsWindow extends BaseComponent<ChannelDetailsWindowProp
         const newTitle = this.nameInput?.value?.trim() || '';
         const titleChanged = newTitle !== '' && newTitle !== this.props.channel.title;
         const avatarChanged = this.selectedAvatarFile !== null;
-        const newDescription = this.descriptionTextarea?.value?.trim() ?? this.props.channel.description;
-        const descriptionChanged = newDescription !== this.props.channel.description;
 
         if (titleChanged && newTitle.length > MAX_TITLE_LENGTH) {
             this.showAlert(`Название не должно превышать ${MAX_TITLE_LENGTH} символов`, () => this.setEditing(true));
             return;
         }
 
-        if (!titleChanged && !avatarChanged && !descriptionChanged) {
+        if (!titleChanged && !avatarChanged) {
             this.setEditing(false);
             return;
         }
@@ -347,13 +397,12 @@ export class ChannelDetailsWindow extends BaseComponent<ChannelDetailsWindowProp
         try {
             const res = await this.props.onUpdateChannel(
                 titleChanged ? newTitle : undefined,
-                descriptionChanged ? newDescription : undefined,
+                undefined,
                 avatarChanged ? this.selectedAvatarFile! : undefined
             );
 
             if (res.success) {
                 if (titleChanged) this.props.channel.title = newTitle;
-                if (descriptionChanged) this.props.channel.description = newDescription;
                 this.cleanupAvatarPreview();
                 this.setEditing(false);
                 this.props.onChannelUpdated?.();
@@ -458,6 +507,8 @@ export class ChannelDetailsWindow extends BaseComponent<ChannelDetailsWindowProp
         this.headerComponent?.unmount();
         this.avatarComponent?.unmount();
         this.nameInput?.unmount();
+        this.descriptionBlock?.unmount();
+        this.closeDescriptionOverlay();
         this.actionButtons.forEach(b => b.unmount());
         this.memberComponents.forEach(c => c.unmount());
         this.closeModal();
@@ -476,6 +527,6 @@ export class ChannelDetailsWindow extends BaseComponent<ChannelDetailsWindowProp
         this.nameInput = null;
         this.actionButtons = [];
         this.memberComponents = [];
-        this.descriptionTextarea = null;
+        this.descriptionBlock = null;
     }
 }

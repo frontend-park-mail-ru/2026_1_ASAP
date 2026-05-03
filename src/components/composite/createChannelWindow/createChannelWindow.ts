@@ -14,7 +14,7 @@ const MAX_AVATAR_SIZE = 5 * 1024 * 1024;
 
 interface CreateChannelWindowProps extends IBaseComponentProps {
     router: Router;
-    onSubmit: (title: string, description: string, avatar?: File) => Promise<void>;
+    onSubmit: (title: string, avatar?: File) => Promise<void>;
 }
 
 export class CreateChannelWindow extends BaseComponent<CreateChannelWindowProps> {
@@ -138,15 +138,12 @@ export class CreateChannelWindow extends BaseComponent<CreateChannelWindowProps>
             return;
         }
 
-        const descriptionEl = this.element?.querySelector('[data-component="description-input"]') as HTMLTextAreaElement;
-        const description = descriptionEl?.value?.trim() || '';
-
         if (this.submitButton?.element) {
             (this.submitButton.element as HTMLButtonElement).disabled = true;
         }
 
         try {
-            await this.props.onSubmit(title, description, this.selectedAvatarFile || undefined);
+            await this.props.onSubmit(title, this.selectedAvatarFile || undefined);
         } finally {
             if (this.submitButton?.element) {
                 (this.submitButton.element as HTMLButtonElement).disabled = false;
