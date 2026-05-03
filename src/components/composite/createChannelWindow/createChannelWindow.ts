@@ -49,7 +49,7 @@ export class CreateChannelWindow extends BaseComponent<CreateChannelWindowProps>
                     onClick: () => this.props.router.navigate('/chats'),
                 }),
                 content: 'Создание канала',
-                icon: '/assets/images/icons/createChatMenuIcons/group.svg',
+                icon: '/assets/images/icons/createChatMenuIcons/channel.svg',
             });
             this.headerComponent.mount(headerSlot as HTMLElement);
         }
