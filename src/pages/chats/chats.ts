@@ -138,6 +138,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         if (!this.activeChatId || dto.chat_id.toString() !== this.activeChatId) return;
         if (!this.activeMessageList) return;
         this.activeMessageList.updateMessage(dto.id.toString(), dto.text);
+        this.chatWrapper?.updateChatLastMessageIfMatches(this.activeChatId, dto.id.toString(), dto.text);
     };
 
     private readonly handleMessageDeleted = (dto: MessageDto): void => {
