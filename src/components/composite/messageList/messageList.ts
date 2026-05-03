@@ -250,6 +250,10 @@ export class MessageList extends BaseComponent {
      * Используется, чтобы при приходе серверного broadcast `message.New` не создавать дубликат DOM.
      * @returns true, если сообщение с `oldId` было найдено и обновлено.
      */
+    public getLoadedMessages(): FrontendMessage[] {
+        return Array.from(this.messages.values()).map(m => m.props.message);
+    }
+
     public setHighlightQuery(query: string): void {
         this.currentHighlightQuery = query;
         this.childMessages.forEach(m => m.applyHighlight(query));
