@@ -110,7 +110,7 @@ export class ContactService {
         }
 
         try {
-            let url = `${BASE_URL}/api/v1/search/contacts?q=${encodeURIComponent(q)}&scope=${scope}&limit=${limit}`;
+            let url = `${BASE_URL}/api/v1/search/users?q=${encodeURIComponent(q)}&scope=${scope}&limit=${limit}`;
             if (beforeId) url += `&before_id=${beforeId}`;
 
             const response = await httpClient.request(url, { method: 'GET' });
