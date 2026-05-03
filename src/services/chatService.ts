@@ -1,5 +1,5 @@
 import { ChatDetail, FrontendMessage, User, DialogChat, GroupChat, ChannelChat, BackendChat, BackendMessage } from '../types/chat';
-import { SearchMessageHit, SearchMessagesResult } from '../types/search';
+import { SearchChatHit, SearchChatsResult, SearchMessageHit, SearchMessagesResult } from '../types/search';
 import { httpClient } from '../core/utils/httpClient';
 import { wsClient, MessageDto, ChatInformationDto } from '../core/utils/wsClient';
 import { getFullUrl } from '../core/utils/url';
@@ -157,6 +157,43 @@ export class ChatService {
 
         return pending;
     }
+
+    public async searchChats(
+        query: string,
+        beforeId: number | null = null,
+        limit = 20
+    ): Promise<SearchChatsResult | null> {
+        const q = query.trim();
+        if (!q || [...q].length > 256) {
+            return { items: [], nextBeforeId: null};
+        }
+
+        try {
+            let url = `${BASE_URL}/api/v1/search/chats?q=${encodeURIComponent(q)}&limit=${limit}`;
+            if (beforeId) url += `&before_id=${beforeId}`;
+
+            const response = await httpClient.request(url, { method: "GET" });
+            if (!response.ok) return null;
+
+            const data = await response.json();
+            if (data.status !== 'success' || !data.body) return null;
+
+            const items: SearchChatHit[] = (data.body.items || []).map((c: any) => ({
+                chatId: String(c.chat_id),
+                type: c.type,
+                title: c.title || '',
+                avatarUrl: c.avatar_url ?? undefined,
+                lastMessagePreview: c.last_message_preview ?? undefined,
+                lastMessageAt: c.last_message_at ? new Date(c.last_message_at) : undefined,
+                unreadCount: Number(c.unread_count ?? 0),
+            }));
+
+            const nextBeforeId = data.body.next_before_id ? Number(data.body.next_before_id) : null;
+            return { items, nextBeforeId };
+        } catch (e) {
+            return null;
+        }
+    };
 
     /**
      * Отправляет команду для редактирования чообщения через WebSocket.
