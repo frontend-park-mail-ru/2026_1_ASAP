@@ -93,7 +93,7 @@ export class MessageSearchBar extends BaseComponent<MessageSearchBarProps> {
     }
 
     // TODO: костыль, тк бек не ищет смайлики, сделал поиск локально по загруженым сообщениям,
-    // надо убрать как починят бек
+    // надо убрать как починят бек 
     private searchLocally(q: string): SearchMessagesResult {
         const lq = q.toLowerCase();
         const items: SearchMessageHit[] = this.props.getLoadedMessages()
