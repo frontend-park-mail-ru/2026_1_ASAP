@@ -3,6 +3,7 @@ import { ChatListItem } from "../chatListItem/chatListItem";
 import { Router } from '../../../core/router';
 import template from "./chatListWrapper.hbs";
 import { SearchChatHit } from "../../../types/search";
+import { FrontendMessage } from "../../../types/chat";
 
 /**
  * @interface ChatListWrapperProps
@@ -34,6 +35,10 @@ export class ChatListWrapper extends BaseForm<ChatListWrapperProps> {
     getTemplate() {
         return template;
     };
+
+    public updateChatLastMessage(chatId: string, lastMessage: FrontendMessage | undefined): void {
+        this.chatList?.updateChatLastMessage(chatId, lastMessage);
+    }
 
     /**
      * Выполняется после монтирования компонента.

@@ -144,6 +144,9 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         if (!this.activeChatId || dto.chat_id.toString() !== this.activeChatId) return;
         if (!this.activeMessageList) return;
         this.activeMessageList.deleteMessage(dto.id.toString());
+
+        const newLast = this.activeMessageList.getLatestMessageData();
+        this.chatWrapper?.updateChatLastMessage(this.activeChatId, newLast ?? undefined);
     };
 
     /**
