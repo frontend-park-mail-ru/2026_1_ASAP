@@ -175,6 +175,14 @@ export class ChatService {
         });
     };
 
+    public deleteMessage(chatId: string, messageId: string): boolean {
+        if (!wsClient.isConnected()) return false;
+        return wsClient.sendIfOpen('message.Delete', {
+            chat_id: Number(chatId),
+            message_id: Number(messageId),
+        });
+    };
+
     /**
      * Пере-проталкивает все pending-сообщения в WebSocket.
      * Вызывается при `online`, `system.Connected` и сообщении от SW.

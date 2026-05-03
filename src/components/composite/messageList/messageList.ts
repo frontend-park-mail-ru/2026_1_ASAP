@@ -18,6 +18,7 @@ interface MessageListProps {
     chatType: Chat['type'];
     onLoadMore?: () => Promise<void>;
     onRequestEdit?: (messageId: string, currentText: string) => void;
+    onRequestDelete?: (messageId: string) => void;
 }
 
 /**
@@ -64,6 +65,22 @@ export class MessageList extends BaseComponent {
         if (!msg) return false;
 
         msg.updateText(text, true);
+        return true;
+    }
+
+    public deleteMessage(id: string): boolean {
+        const msg = this.messages.get(id);
+        if (!msg) return false;
+
+        msg.unmount();
+        this.messages.delete(id);
+        this.childMessages = this.childMessages.filter(m => m !== msg);
+
+        if (this.childMessages.length === 0) {
+            if (this.emptyStateElement) this.emptyStateElement.style.display = 'flex';
+            if (this.flexContainer) this.flexContainer.style.display = 'none';
+        }
+
         return true;
     }
 
@@ -143,6 +160,7 @@ export class MessageList extends BaseComponent {
                 isOwn: msgData.isOwn || false,
                 showAuthor: showAuthor,
                 onEdit: (id) => this.props.onRequestEdit?.(id, msgData.text),
+                onDelete: (id) => this.props.onRequestDelete?.(id),
             });
             messageComponent.mount(this.flexContainer!);
             this.messages.set(msgData.id, messageComponent);
@@ -173,6 +191,7 @@ export class MessageList extends BaseComponent {
                 isOwn: msgData.isOwn || false, 
                 showAuthor,
                 onEdit: (id) => this.props.onRequestEdit?.(id, msgData.text),
+                onDelete: (id) => this.props.onRequestDelete?.(id),
             });
             const tempDiv = document.createElement('div');
             comp.mount(tempDiv);
@@ -212,6 +231,7 @@ export class MessageList extends BaseComponent {
             isOwn: newMessage.isOwn || false,
             showAuthor: showAuthor,
             onEdit: (id) => this.props.onRequestEdit?.(id, newMessage.text),
+            onDelete: (id) => this.props.onRequestDelete?.(id),
         });
         
         // Новое сообщение всегда в начало DOM (визуальный низ)
