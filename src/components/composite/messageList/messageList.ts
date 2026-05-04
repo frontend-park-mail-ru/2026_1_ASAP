@@ -16,7 +16,10 @@ interface MessageListProps {
     messages: FrontendMessage[];
     currentUser: User;
     chatType: Chat['type'];
+    chatAvatarUrl?: string;
     onLoadMore?: () => Promise<void>;
+    onRequestEdit?: (messageId: string, currentText: string) => void;
+    onRequestDelete?: (messageId: string) => void;
 }
 
 /**
@@ -27,6 +30,9 @@ export class MessageList extends BaseComponent {
     private flexContainer: HTMLElement | null = null;
     private emptyStateElement: HTMLElement | null = null;
     private isLoadingMore = false;
+    private messages: Map<string, Message> = new Map();
+    private currentHighlightQuery = '';
+    private selectedMessageEl: HTMLElement | null = null;
 
     /**
      * @param {MessageListProps} props - Свойства компонента.
@@ -54,6 +60,48 @@ export class MessageList extends BaseComponent {
             this.isLoadingMore = false;
         }
     };
+
+    public updateMessage(id: string, text: string): boolean {
+        const msg = this.messages.get(id);
+        if (!msg) return false;
+
+        msg.updateText(text, true);
+        return true;
+    }
+
+    public deleteMessage(id: string): boolean {
+        const msg = this.messages.get(id);
+        if (!msg) return false;
+
+        msg.unmount();
+        this.messages.delete(id);
+        this.childMessages = this.childMessages.filter(m => m !== msg);
+
+        if (this.childMessages.length === 0) {
+            if (this.emptyStateElement) this.emptyStateElement.style.display = 'flex';
+            if (this.flexContainer) this.flexContainer.style.display = 'none';
+        }
+
+        return true;
+    }
+
+    /**
+     * Добавляет системное сообщение (центрированный текст без автора/времени).
+     * Используется для уведомлений типа «X добавлен в чат» / «X удалён из чата».
+     * Эфемерное — не сохраняется в истории, видно только в текущей сессии.
+     */
+    public addSystemMessage(text: string): void {
+        if (!this.element || !this.flexContainer) return;
+
+        if (this.emptyStateElement) this.emptyStateElement.style.display = 'none';
+        this.flexContainer.style.display = 'flex';
+
+        const node = document.createElement('div');
+        node.className = 'message-system';
+        node.textContent = text;
+        this.flexContainer.prepend(node);
+        this.scrollToBottom();
+    }
 
     /**
      * Обработчик события обновления профиля пользователя через WebSocket.
@@ -109,6 +157,7 @@ export class MessageList extends BaseComponent {
     public setMessages(messages: FrontendMessage[]): void {
         this.childMessages.forEach(msg => msg.unmount());
         this.childMessages = [];
+        this.messages.clear();
 
         const showAuthor = this.props.chatType === 'group';
 
@@ -126,14 +175,19 @@ export class MessageList extends BaseComponent {
                 msgData.sender.avatarUrl = this.props.currentUser.avatarUrl;
             }
             const messageComponent = new Message({
-                message: msgData, 
+                message: msgData,
                 isOwn: msgData.isOwn || false,
-                showAuthor: showAuthor
+                showAuthor: showAuthor,
+                chatAvatarUrl: this.props.chatAvatarUrl,
+                onEdit: (id) => this.props.onRequestEdit?.(id, msgData.text),
+                onDelete: (id) => this.props.onRequestDelete?.(id),
             });
             messageComponent.mount(this.flexContainer!);
+            this.messages.set(msgData.id, messageComponent);
             if (messageComponent.element) {
                 this.flexContainer!.prepend(messageComponent.element);
             }
+            if (this.currentHighlightQuery) messageComponent.applyHighlight(this.currentHighlightQuery);
             this.childMessages.unshift(messageComponent);
         });
         this.scrollToBottom();
@@ -152,13 +206,18 @@ export class MessageList extends BaseComponent {
         const showAuthor = this.props.chatType === 'group';
 
         messages.forEach(msgData => {
-            const comp = new Message({ 
-                message: msgData, 
-                isOwn: msgData.isOwn || false, 
-                showAuthor 
+            const comp = new Message({
+                message: msgData,
+                isOwn: msgData.isOwn || false,
+                showAuthor,
+                chatAvatarUrl: this.props.chatAvatarUrl,
+                onEdit: (id) => this.props.onRequestEdit?.(id, msgData.text),
+                onDelete: (id) => this.props.onRequestDelete?.(id),
             });
             const tempDiv = document.createElement('div');
             comp.mount(tempDiv);
+            this.messages.set(msgData.id, comp)
+            if (this.currentHighlightQuery) comp.applyHighlight(this.currentHighlightQuery);
             if (comp.element) fragment.appendChild(comp.element);
             newComponents.push(comp);
         });
@@ -189,18 +248,64 @@ export class MessageList extends BaseComponent {
             newMessage.sender.avatarUrl = this.props.currentUser.avatarUrl;
         }
         const messageComponent = new Message({
-            message: newMessage, 
+            message: newMessage,
             isOwn: newMessage.isOwn || false,
-            showAuthor: showAuthor
+            showAuthor: showAuthor,
+            chatAvatarUrl: this.props.chatAvatarUrl,
+            onEdit: (id) => this.props.onRequestEdit?.(id, newMessage.text),
+            onDelete: (id) => this.props.onRequestDelete?.(id),
         });
         
         // Новое сообщение всегда в начало DOM (визуальный низ)
         messageComponent.mount(this.flexContainer!);
+        if (this.currentHighlightQuery) messageComponent.applyHighlight(this.currentHighlightQuery);
+        this.messages.set(newMessage.id, messageComponent);
         if (messageComponent.element) {
             this.flexContainer!.prepend(messageComponent.element);
         }
         this.childMessages.unshift(messageComponent);
         this.scrollToBottom();
+    }
+
+    /**
+     * Заменяет ID ранее добавленного (оптимистичного) сообщения на ID, присланный сервером.
+     * Используется, чтобы при приходе серверного broadcast `message.New` не создавать дубликат DOM.
+     * @returns true, если сообщение с `oldId` было найдено и обновлено.
+     */
+    public getLoadedMessages(): FrontendMessage[] {
+        return Array.from(this.messages.values()).map(m => m.props.message);
+    }
+
+    public setHighlightQuery(query: string): void {
+        this.currentHighlightQuery = query;
+        this.childMessages.forEach(m => m.applyHighlight(query));
+        if (!query && this.selectedMessageEl) {
+            this.selectedMessageEl.classList.remove('message--flash');
+            this.selectedMessageEl = null;
+        }
+    }
+
+    public scrollToMessage(messageId: string): boolean {
+        const msg = this.messages.get(messageId);
+        if (!msg?.element) return false;
+
+        if (this.selectedMessageEl && this.selectedMessageEl !== msg.element) {
+            this.selectedMessageEl.classList.remove('message--flash');
+        }
+        this.selectedMessageEl = msg.element;
+        msg.element.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        msg.element.classList.add('message--flash');
+        return true;
+    }
+
+    public replaceMessageId(oldId: string, newId: string, newTimestamp?: Date): boolean {
+        const target = this.childMessages.find((m) => m.getId() === oldId);
+        if (!target) return false;
+        this.messages.delete(oldId);
+        target.setId(newId);
+        this.messages.set(newId, target);
+        if (newTimestamp) target.updateTimestamp(newTimestamp);
+        return true;
     }
 
     /**
@@ -223,6 +328,7 @@ export class MessageList extends BaseComponent {
         }
         this.childMessages.forEach(msg => msg.unmount());
         this.childMessages = [];
+        this.messages.clear();
 
         wsClient.unsubscribe('profile.Updated', this.handleUserUpdate);
     }

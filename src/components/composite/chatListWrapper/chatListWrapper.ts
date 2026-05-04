@@ -2,6 +2,8 @@ import { BaseForm } from "../../../core/base/baseForm";
 import { ChatListItem } from "../chatListItem/chatListItem";
 import { Router } from '../../../core/router';
 import template from "./chatListWrapper.hbs";
+import { SearchChatHit } from "../../../types/search";
+import { FrontendMessage } from "../../../types/chat";
 
 /**
  * @interface ChatListWrapperProps
@@ -34,6 +36,14 @@ export class ChatListWrapper extends BaseForm<ChatListWrapperProps> {
         return template;
     };
 
+    public updateChatLastMessageText(chatId: string, newText: string): void {
+        this.chatList?.updateChatLastMessageText(chatId, newText);
+    }
+
+    public setChatLastMessage(chatId: string, lastMessage: FrontendMessage | undefined): void {
+        this.chatList?.setChatLastMessage(chatId, lastMessage);
+    }
+
     /**
      * Выполняется после монтирования компонента.
      * Инициализирует и монтирует дочерний компонент `ChatListItem`.
@@ -60,6 +70,14 @@ export class ChatListWrapper extends BaseForm<ChatListWrapperProps> {
         if (this.chatList) {
             this.chatList.setActiveChat(chatId);
         }
+    }
+
+    public showSearchResults(hits: SearchChatHit[]): void {
+        this.chatList?.showSearchResults(hits);
+    };
+
+    public restoreChatList(): void {
+        this.chatList?.restoreChatList();
     }
 
     /**

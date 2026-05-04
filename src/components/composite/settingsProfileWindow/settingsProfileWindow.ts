@@ -20,7 +20,7 @@ interface SettingsProfileWindowProps extends IBaseComponentProps {
 
 export type EditableField = 'login' | 'email' | 'birthDate' | 'bio';
 
-const DEFAULT_AVATAR_URL = '/assets/images/avatars/profileAvatar.svg';
+const DEFAULT_AVATAR_URL = '/assets/images/avatars/defaultAvatar.svg';
 
 export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowProps> {
     private profileHeader: ProfileHeader | null = null;
@@ -134,17 +134,31 @@ export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowPr
         this.deleteAvatarConfirm = null;
     }
 
-    private applyAvatarDelete(): void {
+    private async applyAvatarDelete(): Promise<void> {
         if (this.avatarPreviewUrl?.startsWith("blob:")) {
             URL.revokeObjectURL(this.avatarPreviewUrl);
         }
+
+        const response = await contactService.deleteAvatar();
+        if (response.status !== 200 || !response.profile) {
+            this.successModal = new ConfirmModal({
+                text: "Не удалось удалить аватар, попробуйте позже :(",
+                confirmButtonText: "Хорошо",
+                hideCancel: true,
+                confirmButtonClass: "confirm-modal__button--cancel ui-button ui-button-secondary",
+                onConfirm: () => {
+                    this.successModal?.unmount();
+                    this.successModal = null;
+                },
+            });
+            this.successModal.mount(this.element!);
+            return;
+        }
+
         this.avatarPreviewUrl = null;
         this.pendingAvatarFile = null;
-        if (this.draftProfileMainInfo) {
-            this.draftProfileMainInfo.avatarUrl = DEFAULT_AVATAR_URL;
-        }
-        this.remountProfileMainInfoBlock();
-        this.setButtonState();
+        contactService.clearCache();
+        await this.syncDraftAndBaselineFromServer();
     }
 
     handleAvatarEditClick = (avatarWrap: HTMLElement): void => {
@@ -189,9 +203,9 @@ export class SettingsProfileWindow extends BaseComponent<SettingsProfileWindowPr
         let errorMessage = '';
 
         if (!ALLOWED_TYPES.includes(file.type)) {
-            errorMessage = 'Неверный формат файла. Разрешены только JPEG, PNG и WEBP';
+            errorMessage = 'Пожалуйста, используйте формат JPEG, PNG или WEBP';
         } else if (file.size > MAX_SIZE) {
-            errorMessage = 'Файл слишком большой. Максимальный размер — 5 МБ';
+            errorMessage = 'Выберите файл размером до 5 МБ';
         }
 
         if (errorMessage) {

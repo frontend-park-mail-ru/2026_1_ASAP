@@ -1,10 +1,11 @@
 import { ChatDetail, FrontendMessage, User, DialogChat, GroupChat, ChannelChat, BackendChat, BackendMessage } from '../types/chat';
+import { SearchChatHit, SearchChatsResult, SearchMessageHit, SearchMessagesResult } from '../types/search';
 import { httpClient } from '../core/utils/httpClient';
 import { wsClient, MessageDto, ChatInformationDto } from '../core/utils/wsClient';
 import { getFullUrl } from '../core/utils/url';
+import { offlineQueue, PendingMessage } from './offlineMessageQueue';
 
-const host = window.location.hostname;
-const BASE_URL = `${window.location.protocol}//${host}`;
+import { BASE_URL } from '../core/utils/apiBase';
 
 /**
  * @class ChatService
@@ -14,7 +15,9 @@ const BASE_URL = `${window.location.protocol}//${host}`;
 export class ChatService {
     private profilesCache: Map<number, User> = new Map();
     private pendingProfiles: Map<number, Promise<User | null>> = new Map();
-    
+    private inFlightMessages = new Set<string>(); //сообщения, которые уже отправлены и ждут ответа
+    private isFlushing = false; //блокировка от параллельного запуска 
+
     /**
      * Преобразует BackendMessage (REST) в FrontendMessage.
      * @param backendMessage - «сырой» объект сообщения из REST-ответа.
@@ -61,6 +64,7 @@ export class ChatService {
             text: dto.text || '',
             timestamp: new Date(dto.created_at || Date.now()),
             isOwn: String(dto.sender_id) === String(currentUserId) || dto.login === currentUserId,
+            isEdited: Boolean(dto.edited),
         };
     }
 
@@ -108,25 +112,194 @@ export class ChatService {
                 chat = { ...commonProps } as any;
         }
 
-        if (dto.last_message && dto.last_message.id !== 0 && (dto.last_message.id !== undefined || dto.last_message.created_at)) {
-            chat.lastMessage = this.convertWsMessageDto(dto.last_message, currentUserId);
+        if (dto.last_message) {
+            chat.lastMessage = {
+                id: '',
+                text: dto.last_message.text,
+                timestamp: new Date(dto.last_message.created_at),
+                sender: { id: dto.last_message.sender_id } as User,
+                isOwn: Number(dto.last_message.sender_id) === Number(currentUserId),
+            };
         }
 
         return chat;
     }
 
     /**
-     * Отправляет сообщение в текущий чат через WebSocket.
-     * Формат пакета: `{ type: "message.Send", payload: { text } }`.
+     * Отправляет сообщение в текущий чат через WebSocket с offline-очередью.
+     * Сначала кладёт запись в IndexedDB (persistent), затем пробует отправить через WS.
+     * Если SyncManager доступен — регистрирует `flush-messages`, чтобы SW разбудил флаш при восстановлении сети.
      *
-     * @param chatId - Строковый ID чата (не используется в payload, так как он в URL сокета).
-     * @param text   - Текст отправляемого сообщения.
+     * @param chatId   - Строковый ID чата.
+     * @param text     - Текст отправляемого сообщения.
+     * @param senderId - ID текущего пользователя (нужен для оптимистичной модели и дедупа).
+     * @returns PendingMessage с tempId для привязки оптимистичного DOM-узла.
      */
-    public sendMessage(chatId: string, text: string): void {
-        wsClient.send('message.Send', {
-            chat_id: Number(chatId),
+    public async sendMessage(chatId: string, text: string, senderId: number): Promise<PendingMessage> {
+        const pending: PendingMessage = {
+            tempId: `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            chatId,
             text,
+            senderId,
+            createdAt: Date.now(),
+        };
+
+        await offlineQueue.enqueue(pending);
+        if (wsClient.isConnected()) {
+            this.inFlightMessages.add(pending.tempId);
+            wsClient.sendIfOpen('message.Send', {
+                chat_id: Number(chatId),
+                text,
+            });
+        }
+
+        if (!navigator.onLine && 'serviceWorker' in navigator && 'SyncManager' in window) {            
+            try {
+                const reg = await navigator.serviceWorker.ready;
+                await (reg as any).sync.register('flush-messages');
+            } catch (e){
+                console.warn('SyncManager failed', e);
+            }
+        }
+
+        return pending;
+    }
+
+    public async searchChats(
+        query: string,
+        type: '' | 'group' | 'channel' = '',
+        beforeId: number | null = null,
+        limit = 20,
+    ): Promise<SearchChatsResult | null> {
+        const q = query.trim();
+        if (!q || [...q].length > 256) {
+            return { items: [], nextBeforeId: null };
+        }
+
+        try {
+            let url = `${BASE_URL}/api/v1/search/chats?q=${encodeURIComponent(q)}&limit=${limit}`;
+            if (type) url += `&type=${type}`;
+            if (beforeId) url += `&before_id=${beforeId}`;
+
+            const response = await httpClient.request(url, { method: "GET" });
+            if (!response.ok) return null;
+
+            const data = await response.json();
+            if (data.status !== 'success' || !data.body) return null;
+
+            const items: SearchChatHit[] = (data.body.items || []).map((c: any) => ({
+                chatId: String(c.chat_id),
+                type: c.type,
+                title: c.title || '',
+                avatarUrl: c.avatar_url ?? undefined,
+                lastMessagePreview: c.last_message_preview ?? undefined,
+                lastMessageAt: c.last_message_at ? new Date(c.last_message_at) : undefined,
+                unreadCount: Number(c.unread_count ?? 0),
+            }));
+
+            const nextBeforeId = data.body.next_before_id ? Number(data.body.next_before_id) : null;
+            return { items, nextBeforeId };
+        } catch (e) {
+            return null;
+        }
+    };
+
+    /**
+     * Отправляет команду для редактирования чообщения через WebSocket.
+     * Сервер обработает и разошлёт всем участникам чата broadcast `message.Edited`.
+     * 
+     * @param messageId 
+     * @param newText 
+     * @returns 
+     */
+    public editMessage(chatId: string, messageId: string, text: string): boolean {
+        if (!wsClient.isConnected()) return false;
+        return wsClient.sendIfOpen('message.Edit', {
+            chat_id: Number(chatId),
+            message_id: Number(messageId),
+            text: text,
         });
+    };
+
+    public deleteMessage(chatId: string, messageId: string): boolean {
+        if (!wsClient.isConnected()) return false;
+        return wsClient.sendIfOpen('message.Delete', {
+            chat_id: Number(chatId),
+            message_id: Number(messageId),
+        });
+    };
+
+    /**
+     * Пере-проталкивает все pending-сообщения в WebSocket.
+     * Вызывается при `online`, `system.Connected` и сообщении от SW.
+     * Элементы удаляются не здесь, а при приходе серверного broadcast `message.New` (см. resolveServerMessage).
+     */
+    public async flushQueue(): Promise<void> {
+        if (this.isFlushing) return;
+
+        if (!wsClient.isConnected()) return;
+
+        this.isFlushing = true;
+
+        try {
+            const pending = await offlineQueue.getAll();
+            for (const m of pending) {
+
+                if (this.inFlightMessages.has(m.tempId)) continue;
+                
+                this.inFlightMessages.add(m.tempId);
+                
+                const sent = wsClient.sendIfOpen('message.Send', {
+                    chat_id: Number(m.chatId),
+                    text: m.text,
+                });
+                
+                // Если внезапно сокет закрылся во время цикла
+                if (!sent) {
+                    this.inFlightMessages.delete(m.tempId);
+                    break;
+                }
+            }
+        } finally {
+            this.isFlushing = false;
+        }
+    }
+
+    /**
+     * Сопоставляет пришедшее от сервера сообщение с оптимистичным из очереди.
+     * Если совпадение найдено — удаляет запись из IndexedDB и возвращает её tempId
+     * (UI должен заменить DOM-узел вместо добавления дубликата).
+     */
+    private unescapeHtml(text: string): string {
+        return text
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&#34;/g, '"')
+            .replace(/&#39;/g, "'");
+    }
+
+    public async resolveServerMessage(dto: MessageDto, currentUserId: number): Promise<string | null> {
+        if (dto.sender_id !== currentUserId) return null;
+
+        const pending = await offlineQueue.getByChat(dto.chat_id.toString());
+        const unescapedText = this.unescapeHtml(dto.text ?? '');
+        const match = pending.find((m) => m.text === unescapedText);
+
+        if (!match) return null;
+
+        await offlineQueue.remove(match.tempId);
+        this.inFlightMessages.delete(match.tempId);
+
+        return match.tempId;
+    }
+
+    /**
+     * Вызывать при обрыве соединения, чтобы сбросить In-Flight статус.
+     * Иначе при реконнекте flushQueue проигнорирует сообщения, думая, что они все еще летят.
+     */
+    public clearInFlight(): void {
+        this.inFlightMessages.clear();
     }
 
     /**
@@ -158,19 +331,19 @@ export class ChatService {
                 const commonProps = {
                     id: chat.id.toString(),
                     title: chat.title,
-                    type: chat.chat_type,
+                    type: chat.type,
                     avatarUrl: getFullUrl(chat.avatar),
                     unreadCount: 0,
                 };
 
-                switch (chat.chat_type) {
+                switch (chat.type) {
                     case 'dialog':
                         frontendChat = {
                             ...commonProps,
                             interlocutor: { 
                                 id: 0, 
                                 login: chat.title, 
-                                avatarUrl: chat.avatar || '/assets/images/avatars/chatAvatar.svg' 
+                                avatarUrl: chat.avatar || '/assets/images/avatars/defaultAvatar.svg' 
                             }, 
                         } as DialogChat;
                         break;
@@ -228,13 +401,13 @@ export class ChatService {
                 const commonProps = {
                     id: chat.id.toString(),
                     title: chat.title,
-                    type: chat.chat_type,
+                    type: chat.type,
                     avatarUrl: getFullUrl(chat.avatar),
                     unreadCount: 0,
                     owner_id: chat.owner_id
                 };
 
-                switch (chat.chat_type) {
+                switch (chat.type) {
                     case 'dialog':
                         return {
                             ...commonProps,
@@ -255,11 +428,12 @@ export class ChatService {
                     case 'channel':
                         return {
                             ...commonProps,
-                            subscribersCount: chat.subscribers_count || 0
+                            subscribersCount: chat.subscribers_count || 0,
+                            description: chat.description ?? ''
                         } as ChannelChat;
 
                     default:
-                        console.error(`ChatService: неизвестный тип чата ${chat.chat_type}`);
+                        console.error(`ChatService: неизвестный тип чата ${chat.type}`);
                         return undefined;
                 }
             }
@@ -400,7 +574,7 @@ export class ChatService {
     public async leaveChat(chatId: number): Promise<{ success: boolean; status: number; errorCode?: string; errorMessage?: string }> {
         try {
             const response = await httpClient.request(`${BASE_URL}/api/v1/chats/${chatId}/quit`, {
-                method: 'POST',
+                method: 'DELETE',
             });
 
             if (response.ok) {
@@ -422,6 +596,35 @@ export class ChatService {
             return { success: false, status: response.status, errorCode, errorMessage };
         } catch (error) {
             console.error("ChatService: ошибка при выходе из чата:", error);
+            return { success: false, status: 500 };
+        }
+    }
+
+    public async joinChat(chatId: string | number): Promise<{ success: boolean; status: number; errorCode?: string; errorMessage?: string }> {
+        try {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/chats/${chatId}/join`, {
+                method: 'POST',
+            });
+
+            if (response.ok) {
+                return { success: true, status: response.status };
+            }
+
+            let errorCode = '';
+            let errorMessage = '';
+            try {
+                const data = await response.json();
+                if (data.status === 'error' && data.errors && data.errors.length > 0) {
+                    errorCode = data.errors[0].code;
+                    errorMessage = data.errors[0].message;
+                }
+            } catch (e) {
+                // Игнорируем ошибки парсинга
+            }
+
+            return { success: false, status: response.status, errorCode, errorMessage };
+        } catch (error) {
+            console.error("ChatService: ошибка при вступлении в чат:", error);
             return { success: false, status: 500 };
         }
     }
@@ -457,6 +660,28 @@ export class ChatService {
             return true;
         } catch (error) {
             console.error('Ошибка сети при обновлении названия чата:', error);
+            return false;
+        }
+    }
+
+    public async updateChatDescription(chatId: string, description: string): Promise<boolean> {
+        try {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/chats/${chatId}/description`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ description })
+            });
+
+            if (!response.ok) {
+                console.error(`Ошибка при обновлении описания чата: ${response.status}`);
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Ошибка сети при обновлении описания чата:', error);
             return false;
         }
     }
@@ -528,6 +753,24 @@ export class ChatService {
         }
     }
 
+    // TODO: удалить, когда бэк начнёт возвращать chat_id в ответе на 409
+    public async findExistingDialogChatId(targetId: number, targetLogin?: string): Promise<string | undefined> {
+        const chats = await this.getChats();
+        const dialogs = chats.filter(c => c.type === 'dialog');
+
+        if (targetLogin) {
+            const byLogin = dialogs.find(c => (c as any).interlocutor?.login === targetLogin);
+            if (byLogin) return byLogin.id;
+        }
+
+        for (const d of dialogs) {
+            const members = await this.getChatMembers(d.id);
+            if (members.includes(targetId)) return d.id;
+        }
+
+        return undefined;
+    }
+
     /**
      * Получает список ID всех участников чата.
      * @param chatId — Идентификатор чата.
@@ -563,12 +806,8 @@ export class ChatService {
      */
     public async removeMember(chatId: string, userId: number): Promise<{ success: boolean; status: number }> {
         try {
-            const response = await httpClient.request(`${BASE_URL}/api/v1/chats/${chatId}/members`, {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/chats/${chatId}/members/${userId}`, {
                 method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ member_id: userId })
             });
 
             if (response.ok) {
@@ -631,6 +870,42 @@ export class ChatService {
 
         this.pendingProfiles.set(userId, profilePromise);
         return profilePromise;
+    }
+
+    public async searchMessages(
+        chatId: string,
+        query: string,
+        beforeId: number | null = null,
+        limit = 20,
+    ): Promise<SearchMessagesResult | null> {
+        const q = query.trim();
+        if (!q || [...q].length > 256) {
+            return { items: [], nextBeforeId: null };
+        }
+
+        try {
+            let url = `${BASE_URL}/api/v1/search/messages?chat_id=${chatId}&q=${encodeURIComponent(q)}&limit=${limit}`;
+            if (beforeId) url += `&before_id=${beforeId}`;
+
+            const response = await httpClient.request(url, { method: 'GET' });
+            if (!response.ok) return null;
+
+            const data = await response.json();
+            if (data.status !== 'success' || !data.body) return null;
+
+            const items: SearchMessageHit[] = (data.body.items || []).map((m: any) => ({
+                messageId: String(m.message_id),
+                chatId: String(m.chat_id),
+                senderId: Number(m.sender_id),
+                textPreview: m.text_preview || '',
+                createdAt: new Date(m.created_at),
+            }));
+
+            const nextBeforeId = data.body.next_before_id ? Number(data.body.next_before_id) : null;
+            return { items, nextBeforeId };
+        } catch {
+            return null;
+        }
     }
 }
 

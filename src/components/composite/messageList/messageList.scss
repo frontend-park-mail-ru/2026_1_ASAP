@@ -50,3 +50,18 @@
         font-size: 14px;
     }
 }
+
+.message-system {
+    align-self: center;
+    padding: 4px 12px;
+    border-radius: 12px;
+    background-color: $color-base-background;
+    color: $color-text-hover;
+    font: $text-tertiary;
+    letter-spacing: $text-tertiary-ls;
+    font-size: 12px;
+    text-align: center;
+    user-select: none;
+    max-width: 80%;
+    word-wrap: break-word;
+}

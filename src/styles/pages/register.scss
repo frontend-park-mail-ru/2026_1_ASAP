@@ -16,4 +16,14 @@
     max-width: 410px;
     align-items: center;
     z-index: 1;
+    box-sizing: border-box;
+
+    @media (max-width: $breakpoint-mobile-max) {
+        gap: 18px;
+        height: auto;
+        min-height: min(495px, 85dvh);
+        max-width: 100%;
+        margin-left: auto;
+        margin-right: auto;
+    }
 }

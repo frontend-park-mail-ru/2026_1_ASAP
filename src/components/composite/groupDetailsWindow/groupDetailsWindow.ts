@@ -11,7 +11,6 @@ import { chatService } from '../../../services/chatService';
 
 
 const MAX_TITLE_LENGTH = 100;
-const MAX_AVATAR_SIZE = 5 * 1024 * 1024;
 const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 interface GroupMember {
@@ -128,7 +127,7 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
         if (avatarSlot) {
             const avatarSrc = this.avatarPreviewUrl
                 || this.props.groupAvatarUrl
-                || "/assets/images/avatars/defaultAvatar.svg";
+                || "/assets/images/avatars/defaultGroup.svg";
 
             this.avatarComponent = new Avatar({
                 src: avatarSrc,
@@ -280,7 +279,7 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
             const item = new ContactItem({
                 id: member.id,
                 name: member.name,
-                avatarUrl: member.avatarUrl || '/assets/images/avatars/chatAvatar.svg',
+                avatarUrl: member.avatarUrl || '/assets/images/avatars/defaultGroup.svg',
                 rightSlot: rightControl,
                 onClick: !this.props.isEditing ? () => {
                     if (this.props.onMemberClick) {
@@ -307,9 +306,9 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
         let errorMessage = '';
 
         if (!ALLOWED_TYPES.includes(file.type)) {
-            errorMessage = 'Неверный формат файла. Разрешены только JPEG, PNG и WEBP';
+            errorMessage = 'Пожалуйста, используйте формат JPEG, PNG или WEBP';
         } else if (file.size > MAX_SIZE) {
-            errorMessage = 'Файл слишком большой. Максимальный размер — 5 МБ';
+            errorMessage = 'Выберите файл размером до 5 МБ';
         }
 
         if (errorMessage) {
@@ -341,7 +340,7 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
 
         if (titleChanged) {
             if (newName.length > MAX_TITLE_LENGTH) {
-                this.showAlert(`Название группы не должно превышать ${MAX_TITLE_LENGTH} символов.`, () => {
+                this.showAlert(`Название группы не должно превышать ${MAX_TITLE_LENGTH} символов`, () => {
                     this.setEditing(true);
                 });
                 return;
@@ -379,13 +378,13 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
                     this.props.onGroupUpdated();
                 }
             } else {
-                this.showAlert('Не удалось сохранить изменения. Попробуйте ещё раз.', () => {
+                this.showAlert('Не удалось сохранить изменения. Попробуйте ещё раз', () => {
                     this.setEditing(true);
                 });
             }
         } catch (error) {
             console.error("Ошибка при сохранении группы:", error);
-            this.showAlert('Произошла ошибка при сохранении. Проверьте подключение к сети.');
+            this.showAlert('Произошла ошибка при сохранении. Проверьте подключение к сети');
         } finally {
             this.setLoadingState(false);
         }

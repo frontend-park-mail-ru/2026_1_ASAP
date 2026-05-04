@@ -2,9 +2,9 @@ import { BackendContact, FrontendContact } from "../types/contact";
 import { BackendProfile, FrontendProfile, ProfileAdditionalInfo, ProfileMainInfo } from "../types/profile";
 import { httpClient } from "../core/utils/httpClient";
 import { sanitizeBioText } from "../utils/sanitizeBioText";
+import { SearchContactHit, SearchContactsResult } from '../types/search';
 
-const host = window.location.hostname;
-const BASE_URL = `${window.location.protocol}//${host}`;
+import { BASE_URL } from '../core/utils/apiBase';
 
 const CACHE_KEY = 'current_user_profile';
 const CACHE_VERSION = 1;
@@ -49,6 +49,7 @@ function formatLastSeen(date: Date): string {
     return `был(а) в сети в ${time} ${dateStr}`;
 }
 
+
 /**
  * @class ContactService
  * @description Сервис для управления контактами и профилями пользователей.
@@ -57,6 +58,7 @@ function formatLastSeen(date: Date): string {
 export class ContactService {
     private myProfile: FrontendProfile | null = null;
     private profilePromise: Promise<FrontendProfile> | null = null;
+    private adminStatus: boolean | null = null;
 
     /**
      * Конвертирует данные контакта от бэкенда в формат фронтенда.
@@ -70,7 +72,7 @@ export class ContactService {
         return {
             contact_user_id: backendContact.contact_user_id,
             contact_name: name,
-            avatarURL: backendContact.contact_avatar_url || '/assets/images/avatars/chatAvatar.svg',
+            avatarURL: backendContact.contact_avatar_url || '/assets/images/avatars/defaultAvatar.svg',
         };
     };
 
@@ -83,7 +85,7 @@ export class ContactService {
             mainInfo: {
                 firstName: backendProfile.first_name,
                 lastName: backendProfile.last_name || "",
-                avatarUrl: backendProfile.avatar || "/assets/images/avatars/profileAvatar.svg",
+                avatarUrl: backendProfile.avatar || "/assets/images/avatars/defaultAvatar.svg",
                 lastSeen: backendProfile.last_seen ? formatLastSeen(new Date(backendProfile.last_seen)) : undefined,
             },
             additionalInfo: {
@@ -95,6 +97,44 @@ export class ContactService {
             }
         };
     };
+
+    public async searchContacts(
+        query: string,
+        scope: 'contacts' | 'local' = 'contacts',
+        beforeId: number | null = null,
+        limit = 20,
+    ): Promise<SearchContactsResult | null> {
+        const q = query.trim();
+        if (!q || [...q].length > 256) {
+            return { items: [], nextBeforeId: null };
+        }
+
+        try {
+            let url = `${BASE_URL}/api/v1/search/users?q=${encodeURIComponent(q)}&scope=${scope}&limit=${limit}`;
+            if (beforeId) url += `&before_id=${beforeId}`;
+
+            const response = await httpClient.request(url, { method: 'GET' });
+            if (!response.ok) return null;
+
+            const data = await response.json();
+            if (data.status !== 'success' || !data.body) return null;
+
+            const items: SearchContactHit[] = (data.body.items || []).map((c: any) => ({
+                userId: Number(c.user_id),
+                displayName: c.display_name || '',
+                login: c.login ?? undefined,
+                avatarUrl: c.avatar_url ?? undefined,
+                isOnline: Boolean(c.is_online),
+                lastSeenAt: c.last_seen_at ? new Date(c.last_seen_at) : undefined,
+            }));
+
+            const nextBeforeId = data.body.next_before_id ? Number(data.body.next_before_id) : null;
+            return { items, nextBeforeId };
+        } catch (e) {
+            console.warn('searchContacts failed', e);
+            return null;
+        }
+    }
 
     private saveToCache(profile: FrontendProfile): void {
         try {
@@ -136,6 +176,7 @@ export class ContactService {
         localStorage.removeItem(CACHE_KEY);
         this.myProfile = null;
         this.profilePromise = null;
+        this.adminStatus = null;
     }
 
     /**
@@ -374,13 +415,40 @@ export class ContactService {
             const response = await httpClient.request(`${BASE_URL}/api/v1/contacts`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     contact_user_id: id,
-                    first_name: login,
+                    first_name: "",
                     last_name: ""
                 })
             });
             
+            let errorCode = '';
+            if (!response.ok) {
+                try {
+                    const data = await response.json();
+                    if (data.errors && data.errors.length > 0) errorCode = data.errors[0].code;
+                } catch {}
+                return { success: false, status: response.status, code: errorCode };
+            }
+
+            return { success: true, status: 200, code: '' };
+        } catch (error) {
+            return { success: false, status: 500, code: '' };
+        }
+    }
+
+    /**
+     * Удаляет пользователя из контактов по ID.
+     * @param {number} contactUserId - ID контакта для удаления.
+     * @returns {Promise<{success: boolean, status: number, code: string}>}
+     */
+    public async deleteContact(contactUserId: number): Promise<{success: boolean, status: number, code: string}> {
+        try {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/contacts/${contactUserId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+            });
+
             let errorCode = '';
             if (!response.ok) {
                 try {
@@ -413,6 +481,48 @@ export class ContactService {
         } catch (error) {
             return { id: null, status: 500 };
         }
+    };
+
+    public async deleteAvatar(): Promise<{status: number, profile: FrontendProfile | null }> {
+        try {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/profiles/me/avatar`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            if (response.status === 404) return { status: 404, profile: null };
+            if (!response.ok) return { status: response.status, profile: null };
+
+            const data: {status: string, body: BackendProfile } = await response.json();
+            return { status: 200, profile: this.convertToFrontendProfile(data.body) };
+        } catch(error) {
+            return { status: 500, profile: null };
+        }
+    }
+
+    /**
+     * Проверяет, является ли текущий пользователь администратором.
+     * Администратор в текущем приложении зарезервирован за логином `admin`.
+     * Для него дополнительно проверяется доступность admin endpoint.
+     * Результат кэшируется до логаута.
+     */
+    public async isAdmin(): Promise<boolean> {
+        if (this.adminStatus !== null) return this.adminStatus;
+        try {
+            const profile = await this.getMyProfile();
+            if (profile.additionalInfo.login !== 'admin') {
+                this.adminStatus = false;
+                return this.adminStatus;
+            }
+
+            const response = await httpClient.request(`${BASE_URL}/api/v1/complaints/all`, {
+                ignoreUnauthorized: true,
+            });
+            this.adminStatus = response.ok;
+        } catch {
+            this.adminStatus = false;
+        }
+        return this.adminStatus;
     }
 };
 

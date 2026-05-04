@@ -90,4 +90,38 @@
         font-size: 12px;
         text-align: right;
     }
+
+    &__edited {
+        margin-left: 6px;
+        font-size: 11px;
+        color: $color-text-tertiary;
+        font-style: italic;
+
+        &[hidden] { display: none; }
+    }
+
+    &--flash {
+        &.message--own .message__content-wrapper {
+            animation: message-flash-own 0.35s ease-out forwards;
+        }
+        &:not(.message--own) .message__content-wrapper {
+            animation: message-flash-other 0.35s ease-out forwards;
+        }
+    }
+}
+
+@keyframes message-flash-own {
+    0%   { box-shadow: 0 0 0 0px var(--color-search-selected-own); }
+    100% { box-shadow: 0 0 0 2.5px var(--color-search-selected-own); }
+}
+
+@keyframes message-flash-other {
+    0%   { box-shadow: 0 0 0 0px var(--color-search-selected-other); }
+    100% { box-shadow: 0 0 0 2.5px var(--color-search-selected-other); }
+}
+
+.message {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
 }

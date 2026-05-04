@@ -3,8 +3,7 @@
  * @description Утилиты для работы с URL и путями к ресурсам.
  */
 
-const host = window.location.hostname;
-const BASE_URL = `${window.location.protocol}//${host}:8080`;
+import { BASE_URL } from './apiBase';
 
 /**
  * Преобразует относительный путь от бэкенда в полный URL.
@@ -16,7 +15,7 @@ const BASE_URL = `${window.location.protocol}//${host}:8080`;
  * @returns {string} Полный URL или путь к дефолтному ресурсу.
  */
 export const getFullUrl = (path?: string, defaultPath: string = '/assets/images/avatars/defaultAvatar.svg'): string => {
-    if (!path || path === '' || path.includes('defaultAvatar.svg') || path.includes('chatAvatar.svg')) {
+    if (!path || path === '' || path.includes('defaultAvatar.svg')) {
         return defaultPath;
     }
 

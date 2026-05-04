@@ -19,14 +19,14 @@
         width: 100%;
         display: flex;
         flex-direction: row;
-        border: 1px solid $color-text;
+        border: 1px solid $color-text-hover;
         border-radius: 10px;
         gap: 0.5rem;
         transition: border-color 0.2s;
         padding-right: 5px;
 
         &:focus-within {
-            border-color: $color-text-hover;
+            border-color: $color-text;
         }
     }
 
@@ -42,6 +42,8 @@
 
 .add-button-cont {
     @include flex-center;
+    position: relative;
+    flex-shrink: 0;
     padding: 0;
 }
 

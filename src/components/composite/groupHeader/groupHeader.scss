@@ -40,6 +40,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
         width: 100%;
+        line-height: 1.3;
 
         &:hover {
             font-weight: 500;
@@ -52,12 +53,41 @@
         overflow: hidden;
         text-overflow: ellipsis;
         width: 100%;
+        line-height: 1.3;
     }
 
-    &__settings {
-        @include btn-reset;
+    &__actions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
         flex-shrink: 0;
-        max-width: 50px;
-        max-height: 50px;
+    }
+
+    &__settings,
+    &__search-btn {
+        @include btn-reset;
+        @include flex-center;
+        flex-shrink: 0;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        @include hover-transition;
+
+        img {
+            width: 22px;
+            height: 22px;
+            display: block;
+            object-fit: contain;
+            pointer-events: none;
+        }
+
+        &:hover {
+            background-color: $color-text-hover2;
+        }
+    }
+
+    &__settings img {
+        width: 34px;
+        height: 34px;
     }
 }

@@ -6,17 +6,26 @@ import template from './groupHeader.hbs'
 import { DeleteChatMenu } from '../deleteChatMenu/deleteChatMenu';
 import { ConfirmModal } from '../confirmModal/confirmModal';
 import { chatService } from '../../../services/chatService';
-import { wsClient, ChatInformationDto } from '../../../core/utils/wsClient';
+import {
+    wsClient,
+    ChatUpdatedAvatarDto,
+    ChatUpdatedTitleDto,
+    ChatUpdatedMembersDto,
+} from '../../../core/utils/wsClient';
 import { getFullUrl } from '../../../core/utils/url';
 
 interface GroupHeaderProps extends IBaseComponentProps {
     chat: GroupChat;
+    currentUserRole: 'owner' | 'member';
     onDeleteChat?: () => void;
+    onLeaveGroup?: () => void;
     onOpenGroupInfo?: () => void;
+    onOpenSearch?: () => void;
 }
 
 export class GroupHeader extends BaseComponent<GroupHeaderProps> {
     private avatarComponent: Avatar | null = null;
+    private searchButton: Button | null = null;
     private settingsButton: Button | null = null;
     private deleteChatMenu: DeleteChatMenu | null = null;
     private confirmModal: ConfirmModal | null = null;
@@ -47,10 +56,21 @@ export class GroupHeader extends BaseComponent<GroupHeaderProps> {
         const avatarSlot = this.element.querySelector('[data-component="group-avatar-slot"]');
         if (avatarSlot) {
             this.avatarComponent = new Avatar({
-                src: this.props.chat.avatarUrl || '/assets/images/avatars/defaultAvatar.svg',
+                src: this.props.chat.avatarUrl || '/assets/images/avatars/defaultGroup.svg',
                 class: 'group-header__avatar',
             });
             this.avatarComponent.mount(avatarSlot as HTMLElement);
+        }
+
+        const searchSlot = this.element.querySelector('[data-component="group-search-slot"]');
+        if (searchSlot) {
+            this.searchButton = new Button({
+                class: 'group-header__search-btn',
+                icon: '/assets/images/icons/searchIcon.svg',
+                title: 'Поиск',
+                onClick: () => this.props.onOpenSearch?.(),
+            });
+            this.searchButton.mount(searchSlot as HTMLElement);
         }
 
         const settingsSlot = this.element.querySelector('[data-component="group-settings-slot"]');
@@ -63,15 +83,24 @@ export class GroupHeader extends BaseComponent<GroupHeaderProps> {
                 onClick: () => {
                     if (!this.isDeleteMenuOpen) {
                         console.log("Открытие меню настроек диалога");
+                        const isOwner = this.props.currentUserRole === 'owner';
                         this.deleteChatMenu = new DeleteChatMenu({
                             typeChat: "group",
+                            deleteLabel: isOwner ? "Удалить группу" : "Выйти из группы",
                             onInfo: () => {
                                 this.openInfo();
                                 this.deleteChatMenu?.unmount();
                                 this.isDeleteMenuOpen = false;
                             },
                             onDelete: () => {
-                                this.openDeleteMenu();
+                                this.deleteChatMenu?.unmount();
+                                this.deleteChatMenu = null;
+                                this.isDeleteMenuOpen = false;
+                                if (isOwner) {
+                                    this.openDeleteMenu();
+                                } else {
+                                    this.props.onLeaveGroup?.();
+                                }
                             },
                             onClose: () => {
                                 this.isDeleteMenuOpen = false;
@@ -90,27 +119,37 @@ export class GroupHeader extends BaseComponent<GroupHeaderProps> {
         // Загружаем количество участников, если это группа
         this.loadMemberCount();
 
-        wsClient.subscribe<ChatInformationDto>('chat.Updated', this.handleChatUpdated);
+        wsClient.subscribe<ChatUpdatedAvatarDto>('chat.Updated.Avatar', this.handleAvatarUpdated);
+        wsClient.subscribe<ChatUpdatedTitleDto>('chat.Updated.Title', this.handleTitleUpdated);
+        wsClient.subscribe<ChatUpdatedMembersDto>('chat.Updated.Members', this.handleMembersUpdated);
     }
 
-    /**
-     * Обработчик события обновления чата через WebSocket.
-     * Обновляет название и аватарку в шапке, если ID совпадает.
-     * @param {ChatInformationDto} payload - Данные обновленного чата.
-     * @private
-     */
-    private handleChatUpdated = (payload: ChatInformationDto): void => {
-        if (this.props.chat && String(this.props.chat.id) === String(payload.id)) {
-            const nameEl = this.element?.querySelector('.group-header__name');
-            if (nameEl) {
-                nameEl.textContent = payload.title;
-            }
+    private isTargetChat(chatId: number): boolean {
+        return !!this.props.chat && String(this.props.chat.id) === String(chatId);
+    }
 
-            const avatarImg = this.element?.querySelector('.group-header__avatar') as HTMLImageElement;
-            if (avatarImg && payload.avatar) {
-                avatarImg.src = getFullUrl(payload.avatar);
-            }
+    private handleAvatarUpdated = (payload: ChatUpdatedAvatarDto): void => {
+        if (!this.isTargetChat(payload.chat_id)) return;
+        const avatarImg = this.element?.querySelector('.group-header__avatar') as HTMLImageElement;
+        if (avatarImg) {
+            avatarImg.src = payload.avatar_url
+                ? getFullUrl(payload.avatar_url)
+                : '/assets/images/avatars/defaultGroup.svg';
         }
+        this.props.chat.avatarUrl = payload.avatar_url;
+    };
+
+    private handleTitleUpdated = (payload: ChatUpdatedTitleDto): void => {
+        if (!this.isTargetChat(payload.chat_id)) return;
+        const nameEl = this.element?.querySelector('.group-header__name');
+        if (nameEl) nameEl.textContent = payload.title;
+        this.props.chat.title = payload.title;
+    };
+
+    private handleMembersUpdated = (payload: ChatUpdatedMembersDto): void => {
+        if (!this.isTargetChat(payload.chat_id)) return;
+        // подгрузим актуальное количество — список участников мог измениться
+        this.loadMemberCount();
     };
 
     /**
@@ -193,10 +232,13 @@ export class GroupHeader extends BaseComponent<GroupHeaderProps> {
 
     protected beforeUnmount(): void {
         this.avatarComponent?.unmount();
+        this.searchButton?.unmount();
         this.settingsButton?.unmount();
         this.deleteChatMenu?.unmount();
         this.confirmModal?.unmount();
 
-        wsClient.unsubscribe('chat.Updated', this.handleChatUpdated);
-    }   
+        wsClient.unsubscribe('chat.Updated.Avatar', this.handleAvatarUpdated);
+        wsClient.unsubscribe('chat.Updated.Title', this.handleTitleUpdated);
+        wsClient.unsubscribe('chat.Updated.Members', this.handleMembersUpdated);
+    }
 }

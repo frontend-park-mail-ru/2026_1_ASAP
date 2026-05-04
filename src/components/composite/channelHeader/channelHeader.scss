@@ -1,0 +1,97 @@
+@use "variables" as *;
+@use "mixins" as *;
+
+.channel-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    gap: 15px;
+
+    &__avatar-container {
+        max-width: 50px;
+        max-height: 50px;
+        flex-shrink: 0;
+    }
+
+    &__avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    &__info {
+        @include flex-column;
+        flex: 1;
+        min-width: 0;
+        cursor: pointer;
+
+        &:hover .channel-header__name {
+            font-weight: 500;
+        }
+    }
+
+    &__name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        width: 100%;
+        line-height: 1.3;
+        font-size: 18px;
+    }
+
+    &__subscribers {
+        font-size: 12px;
+        color: $color-text-hover;
+        line-height: 1.3;
+    }
+
+    &__actions {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+    &__search-slot,
+    &__settings-slot {
+        position: relative;
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+    }
+
+    &__search-btn,
+    &__settings-btn {
+        @include btn-reset;
+        @include flex-center;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        box-sizing: border-box;
+        background-color: transparent;
+        @include hover-transition;
+
+        img {
+            display: block;
+            object-fit: contain;
+            pointer-events: none;
+        }
+
+        &:hover {
+            background-color: $color-text-hover2;
+        }
+    }
+
+    &__search-btn img {
+        width: 24px;
+        height: 24px;
+    }
+
+    &__settings-btn img {
+        width: 34px;
+        height: 34px;
+    }
+}

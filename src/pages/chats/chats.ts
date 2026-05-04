@@ -1,5 +1,6 @@
 import template from "./chats.hbs";
 import { BasePage, IBasePageProps } from "../../core/base/basePage";
+import { OnboardingEmpty } from "../../components/composite/onboardingEmpty/onboardingEmpty";
 import { SearchForm } from "../../components/composite/searchForm/searchForm";
 import { MenuBar, MenuButtonType } from "../../components/composite/menuBar/menuBar";
 import { ChatListWrapper } from "../../components/composite/chatListWrapper/chatListWrapper";
@@ -10,18 +11,26 @@ import { ChatWindow } from "../../components/composite/chatWindow/chatWindow";
 import { DialogHeader } from "../../components/composite/dialogHeader/dialogHeader";
 import { MessageList } from "../../components/composite/messageList/messageList";
 import { MessageInput } from "../../components/ui/messageInput/messageInput";
-import { Chat, FrontendMessage, DialogChat, GroupChat, ChannelChat } from '../../types/chat';
+import { Chat, FrontendMessage, DialogChat, GroupChat, ChannelChat, User } from '../../types/chat';
 import { chatService } from "../../services/chatService";
+import { channelService, type ChannelRole } from "../../services/channelService";
 import { GroupHeader } from "../../components/composite/groupHeader/groupHeader";
 import { ChannelHeader } from "../../components/composite/channelHeader/channelHeader";
+import { ChannelJoinFooter } from "../../components/composite/channelJoinFooter/channelJoinFooter";
 import { FrontendProfile } from "../../types/profile";
-import { CreateDialogWindow } from "../../components/composite/createDialogWindow/createDialogWindow"; 
+import { CreateDialogWindow } from "../../components/composite/createDialogWindow/createDialogWindow";
 import { CreateGroupWindow } from "../../components/composite/createGroupWindow/createGroupWindow";
+import { CreateChannelWindow } from "../../components/composite/createChannelWindow/createChannelWindow";
 import { GroupDetailsWindow } from "../../components/composite/groupDetailsWindow/groupDetailsWindow";
+import { ChannelDetailsWindow } from "../../components/composite/channelDetailsWindow/channelDetailsWindow";
 import { AddMemberWindow } from "../../components/composite/addMemberWindow/addMemberWindow";
 import { contactService } from "../../services/contactService";
 import { ConfirmModal } from "../../components/composite/confirmModal/confirmModal";
-import { wsClient, MessageDto } from "../../core/utils/wsClient";
+import {
+    wsClient, MessageDto, MessageUpdateDto, MessageClearDto, ChatUpdatedMembersDto,
+} from "../../core/utils/wsClient";
+import { offlineQueue } from "../../services/offlineMessageQueue";
+import { MessageSearchBar } from "../../components/composite/messageSearchBar/messageSearchBar";
 
 
 /**
@@ -60,25 +69,37 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private chatWindow: ChatWindow | null = null;
     private createChatWindow: BaseComponent | null = null;
     private groupDetailsWindow: GroupDetailsWindow | null = null;
+    private channelDetailsWindow: ChannelDetailsWindow | null = null;
     private addMemberWindow: AddMemberWindow | null = null;
     private modalComponent: ConfirmModal | null = null;
+    private onboardingComponent: OnboardingEmpty | null = null;
     
     public activeChatId: string | null = null;
+    private messageSearchBar: MessageSearchBar | null = null;
     private mainContentArea: HTMLElement | null = null;
     private placeholderElement: HTMLElement | null = null;
     private currentUserId: number | null = null;
     private hasMoreHistory: boolean = false;
     private nextBeforeId: number | null = null;
     private currentUserProfile: FrontendProfile | null = null;
+    private searchDebounce: ReturnType<typeof setTimeout> | null = null;
+    private searchRequestId = 0;
+    private searchType: '' | 'group' | 'channel' = '';
+    private searchTabsEl: HTMLElement | null = null;
+    private currentQuery: string = '';
 
     /** ID текущего запроса истории (используется для защиты от гонок). */
     private historyRequestId = 0;
+    /** ID текущего вызова openChat (защита от race condition при быстром переключении чатов). */
+    private openChatRequestId = 0;
 
     /**
      * Ссылка на активный MessageList-компонент.
      * Хранится отдельно для доступа из WS-обработчика сообщений.
      */
     private activeMessageList: MessageList | null = null;
+    private activeMessageInput: MessageInput | null = null;
+    private activeChannelRole: ChannelRole | null = null;
 
     /**
      * Обработчик глобальных нажатий клавиш.
@@ -86,7 +107,11 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      */
     private handleKeyDown = (event: KeyboardEvent): void => {
         if (event.key === 'Escape') {
-            if (this.activeChatId || this.createChatWindow || this.groupDetailsWindow || this.addMemberWindow) {
+            if (this.messageSearchBar) {
+                this.closeMessageSearch();
+                return;
+            }
+            if (this.activeChatId || this.createChatWindow || this.groupDetailsWindow || this.channelDetailsWindow || this.addMemberWindow) {
                 this.props.router.navigate('/chats');
             }
         }
@@ -96,7 +121,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * Стрелочный обработчик WS-события «message.New».
      * Хранится как поле класса для корректной отписки.
      */
-    private readonly handleNewMessage = (dto: MessageDto): void => {
+    private readonly handleNewMessage = async (dto: MessageDto): Promise<void> => {
         if (!this.activeChatId || dto.chat_id.toString() !== this.activeChatId) {
             return;
         }
@@ -105,20 +130,90 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             return;
         }
 
+        const tempId = await chatService.resolveServerMessage(dto, this.currentUserId);
+        const serverTime = dto.created_at ? new Date(dto.created_at) : undefined;
+        if (tempId && this.activeMessageList.replaceMessageId(tempId, dto.id.toString(), serverTime)) {
+            return;
+        }
+
         const frontendMsg = chatService.convertWsMessageDto(dto, this.currentUserId);
         this.activeMessageList.addMessage(frontendMsg);
     };
 
+    private readonly handleMessageEdited = (dto: MessageUpdateDto): void => {
+        if (dto.last_message_edited) {
+            this.chatWrapper?.updateChatLastMessageText(dto.chat_id.toString(), dto.text);
+        }
+
+        if (!this.activeChatId || dto.chat_id.toString() !== this.activeChatId) return;
+        if (!this.activeMessageList) return;
+        this.activeMessageList.updateMessage(dto.id.toString(), dto.text);
+    };
+
+    private readonly handleMessageDeleted = (dto: MessageClearDto): void => {
+        const dtoChatId = dto.chat_id.toString();
+        const isActiveChat = this.activeChatId === dtoChatId;
+
+        if (isActiveChat && this.activeMessageList) {
+            this.activeMessageList.deleteMessage(dto.id.toString());
+        }
+
+        if (dto.last_message_edited) {
+            const newLast: FrontendMessage | undefined = dto.last_message
+                ? {
+                    id: '',
+                    text: dto.last_message.text,
+                    timestamp: new Date(dto.last_message.created_at),
+                    sender: { id: dto.last_message.sender_id } as User,
+                    isOwn: this.currentUserId !== null
+                        && Number(dto.last_message.sender_id) === Number(this.currentUserId),
+                }
+                : undefined;
+            this.chatWrapper?.setChatLastMessage(dtoChatId, newLast);
+        }
+    };
+
+    /**
+     * Обработчик `chat.Updated.Members` — добавляет системное сообщение в открытый чат
+     * вида «Иван Петров добавлен в чат» / «Иван Петров удалён из чата».
+     * Только для активного чата; сайдбар-логика отдельно живёт в ChatListItem.
+     */
+    private readonly handleActiveChatMembersUpdated = (payload: ChatUpdatedMembersDto): void => {
+        if (!this.activeChatId || String(payload.chat_id) !== this.activeChatId) return;
+        if (!this.activeMessageList) return;
+
+        const name = payload.name?.trim() || 'Пользователь';
+        const verb = payload.type === 'added' ? 'добавлен в чат' : 'удалён из чата';
+        this.activeMessageList.addSystemMessage(`${name} ${verb}`);
+    };
+
     /**
      * Обработчик системного события переподключения WS.
-     * Перезапрашивает историю для активного чата.
+     * Перезапрашивает историю для активного чата и флашит offline-очередь.
      */
     private handleWsConnected = () => {
+        chatService.flushQueue();
         if (this.activeChatId) {
             console.log('[ChatsPage] WS переподключен, запрашиваем свежую историю...');
             this.hasMoreHistory = false;
             this.nextBeforeId = null;
             this.loadHistory(this.activeChatId);
+        }
+    };
+
+    /**
+     * Триггер флаша очереди при восстановлении сети.
+     */
+    private handleOnline = (): void => {
+        chatService.flushQueue();
+    };
+
+    /**
+     * Триггер флаша очереди по сообщению от Service Worker (Background Sync).
+     */
+    private handleSwMessage = (event: MessageEvent): void => {
+        if (event.data?.type === 'flush-messages') {
+            chatService.flushQueue();
         }
     };
 
@@ -153,16 +248,28 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             console.error("ChatsPage: Не удалось получить профиль пользователя", error);
         }
 
-        // Подключаемся к глобальному WebSocket-хабу
         wsClient.connect();
 
-        // Подписываемся на системное событие подключения
         wsClient.subscribe('system.Connected', this.handleWsConnected);
+
+        wsClient.subscribe('system.Disconnected', () => {
+            chatService.clearInFlight();
+        });
 
         await this.handleChatRoute();
 
-        // Подписываемся на глобальное нажатие клавиш для выхода по Esc
         document.addEventListener('keydown', this.handleKeyDown);
+
+        // Триггеры флаша оффлайн-очереди сообщений
+        window.addEventListener('online', this.handleOnline);
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('message', this.handleSwMessage);
+        }
+
+        const mobileBack = this.element.querySelector('.chat-page__mobile-back');
+        mobileBack?.addEventListener('click', this.handleMobileBack);
+
+        this.syncMobileLayoutState();
     }
 
     /**
@@ -181,9 +288,79 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * чтобы избежать наложения интерфейсов и утечек памяти.
      * @private
      */
+    private toggleMessageSearch(chat: Chat): void {
+        if (this.messageSearchBar) {
+            this.closeMessageSearch();
+        } else {
+            this.openMessageSearch(chat);
+        }
+    }
+
+    private openMessageSearch(chat: Chat): void {
+        if (!this.chatWindow?.element || this.currentUserId === null) return;
+        const slot = this.chatWindow.element.querySelector('[data-component="chat-search-slot"]');
+        if (!slot) return;
+
+        this.messageSearchBar = new MessageSearchBar({
+            chatId: chat.id,
+            chatType: chat.type,
+            currentUserId: this.currentUserId,
+            onClose: () => this.closeMessageSearch(),
+            onResults: (query) => {
+                this.activeMessageList?.setHighlightQuery(query);
+            },
+            onJumpTo: (messageId) => this.jumpToMessage(messageId),
+            getLoadedMessages: () => this.activeMessageList?.getLoadedMessages() ?? [],
+        });
+        this.messageSearchBar.mount(slot as HTMLElement);
+    }
+
+    private closeMessageSearch(): void {
+        this.messageSearchBar?.unmount();
+        this.messageSearchBar = null;
+        this.activeMessageList?.setHighlightQuery('');
+    }
+
+    private async jumpToMessage(messageId: string): Promise<void> {
+        if (!this.activeMessageList) return;
+
+        if (this.activeMessageList.scrollToMessage(messageId)) return;
+
+        let iterations = 0;
+        const MAX_ITERATIONS = 5;
+
+        while (iterations < MAX_ITERATIONS && this.hasMoreHistory && this.nextBeforeId && this.activeChatId && this.currentUserId) {
+            const res = await chatService.getMessages(this.activeChatId, this.currentUserId, this.nextBeforeId);
+            if (!res) break;
+
+            this.hasMoreHistory = res.hasMore;
+            this.nextBeforeId = res.nextBeforeId;
+            this.activeMessageList.prependMessages(res.messages);
+
+            if (this.activeMessageList.scrollToMessage(messageId)) return;
+            iterations++;
+        }
+    }
+
     private cleanupMainContent(): void {
         wsClient.unsubscribe('message.New', this.handleNewMessage);
+        wsClient.unsubscribe('message.Update', this.handleMessageEdited);
+        wsClient.unsubscribe('message.Clear', this.handleMessageDeleted);
+        wsClient.unsubscribe('chat.Updated.Members', this.handleActiveChatMembersUpdated);
         this.activeMessageList = null;
+        this.activeMessageInput = null;
+        this.activeChannelRole = null;
+
+        if (this.searchDebounce !== null) {
+            clearTimeout(this.searchDebounce);
+            this.searchDebounce = null;
+        }
+        this.searchRequestId += 1;
+
+        if (this.messageSearchBar) {
+            this.messageSearchBar.unmount();
+            this.messageSearchBar = null;
+        }
 
         if (this.chatWindow) {
             this.chatWindow.unmount();
@@ -197,6 +374,10 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             this.groupDetailsWindow.unmount();
             this.groupDetailsWindow = null;
         }
+        if (this.channelDetailsWindow) {
+            this.channelDetailsWindow.unmount();
+            this.channelDetailsWindow = null;
+        }
         if (this.addMemberWindow) {
             this.addMemberWindow.unmount();
             this.addMemberWindow = null;
@@ -204,7 +385,75 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         if (this.placeholderElement) {
             this.placeholderElement.style.display = 'none';
         }
+        if (this.onboardingComponent) {
+            this.onboardingComponent.unmount();
+            this.onboardingComponent = null;
+        }
         this.closeModal();
+    }
+
+    private async runChatSearch(query: string): Promise<void> {
+        this.searchRequestId += 1;
+        const myId = this.searchRequestId;
+        const result = await chatService.searchChats(query, this.searchType);
+        if (myId !== this.searchRequestId) return;
+        if (!result) return;
+        this.chatWrapper?.showSearchResults(result.items);
+    }
+
+    private buildSearchTabs(): HTMLElement {
+        const wrap = document.createElement('div');
+        wrap.className = 'chats-search-tabs';
+        wrap.innerHTML = `
+            <button type="button" class="chats-search-tabs__btn chats-search-tabs__btn--active" data-type="">Чаты</button>
+            <button type="button" class="chats-search-tabs__btn" data-type="group">Группы</button>
+            <button type="button" class="chats-search-tabs__btn" data-type="channel">Каналы</button>
+        `;
+        wrap.style.display = 'none';
+        wrap.addEventListener('click', (e) => {
+            const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.chats-search-tabs__btn');
+            if (!btn) return;
+            const type = (btn.dataset.type ?? '') as '' | 'group' | 'channel';
+            if (type === this.searchType) return;
+            this.searchType = type;
+
+            wrap.querySelectorAll('.chats-search-tabs__btn').forEach(b =>
+                b.classList.toggle('chats-search-tabs__btn--active', b === btn)
+            );
+
+            if (this.currentQuery.trim()) {
+                this.runChatSearch(this.currentQuery);
+            }
+        });
+        return wrap;
+    }
+
+    private handleSearchInput = (query: string): void => {
+        if (this.searchDebounce !== null) clearTimeout(this.searchDebounce);
+        this.currentQuery = query;
+
+        if (!query.trim()) {
+            this.searchRequestId += 1;
+            if (this.searchTabsEl) this.searchTabsEl.style.display = 'none';
+            this.chatWrapper?.restoreChatList();
+            return;
+        }
+
+        if (this.searchTabsEl) this.searchTabsEl.style.display = 'flex';
+        this.searchDebounce = setTimeout(() => this.runChatSearch(query), 300);
+    };
+
+    private mountOnboarding(obKey: string): void {
+        if (!this.element || this.onboardingComponent) return;
+        this.onboardingComponent = new OnboardingEmpty({
+            onComplete: () => {
+                sessionStorage.setItem(obKey, '1');
+                this.onboardingComponent?.unmount();
+                this.onboardingComponent = null;
+                this.props.router.navigate('/chats/create-dialog');
+            },
+        });
+        this.onboardingComponent.mount(this.element);
     }
 
     /**
@@ -214,48 +463,108 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * @private
      */
     private async handleChatRoute(): Promise<void> {
-        const path = this.props.currentPath || window.location.pathname;
-        const pathParts = path.split('/');
-        const lastParam = pathParts[pathParts.length - 1];
+        try {
+            const path = this.props.currentPath || window.location.pathname;
+            const pathParts = path.split('/');
+            const lastParam = pathParts[pathParts.length - 1];
 
-        const isValidId = /^\d+$/.test(lastParam);
+            const isValidId = /^\d+$/.test(lastParam);
 
-        // Корень чатов (показываем плейсхолдер)
-        if (path === '/chats') {
-            this.cleanupMainContent();
-            this.activeChatId = null;
-            this.chatWrapper?.setActiveChat(null);
-            
-            if (this.placeholderElement) {
-                this.placeholderElement.style.display = 'block';
-            }
-            return;
-        }
-
-        // Открытие существующего чата
-        if (isValidId) {
-            if (lastParam !== this.activeChatId || !this.chatWindow) {
+            // Корень чатов (показываем плейсхолдер или онбординг)
+            if (path === '/chats') {
                 this.cleanupMainContent();
-                
-                this.activeChatId = lastParam;
-                this.chatWrapper?.setActiveChat(lastParam);
-                await this.openChat(lastParam);
+                this.activeChatId = null;
+                this.chatWrapper?.setActiveChat(null);
+
+                if (this.currentUserId !== null) {
+                    const obKey = `pulse_ob_closed_${this.currentUserId}`;
+                    if (!sessionStorage.getItem(obKey)) {
+                        try {
+                            const chats = await chatService.getChats(this.currentUserId);
+                            if (chats.length === 0) {
+                                this.mountOnboarding(obKey);
+                                return;
+                            }
+                        } catch {
+                            // не удалось проверить — показываем обычный плейсхолдер
+                        }
+                    }
+                }
+
+                if (this.placeholderElement) {
+                    this.placeholderElement.style.display = 'block';
+                }
+                return;
             }
-            return;
-        }
-        
-        // Создание нового чата
-        if (path.startsWith('/chats/create-')) {
-            this.cleanupMainContent();
-            
-            this.activeChatId = null;
-            this.chatWrapper?.setActiveChat(null);
-            
-            const chatType = path.replace('/chats/create-', ''); 
-            this.createChat(chatType);
-            return;
+
+            if (isValidId) {
+                if (lastParam !== this.activeChatId || !this.chatWindow) {
+                    this.cleanupMainContent();
+
+                    this.activeChatId = lastParam;
+                    this.chatWrapper?.setActiveChat(lastParam);
+                    await this.openChat(lastParam);
+                }
+                return;
+            }
+
+            if (path.startsWith('/chats/create-')) {
+                this.cleanupMainContent();
+
+                this.activeChatId = null;
+                this.chatWrapper?.setActiveChat(null);
+
+                const chatType = path.replace('/chats/create-', '');
+                await this.createChat(chatType);
+                return;
+            }
+        } finally {
+            this.syncMobileLayoutState();
         }
     }
+
+    /**
+     * На узких экранах переключает вид: список чатов или основная область (чат / создание / детали).
+     */
+    private syncMobileLayoutState(): void {
+        const pageRoot = this.element?.classList.contains('chat-page')
+            ? this.element
+            : this.element?.querySelector('.chat-page');
+        if (!pageRoot) return;
+
+        const mainVisible =
+            this.activeChatId !== null ||
+            this.createChatWindow !== null ||
+            this.groupDetailsWindow !== null ||
+            this.channelDetailsWindow !== null ||
+            this.addMemberWindow !== null;
+
+        /**
+         * Плавающая ‹ только у экрана открытого чата (в шапке чата нет своей «Назад»).
+         * Детали группы / добавление участника / создание чата — своя кнопка в ActionHeader.
+         */
+        const mobileFloatingBackVisible =
+            this.activeChatId !== null &&
+            this.createChatWindow === null &&
+            this.groupDetailsWindow === null &&
+            this.channelDetailsWindow === null &&
+            this.addMemberWindow === null;
+
+        pageRoot.classList.toggle('chat-page--main-visible', mainVisible);
+        pageRoot.classList.toggle('chat-page--mobile-floating-back', mobileFloatingBackVisible);
+    }
+
+    private readonly handleMobileBack = (): void => {
+        if (
+            this.activeChatId ||
+            this.createChatWindow ||
+            this.groupDetailsWindow ||
+            this.channelDetailsWindow ||
+            this.addMemberWindow
+        ) {
+            this.props.router.navigate('/chats');
+        }
+    };
 
     /**
      * Полностью пересобирает левую панель (сайдбар).
@@ -274,8 +583,14 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
         sidebar.innerHTML = '';
 
-        this.searchForm = new SearchForm({ router: this.props.router });
+        this.searchForm = new SearchForm({ 
+            router: this.props.router,
+            onSearch: this.handleSearchInput,
+         });
         this.searchForm.mount(sidebar as HTMLElement);
+
+        this.searchTabsEl = this.buildSearchTabs();
+        sidebar.appendChild(this.searchTabsEl);
 
         this.chatWrapper = new ChatListWrapper({ 
             router: this.props.router,
@@ -319,12 +634,19 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     router: this.props.router,
                     onSubmit: async (contactId: number, contactName: string) => {
                         const res = await chatService.createChat(
-                            [contactId], 
+                            [contactId],
                             "dialog",
                         );
-                        if (res.success && res.body?.id) {   
-                            this.rebuildSidebar(); 
+                        if (res.success && res.body?.id) {
+                            this.rebuildSidebar();
                             this.props.router.navigate(`/chats/${res.body.id}`);
+                            return;
+                        }
+                        if (res.status === 409) {
+                            const chatId = await chatService.findExistingDialogChatId(contactId);
+                            if (chatId) {
+                                this.props.router.navigate(`/chats/${chatId}`);
+                            }
                         }
                     },
                     onSubmitSearch: async (login: string) => {
@@ -409,10 +731,27 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 });
                 break;
             case 'channel':
-                // todo: Реализовать CreateChannelWindow и раскомментировать эту строку
-                // this.createChatWindow = new CreateChannelWindow({ router: this.props.router });
-                console.log("Рендерим компонент создания канала");
-                return;
+                this.createChatWindow = new CreateChannelWindow({
+                    router: this.props.router,
+                    onSubmit: async (title: string, _avatar?: File) => {
+                        // TODO: avatar при создании не передаётся на бэк, ставить через "Изменить" после создания
+                        const res = await channelService.createChannel(
+                            { title },
+                            myId
+                        );
+                        if (res.success && res.channelId) {
+                            this.rebuildSidebar();
+                            this.props.router.navigate(`/chats/${res.channelId}`);
+                            return;
+                        }
+
+                        const errorMsg = res.status === 403
+                            ? 'У вас нет прав на создание канала'
+                            : 'Не удалось создать канал. Попробуйте ещё раз';
+                        this.showAlert(errorMsg);
+                    },
+                });
+                break;
             default:
                 console.error("ChatsPage: Неизвестный тип создаваемого чата:", type);
                 return;
@@ -433,29 +772,44 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private async openChat(chatId: string): Promise<void> {
         if (!this.mainContentArea) return;
 
-        const chatDetail = await chatService.getChatDetail(chatId);
+        const reqId = ++this.openChatRequestId;
+        const isCancelled = () => reqId !== this.openChatRequestId || this.activeChatId !== chatId;
 
-        if (this.activeChatId !== chatId) {
-            return;
-        }
-        if (!chatDetail) {
-            this.props.router.navigate('/chats');
-            return;
-        }
-        this.cleanupMainContent();
+        try {
+            const chatDetail = await chatService.getChatDetail(chatId);
 
-        let headerComponent: BaseComponent;
-        switch (chatDetail.type) {
+            if (isCancelled()) {
+                return;
+            }
+            if (!chatDetail) {
+                this.props.router.navigate('/chats');
+                return;
+            }
+            this.cleanupMainContent();
+
+            let headerComponent: BaseComponent;
+            let footerComponent: BaseComponent | undefined;
+            let canWriteActiveChat = chatDetail.type !== 'channel';
+            let canJoinActiveChat = false;
+
+            switch (chatDetail.type) {
             case 'dialog':
                 const members = await chatService.getChatMembers(chatId);
+                if (isCancelled()) return;
                 const myId = await contactService.getMyId();
+                if (isCancelled()) return;
                 const interlocutorId = members.find(id => id !== myId) || members[0] || 0;
-                
+
                 (chatDetail as DialogChat).interlocutor.id = interlocutorId;
 
-                headerComponent = new DialogHeader({ 
+                const interlocutorProfile = await contactService.getProfileInfo(interlocutorId);
+                if (isCancelled()) return;
+                const interlocutorLogin = interlocutorProfile?.additionalInfo?.login || String(interlocutorId);
+
+                headerComponent = new DialogHeader({
                     chat: chatDetail as DialogChat,
-                    onOpenProfile: () => this.props.router.navigate('/contacts/' + interlocutorId),
+                    onOpenProfile: () => this.props.router.navigate('/contacts/' + interlocutorLogin),
+                    onOpenSearch: () => this.toggleMessageSearch(chatDetail),
                     onDeleteChat: async() => {
                         const res = await chatService.deleteChat(chatId);
                         if (res.success) {
@@ -472,9 +826,14 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 });
                 break;
 
-            case 'group':
-                headerComponent = new GroupHeader({ 
+            case 'group': {
+                const groupRole = (this.currentUserId !== null && (chatDetail as GroupChat).owner_id === this.currentUserId)
+                    ? 'owner' : 'member';
+                (chatDetail as GroupChat).currentUserRole = groupRole;
+                headerComponent = new GroupHeader({
                     chat: chatDetail as GroupChat,
+                    currentUserRole: groupRole,
+                    onOpenSearch: () => this.toggleMessageSearch(chatDetail),
                     onDeleteChat: async () => {
                         const res = await chatService.deleteChat(chatId);
                         if (res.success) {
@@ -491,31 +850,73 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                             });
                         }
                     },
+                    onLeaveGroup: async () => {
+                        const res = await chatService.leaveChat(Number(chatId));
+                        if (res.success) {
+                            this.activeChatId = null;
+                            this.rebuildSidebar();
+                            this.props.router.navigate('/chats');
+                        } else {
+                            this.showAlert("Не удалось выйти из группы");
+                        }
+                    },
                     onOpenGroupInfo: () => this.openGroupDetails(chatDetail as GroupChat)
                 });
                 break;
+            }
 
-            case 'channel':
-                headerComponent = new ChannelHeader({ 
+            case 'channel': {
+                if (this.currentUserId === null) return;
+                const channelDetail = await channelService.getChannel(chatId, this.currentUserId);
+                if (isCancelled()) return;
+                if (!channelDetail) {
+                    this.props.router.navigate('/chats');
+                    return;
+                }
+                (chatDetail as ChannelChat).currentUserRole = channelDetail.currentUserRole;
+                (chatDetail as ChannelChat).subscribersCount = channelDetail.subscribersCount;
+                this.activeChannelRole = channelDetail.currentUserRole;
+                canWriteActiveChat = channelDetail.currentUserRole === 'owner';
+                canJoinActiveChat = channelDetail.currentUserRole === 'guest';
+
+                headerComponent = new ChannelHeader({
                     chat: chatDetail as ChannelChat,
+                    currentUserRole: channelDetail.currentUserRole,
                     onDeleteChat: async () => {
-                        const res = await chatService.deleteChat(chatId);
+                        const res = await channelService.deleteChannel(chatId);
                         if (res.success) {
                             this.activeChatId = null;
                             this.rebuildSidebar();
                             this.props.router.navigate('/chats');
                         } else {
                             const errorMsg = res.errorCode === 'CANT_DELETE_CHAT'
-                                ? "Вы не можете удалить этот чат"
-                                : "Не удалось удалить канал";
+                                ? 'Вы не можете удалить этот канал'
+                                : 'Не удалось удалить канал';
                             this.showAlert(errorMsg);
                         }
-                    }
+                    },
+                    onLeaveChannel: async () => {
+                        if (channelDetail.currentUserRole !== 'participant') {
+                            this.showAlert('Вы не подписаны на этот канал');
+                            return;
+                        }
+                        const res = await channelService.leaveChannel(chatId);
+                        if (res.success) {
+                            this.activeChatId = null;
+                            this.rebuildSidebar();
+                            this.props.router.navigate('/chats');
+                        } else {
+                            this.showAlert('Не удалось покинуть канал');
+                        }
+                    },
+                    onOpenChannelInfo: () => this.openChannelDetails(chatDetail as ChannelChat),
+                    onOpenSearch: () => this.toggleMessageSearch(chatDetail),
                 });
                 break;
-        }
+            }
+            }
 
-        const messageListComponent = new MessageList({ 
+            const messageListComponent = new MessageList({
             messages: [],
             currentUser: {
                 id: this.currentUserId as number,
@@ -523,11 +924,12 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 avatarUrl: this.currentUserProfile?.mainInfo.avatarUrl
             },
             chatType: chatDetail.type,
+            chatAvatarUrl: chatDetail.type === 'channel' ? (chatDetail.avatarUrl || undefined) : undefined,
             onLoadMore: async () => {
                 if (!this.hasMoreHistory || !this.nextBeforeId || !this.currentUserId || !this.activeChatId) return;
-                
+
                 const res = await chatService.getMessages(this.activeChatId, this.currentUserId as number, this.nextBeforeId);
-                
+
                 if (res === null) return;
 
                 if (this.activeChatId === chatDetail.id && this.activeMessageList) {
@@ -535,32 +937,138 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     this.nextBeforeId = res.nextBeforeId;
                     this.activeMessageList.prependMessages(res.messages);
                 }
-            }
-        });
-
-        this.activeMessageList = messageListComponent;
-
-        const messageInputComponent = new MessageInput({
-            onSubmit: (text: string) => {
-                if (this.activeChatId) {
-                    chatService.sendMessage(this.activeChatId, text);
+            },
+            onRequestEdit: (messageId, currentText) => {
+                this.activeMessageInput?.enterEditMode(messageId, currentText);
+            },
+            onRequestDelete: (messageId) => {
+                if (!this.activeChatId) return;
+                const ok = chatService.deleteMessage(this.activeChatId, messageId);
+                if (!ok) {
+                    this.showAlert?.('No connection, try later');
                 }
-            } 
+            },
+            });
+
+            this.activeMessageList = messageListComponent;
+
+            if (canWriteActiveChat) {
+                const messageInputComponent = new MessageInput({
+                    onSubmit: async (text: string) => {
+                        if (!this.activeChatId || this.currentUserId === null) return;
+                        if (chatDetail.type === 'channel' && this.activeChannelRole !== 'owner') return;
+
+                        const pending = await chatService.sendMessage(
+                            this.activeChatId,
+                            text,
+                            this.currentUserId as number,
+                        );
+
+                        const optimistic: FrontendMessage = {
+                            id: pending.tempId,
+                            sender: {
+                                id: this.currentUserId as number,
+                                login: this.currentUserProfile?.additionalInfo.login || '',
+                                avatarUrl: this.currentUserProfile?.mainInfo.avatarUrl,
+                                firstName: this.currentUserProfile?.mainInfo.firstName,
+                                lastName: this.currentUserProfile?.mainInfo.lastName,
+                            },
+                            text,
+                            timestamp: new Date(pending.createdAt),
+                            isOwn: true,
+                        };
+                        this.activeMessageList?.addMessage(optimistic);
+                    },
+                    onSubmitEdit: (messageId, newText) => {
+                        if (!this.activeChatId) return;
+                        if (chatDetail.type === 'channel' && this.activeChannelRole !== 'owner') return;
+                        const ok = chatService.editMessage(this.activeChatId, messageId, newText);
+                        if (!ok) {
+                            this.showAlert?.('No connection, try later');
+                        }
+                    },
+                });
+                this.activeMessageInput = messageInputComponent;
+                footerComponent = messageInputComponent;
+            } else if (canJoinActiveChat) {
+                footerComponent = new ChannelJoinFooter({
+                    onJoin: () => this.handleJoinChannel(chatId),
+                });
+            }
+
+            if (isCancelled()) return;
+
+            this.chatWindow = new ChatWindow({
+                headerComponent: headerComponent,
+                messageListComponent: messageListComponent,
+                inputComponent: footerComponent
+            });
+
+            this.chatWindow.mount(this.mainContentArea);
+
+            // Подписываемся на новые сообщения (соединение уже установлено в afterMount)
+            wsClient.subscribe('message.New', this.handleNewMessage);
+            wsClient.subscribe('message.Update', this.handleMessageEdited);
+            wsClient.subscribe('message.Clear', this.handleMessageDeleted);
+            wsClient.subscribe('chat.Updated.Members', this.handleActiveChatMembersUpdated);
+
+            await this.loadHistory(chatId);
+            if (canWriteActiveChat) {
+                await this.restorePendingMessages(chatId);
+            }
+        } finally {
+            this.syncMobileLayoutState();
+        }
+    }
+
+    private async handleJoinChannel(chatId: string): Promise<void> {
+        const res = await channelService.joinChannel(chatId);
+        if (!res.success) {
+            let errorMsg = 'Не удалось подписаться на канал';
+            if (res.status === 404) {
+                errorMsg = 'Канал не найден';
+            } else if (res.status === 409) {
+                errorMsg = 'Вы уже подписаны на этот канал';
+            } else if (res.errorMessage) {
+                errorMsg = res.errorMessage;
+            }
+            this.showAlert(errorMsg);
+            return;
+        }
+
+        this.rebuildSidebar();
+        if (this.activeChatId === chatId) {
+            await this.openChat(chatId);
+        }
+    }
+
+    /**
+     * Догружает оптимистичные сообщения из IndexedDB (если остались с прошлой офлайн-сессии)
+     * и добавляет их в текущий список сообщений.
+     * @private
+     */
+    private async restorePendingMessages(chatId: string): Promise<void> {
+        if (!this.activeMessageList || this.currentUserId === null) return;
+        if (this.activeChatId !== chatId) return;
+
+        const pending = await offlineQueue.getByChat(chatId);
+        if (pending.length === 0) return;
+
+        pending.forEach((p) => {
+            this.activeMessageList?.addMessage({
+                id: p.tempId,
+                sender: {
+                    id: p.senderId,
+                    login: this.currentUserProfile?.additionalInfo.login || '',
+                    avatarUrl: this.currentUserProfile?.mainInfo.avatarUrl,
+                    firstName: this.currentUserProfile?.mainInfo.firstName,
+                    lastName: this.currentUserProfile?.mainInfo.lastName,
+                },
+                text: p.text,
+                timestamp: new Date(p.createdAt),
+                isOwn: true,
+            });
         });
-
-        this.chatWindow = new ChatWindow({
-            headerComponent: headerComponent,
-            messageListComponent: messageListComponent,
-            inputComponent: messageInputComponent
-        });
-        
-        this.chatWindow.mount(this.mainContentArea);
-
-        // Подписываемся на новые сообщения (соединение уже установлено в afterMount)
-        wsClient.subscribe('message.New', this.handleNewMessage);
-
-        // Загружаем историю через сокеты сразу после открытия чата
-        this.loadHistory(chatId);
     }
 
     /**
@@ -629,14 +1137,13 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             avatarUrl: p.mainInfo.avatarUrl || '/assets/images/avatars/defaultAvatar.svg'
         }));
 
-        const myId = await contactService.getMyId();
-
+        const groupDetailsRole = (this.currentUserId !== null && chat.owner_id === this.currentUserId)
+            ? 'owner' : 'member';
         this.groupDetailsWindow = new GroupDetailsWindow({
             groupId: chat.id,
             groupName: chat.title,
             groupAvatarUrl: chat.avatarUrl || '/assets/images/avatars/defaultAvatar.svg',
-            // Оставляем owner, чтобы кнопки были доступны; сервер проверит права при действии
-            currentUserRole: 'owner',
+            currentUserRole: groupDetailsRole,
             members: members,
             initialIsEditing: initialIsEditing,
             onBack: () => {
@@ -647,6 +1154,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 if (this.chatWindow?.element) {
                     this.chatWindow.element.style.display = 'flex';
                 }
+                this.syncMobileLayoutState();
             },
             onLeaveGroup: async () => {
                 const res = await chatService.leaveGroup(chat.id);
@@ -659,14 +1167,14 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     this.rebuildSidebar();
                     this.props.router.navigate('/chats');
                 } else {
-                    let errorMsg = 'Не удалось покинуть группу.';
-                    
+                    let errorMsg = 'Не удалось покинуть группу';
+
                     if (res.status === 403 || res.errorCode === 'CANT_LEAVE_OWN_CHAT') {
                         errorMsg = 'У вас нет прав для выхода (вы владелец)';
                     } else if (res.status === 400) {
-                        errorMsg = 'Неверный запрос или попытка выхода из личного диалога.';
+                        errorMsg = 'Неверный запрос или попытка выхода из личного диалога';
                     } else if (res.status === 404) {
-                        errorMsg = 'Чат не найден.';
+                        errorMsg = 'Чат не найден';
                     } else if (res.errorMessage) {
                         errorMsg = res.errorMessage;
                     } else if (res.errorCode) {
@@ -693,11 +1201,11 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             onRemoveMember: async (userId: number) => {
                 const res = await chatService.removeMember(chat.id, userId);
                 if (!res.success) {
-                    let errorMsg = 'Произошла ошибка при удалении участника.';
+                    let errorMsg = 'Произошла ошибка при удалении участника';
                     if (res.status === 403) {
-                        errorMsg = 'Только владелец может удалять участников.';
+                        errorMsg = 'Только владелец может удалять участников';
                     } else if (res.status === 400) {
-                        errorMsg = 'Невозможно удалить владельца чата.';
+                        errorMsg = 'Невозможно удалить владельца чата';
                     }
                     
                     this.showAlert(errorMsg, () => {
@@ -710,13 +1218,132 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             onAddMember: () => {
                 this.openAddMemberWindow(chat);
             },
-            onMemberClick: (userId: number) => {
-                this.props.router.navigate(`/contacts/${userId}`);
+            onMemberClick: async (userId: number) => {
+                const memberProfile = await contactService.getProfileInfo(userId);
+                const memberLogin = memberProfile?.additionalInfo?.login || String(userId);
+                this.props.router.navigate(`/contacts/${memberLogin}`);
             }
         });
 
         this.groupDetailsWindow.mount(this.mainContentArea);
+        this.syncMobileLayoutState();
     }
+    /**
+     * Открывает окно деталей канала поверх чата.
+     * Загружает свежие данные через channelService, монтирует ChannelDetailsWindow.
+     */
+    private async openChannelDetails(chat: ChannelChat): Promise<void> {
+        if (!this.mainContentArea || this.currentUserId === null) return;
+
+        if (this.channelDetailsWindow) {
+            this.channelDetailsWindow.unmount();
+            this.channelDetailsWindow = null;
+        }
+
+        if (this.chatWindow?.element) {
+            this.chatWindow.element.style.display = 'none';
+        }
+
+        const channelDetail = await channelService.getChannel(chat.id, this.currentUserId);
+        if (!channelDetail) {
+            if (this.chatWindow?.element) {
+                this.chatWindow.element.style.display = 'flex';
+            }
+            this.syncMobileLayoutState();
+            this.showAlert('Не удалось загрузить информацию о канале');
+            return;
+        }
+
+        this.channelDetailsWindow = new ChannelDetailsWindow({
+            channel: channelDetail,
+            onBack: () => {
+                if (this.channelDetailsWindow) {
+                    this.channelDetailsWindow.unmount();
+                    this.channelDetailsWindow = null;
+                }
+                if (this.chatWindow?.element) {
+                    this.chatWindow.element.style.display = 'flex';
+                }
+                this.syncMobileLayoutState();
+            },
+            onLeaveChannel: async () => {
+                if (channelDetail.currentUserRole !== 'participant') {
+                    this.showAlert('Вы не подписаны на этот канал', () => {
+                        this.openChannelDetails(chat);
+                    });
+                    return;
+                }
+                const res = await channelService.leaveChannel(chat.id);
+                if (res.success) {
+                    if (this.channelDetailsWindow) {
+                        this.channelDetailsWindow.unmount();
+                        this.channelDetailsWindow = null;
+                    }
+                    this.activeChatId = null;
+                    this.rebuildSidebar();
+                    this.props.router.navigate('/chats');
+                } else {
+                    this.showAlert('Не удалось покинуть канал', () => {
+                        this.openChannelDetails(chat);
+                    });
+                }
+            },
+            onDeleteChannel: async () => {
+                const res = await channelService.deleteChannel(chat.id);
+                if (res.success) {
+                    if (this.channelDetailsWindow) {
+                        this.channelDetailsWindow.unmount();
+                        this.channelDetailsWindow = null;
+                    }
+                    this.activeChatId = null;
+                    this.rebuildSidebar();
+                    this.props.router.navigate('/chats');
+                } else {
+                    const errorMsg = res.errorCode === 'CANT_DELETE_CHAT'
+                        ? 'Вы не можете удалить этот канал'
+                        : 'Не удалось удалить канал';
+                    this.showAlert(errorMsg, () => {
+                        this.openChannelDetails(chat);
+                    });
+                }
+            },
+            onUpdateChannel: async (title?: string, description?: string, avatar?: File) => {
+                if (this.currentUserId === null) return { success: false };
+                return channelService.updateChannel(chat.id, { title, description, avatar }, this.currentUserId);
+            },
+            onChannelUpdated: () => {
+                this.rebuildSidebar();
+                if (this.activeChatId) {
+                    if (this.channelDetailsWindow) {
+                        this.channelDetailsWindow.unmount();
+                        this.channelDetailsWindow = null;
+                    }
+                    this.chatWindow?.unmount();
+                    this.chatWindow = null;
+                    this.openChat(this.activeChatId);
+                }
+            },
+            onRemoveMember: async (userId: number) => {
+                const res = await channelService.removeMember(chat.id, userId);
+                if (!res.success) {
+                    this.showAlert('Не удалось удалить участника', () => {
+                        this.openChannelDetails(chat);
+                    });
+                    return false;
+                }
+                return true;
+            },
+            onMemberClick: async (userId: number) => {
+                const memberProfile = await contactService.getProfileInfo(userId);
+                const memberLogin = memberProfile?.additionalInfo?.login || String(userId);
+                this.props.router.navigate(`/contacts/${memberLogin}`);
+            },
+        });
+
+        this.channelDetailsWindow.mount(this.mainContentArea);
+        this.syncMobileLayoutState();
+    }
+
     /**
      * Открывает окно добавления участника в группу по логину.
      * Прячет окно деталей группы и показывает форму поиска пользователя.
@@ -743,6 +1370,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 if (this.groupDetailsWindow?.element) {
                     this.groupDetailsWindow.element.style.display = 'flex';
                 }
+                this.syncMobileLayoutState();
             },
             onSubmitSearch: async (login: string) => {
                 const targetLogin = login.trim().toLowerCase();
@@ -784,12 +1412,13 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     if (res.status === 400) {
                         return "Неверный запрос (проверьте данные)";
                     }
-                    return 'Не удалось добавить участника.';
+                    return 'Не удалось добавить участника';
                 }
             }
         });
 
         this.addMemberWindow.mount(this.mainContentArea);
+        this.syncMobileLayoutState();
     }
 
     /**
@@ -798,6 +1427,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * @protected
      */
     beforeUnmount() {
+        this.onboardingComponent?.unmount();
+        this.onboardingComponent = null;
         this.cleanupMainContent();
         this.closeModal();
         this.logoutWrapper?.remove();
@@ -808,9 +1439,17 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         
         wsClient.unsubscribe('system.Connected', this.handleWsConnected);
         wsClient.disconnect();
-        
+
         // Отписываемся от глобального события
         document.removeEventListener('keydown', this.handleKeyDown);
+
+        this.element?.querySelector('.chat-page__mobile-back')
+            ?.removeEventListener('click', this.handleMobileBack);
+
+        window.removeEventListener('online', this.handleOnline);
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.removeEventListener('message', this.handleSwMessage);
+        }
         
         this.activeChatId = null;
         this.placeholderElement = null; 

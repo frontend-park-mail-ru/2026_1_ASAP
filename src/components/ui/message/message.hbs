@@ -1,4 +1,4 @@
-<div class="message {{#if isOwn}}message--own{{/if}}">
+<div class="message {{#if isOwn}}message--own{{/if}}" data-message-id="{{message.id}}">
     {{#unless isOwn}}
         <div class="message__avatar-container" data-component="message-avatar-slot"></div>
     {{/unless}}
@@ -11,6 +11,7 @@
         <div class="message__text">{{message.text}}</div>
         <div class="message__meta">
             <span class="message__time">{{formattedTime}}</span>
+            <span class="message__edited" {{#unless message.isEdited}}hidden{{/unless}}>(изм.)</span>
             {{#if isOwn}}
                 <span class="message__status">{{message.status}}</span>
             {{/if}}

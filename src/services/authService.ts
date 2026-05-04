@@ -1,8 +1,7 @@
 import { httpClient } from "../core/utils/httpClient";
 import { contactService } from "./contactService";
 
-const host = window.location.hostname;
-const BASE_URL = `${window.location.protocol}//${host}`;
+import { BASE_URL } from '../core/utils/apiBase';
 
 /**
  * @interface AuthResult - Результат операции аутентификации.
@@ -77,7 +76,7 @@ class AuthService {
             });
 
             if (!response.ok) {
-                let errorMessage = `Ошибка сервера: ${response.status}`;
+                let errorMessage = `Сервис временно недоступен (код ${response.status})`;
 
                 try {
                     const errorData = await response.json();
@@ -114,6 +113,7 @@ class AuthService {
         if (result.success) {
             this.isAuthStatus = true;
         }
+        contactService.clearCache();
         return result;
     }
 
@@ -129,6 +129,7 @@ class AuthService {
         if (result.success) {
             this.isAuthStatus = true;
         }
+        contactService.clearCache();
         return result;
     }
 

@@ -27,8 +27,9 @@
     }
 
     &__secondary {
-        border: 1px solid $color-primary;
+        box-shadow: inset 0 0 0 1px $color-primary;
         color: $color-primary;
+        background-color: $color-surface-light;
         @include hover-after-gradient($gradient-button-hover);
 
         &:hover:not(:disabled) {
@@ -37,7 +38,7 @@
     }
 
     &__secondary2 {
-        border: 1px solid $color-text;
+        box-shadow: inset 0 0 0 1px $color-surface-light;
         background: none;
         color: $color-text;
         @include hover-after-gradient($color-text);
@@ -76,14 +77,24 @@
 
 .add-button {
     @include flex-center;
-    width: 40px;
-    height: 40px;
-    border: 2px solid $color-text;
+    width: 42px;
+    height: 42px;
     border-radius: 10px;
-    background-color: $color-empty;
+    background: transparent;
+    border: 1px solid $color-text-hover;
     cursor: pointer;
-    transition: background-color 0.2s, transform 0.1s;
     user-select: none;
+    transition:
+        border-color 200ms ease,
+        background-color 200ms ease,
+        transform 80ms ease;
+
+    &:hover:not(:disabled) {
+        border-color: $color-primary;
+        background-color: rgba(69, 93, 186, 0.12);
+    }
+
+    &:active:not(:disabled) { transform: scale(0.95); }
 
     &:disabled {
         opacity: 0.5;
@@ -91,16 +102,9 @@
         pointer-events: none;
     }
 
-    &:hover:not(:disabled) {
-        border: 2px solid $color-text-hover;
-
-        & > img {
-            filter: brightness(0.5);
-        }
-    }
-
     & > img {
         transform: rotate(45deg);
+        filter: brightness(0) invert(1);
         @include hover-transition;
     }
 }
@@ -165,25 +169,64 @@
     @include hover-transition;
 
     &:hover {
-        border: none;
-        color: $color-text;
+        opacity: 0.8;
         background-color: $color-error-border;
+        border-color: $color-error-border;
+        color: $color-text;
     }
 }
 
 .save-field-button {
     width: 100%;
     height: 42px;
-    background-color: $color-text;
+    background-color: $color-surface-light;
     color: $color-primary;
     border-radius: 10px;
     cursor: pointer;
-    border: none;
+    border: 1px solid transparent;
     font: inherit;
     letter-spacing: inherit;
     @include hover-after-gradient($gradient-button-hover);
 
     &:hover:not(:disabled) {
         color: $color-text;
+    }
+}
+
+.edit-msg-overlay__buttons-container {
+    &-edit-button {
+        width: 100%;
+        color: $color-text;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        padding: 10px;
+        background-color: $color-empty;
+        @include hover-transition;
+        &:hover:not(:disabled) {
+            background-color: $color-text-hover2;
+            cursor: pointer;
+            border-radius: 10px;
+        }
+    }
+
+    &-delete-button {
+        width: 100%;
+        border: none;
+        color: $color-error;
+        display: flex;
+        align-items: center;
+        flex-direction: row;
+        gap: 8px;
+        padding: 10px;
+        background-color: $color-empty;
+        @include hover-transition;
+        &:hover:not(:disabled) {
+            background-color: $color-text-hover2;
+            cursor: pointer;
+            border-radius: 10px;
+        }
     }
 }

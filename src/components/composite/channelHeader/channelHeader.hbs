@@ -1,4 +1,11 @@
 <div class="channel-header">
-    <div class="channel-header__name">{{chat.title}}</div>
-    <div class="channel-header__subscribers">{{chat.subscribersCount}} подписчика(ов)</div>
+    <div class="channel-header__avatar-container" data-component="channel-avatar-slot"></div>
+    <div class="channel-header__info">
+        <div class="channel-header__name">{{chat.title}}</div>
+        <div class="channel-header__subscribers"></div>
+    </div>
+    <div class="channel-header__actions">
+        <div class="channel-header__search-slot" data-component="channel-search-slot"></div>
+        <div class="channel-header__settings-slot" data-component="channel-settings-slot"></div>
+    </div>
 </div>

@@ -21,9 +21,13 @@
         border: 1px solid $color-stroke;
         border-radius: 10px;
         background-color: transparent;
-        min-height: 60px;
+        min-height: 58px;
         display: flex;
         align-items: center;
+    }
+
+    &__search {
+        &:empty { display: none; }
     }
 
     &__main {
@@ -38,5 +42,11 @@
         flex-direction: column;
         justify-content: flex-end;
         padding: 10px 10px 0px 10px;
+    }
+
+    @media (max-width: $breakpoint-mobile-max) {
+        &__footer {
+            padding-bottom: max(4px, env(safe-area-inset-bottom, 0px));
+        }
     }
 }

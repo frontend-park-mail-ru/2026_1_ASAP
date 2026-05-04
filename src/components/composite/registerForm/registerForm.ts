@@ -120,7 +120,7 @@ export class RegisterForm extends BaseForm<RegisterFormProps> {
             isFormValid = false;
         }
         if (!passwordResult.isValid) {
-            this.passwordInput.setError(`Не хватает: ${passwordResult.missing?.join(', ')}`);
+            this.passwordInput.setError(`${passwordResult.missing?.join('; ')}`);
             isFormValid = false;
         }
 

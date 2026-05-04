@@ -59,7 +59,7 @@ export class ChatItem extends BaseForm<ChatItemProps> {
             case 'group':
                 return 'message-group';
             case 'channel':
-                return 'message-channel';
+                return 'message-chanel';
             default:
                 return 'message-personal';
         }
@@ -140,7 +140,7 @@ export class ChatItem extends BaseForm<ChatItemProps> {
         if (avatarSlot) {
             this.avatar = new Avatar({
                 class: "chat-avatar",
-                src: this.props.chat.avatarUrl || "/assets/images/avatars/chatAvatar.svg",
+                src: this.props.chat.avatarUrl || "/assets/images/avatars/defaultAvatar.svg",
             });
             this.avatar.mount(avatarSlot as HTMLElement);
         }
@@ -221,7 +221,7 @@ export class ChatItem extends BaseForm<ChatItemProps> {
 
         const avatarImg = this.element.querySelector<HTMLImageElement>('.chat-avatar');
         if (avatarImg) {
-            avatarImg.src = newData.avatarUrl || "/assets/images/avatars/chatAvatar.svg";
+            avatarImg.src = newData.avatarUrl || "/assets/images/avatars/defaultAvatar.svg";
         }
 
         const nameEl = this.element.querySelector('.user-name .name-text, .group-name .name-text, .chanel-name .name-text');

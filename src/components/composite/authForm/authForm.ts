@@ -2,10 +2,12 @@ import { BaseForm, IBaseFormProps } from '../../../core/base/baseForm';
 import { Button } from '../../ui/button/button';
 import { Checkbox } from "../../ui/checkbox/checkbox";
 import { authService } from '../../../services/authService';
+import { contactService } from '../../../services/contactService';
 import { Input } from '../../ui/input/input';
 import { validationService } from '../../../services/validationService';
 import { Router } from '../../../core/router';
 import template from './authForm.hbs';
+import { vkAuthService } from '../../../services/vkAuthService';
 
 /**
  * @interface AuthFormProps - Свойства для формы авторизации.
@@ -35,7 +37,6 @@ export class AuthForm extends BaseForm<AuthFormProps> {
     private passwordInput: Input | null = null;
     private remember: Checkbox | null = null;
     private loginButton: Button | null = null;
-    private registerButton: Button | null = null;
     private formErrorElement: HTMLElement | null = null;
 
     /**
@@ -101,12 +102,20 @@ export class AuthForm extends BaseForm<AuthFormProps> {
             type: "submit" });
         this.loginButton.mount(this.element.querySelector('.auth__login') as HTMLElement);
 
-        this.registerButton = new Button({ 
-            label: 'Зарегистрироваться', 
-            class: 'ui-button ui-button__secondary', 
-            type: "button", 
-            onClick: this.props.onNavigateToRegister });
-        this.registerButton.mount(this.element.querySelector('.auth__register') as HTMLElement);
+        const vkContainer = this.element.querySelector('.auth__vk-button') as HTMLElement;
+        if (vkContainer) {
+            vkAuthService.init(vkContainer, () => {
+                this.props.router.navigate('/chats');
+            });
+        }
+
+        const registerLink = this.element.querySelector('.auth__register-link');
+        if (registerLink) {
+            registerLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.props.onNavigateToRegister();
+            });
+        }
 
         const onInputChange = () => {
             this.clearFormError();
@@ -130,7 +139,6 @@ export class AuthForm extends BaseForm<AuthFormProps> {
         this.passwordInput?.unmount();
         this.remember?.unmount();
         this.loginButton?.unmount();
-        this.registerButton?.unmount();
     }
 
     /**
@@ -199,11 +207,12 @@ export class AuthForm extends BaseForm<AuthFormProps> {
             } else {
                 localStorage.removeItem('saved_login');
             }
-            this.props.router.navigate('/chats');
+            const isAdmin = await contactService.isAdmin();
+            this.props.router.navigate(isAdmin ? '/admin' : '/chats');
         } else {
             this.loginInput.setError(' ');
             this.passwordInput.setError(' ');
-            this.showFormError('Неверный логин или пароль');
+            this.showFormError('Проверьте логин и пароль');
             this.loginButton.disabled = true;
         }
     }

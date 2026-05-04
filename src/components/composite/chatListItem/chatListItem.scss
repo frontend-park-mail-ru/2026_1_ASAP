@@ -17,8 +17,10 @@
     }
 }
 
-.no-chats {
-    font: $text-heading1;
+.chat-list-item__no-chats {
+    font: $font-tertiary;
     text-align: center;
     user-select: none;
+    color: $color-text-tertiary;
 }
+

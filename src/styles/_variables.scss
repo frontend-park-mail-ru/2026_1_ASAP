@@ -1,103 +1,188 @@
 /**
  * @file _variables.scss
- * @description Глобальные переменные SCSS для проекта.
+ * @description Глобальные переменные SCSS + CSS custom properties для themable-цветов.
+ *
+ * Как это работает:
+ *   - Цвета объявлены как CSS custom properties (--color-*) в :root для тёмной
+ *     темы и в [data-theme="light"] для светлой. Переключение происходит сменой
+ *     атрибута data-theme на <html> (см. themeService.ts).
+ *   - SCSS-переменные ($color-*) — это алиасы вида var(--color-*), чтобы старый
+ *     код, использующий `$color-text`, продолжал работать без изменений.
+ *   - Бренд-цвета (primary / accent) и оверлеи одинаковы в обеих темах.
+ *   - Шрифты, размеры, брейкпоинты остаются обычными SCSS-переменными — они не
+ *     меняются от темы.
  */
 
-// основные цвета 
-$color-background: #0f102f;
-$color-primary: #455DBA;
-$color-text: rgba(242, 240, 240, 1);
-$color-text-hover: rgba(242, 240, 240, 0.5);
-$color-text-hover2: rgba(242, 240, 240, 0.1);
-$color-neutral: rgba(19, 19, 19, 1);
-$color-background-blur: #5A8A6E;
-$color-border: rgba(255, 255, 255, 0.1);
+// ═══════════ CSS CUSTOM PROPERTIES ═══════════
 
-$color-chat-sidebar: rgba(6, 5, 5, 0.31);
-$color-border-sidebar: rgba(45, 50, 53, 1);
-$color-border-chats: rgba(112, 112, 112, 0.3);
+:root {
+    // бренд (одинаково в обеих темах)
+    --color-primary: #455DBA;
+    --color-background-blur: #5A8A6E;
+    --color-bubble: rgba(69, 93, 186, 1);
+    --color-secondary: rgba(69, 93, 186, 1);
+    --color-checkbox-active: #4f6ef7;
+    --color-error: #C0392B;
+    --color-error-border: #A93226;
+    --color-text-inverted: #ffffff;
 
-$color-scroll: rgba(112, 112, 112, 1);
-$color-empty: rgba(242, 240, 240, 0);
-$color-half-empty: rgba(242, 240, 240, 0.5);
+    // оверлеи затемнения (одинаковы — всегда тёмные поверх контента)
+    --color-overlay-light: rgba(0, 0, 0, 0.25);
+    --color-overlay-medium: rgba(0, 0, 0, 0.5);
+    --color-overlay-dark: rgba(0, 0, 0, 0.75);
+    --color-overlay-avatar: rgba(0, 0, 0, 0.35);
 
-$color-bubble: rgba(69, 93, 186, 1);
+    // checkbox
+    --color-checkbox-bg: #d1d5db;
+    --color-checkbox-hover: #aab0bb;
 
-$color-error: #FF0000;
-$color-error-border: #D80000;
+    // auth (всегда светлый блок на тёмном/светлом фоне)
+    --color-auth-text: #1E1E1E;
+    --color-auth-hint: #9aa0a6;
+    --color-auth-disabled: #d0d0d0;
+    --color-input-placeholder: #9ca3af;
 
-$color-stroke: rgba(122, 122, 122, 0.37);
-$color-stroke2: rgba(122, 122, 122, 0.30);
+    // search highlight (одинаково в обеих темах — зелёный акцент)
+    --search-highlight-bg: rgba(90, 138, 110, 0.55);
+    --search-highlight-text: #ffffff;
 
-$color-base-background: rgba(6, 5, 5, 0.5);
+    // search jump-to-message border (одинаково в обеих темах)
+    --color-search-selected-own: #8EC0A3;
+    --color-search-selected-other: #879FFF;
 
-// доп цвета
-$color-background-default: $color-background;
-$color-background-secondary: rgba(242, 240, 240, 0.05);
-$color-text-inverted: #ffffff;
-$color-text-tertiary: rgba(242, 240, 240, 0.6);
-$color-secondary: rgba(69, 93, 186, 1);
+    // тёмная тема (default)
+    --color-background: #0f102f;
+    --color-neutral: rgba(19, 19, 19, 1);
+    --color-text: rgba(242, 240, 240, 1);
+    --color-text-hover: rgba(242, 240, 240, 0.5);
+    --color-text-hover2: rgba(242, 240, 240, 0.1);
+    --color-text-tertiary: rgba(242, 240, 240, 0.6);
+    --color-border: rgba(255, 255, 255, 0.1);
+    --color-chat-sidebar: rgba(6, 5, 5, 0.31);
+    --color-border-sidebar: rgba(45, 50, 53, 1);
+    --color-border-chats: rgba(112, 112, 112, 0.3);
+    --color-scroll: rgba(112, 112, 112, 1);
+    --color-empty: rgba(242, 240, 240, 0);
+    --color-surface-light: rgba(242, 240, 240, 0.88);
+    --color-half-empty: rgba(242, 240, 240, 0.5);
+    --color-stroke: rgba(122, 122, 122, 0.37);
+    --color-stroke2: rgba(122, 122, 122, 0.30);
+    --color-base-background: rgba(6, 5, 5, 0.5);
+    --color-background-secondary: rgba(242, 240, 240, 0.05);
+    --color-input-border: #2A2A2A;
 
-// цвета которые мало используются (в отдельных компонентах)
-$color-checkbox-active: #4f6ef7;
-$color-checkbox-bg: #d1d5db;
-$color-checkbox-hover: #aab0bb;
-$color-input-border: #2A2A2A;
-$color-input-placeholder: #9ca3af;
-$color-auth-text: #1E1E1E;
-$color-auth-hint: #9aa0a6;
-$color-auth-disabled: #d0d0d0;
+    --gradient-background-chats: linear-gradient(
+        to bottom,
+        rgba(15, 16, 47, 1) 0%,
+        rgba(4, 28, 13, 0.88) 140%
+    );
+    --gradient-msg: linear-gradient(to right, #455DBA 11%, #5A8A6E 100%);
+    --gradient-msg-reverse: linear-gradient(to right, #5A8A6E 0%, #455DBA 100%);
+    --gradient-button: linear-gradient(to right, #6583FA 0%, #5A8A6E 100%);
+    --gradient-button-hover: linear-gradient(to right, #3D5D4A 0%, #324487 100%);
+    --gradient-selected-chat: linear-gradient(to right, #455DBA 11%, #5A8A6E 100%);
+}
 
-// затемнения оверлеев
-$color-overlay-light: rgba(0, 0, 0, 0.25);
-$color-overlay-medium: rgba(0, 0, 0, 0.5);
-$color-overlay-dark: rgba(0, 0, 0, 0.75);
-$color-overlay-avatar: rgba(0, 0, 0, 0.35);
+[data-theme="light"] {
+    --color-background: #F4F8F3;
+    --color-neutral: rgba(255, 255, 255, 1);
+    --color-text: rgba(31, 39, 34, 1);
+    --color-text-hover: rgba(31, 39, 34, 0.55);
+    --color-text-hover2: rgba(31, 39, 34, 0.06);
+    --color-text-tertiary: rgba(31, 39, 34, 0.6);
+    --color-border: rgba(31, 39, 34, 0.08);
+    --color-chat-sidebar: rgba(234, 241, 232, 0.88);
+    --color-border-sidebar: rgba(31, 39, 34, 0.08);
+    --color-border-chats: rgba(31, 39, 34, 0.10);
+    --color-scroll: rgba(31, 39, 34, 0.4);
+    --color-empty: rgba(31, 39, 34, 0);
+    --color-surface-light: rgba(31, 39, 34, 0.88);
+    --color-half-empty: rgba(31, 39, 34, 0.5);
+    --color-stroke: rgba(31, 39, 34, 0.15);
+    --color-stroke2: rgba(31, 39, 34, 0.12);
+    --color-base-background: rgba(233, 224, 224, 1);
+    --color-background-secondary: rgba(31, 39, 34, 0.04);
+    --color-input-border: rgba(31, 39, 34, 0.15);
 
-// градиенты 
-$gradient-msg: linear-gradient(
-    to right,
-    $color-primary 11%,
-    $color-background-blur 100%
-);
-
-$gradient-msg-reverse: linear-gradient(
-    to right,
-    $color-background-blur 0%,
-    $color-primary 100%
-);
-
-$gradient-button: linear-gradient(
-    to right,
-    #6583FA 0%,
-    $color-background-blur 100%
-);
-
-$gradient-button-hover: linear-gradient(
-    to right,
-    #3D5D4A 0%,
-    #324487 100%
-);
-
-$gradient-background-chats: linear-gradient(
-    to bottom,
-    rgba(15, 16, 47, 1) 0%,
-    rgba(4, 28, 13, 0.88) 140%
-);
-
-$gradient-selected-chat: linear-gradient(
-    to right,
-    $color-bubble 11%,
-    rgba(90, 138, 110, 1) 100%
-);
+    --gradient-background-chats: linear-gradient(
+        to bottom,
+        rgba(244, 248, 243, 1) 0%,
+        rgba(212, 229, 216, 0.88) 140%
+    );
+    --gradient-msg: linear-gradient(to right, #E8F0EA 11%, #D4E5D8 100%);
+    --gradient-msg-reverse: linear-gradient(to right, #D4E5D8 0%, #E8F0EA 100%);
+    --gradient-button: linear-gradient(to right, #6BA181 0%, #4A7B5C 100%);
+    --gradient-button-hover: linear-gradient(to right, #4A7B5C 0%, #3A6648 100%);
+    --gradient-selected-chat: linear-gradient(to right, #E8F0EA 11%, #D4E5D8 100%);
+}
 
 
+// ═══════════ SCSS-АЛИАСЫ (обратная совместимость) ═══════════
 
-// шрифты
+$color-primary: var(--color-primary);
+$color-background-blur: var(--color-background-blur);
+$color-bubble: var(--color-bubble);
+$color-secondary: var(--color-secondary);
+$color-checkbox-active: var(--color-checkbox-active);
+$color-checkbox-bg: var(--color-checkbox-bg);
+$color-checkbox-hover: var(--color-checkbox-hover);
+$color-error: var(--color-error);
+$color-error-border: var(--color-error-border);
+$color-text-inverted: var(--color-text-inverted);
+
+$color-overlay-light: var(--color-overlay-light);
+$color-overlay-medium: var(--color-overlay-medium);
+$color-overlay-dark: var(--color-overlay-dark);
+$color-overlay-avatar: var(--color-overlay-avatar);
+
+$color-auth-text: var(--color-auth-text);
+$color-auth-hint: var(--color-auth-hint);
+$color-auth-disabled: var(--color-auth-disabled);
+$color-input-placeholder: var(--color-input-placeholder);
+
+$color-background: var(--color-background);
+$color-background-default: var(--color-background);
+$color-neutral: var(--color-neutral);
+$color-text: var(--color-text);
+$color-text-hover: var(--color-text-hover);
+$color-text-hover2: var(--color-text-hover2);
+$color-text-tertiary: var(--color-text-tertiary);
+$color-border: var(--color-border);
+$color-chat-sidebar: var(--color-chat-sidebar);
+$color-border-sidebar: var(--color-border-sidebar);
+$color-border-chats: var(--color-border-chats);
+$color-scroll: var(--color-scroll);
+$color-empty: var(--color-empty);
+$color-surface-light: var(--color-surface-light);
+$color-half-empty: var(--color-half-empty);
+$color-stroke: var(--color-stroke);
+$color-stroke2: var(--color-stroke2);
+$color-base-background: var(--color-base-background);
+$color-background-secondary: var(--color-background-secondary);
+$color-input-border: var(--color-input-border);
+
+$color-search-selected-own: var(--color-search-selected-own);
+$color-search-selected-other: var(--color-search-selected-other);
+
+
+// ═══════════ ГРАДИЕНТЫ ═══════════
+// Используют CSS-vars, поэтому переключаются автоматически вместе с темой.
+
+$gradient-msg:           var(--gradient-msg);
+$gradient-msg-reverse:   var(--gradient-msg-reverse);
+$gradient-button:        var(--gradient-button);
+$gradient-button-hover:  var(--gradient-button-hover);
+$gradient-selected-chat: var(--gradient-selected-chat);
+$gradient-background-chats: var(--gradient-background-chats);
+
+
+// ═══════════ ШРИФТЫ И РАЗМЕРЫ ═══════════
+// Тема не меняется, остаются обычными SCSS-переменными.
+
 $font-primary: "Inter", sans-serif;
 $font-secondary: "Inter", sans-serif;
 $font-tertiary: "Inter", sans-serif;
-$font-text-main: "Roboto Condensed", sans-serif;
+$font-text-main: "Roboto", sans-serif;
 
 
 $text-heading1: 600 24px/30px $font-primary;
@@ -112,9 +197,12 @@ $text-tertiary-ls: 0.4px;
 $text-main-style: 400 14px/22px $font-text-main;
 $text-main-ls: 0px;
 
-// отступы и размеры
+
 $spacing-sm: 8px;
 $spacing-md: 16px;
 $font-size-base: 14px;
 $font-size-lg: 18px;
 $font-size-xs: 12px;
+
+/** Вьюпорт @media (max-width): узкие экраны и смартфоны */
+$breakpoint-mobile-max: 767px;

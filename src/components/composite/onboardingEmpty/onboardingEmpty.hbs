@@ -1,0 +1,178 @@
+<div class="onboarding" data-step="0" role="dialog" aria-label="Знакомство с Pulse" aria-modal="true">
+
+  <aside class="onboarding__left">
+    <div class="onboarding__left-inner">
+
+      {{!-- Шаг 0: логотип + волна --}}
+      <div class="onboarding__anim" data-anim="0">
+        <div class="ob-logo">
+          <div class="ob-logo__ring ob-logo__ring--1"></div>
+          <div class="ob-logo__ring ob-logo__ring--2"></div>
+          <div class="ob-logo__ring ob-logo__ring--3"></div>
+          <div class="ob-logo__icon">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 12h3l2-6 3 12 3-9 2 4h3"/>
+            </svg>
+          </div>
+        </div>
+        <div class="ob-wave">
+          <span class="ob-wave__bar" style="--ob-h:0.3"></span>
+          <span class="ob-wave__bar" style="--ob-h:0.5"></span>
+          <span class="ob-wave__bar" style="--ob-h:0.8"></span>
+          <span class="ob-wave__bar" style="--ob-h:1.0"></span>
+          <span class="ob-wave__bar" style="--ob-h:0.7"></span>
+          <span class="ob-wave__bar" style="--ob-h:0.9"></span>
+          <span class="ob-wave__bar" style="--ob-h:0.5"></span>
+          <span class="ob-wave__bar" style="--ob-h:0.6"></span>
+          <span class="ob-wave__bar" style="--ob-h:1.0"></span>
+          <span class="ob-wave__bar" style="--ob-h:0.8"></span>
+          <span class="ob-wave__bar" style="--ob-h:0.4"></span>
+          <span class="ob-wave__bar" style="--ob-h:0.6"></span>
+          <span class="ob-wave__bar" style="--ob-h:0.9"></span>
+          <span class="ob-wave__bar" style="--ob-h:0.7"></span>
+          <span class="ob-wave__bar" style="--ob-h:0.5"></span>
+          <span class="ob-wave__bar" style="--ob-h:0.4"></span>
+          <span class="ob-wave__bar" style="--ob-h:0.7"></span>
+          <span class="ob-wave__bar" style="--ob-h:0.8"></span>
+          <span class="ob-wave__bar" style="--ob-h:0.5"></span>
+          <span class="ob-wave__bar" style="--ob-h:0.3"></span>
+        </div>
+        <div class="ob-tags">
+          <span class="ob-tags__item ob-tags__item--0">Быстро</span>
+          <span class="ob-tags__item ob-tags__item--1">Удобно</span>
+          <span class="ob-tags__item ob-tags__item--2">Вместе</span>
+        </div>
+      </div>
+
+      {{!-- Шаг 1: пузыри чата --}}
+      <div class="onboarding__anim" data-anim="1">
+        <div class="ob-chat">
+          <div class="ob-chat__bubble ob-chat__bubble--left ob-chat__bubble--pop1">
+            <span>Привет! Как дела?</span>
+            <time class="ob-chat__time">10:02</time>
+          </div>
+          <div class="ob-chat__bubble ob-chat__bubble--right ob-chat__bubble--pop2">
+            <span>Всё отлично</span>
+            <time class="ob-chat__time">10:04</time>
+          </div>
+          <div class="ob-chat__bubble ob-chat__bubble--left ob-chat__bubble--pop3">
+            <span>Иду на дейли</span>
+            <time class="ob-chat__time">10:06</time>
+          </div>
+          <div class="ob-chat__typing">
+            <span class="ob-chat__dot"></span>
+            <span class="ob-chat__dot"></span>
+            <span class="ob-chat__dot"></span>
+          </div>
+        </div>
+      </div>
+
+      {{!-- Шаг 2: орбиты аватаров --}}
+      <div class="onboarding__anim" data-anim="2">
+        <div class="ob-orbit">
+          <div class="ob-orbit__center">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+              <circle cx="8" cy="7.5" r="3.2" stroke="#fff" stroke-width="1.6"/>
+              <path d="M2 19a6 6 0 0 1 12 0" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M15.5 10a2.5 2.5 0 1 0 0-5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M19 19a4.5 4.5 0 0 0-5-4.4" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="ob-orbit__ring"></div>
+          <div class="ob-orbit__avatar" style="--ob-start:0deg;--ob-delay:0s">АФ</div>
+          <div class="ob-orbit__avatar" style="--ob-start:90deg;--ob-delay:-2.25s">МК</div>
+          <div class="ob-orbit__avatar" style="--ob-start:180deg;--ob-delay:-4.5s">ВС</div>
+          <div class="ob-orbit__avatar" style="--ob-start:270deg;--ob-delay:-6.75s">ДЛ</div>
+          <div class="ob-orbit__badge">+128 человек</div>
+        </div>
+      </div>
+
+      {{!-- Шаг 3: чеклист --}}
+      <div class="onboarding__anim" data-anim="3">
+        <div class="ob-check">
+          <div class="ob-check__item ob-check__item--0">
+            <div class="ob-check__box">
+              <svg class="ob-check__mark" width="13" height="13" viewBox="0 0 13 13" fill="none">
+                <path d="M2 6.5l3 3 6-6" stroke="#7BC097" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="24" stroke-dashoffset="24"/>
+              </svg>
+            </div>
+            <span class="ob-check__label">Написать первое сообщение</span>
+          </div>
+          <div class="ob-check__item ob-check__item--1">
+            <div class="ob-check__box">
+              <svg class="ob-check__mark" width="13" height="13" viewBox="0 0 13 13" fill="none">
+                <path d="M2 6.5l3 3 6-6" stroke="#7BC097" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="24" stroke-dashoffset="24"/>
+              </svg>
+            </div>
+            <span class="ob-check__label">Создать группу</span>
+          </div>
+          <div class="ob-check__item ob-check__item--2">
+            <div class="ob-check__box">
+              <svg class="ob-check__mark" width="13" height="13" viewBox="0 0 13 13" fill="none">
+                <path d="M2 6.5l3 3 6-6" stroke="#7BC097" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="24" stroke-dashoffset="24"/>
+              </svg>
+            </div>
+            <span class="ob-check__label">Найти коллегу</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <main class="onboarding__right">
+    <button class="onboarding__skip" type="button" aria-label="Пропустить онбординг">Пропустить</button>
+
+    <div class="onboarding__content">
+
+      {{!-- Прогресс --}}
+      <div class="onboarding__progress">
+        <div class="onboarding__progress-header">
+          <span class="onboarding__progress-label">Шаг <span class="ob-step-num">1</span> из 4</span>
+          <span class="onboarding__progress-pct">25%</span>
+        </div>
+        <div class="onboarding__progress-bar-bg">
+          <div class="onboarding__progress-bar"></div>
+        </div>
+        <progress class="onboarding__progress-a11y" value="1" max="4" aria-label="Шаг онбординга"></progress>
+        <div class="onboarding__dots">
+          <button class="onboarding__dot onboarding__dot--active" data-goto="0" aria-label="Перейти к шагу 1"></button>
+          <button class="onboarding__dot" data-goto="1" aria-label="Перейти к шагу 2"></button>
+          <button class="onboarding__dot" data-goto="2" aria-label="Перейти к шагу 3"></button>
+          <button class="onboarding__dot" data-goto="3" aria-label="Перейти к шагу 4"></button>
+        </div>
+      </div>
+
+      {{!-- Слайды --}}
+      <div class="onboarding__slide" data-slide="0">
+        <p class="onboarding__eyebrow">Добро пожаловать</p>
+        <h1 class="onboarding__title">Pulse — мессенджер для вашего ритма</h1>
+        <p class="onboarding__desc">Быстрое общение и группы — всё в одном месте.</p>
+        <button class="onboarding__cta" type="button">Начать знакомство →</button>
+      </div>
+
+      <div class="onboarding__slide" data-slide="1">
+        <p class="onboarding__eyebrow">Личные сообщения</p>
+        <h1 class="onboarding__title">Пишите коллегам мгновенно</h1>
+        <p class="onboarding__desc">Нажмите «+» в левой панели и найдите человека по имени или логину.</p>
+        <button class="onboarding__cta" type="button">Понятно, дальше →</button>
+      </div>
+
+      <div class="onboarding__slide" data-slide="2">
+        <p class="onboarding__eyebrow">Группы и каналы</p>
+        <h1 class="onboarding__title">Объединяйте команды и проекты</h1>
+        <p class="onboarding__desc">Создайте группу за несколько секунд — добавьте участников и общайтесь.</p>
+        <button class="onboarding__cta" type="button">Понятно, дальше →</button>
+      </div>
+
+      <div class="onboarding__slide" data-slide="3">
+        <p class="onboarding__eyebrow">Всё готово</p>
+        <h1 class="onboarding__title">Начните с первого сообщения</h1>
+        <p class="onboarding__desc">Напишите коллеге или создайте группу.</p>
+        <button class="onboarding__cta" type="button">Создать чат</button>
+      </div>
+
+    </div>
+  </main>
+
+</div>

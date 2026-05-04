@@ -1,6 +1,7 @@
 import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent";
 import { Router } from "../../../core/router";
 import { authService } from "../../../services/authService";
+import { themeService } from "../../../services/themeService";
 import { SettingsItem } from "../settingsItem/settingsItem";
 import { ConfirmModal } from "../confirmModal/confirmModal";
 import template from "./settingsListItem.hbs";
@@ -8,16 +9,20 @@ import template from "./settingsListItem.hbs";
 interface SettingsListItemProps extends IBaseComponentProps {
     router: Router;
     onProfileClick: () => void;
+    onSupportClick: () => void;
 };
 
 export class SettingsListItem extends BaseComponent<SettingsListItemProps> {
     private profileSetting: SettingsItem | null = null;
+    private suportSetting: SettingsItem | null = null;
+    private themeSetting: SettingsItem | null = null;
     private commonSetting: SettingsItem | null = null;
     private privacySetting: SettingsItem | null = null;
     private subscriptionSetting: SettingsItem | null = null;
     private logoutSetting: SettingsItem | null = null;
     private mainContentArea: HTMLElement | null = null;
     private activeItem: SettingsItem | null = null;
+    private unsubscribeTheme: (() => void) | null = null;
 
     constructor(props: SettingsListItemProps) {
         super(props);
@@ -85,6 +90,28 @@ export class SettingsListItem extends BaseComponent<SettingsListItemProps> {
         });
         this.profileSetting.mount(this.mainContentArea);
 
+        this.suportSetting = new SettingsItem({
+            src: '/assets/images/icons/Info.svg',
+            title: 'Техподдержка',
+            onClick: () => {
+                this.setActiveSetting(this.suportSetting!);
+                this.props.onSupportClick();
+            },
+        });
+        this.suportSetting.mount(this.mainContentArea);
+
+        this.themeSetting = new SettingsItem({
+            src: '/assets/images/icons/commonSettings.svg',
+            title: this.getThemeTitle(),
+            onClick: () => themeService.toggle(),
+        });
+        this.themeSetting.mount(this.mainContentArea);
+
+        this.unsubscribeTheme = themeService.subscribe(() => {
+            const titleEl = this.themeSetting?.element?.querySelector('p');
+            if (titleEl) titleEl.textContent = this.getThemeTitle();
+        });
+
         // this.commonSetting = new SettingsItem({
         //     src: '/assets/images/icons/commonSettings.svg',
         //     title: 'В разработке',
@@ -117,9 +144,8 @@ export class SettingsListItem extends BaseComponent<SettingsListItemProps> {
         //     },
         // });
         // this.subscriptionSetting.mount(this.mainContentArea);
-
         this.logoutSetting = new SettingsItem({
-            src: '/assets/images/icons/logoutSettings.svg',
+            src: '/assets/images/icons/logoutSettings__White.svg',
             title: 'Выйти из аккаунта',
             class: "logout-setting",
             onClick: this.handleLogout,
@@ -127,8 +153,16 @@ export class SettingsListItem extends BaseComponent<SettingsListItemProps> {
         this.logoutSetting.mount(this.mainContentArea);
     };
 
+    private getThemeTitle(): string {
+        return themeService.get() === 'dark' ? 'Тема: тёмная' : 'Тема: светлая';
+    }
+
     protected beforeUnmount(): void {
+        this.unsubscribeTheme?.();
+        this.unsubscribeTheme = null;
         this.profileSetting?.unmount();
+        this.suportSetting?.unmount();
+        this.themeSetting?.unmount();
         this.commonSetting?.unmount();
         this.privacySetting?.unmount();
         this.subscriptionSetting?.unmount();

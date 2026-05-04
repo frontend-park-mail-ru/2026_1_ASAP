@@ -2,6 +2,7 @@ import { BaseForm, IBaseFormProps } from "../../../core/base/baseForm";
 import { Router } from "../../../core/router";
 import { ContactListItem } from "../contactListItem/contactListItem";
 import template from "./contactListWrapper.hbs";
+import { SearchContactHit } from "../../../types/search";
 
 /**
  * @interface ContactListWrapperProps
@@ -60,6 +61,21 @@ export class ContactListWrapper extends BaseForm<ContactListWrapperProps> {
         if (this.contactListItem) {
             this.contactListItem.setActiveContact(contactId);
         }
+    };
+
+    public showSearchResults(hits: SearchContactHit[]): void {
+        this.contactListItem?.showSearchResults(hits);
+    }
+
+    public restoreContactList(): void {
+        this.contactListItem?.restoreContactList();
+    }
+
+    /**
+     * Делегирует перезагрузку списка контактов дочернему компоненту `ContactListItem`.
+     */
+    public reload = (): void => {
+        this.contactListItem?.reload();
     };
 
     /**

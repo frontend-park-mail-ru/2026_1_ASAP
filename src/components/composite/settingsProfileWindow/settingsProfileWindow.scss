@@ -17,6 +17,10 @@
     min-width: 200px;
     gap: 10px;
     position: relative;
+
+    @media (max-width: $breakpoint-mobile-max) {
+        padding: 8px;
+    }
 }
 
 .settings-profile-save-button-wrapper {
@@ -25,4 +29,10 @@
     bottom: 10px;
     height: 42px;
     width: 360px;
+    max-width: calc(100% - 20px);
+
+    @media (max-width: $breakpoint-mobile-max) {
+        width: calc(100% - 16px);
+        bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    }
 }

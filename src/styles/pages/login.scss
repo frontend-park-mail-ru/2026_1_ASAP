@@ -8,24 +8,65 @@
 
 .login-page {
     min-height: 100vh;
+    min-height: 100dvh;
     width: 100%;
     overflow: hidden;
     position: fixed;
     inset: 0;
     @include flex-center;
     background: $color-background;
+    box-sizing: border-box;
+    padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px))
+        max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
 
-    &__glow {
-        position: absolute;
-        width: 410px;
-        height: 520px;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        background: $color-background-blur;
-        filter: blur(238px);
-        z-index: 0;
-        pointer-events: none;
+    &__support-button-container {
+        position: fixed;
+        bottom: max(20px, env(safe-area-inset-bottom, 0px));
+        right: max(20px, env(safe-area-inset-right, 0px));
+        width: 45px;
+        height: 45px;
+        z-index: 9998;
+    }
+
+    &__support-button {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        border: none;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+
+        &:hover {
+            transform: scale(1.05);
+        }
+    }
+
+    &__support-frame-container {
+        position: fixed;
+        bottom: max(90px, calc(env(safe-area-inset-bottom, 0px) + 70px));
+        right: max(20px, env(safe-area-inset-right, 0px));
+        z-index: 9999;
+    }
+
+    @media (max-width: $breakpoint-mobile-max) {
+        align-items: center;
+        overflow-y: auto;
+
+        &__support-button-container {
+            bottom: max(16px, env(safe-area-inset-bottom, 0px));
+            right: max(16px, env(safe-area-inset-right, 0px));
+        }
+
+        &__support-frame-container {
+            right: max(12px, env(safe-area-inset-right, 0px));
+            left: max(12px, env(safe-area-inset-left, 0px));
+            width: auto;
+            max-width: calc(100vw - 24px);
+        }
     }
 }
 
@@ -34,15 +75,54 @@
     border-radius: 10px;
     @include flex-column;
     gap: 25px;
-    height: 520px;
+
     width: 100%;
     max-width: 410px;
     align-items: center;
     z-index: 1;
+    box-sizing: border-box;
+
+    @media (max-width: $breakpoint-mobile-max) {
+        gap: 18px;
+        max-width: 100%;
+    }
 }
 
 .auth__logo {
     position: absolute;
     top: 0;
     left: 0;
+
+    @media (max-width: $breakpoint-mobile-max) {
+        top: max(8px, env(safe-area-inset-top, 0px));
+        left: max(8px, env(safe-area-inset-left, 0px));
+        width: clamp(100px, 40vw, 140px);
+        height: auto;
+    }
+}
+
+.support-iframe {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 350px;
+    height: 500px;
+    max-width: calc(100vw - 24px);
+    max-height: calc(100dvh - env(safe-area-inset-bottom, 0px) - 100px);
+    border-radius: 10px;
+    z-index: 9999;
+    display: block;
+
+    &--hidden {
+        display: none;
+    }
+
+    @media (max-width: $breakpoint-mobile-max) {
+        width: calc(100vw - 24px);
+        height: min(520px, 70dvh);
+        bottom: max(16px, env(safe-area-inset-bottom, 0px));
+        right: max(12px, env(safe-area-inset-right, 0px));
+        left: max(12px, env(safe-area-inset-left, 0px));
+        margin: 0 auto;
+    }
 }

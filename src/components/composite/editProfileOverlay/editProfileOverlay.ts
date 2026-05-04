@@ -14,12 +14,14 @@ interface EditProfileOverlayProps extends IBaseComponentProps {
     fieldKey: "login" | "email" | "birthDate" | "bio";
     value?: string;
     inputType: "text" | "email" | "date" | "textarea";
-    onSave: (newValue: string) => void;
+    title?: string;
+    onSave: (newValue: string) => void | Promise<void>;
     onClose: () => void;
 }
 
 export class EditProfileOverlay extends BaseComponent<EditProfileOverlayProps> {
     private saveButton: Button | null = null;
+    private closeButton: Button | null = null;
     private editInput: Input | null = null;
     private birthDateInputEl: HTMLInputElement | null = null;
     private overlay: HTMLElement | null = null;
@@ -63,6 +65,8 @@ export class EditProfileOverlay extends BaseComponent<EditProfileOverlayProps> {
     };
 
     private getEditTitle(): string {
+        if (this.props.title) return this.props.title;
+
         switch (this.props.fieldKey) {
             case "login":
                 return "Редактирование логина";
@@ -118,6 +122,13 @@ export class EditProfileOverlay extends BaseComponent<EditProfileOverlayProps> {
         const container = this.element!.querySelector(".edit-profile__edit-container") as HTMLElement | null;
         if (!container) return;
 
+        this.closeButton = new Button({
+            icon: "/assets/images/icons/deleteIcon.svg",
+            class: "edit-profile__close-btn",
+            onClick: () => this.props.onClose(),
+        });
+        this.closeButton.mount(container);
+
         const titleEl = container.querySelector(".edit-title");
         if (titleEl) {
             titleEl.textContent = this.getEditTitle();
@@ -133,6 +144,7 @@ export class EditProfileOverlay extends BaseComponent<EditProfileOverlayProps> {
             this.bioCharCountEl.className = "edit-profile__char-count";
             counterRow.appendChild(this.bioCharCountEl);
             bioBlock.appendChild(counterRow);
+            container.style.minWidth = "480px";
             container.appendChild(bioBlock);
             inputParent = bioBlock;
         }
@@ -142,7 +154,7 @@ export class EditProfileOverlay extends BaseComponent<EditProfileOverlayProps> {
             wrap.className = "edit-profile__birth-date-field";
             const hint = document.createElement("p");
             hint.className = "edit-profile__birth-date-hint";
-            hint.textContent = "Вводите только цифры; точки расставляются сами (ДД.ММ.ГГГГ).";
+            hint.textContent = "Вводите только цифры; точки расставляются сами (ДД.ММ.ГГГГ)";
             const input = document.createElement("input");
             input.type = "text";
             input.className = "edit-profile__birth-date-input";
@@ -171,6 +183,7 @@ export class EditProfileOverlay extends BaseComponent<EditProfileOverlayProps> {
                     : {}),
             });
             this.editInput.mount(inputParent);
+            this.editInput.element.style.height = "270px";
         }
 
         const updateBioCharCount = () => {
@@ -229,6 +242,7 @@ export class EditProfileOverlay extends BaseComponent<EditProfileOverlayProps> {
             this.birthDateInputEl = null;
         }
         this.editInput?.unmount();
+        this.closeButton?.unmount();
         this.saveButton?.unmount();
         this.overlay?.removeEventListener("click", this.props.onClose);
     }

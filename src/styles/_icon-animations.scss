@@ -1,0 +1,98 @@
+@keyframes springPop {
+  0%   { transform: scale(1); }
+  22%  { transform: scale(1.38); }
+  47%  { transform: scale(0.87); }
+  64%  { transform: scale(1.11); }
+  80%  { transform: scale(0.97); }
+  100% { transform: scale(1); }
+}
+
+@keyframes jellySqueeze {
+  0%   { transform: scaleX(1)    scaleY(1); }
+  14%  { transform: scaleX(0.8)  scaleY(1.24); }
+  32%  { transform: scaleX(1.2)  scaleY(0.82); }
+  50%  { transform: scaleX(0.93) scaleY(1.07); }
+  66%  { transform: scaleX(1.06) scaleY(0.96); }
+  82%  { transform: scaleX(0.98) scaleY(1.02); }
+  100% { transform: scaleX(1)    scaleY(1); }
+}
+
+@keyframes smoothRotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+
+// Открытие: прокручивается и останавливается на 135
+// Закрытие: 135 прокручивается обратно и возвращается к 45
+@keyframes spin90Open {
+  0%   { transform: rotate(45deg); }
+  55%  { transform: rotate(150deg); }
+  75%  { transform: rotate(125deg); }
+  88%  { transform: rotate(140deg); }
+  100% { transform: rotate(135deg); }
+}
+
+@keyframes spin90Close {
+  0%   { transform: rotate(135deg); }
+  55%  { transform: rotate(30deg); }
+  75%  { transform: rotate(55deg); }
+  88%  { transform: rotate(42deg); }
+  100% { transform: rotate(45deg); }
+}
+
+// тряска: запускается при наведении и останавливается при снятии курсора
+@keyframes dangerShake {
+  0%,100% { transform: translateX(0)   rotate(0deg); }
+  12%     { transform: translateX(-4px) rotate(-13deg); }
+  24%     { transform: translateX(4px)  rotate(13deg); }
+  36%     { transform: translateX(-3px) rotate(-9deg); }
+  48%     { transform: translateX(3px)  rotate(9deg); }
+  60%     { transform: translateX(-2px) rotate(-5deg); }
+  72%     { transform: translateX(2px)  rotate(5deg); }
+  84%     { transform: translateX(-1px) rotate(-2deg); }
+}
+
+
+.icon-anim--spring-pop {
+  will-change: transform;
+  animation: springPop 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.icon-anim--jelly-squeeze {
+  will-change: transform;
+  animation: jellySqueeze 0.58s ease both;
+}
+
+.icon-anim--smooth-rotate {
+  will-change: transform;
+  animation: smoothRotate 0.65s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.icon-anim--spin-open {
+  will-change: transform;
+  animation: spin90Open 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.icon-anim--spin-close {
+  will-change: transform;
+  animation: spin90Close 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.icon-anim--danger-shake {
+  will-change: transform;
+  animation: dangerShake 0.62s ease 0.15s infinite;
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  .icon-anim--spring-pop,
+  .icon-anim--jelly-squeeze,
+  .icon-anim--smooth-rotate,
+  .icon-anim--spin-open,
+  .icon-anim--spin-close,
+  .icon-anim--danger-shake {
+    animation: none;
+    will-change: auto;
+  }
+}

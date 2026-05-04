@@ -6,12 +6,12 @@ import template from './chatWindow.hbs';
  * @interface ChatWindowProps - Свойства компонента окна чата.
  * @property {AnyComponent} headerComponent - Компонент для отображения шапки чата.
  * @property {AnyComponent} messageListComponent - Компонент для отображения списка сообщений.
- * @property {AnyComponent} inputComponent - Компонент для формы ввода сообщения.
+ * @property {AnyComponent} [inputComponent] - Компонент для формы ввода сообщения (не монтируется для каналов-только-чтения).
  */
 interface ChatWindowProps {
     headerComponent: AnyComponent;
     messageListComponent: AnyComponent;
-    inputComponent: AnyComponent;
+    inputComponent?: AnyComponent;
 }
 
 /**
@@ -58,11 +58,13 @@ export class ChatWindow extends BaseComponent {
             console.error("ChatWindow: слот для списка сообщений не найден.");
         }
 
-        const messageInputSlot = this.element.querySelector('[data-component="message-input-slot"]');
-        if (messageInputSlot) {
-            this.props.inputComponent.mount(messageInputSlot as HTMLElement);
-        } else {
-            console.error("ChatWindow: слот для формы ввода сообщения не найден.");
+        if (this.props.inputComponent) {
+            const messageInputSlot = this.element.querySelector('[data-component="message-input-slot"]');
+            if (messageInputSlot) {
+                this.props.inputComponent.mount(messageInputSlot as HTMLElement);
+            } else {
+                console.error("ChatWindow: слот для формы ввода сообщения не найден.");
+            }
         }
     }
 
@@ -75,6 +77,6 @@ export class ChatWindow extends BaseComponent {
     beforeUnmount() {
         this.props.headerComponent.unmount();
         this.props.messageListComponent.unmount();
-        this.props.inputComponent.unmount();
+        this.props.inputComponent?.unmount();
     }
 }

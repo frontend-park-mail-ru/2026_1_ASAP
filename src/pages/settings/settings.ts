@@ -5,6 +5,7 @@ import { SearchForm } from "../../components/composite/searchForm/searchForm";
 import { SettingsListWrapper } from "../../components/composite/settingsListWrapper/settingsListWrapper";
 import { contactService } from "../../services/contactService";
 import { SettingsProfileWindow } from "../../components/composite/settingsProfileWindow/settingsProfileWindow";
+import { SupportFrame } from "../../components/composite/supportFrame/supportFrame";
 import { ProfileAdditionalInfo, ProfileMainInfo } from "../../types/profile";
 
 /**
@@ -37,6 +38,7 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
     private placeHolder: HTMLElement | null = null;
     private activeSetting: string | null = null;
     private settingsWindow: SettingsProfileWindow | null = null;
+    private supportFrame: SupportFrame | null = null;
     private cachedUserProfile: {mainInfo: ProfileMainInfo, additionalInfo: ProfileAdditionalInfo} | null = null;
     private openSettingSeq = 0;
 
@@ -65,6 +67,7 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
         this.settingsListWrapper = new SettingsListWrapper({
             router: this.props.router,
             onProfileClick: () => this.openSetting('profile'),
+            onSupportClick: () => this.openSetting('support'),
         });
         this.settingsListWrapper.mount(this.element!.querySelector('.settings-page__sidebar'));
 
@@ -105,17 +108,32 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
      * @private
      */
     private async handleSettingsRoute(): Promise<void> {
-        const path = this.props.currentPath || window.location.pathname;
-        const pathParts = path.split('/');
-        const settingType = pathParts[pathParts.length - 1];
+        try {
+            const path = this.props.currentPath || window.location.pathname;
+            const pathParts = path.split("/");
+            const settingType = pathParts[pathParts.length - 1];
 
-        const target = (settingType === 'settings' || settingType === 'profile') 
-            ? 'profile' 
-            : settingType;
-        
-        this.activeSetting = target;
-        await this.openSetting(this.activeSetting);
-    };
+            const target =
+                settingType === "settings" || settingType === "profile" ? "profile" : settingType;
+
+            this.activeSetting = target;
+            await this.openSetting(this.activeSetting);
+        } finally {
+            this.syncMobileLayoutState();
+        }
+    }
+
+    /**
+     * На узких экранах: список настроек или панель профиля / поддержки.
+     */
+    private syncMobileLayoutState(): void {
+        const pageRoot = this.element?.classList.contains("settings-page")
+            ? this.element
+            : this.element?.querySelector(".settings-page");
+        if (!pageRoot) return;
+        const mainVisible = this.settingsWindow !== null || this.supportFrame !== null;
+        pageRoot.classList.toggle("settings-page--main-visible", mainVisible);
+    }
 
     /**
      * Открывает окно с определенным разделом настроек.
@@ -125,48 +143,75 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
      */
     private async openSetting(activeSetting: string): Promise<void> {
         const seq = ++this.openSettingSeq;
-
-        if (!this.mainContentArea) {
-            console.error("Отсутствует элемент mainContentArea");
-            return;
-        }
-
-        if (this.placeHolder) {
-            this.placeHolder.style.display = "none";
-        }
-
-        if (this.settingsWindow) {
-            this.settingsWindow.unmount();
-            this.settingsWindow = null;
-        }
-
-        if (activeSetting === "profile") {
-            const userProfile = await contactService.getMyProfile();
-            if (seq !== this.openSettingSeq) {
+        try {
+            if (!this.mainContentArea) {
+                console.error("Отсутствует элемент mainContentArea");
                 return;
             }
+
+            if (this.placeHolder) {
+                this.placeHolder.style.display = "none";
+            }
+
             if (this.settingsWindow) {
                 this.settingsWindow.unmount();
                 this.settingsWindow = null;
             }
-            this.cachedUserProfile = userProfile;
 
-            this.settingsWindow = new SettingsProfileWindow({
-                profileAdditionalInfo: userProfile.additionalInfo,
-                profileMainInfo: userProfile.mainInfo,
-                closeWindow: this.closeSetting,
-                onProfileSaved: (main, additional) => {
-                    this.cachedUserProfile = {mainInfo: main, additionalInfo: additional};
-                }
-            });
-            this.settingsWindow.mount(this.mainContentArea!);
-        } else {
-            if (seq !== this.openSettingSeq) {
+            if (this.supportFrame) {
+                this.supportFrame.unmount();
+                this.supportFrame = null;
+            }
+
+            if (activeSetting === "support") {
+                if (seq !== this.openSettingSeq) return;
+                this.supportFrame = new SupportFrame({
+                    fullsize: true,
+                    onCloseClick: () => {
+                        if (this.supportFrame) {
+                            this.supportFrame.unmount();
+                            this.supportFrame = null;
+                        }
+                        if (this.placeHolder) this.placeHolder.style.display = "block";
+                        this.activeSetting = null;
+                        this.settingsListWrapper?.setActiveByKey("");
+                        this.syncMobileLayoutState();
+                    }
+                });
+                this.supportFrame.mount(this.mainContentArea!);
                 return;
             }
-            this.placeHolder.style.display = "block";
+
+            if (activeSetting === "profile") {
+                const userProfile = await contactService.getMyProfile();
+                if (seq !== this.openSettingSeq) {
+                    return;
+                }
+                if (this.settingsWindow) {
+                    this.settingsWindow.unmount();
+                    this.settingsWindow = null;
+                }
+                this.cachedUserProfile = userProfile;
+
+                this.settingsWindow = new SettingsProfileWindow({
+                    profileAdditionalInfo: userProfile.additionalInfo,
+                    profileMainInfo: userProfile.mainInfo,
+                    closeWindow: this.closeSetting,
+                    onProfileSaved: (main, additional) => {
+                        this.cachedUserProfile = { mainInfo: main, additionalInfo: additional };
+                    }
+                });
+                this.settingsWindow.mount(this.mainContentArea!);
+            } else {
+                if (seq !== this.openSettingSeq) {
+                    return;
+                }
+                if (this.placeHolder) this.placeHolder.style.display = "block";
+            }
+        } finally {
+            this.syncMobileLayoutState();
         }
-    };
+    }
 
     /**
      * Закрывает текущее открытое окно настроек и показывает плейсхолдер.
@@ -174,15 +219,21 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
      */
     private closeSetting = (): void => {
         if (!this.settingsWindow) return;
-        this.settingsWindow!.unmount();
-        if (this.placeHolder)
-            this.placeHolder.style.display = "block";
+        this.settingsWindow.unmount();
+        this.settingsWindow = null;
+        if (this.placeHolder) this.placeHolder.style.display = "block";
         this.activeSetting = null;
         this.settingsListWrapper.setActiveByKey("");
+        this.syncMobileLayoutState();
     };
 
     protected beforeUnmount(): void {
         this.searchForm?.unmount();
+        this.settingsListWrapper?.unmount();
         this.menuBar?.unmount();
-    };
+        this.settingsWindow?.unmount();
+        this.settingsWindow = null;
+        this.supportFrame?.unmount();
+        this.supportFrame = null;
+    }
 };

@@ -8,17 +8,20 @@
 
 .contact-list {
     @include flex-column;
-    height: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
     width: 100%;
 
     &--empty {
         @include flex-center;
-        height: 100%;
+        flex: 1 1 auto;
+        min-height: 0;
     }
 
     .no-contacts {
-        font: $text-heading1;
+        font: $text-secondary;
         text-align: center;
+        line-height: normal;
         user-select: none;
     }
 }

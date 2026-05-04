@@ -50,6 +50,7 @@ export interface FrontendMessage {
     text: string;
     timestamp: Date; // Конвертируем created_at в Date
     isOwn: boolean;
+    isEdited?: boolean;
 }
 
 /**
@@ -110,6 +111,8 @@ export interface GroupChat extends BaseChat {
     members: User[];
     owner: User;
     description?: string;
+    owner_id?: number;
+    currentUserRole?: 'owner' | 'member';
 }
 
 /**
@@ -119,11 +122,15 @@ export interface GroupChat extends BaseChat {
  * @property {'channel'} type - Тип чата.
  * @property {number} subscribersCount - Количество подписчиков.
  * @property {string} [description] - Описание канала (опционально).
+ * @property {number} [owner_id] - ID владельца (приходит с бэкенда).
+ * @property {'owner' | 'participant' | 'guest'} [currentUserRole] - Роль текущего пользователя.
  */
 export interface ChannelChat extends BaseChat {
     type: 'channel';
     subscribersCount: number;
     description?: string;
+    owner_id?: number;
+    currentUserRole?: 'owner' | 'participant' | 'guest';
 }
 
 /**

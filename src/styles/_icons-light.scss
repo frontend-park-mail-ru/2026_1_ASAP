@@ -1,0 +1,170 @@
+/**
+ * @file _icons-light.scss
+ * @description Перекраска иконок в светлой теме без правки SVG-файлов.
+ *              Все иконки в проекте имеют захардкоженный fill="#F2F0F0"
+ *              (светлый, под тёмную тему). На светлом фоне они исчезают.
+ *              Здесь — CSS-фильтры, которые превращают их в нужный цвет.
+ *
+ * Подключить: @use "icons-light" as *;  в main.scss (после остальных тем).
+ */
+
+@use "variables" as *;
+
+// ═══════════ ФИЛЬТР-МИКСИНЫ ═══════════
+// Стек brightness(0) saturate(100%) invert(...) обнуляет SVG до чёрного,
+// далее invert + sepia + saturate + hue-rotate подкрашивают в нужный hex.
+
+
+@mixin icon-dark {
+    // #1F2722 — основной тёмный текст светлой темы
+    filter: brightness(0) saturate(100%) invert(11%) sepia(8%) saturate(1166%)
+            hue-rotate(102deg) brightness(96%) contrast(89%);
+}
+
+@mixin icon-muted {
+    // #6B6E78 — приглушённый, для placeholder/служебных иконок
+    filter: brightness(0) saturate(100%) invert(45%) sepia(6%) saturate(326%)
+            hue-rotate(202deg) brightness(95%) contrast(85%);
+}
+
+@mixin icon-accent {
+    // #5A8A6E — зелёный акцент
+    filter: brightness(0) saturate(100%) invert(48%) sepia(13%) saturate(945%)
+            hue-rotate(95deg) brightness(95%) contrast(85%);
+}
+
+@mixin icon-white {
+    // #FFFFFF — для иконок поверх цветной заливки (send-button)
+    filter: brightness(0) saturate(100%) invert(100%);
+}
+
+
+// ═══════════ ПРАВИЛА ДЛЯ СВЕТЛОЙ ТЕМЫ ═══════════
+
+[data-theme="light"] {
+
+    // ─── Composer (поле ввода сообщения) ─────────────────────
+    .message-input {
+        // стикер и upload — приглушённые, всё равно disabled
+        &__sticker-button img,
+        &__upload-button-container img {
+            @include icon-muted;
+        }
+
+        // send-кнопка остаётся на зелёном/синем фоне → иконка белая
+        &__send-button img {
+            @include icon-white;
+        }
+
+        // edit-индикатор: pencil слева — акцент
+        &__edit-indicator-icon {
+            @include icon-accent;
+        }
+
+        // крестик отмены редактирования — тёмный
+        &__edit-cancel img {
+            @include icon-dark;
+        }
+    }
+
+    // ─── Search bar в sidebar ────────────────────────────────
+    .search-icon {
+        // лупа в инпуте — приглушённая
+        @include icon-muted;
+    }
+
+    .delete-button img {
+        // крестик «очистить поиск» — тёмный
+        @include icon-dark;
+    }
+
+    .add-button img {
+        // плюс «создать чат» — акцент (как в текущей add-button логике)
+        @include icon-accent;
+    }
+
+    // ─── Нижнее меню (msgs / contacts / settings) ────────────
+    .menu-button img {
+        // неактивные пункты — приглушённые
+        @include icon-muted;
+    }
+
+    // активный пункт остаётся в clickedMenu*.svg градиенте
+    // (синий→зелёный, выглядит ок на светлом фоне — НЕ ТРОГАЕМ)
+
+    // ─── Шапки диалога / группы ──────────────────────────────
+    .dialog-header,
+    .group-header {
+        // три точки / dialogSettings — тёмные
+        button img {
+            @include icon-dark;
+        }
+    }
+
+    .back-button img,
+    .chat-page__mobile-back,
+    .contacts-page__mobile-back {
+        // back-стрелки — тёмные
+        @include icon-dark;
+    }
+
+    // ─── Settings-список ─────────────────────────────────────
+    .settings-page__sidebar img {
+        @include icon-dark;
+    }
+
+    .logout-setting img {
+        // logoutSettings__White.svg сейчас белая — на светлом фоне сольётся
+        // подкрашиваем в красноватый? Нет — оставим тёмной как остальные.
+        @include icon-dark;
+    }
+
+    // ─── Profile / contacts ──────────────────────────────────
+    .profile-header-icon,
+    .create-dialog-btn img,
+    .remove-member-btn img {
+        @include icon-dark;
+    }
+
+    // ─── Edit message overlay (контекстное меню сообщения) ───
+    // edit.svg / delete.svg — внутри overlay, иконки кнопок
+    .edit-msg-overlay {
+        button img {
+            @include icon-dark;
+        }
+    }
+
+    // ─── Поле ввода (input → eye / clear) ────────────────────
+    .ui-input-wrapper img {
+        @include icon-muted;
+    }
+
+    // ─── Create chat menu (dialog/group/channel/contact) ─────
+    .create-chat-menu {
+        button img {
+            @include icon-dark;
+        }
+    }
+
+    // ─── Confirm modals / overlays (delete icons и т.п.) ─────
+    .delete-chat-menu,
+    .complaint-status-modal,
+    .confirm-modal,
+    .support-overlay,
+    .avatar-edit-menu-overlay {
+        button img {
+            @include icon-dark;
+        }
+    }
+}
+
+
+// ═══════════ ИСКЛЮЧЕНИЯ ═══════════
+// Иконки, которые НЕ перекрашиваем (имеют свой цвет/градиент):
+//
+//   • clickedMenu*.svg          — синий→зелёный градиент, ок на светлом
+//   • addIcon.svg (в search)    — уже #455DBA, можно оставить или
+//                                  применить @include icon-accent
+//   • Logo.svg                   — бренд-логотип, отдельная история
+//   • аватары (defaultAvatar и т.п.) — это картинки, не иконки
+//   • favicon                    — не виден в UI

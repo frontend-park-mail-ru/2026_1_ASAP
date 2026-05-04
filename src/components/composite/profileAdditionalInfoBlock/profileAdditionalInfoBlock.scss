@@ -28,6 +28,12 @@
         background: $color-scroll;
         border-radius: 50px;
     }
+
+    &--bio-only {
+        padding: 0;
+        background-color: transparent;
+        border-radius: 0;
+    }
 }
 
 .additional-info-paragraph-default {
@@ -47,6 +53,10 @@
     height: 100%;
     box-sizing: border-box;
     align-items: center;
+    min-width: 150px;
+    flex-shrink: 0;
+    font-family: "Inter", sans-serif;
+    font-weight: 400;
 }
 
 .empty-additional-info {
@@ -54,7 +64,6 @@
 }
 
 .bio-info {
-    border-bottom: 0.5px solid $color-border-chats;
     display: flex;
     width: 100%;
     flex-grow: 1;
@@ -64,7 +73,7 @@
     min-height: 0;
     align-items: center;
     padding: 5px 0;
-    overflow: hidden;
+    overflow: hidden;;
 }
 
 .bio-text {
@@ -127,16 +136,14 @@
 }
 
 .settings-additional-info {
+    font: 400 14px / 16px "Inter", sans-serif;
     cursor: pointer;
     transition: 0.2s;
-
     text-decoration: underline dashed $color-text;
     text-decoration-thickness: 1px;
-    text-underline-offset: 3px;
-
+    text-underline-offset: 2px;
     &:hover {
         opacity: 0.6;
         transition: 0.2s;
     }
 }
-

@@ -1,9 +1,10 @@
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import webpack from 'webpack';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
-import { GenerateSW } from 'workbox-webpack-plugin';
+import { InjectManifest } from 'workbox-webpack-plugin';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -12,10 +13,13 @@ export default {
     optimization: {
         minimize: false,
     },
-    entry: './src/index.ts',
+    entry: {
+        main: './src/index.ts',
+        support: './src/support.ts',
+    },
     output: {
         path: resolve(__dirname, 'dist'),
-        filename: 'bundle.[contenthash].js',
+        filename: 'bundle.[name].[contenthash].js',
         clean: true,
         publicPath: '/',
     },
@@ -60,49 +64,32 @@ export default {
     },
 
     plugins: [
+        new webpack.DefinePlugin({
+            __LOCAL_API__: JSON.stringify(process.env.LOCAL_API === 'true'),
+        }),
         new MiniCssExtractPlugin({
-            filename: 'bundle.css',
+            filename: 'bundle.[name].[contenthash].css',
         }),
         new CopyWebpackPlugin({
             patterns: [
                 {from: 'src/assets', to: 'assets'},
+                {from: 'src/manifest.json', to: 'manifest.json'},
             ]
         }),
         new HtmlWebpackPlugin({
             template: './src/index.html',
+            filename: 'index.html',
+            chunks: ['main'],
         }),
-        new GenerateSW({
-            mode: 'development',
+        new HtmlWebpackPlugin({
+            template: './src/support.html',
+            filename: 'support.html',
+            chunks: ['support'],
+        }),
+        new InjectManifest({
+            swSrc: resolve(__dirname, 'src/service-worker.ts'),
             swDest: 'service-worker.js',
-            clientsClaim: true,
-            skipWaiting: true,
-            cleanupOutdatedCaches: true,
-            disableDevLogs: true,
-            navigateFallback: '/index.html',
-            runtimeCaching: [
-                {
-                    urlPattern: ({ request }) => request.destination === 'image',
-                    handler: 'CacheFirst',
-                    options: {
-                        cacheName: 'images-cache',
-                        expiration: {
-                            maxEntries: 200,
-                            maxAgeSeconds: 60 * 60 * 24 * 30,
-                        },
-                    },
-                },
-                {
-                    urlPattern: ({ request }) => request.destination === 'style' || request.destination === 'script',
-                    handler: 'StaleWhileRevalidate',
-                    options: {
-                        cacheName: 'static-resources-cache',
-                    },
-                },
-                {
-                    urlPattern: ({ sameOrigin, url }) => sameOrigin && url.pathname.startsWith('/api/'),
-                    handler: 'NetworkOnly',
-                },
-            ],
+            maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         }),
     ],
 
