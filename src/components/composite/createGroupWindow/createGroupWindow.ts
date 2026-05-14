@@ -79,7 +79,10 @@ export class CreateGroupWindow extends BaseComponent<CreateGroupWindowProps> {
             this.findContactBtn = new Button({
                 label: 'Найти контакт',
                 class: 'ui-button ui-button__primary create-group-window__find-btn',
-                onClick: () => this.props.router.navigate('/contacts'),
+                onClick: () => {
+                    sessionStorage.setItem('contacts_activate_global_search', '1');
+                    this.props.router.navigate('/contacts');
+                },
             });
             this.findContactBtn.mount(emptyEl);
         } else {

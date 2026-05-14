@@ -152,6 +152,11 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
         });
         this.contactSearchList.mount(sidebar as HTMLElement);
 
+        if (sessionStorage.getItem('contacts_activate_global_search')) {
+            sessionStorage.removeItem('contacts_activate_global_search');
+            this.contactSearchList.activateGlobalSearch();
+        }
+
         this.menuBar = new MenuBar({
             onSettingsClick: () => this.props.router.navigate('/settings'),
             onContactsClick: () => this.props.router.navigate('/contacts'),
