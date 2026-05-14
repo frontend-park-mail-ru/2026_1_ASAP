@@ -67,13 +67,7 @@
     }
 
     &__empty-state {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 16px;
-        padding: 24px;
+        display: none;
     }
 
     &__empty-message {
@@ -83,16 +77,34 @@
         margin: 0;
     }
 
+    &__find-btn-wrapper {
+        width: 360px;
+        max-width: calc(100% - 20px);
+    }
+
     &__find-btn {
-        min-width: 160px;
         border-radius: 10px;
         background: $gradient-button;
         color: $color-text;
         border: none;
         font: $text-secondary;
         letter-spacing: $text-secondary-ls;
-        width: 360px;
-        max-width: calc(100% - 20px);
+    }
+
+    &--empty {
+        .create-group-window__layout-slot {
+            flex: 0 0 auto;
+        }
+
+        .create-group-window__empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding: 24px;
+        }
     }
 
     @media (max-width: $breakpoint-mobile-max) {

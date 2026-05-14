@@ -61,21 +61,15 @@ export class CreateGroupWindow extends BaseComponent<CreateGroupWindowProps> {
         const contacts = await contactService.getContacts();
 
         if (contacts.length === 0) {
+            this.element.classList.add('create-group-window--empty');
+
             this.actionLayout = new ActionLayout({
                 header: this.actionHeader,
                 content: [],
             });
             this.actionLayout.mount(layoutSlot as HTMLElement);
 
-            const contentArea = layoutSlot!.querySelector('.action-layout__content') ?? layoutSlot!;
-            const emptyEl = document.createElement('div');
-            emptyEl.className = 'create-group-window__empty-state';
-            const msg = document.createElement('p');
-            msg.className = 'create-group-window__empty-message';
-            msg.textContent = 'У вас пока нет контактов';
-            emptyEl.appendChild(msg);
-            contentArea.appendChild(emptyEl);
-
+            const btnSlot = this.element.querySelector<HTMLElement>('[data-component="find-btn-slot"]')!;
             this.findContactBtn = new Button({
                 label: 'Найти контакт',
                 class: 'ui-button ui-button__primary create-group-window__find-btn',
@@ -84,7 +78,7 @@ export class CreateGroupWindow extends BaseComponent<CreateGroupWindowProps> {
                     this.props.router.navigate('/contacts');
                 },
             });
-            this.findContactBtn.mount(emptyEl);
+            this.findContactBtn.mount(btnSlot);
         } else {
             this.contactList = new ContactListWrapper({
                 router: this.props.router,
