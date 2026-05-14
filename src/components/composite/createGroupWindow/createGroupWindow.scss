@@ -91,6 +91,8 @@
         border: none;
         font: $text-secondary;
         letter-spacing: $text-secondary-ls;
+        width: 360px;
+        max-width: calc(100% - 20px);
     }
 
     @media (max-width: $breakpoint-mobile-max) {
