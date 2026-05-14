@@ -630,9 +630,12 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
         switch (type) {
             case 'dialog':
-                this.createChatWindow = new CreateDialogWindow({ 
+                this.createChatWindow = new CreateDialogWindow({
                     router: this.props.router,
                     onSubmit: async (contactId: number, contactName: string) => {
+                        if (myId === contactId) {
+                            return;
+                        }
                         const res = await chatService.createChat(
                             [contactId],
                             "dialog",
@@ -649,85 +652,22 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                             }
                         }
                     },
-                    onSubmitSearch: async (login: string) => {
-                        const targetLogin = login.trim().toLowerCase();
-                        if (this.currentUserProfile && this.currentUserProfile.additionalInfo.login.toLowerCase() === targetLogin) {
-                            return "Вы не можете создать диалог с самим собой!";
-                        }
-
-                        const targetUserRes = await contactService.getIdByLogin(login); 
-                        const targetUser = {"id": targetUserRes.id, "login": login};
-
-                        if (targetUserRes.status === 404 || !targetUser.id) {
-                            return `Пользователь с логином "${login}" не найден!`;
-                        }
-
-                        if (myId === targetUser.id) {
-                            return "Вы не можете создать диалог с самим собой!";
-                        }
-                        const res = await chatService.createChat(
-                            [targetUser.id], 
-                            "dialog",
-                        );
-                        
-                        if (res.status === 409) {
-                            return "Диалог с этим пользователем уже существует";
-                        }
-
-                        if (res.success && res.body?.id) {
-                            this.rebuildSidebar(); 
-                            this.props.router.navigate(`/chats/${res.body.id}`);
-                            return undefined;
-                        } else {
-                            return "Произошла ошибка при создании диалога";
-                        }
-                    }
                 });
                 break;
             case 'group':
-                this.createChatWindow = new CreateGroupWindow({ 
+                this.createChatWindow = new CreateGroupWindow({
                     router: this.props.router,
                     onSubmit: async (userIds: number[], groupName: string) => {
                         const res = await chatService.createChat(
-                            [myId, ...userIds], 
+                            [myId, ...userIds],
                             "group",
                             groupName
                         );
                         if (res.success && res.body?.id) {
-                            this.rebuildSidebar(); 
+                            this.rebuildSidebar();
                             this.props.router.navigate(`/chats/${res.body.id}`);
                         }
                     },
-                    onSubmitSearch: async (login: string) => {
-                        const targetLogin = login.trim().toLowerCase();
-                        if (this.currentUserProfile && this.currentUserProfile.additionalInfo.login.toLowerCase() === targetLogin) {
-                            return "Вы не можете добавить самого себя в контакты!";
-                        }
-
-                        const targetUserRes = await contactService.getIdByLogin(login); 
-                        
-                        if (targetUserRes.status === 404 || !targetUserRes.id) {
-                            return `Пользователь с логином "${login}" не найден!`;
-                        }
-
-                        if (myId === targetUserRes.id) {
-                            return "Вы не можете добавить в контакты самого себя!";
-                        }
-                        
-                        const successRes = await contactService.addContact(login, targetUserRes.id);
-                        
-                        if (successRes.success) {
-                            this.rebuildSidebar(); 
-                            this.props.router.navigate(`/chats/create-group`);
-                            return undefined;
-                        } else if (successRes.code === 'CANT_CREATE_CONTACT_WITH_YOURSELF') {
-                            return "Вы не можете добавить самого себя в контакты";
-                        } else if (successRes.status === 409) {
-                            return `Пользователь "${login}" уже в контактах!`;
-                        } else {
-                            return `Ошибка сервера: ${successRes.status}`;
-                        }
-                    }
                 });
                 break;
             case 'channel':
