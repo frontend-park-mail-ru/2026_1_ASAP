@@ -123,7 +123,7 @@ export class ContactService {
                 userId: Number(c.user_id),
                 displayName: c.display_name || '',
                 login: c.login ?? undefined,
-                avatarUrl: c.avatar_url ?? undefined,
+                avatarUrl: c.avatar_url || '/assets/images/avatars/defaultAvatar.svg',
                 isOnline: Boolean(c.is_online),
                 lastSeenAt: c.last_seen_at ? new Date(c.last_seen_at) : undefined,
             }));
