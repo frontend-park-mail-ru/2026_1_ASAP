@@ -21,7 +21,7 @@
     @include hover-transition;
 
     &:hover {
-        background-color: $color-text-hover1;
+        background-color: $color-text-hover;
     }
 
     &--selected {
