@@ -1,0 +1,58 @@
+@use "variables" as *;
+@use "mixins" as *;
+
+.contact-search-list {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+
+    &__search {
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+    }
+
+    &__tabs {
+        flex-shrink: 0;
+    }
+
+    &__list {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+        width: 100%;
+    }
+}
+
+.contacts-search-tabs {
+    display: flex;
+    flex-direction: row;
+    gap: 18px;
+    padding: 4px 16px 10px;
+
+    &__btn {
+        background: transparent;
+        border: none;
+        padding: 0 0 5px;
+        cursor: pointer;
+        color: $color-text-hover;
+        border-bottom: 2px solid transparent;
+        font: $text-tertiary;
+        letter-spacing: $text-tertiary-ls;
+        @include hover-transition;
+
+        &:hover:not(&--active) {
+            color: $color-text;
+        }
+
+        &--active {
+            color: $color-text;
+            font-weight: 600;
+            border-bottom: 2px solid $color-bubble;
+        }
+    }
+}
