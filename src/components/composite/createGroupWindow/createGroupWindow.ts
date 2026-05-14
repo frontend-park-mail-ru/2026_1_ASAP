@@ -72,7 +72,7 @@ export class CreateGroupWindow extends BaseComponent<CreateGroupWindowProps> {
             const btnSlot = this.element.querySelector<HTMLElement>('[data-component="find-btn-slot"]')!;
             this.findContactBtn = new Button({
                 label: 'Найти контакт',
-                class: 'ui-button ui-button__primary create-group-window__find-btn',
+                class: 'ui-button ui-button__primary',
                 onClick: () => {
                     sessionStorage.setItem('contacts_activate_global_search', '1');
                     this.props.router.navigate('/contacts');

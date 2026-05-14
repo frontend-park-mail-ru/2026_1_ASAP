@@ -82,15 +82,6 @@
         max-width: calc(100% - 20px);
     }
 
-    &__find-btn {
-        border-radius: 10px;
-        background: $gradient-button;
-        color: $color-text;
-        border: none;
-        font: $text-secondary;
-        letter-spacing: $text-secondary-ls;
-    }
-
     &--empty {
         .create-group-window__layout-slot {
             flex: 0 0 auto;
