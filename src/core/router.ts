@@ -8,7 +8,7 @@ import { contactService } from "../services/contactService";
  * и делегирует открытие страниц в PageManager.
  */
 
-const protectedRoutes = ['/chats', '/admin'];
+const protectedRoutes = ['/chats', '/settings', '/admin'];
 const adminOnlyRoutes = ['/admin'];
 
 export class Router {
