@@ -1,4 +1,4 @@
-import { BaseComponent } from '../../../core/base/baseComponent';
+import { BaseComponent, IBaseComponentProps } from '../../../core/base/baseComponent';
 import { ContactItem } from '../contactItem/contactItem';
 import { Button } from '../../ui/button/button';
 import { Avatar } from '../../ui/avatar/avatar';
@@ -266,7 +266,7 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
         this.membersComponents = [];
 
         this.props.members.forEach(member => {
-            let rightControl: BaseComponent<any> | undefined = undefined;
+            let rightControl: BaseComponent<IBaseComponentProps> | undefined = undefined;
 
             if (this.props.isEditing && this.props.currentUserRole === 'owner') {
                 rightControl = new Button({

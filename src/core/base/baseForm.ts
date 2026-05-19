@@ -1,16 +1,16 @@
 import { BaseComponent, IBaseComponentProps } from "./baseComponent";
 
 /**
- * @interface IBaseFormProps - Базовый интерфейс для свойств формы.
+ * Базовый тип свойств формы.
  */
-export interface IBaseFormProps extends IBaseComponentProps {} // Расширяем IBaseComponentProps
+export type IBaseFormProps = IBaseComponentProps;
 
 /**
  * Базовый компонент формы. Автоматически находит form в разметке,
  * перехватывает событие submit и делегирует обработку в метод onSubmit.
  * @abstract
  */
-export class BaseForm<P extends IBaseFormProps = IBaseFormProps> extends BaseComponent<P> {
+export class BaseForm<P extends object = IBaseFormProps> extends BaseComponent<P> {
     /**
      * HTML-элемент формы, найденный внутри компонента.
      * @protected

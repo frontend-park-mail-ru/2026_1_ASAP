@@ -33,8 +33,8 @@ export class ProfileMainInfoBlock extends BaseComponent<ProfileMainInfoBlockProp
     /**
      * @override
      */
-    public getTemplate(): (context?: any) => string {
-        return (context: any) => template({
+    public getTemplate(): (context?: object) => string {
+        return (context = {}) => template({
             ...this.props.profileMainInfo,
             isPrivate: this.props.type === "private_profile",
             ...context

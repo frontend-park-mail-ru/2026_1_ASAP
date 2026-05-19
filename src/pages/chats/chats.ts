@@ -4,7 +4,6 @@ import { OnboardingEmpty } from "../../components/composite/onboardingEmpty/onbo
 import { SearchForm } from "../../components/composite/searchForm/searchForm";
 import { MenuBar, MenuButtonType } from "../../components/composite/menuBar/menuBar";
 import { ChatListWrapper } from "../../components/composite/chatListWrapper/chatListWrapper";
-import { authService } from "../../services/authService";
 import { Button } from "../../components/ui/button/button";
 import { BaseComponent } from "../../core/base/baseComponent";
 import { ChatWindow } from "../../components/composite/chatWindow/chatWindow";

@@ -82,7 +82,10 @@ class AuthService {
                     const errorData = await response.json();
 
                     if (errorData.errors && Array.isArray(errorData.errors)) {
-                        errorMessage = errorData.errors.map((e: any) => e.message).join('; ');
+                        errorMessage = errorData.errors
+                            .map((e: { message?: string }) => e.message)
+                            .filter(Boolean)
+                            .join('; ');
 
                     } else if (errorData.message){
                         errorMessage = errorData.message;
@@ -97,8 +100,9 @@ class AuthService {
             const result = await response.json();
             return { success: true, data: result };
 
-        } catch (error: any) {
-            return { success: false, error: error.message || 'Неизвестная ошибка сети' };
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Неизвестная ошибка сети';
+            return { success: false, error: message };
         }
     }
 

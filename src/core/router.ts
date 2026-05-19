@@ -1,4 +1,4 @@
-import { BasePage } from "./base/basePage";
+import { BasePage, IBasePageProps } from "./base/basePage";
 import { PageManager } from "./pageManager";
 import { authService } from "../services/authService";
 import { contactService } from "../services/contactService";
@@ -10,16 +10,17 @@ import { contactService } from "../services/contactService";
 
 const protectedRoutes = ['/chats', '/admin'];
 const adminOnlyRoutes = ['/admin'];
+type PageConstructor = new (props?: IBasePageProps) => BasePage<IBasePageProps>;
 
 export class Router {
 
-    private routes: { [key: string]: typeof BasePage };
+    private routes: { [key: string]: PageConstructor };
     public pageManager: PageManager | null = null;
 
     /**
      * @param {Object<string, typeof BasePage>} routes - Маршруты.
      */
-    constructor(routes: { [key: string]: any }) {
+    constructor(routes: { [key: string]: PageConstructor }) {
         /** @type {Object<string, typeof BasePage>} */
         this.routes = routes;
 
@@ -72,7 +73,7 @@ export class Router {
             return;
         }
 
-        let PageClass: typeof BasePage | null = null;
+        let PageClass: PageConstructor | null = null;
 
         if (path.startsWith('/chats/') || path === '/chats') {
             PageClass = this.routes['/chats'];

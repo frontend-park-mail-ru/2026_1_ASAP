@@ -2,7 +2,7 @@ import { BaseForm, IBaseFormProps } from "../../../core/base/baseForm";
 import { Avatar } from "../../ui/avatar/avatar";
 import { ChatInfo } from "../../ui/chatInfo/chatInfo";
 import { MetaChatInfo } from "../../ui/metaChatInfo/metaChatInfo";
-import { Chat as ChatType } from '../../../types/chat';
+import { Chat as ChatType, FrontendMessage } from '../../../types/chat';
 import { chatService } from "../../../services/chatService";    
 import template from "./chatItem.hbs";
 import { escapeHtml } from "../../../core/utils/escape";
@@ -68,11 +68,11 @@ export class ChatItem extends BaseForm<ChatItemProps> {
     /**
      * Возвращает отображаемое имя отправителя сообщения.
      * Приоритет: "Вы" (если isOwn), firstName + lastName, иначе login.
-     * @param {any} message - Объект сообщения.
+     * @param {FrontendMessage} message - Объект сообщения.
      * @returns {string} Имя для отображения.
      * @private
      */
-    private getSenderDisplayName(message?: any): string | null {
+    private getSenderDisplayName(message?: FrontendMessage): string | null {
         if (!message) return null;
         if (message.isOwn) return "Вы";
 

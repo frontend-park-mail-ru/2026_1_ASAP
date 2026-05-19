@@ -4,7 +4,7 @@ import { Input } from "../../ui/input/input";
 import { supportService, ComplaintType } from "../../../services/supportService";
 import template from "./supportNewTab.hbs";
 
-interface SupportNewTabProps extends IBaseComponentProps {}
+type SupportNewTabProps = IBaseComponentProps;
 
 type SupportIssueType = ComplaintType;
 

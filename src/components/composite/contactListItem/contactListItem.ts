@@ -1,4 +1,4 @@
-import { BaseComponent } from "../../../core/base/baseComponent";
+import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent";
 import { BaseForm, IBaseFormProps } from "../../../core/base/baseForm";
 import { Router } from "../../../core/router";
 import { contactService } from "../../../services/contactService";
@@ -143,7 +143,7 @@ export class ContactListItem extends BaseForm<ContactListItemProps> {
         }
 
         contacts.forEach(contact => {
-            let rightControl: BaseComponent<any> | undefined = undefined;
+            let rightControl: BaseComponent<IBaseComponentProps> | undefined = undefined;
             let onRowClick: ((item: ContactItem) => void) | undefined = undefined;
             const mode = this.props.listMode || 'default';
 

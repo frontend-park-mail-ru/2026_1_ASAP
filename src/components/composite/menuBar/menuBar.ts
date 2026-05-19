@@ -31,7 +31,7 @@ export class MenuBar extends BaseComponent<MenuBarProps> {
         super(props);
     }
 
-    public getTemplate(): (context?: any) => string {
+    public getTemplate(): (context?: object) => string {
         return template;
     }
 

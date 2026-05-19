@@ -22,7 +22,7 @@ export class CreateGroupWindow extends BaseComponent<CreateGroupWindowProps> {
     private contactList: ContactListWrapper | null = null;
     private submitButton: Button | null = null;
     private SearchField: SearchForm | null = null;
-    private layoutContent: BaseComponent<any> | null = null;
+    private layoutContent: BaseComponent<IBaseComponentProps> | null = null;
     private selectedUsers: Map<number, string> = new Map(); 
     private infoMenu: InfoMenu | null = null;
 

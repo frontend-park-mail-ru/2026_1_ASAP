@@ -1,5 +1,5 @@
 import { BaseComponent } from '../../../core/base/baseComponent';
-import { User, DialogChat } from '../../../types/chat';
+import { DialogChat } from '../../../types/chat';
 import { Avatar } from '../../ui/avatar/avatar';
 import template from './dialogHeader.hbs';
 import { getFullUrl } from '../../../core/utils/url';
@@ -23,7 +23,7 @@ interface DialogHeaderProps {
  * Компонент шапки для личного диалога.
  * Отображает аватар, имя собеседника и его статус.
  */
-export class DialogHeader extends BaseComponent {
+export class DialogHeader extends BaseComponent<DialogHeaderProps> {
     private avatarComponent: Avatar | null = null;
     private searchButton: Button | null = null;
     private settingsButton: Button | null = null;

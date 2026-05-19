@@ -19,7 +19,7 @@ export class ProfileAdditionalInfoBlock extends BaseComponent<ProfileAdditionalI
     private bioContainer : HTMLElement | null = null;
     private fullText: string | null = null;
     private toggleBtn: HTMLElement | null = null;
-    private hiddenFlag: Boolean | null = null;
+    private hiddenFlag: boolean | null = null;
     private truncatedText: string | null = null;
     private resizeObserver: ResizeObserver | null = null;
     private isTruncating = false;
@@ -71,7 +71,7 @@ export class ProfileAdditionalInfoBlock extends BaseComponent<ProfileAdditionalI
             let lo: number = 0;
             let hi: number = this.fullText.length;
             while (lo < hi - 1) {
-                let mid: number = Math.floor((lo + hi) / 2);
+                const mid: number = Math.floor((lo + hi) / 2);
                 this.bioText.textContent = this.fullText.slice(0, mid) + '... ';
                 if (this.bioContainer.scrollHeight <= this.bioContainer.clientHeight) {
                     lo = mid;

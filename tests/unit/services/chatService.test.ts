@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChatService } from '../../../src/services/chatService';
 import { mockFetchSequence, mockFetchRoutes, getFetchCall } from '../../factories/http';
+import { ChannelChat } from '../../../src/types/chat';
 
 let svc: ChatService;
 
@@ -64,7 +65,7 @@ describe('chatService.getChatDetail', () => {
                 },
             },
         ]);
-        const chat = (await svc.getChatDetail('10')) as any;
+        const chat = (await svc.getChatDetail('10')) as ChannelChat | undefined;
         expect(chat).toBeDefined();
         expect(chat.id).toBe('10');
         expect(chat.type).toBe('channel');

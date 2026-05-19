@@ -8,9 +8,9 @@ declare global {
     interface Window {
         Handlebars: {
             templates: {
-                [key: string]: (context?: any) => string;
+                [key: string]: (context?: object) => string;
             };
-            registerHelper: (name: string, fn: Function) => void;
+            registerHelper: (name: string, fn: (...args: unknown[]) => unknown) => void;
         };
     }
     const Handlebars: Window['Handlebars'];

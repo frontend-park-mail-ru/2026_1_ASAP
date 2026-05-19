@@ -42,9 +42,15 @@ registerRoute(
     new NetworkOnly(),
 );
 
-self.addEventListener('sync', (event: any) => {
-    if (event.tag === 'flush-messages') {
-        event.waitUntil(notifyClientsToFlush());
+type BackgroundSyncEvent = Event & {
+    tag: string;
+    waitUntil: (promise: Promise<void>) => void;
+};
+
+self.addEventListener('sync', (event: Event) => {
+    const syncEvent = event as BackgroundSyncEvent;
+    if (syncEvent.tag === 'flush-messages') {
+        syncEvent.waitUntil(notifyClientsToFlush());
     }
 });
 

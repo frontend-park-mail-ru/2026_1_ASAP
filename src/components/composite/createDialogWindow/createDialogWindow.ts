@@ -40,7 +40,7 @@ export class CreateDialogWindow extends BaseComponent<CreateDialogWindowProps> {
     private actionHeader: ActionHeader | null = null;
     private contactList: ContactListWrapper | null = null;
     private SearchField: SearchForm | null = null;
-    private layoutContent: BaseComponent<any> | null = null;
+    private layoutContent: BaseComponent<IBaseComponentProps> | null = null;
 
     constructor(props: CreateDialogWindowProps) {
         super(props);
@@ -105,7 +105,6 @@ export class CreateDialogWindow extends BaseComponent<CreateDialogWindowProps> {
                 }
             });
         }
-1
         this.actionLayout = new ActionLayout({
             header: this.actionHeader,
             content: [

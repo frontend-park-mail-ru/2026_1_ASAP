@@ -7,7 +7,7 @@ import { Button } from '../../components/ui/button/button';
 /**
  * @interface RegisterPageProps - Свойства для страницы регистрации.
  */
-interface RegisterPageProps extends IBasePageProps {}
+type RegisterPageProps = IBasePageProps;
 
 /**
  * @class RegisterPage
@@ -26,7 +26,7 @@ export class RegisterPage extends BasePage<RegisterPageProps> {
         super(props);
     }
 
-    public getTemplate(): (context?: any) => string {
+    public getTemplate(): (context?: object) => string {
         return template;
     }
 

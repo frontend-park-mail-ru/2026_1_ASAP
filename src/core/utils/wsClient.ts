@@ -144,7 +144,7 @@ export interface ChatUpdatedMembersDto {
 /**
  * @description Тип коллбэка-подписчика на WS-событие.
  */
-type WsEventCallback<T = any> = (payload: T) => void;
+type WsEventCallback<T = unknown> = (payload: T) => void;
 
 /**
  * @class WebSocketClient
@@ -165,7 +165,7 @@ class WebSocketClient {
     /**
      * Словарь подписчиков: ключ — тип события WS, значение — Set коллбэков.
      */
-    private subscribers: Map<string, Set<WsEventCallback<any>>> = new Map();
+    private subscribers: Map<string, Set<WsEventCallback<unknown>>> = new Map();
 
     /** Флаг намеренного закрытия. */
     private intentionallyClosed = false;
@@ -267,7 +267,7 @@ class WebSocketClient {
      * Отправляет сообщение только если сокет открыт. 
      * НЕ кладет в sendQueue (т.к. за очередь отвечает OfflineMessageQueue).
      */
-    public sendIfOpen(type: string, payload: any): boolean {
+    public sendIfOpen(type: string, payload: unknown): boolean {
         if (this.isConnected()) {
             this.socket!.send(JSON.stringify({ type, payload }));
             return true;
@@ -294,18 +294,18 @@ class WebSocketClient {
     /**
      * Подписывает коллбэк на события определённого типа.
      */
-    public subscribe<T = any>(eventType: string, callback: WsEventCallback<T>): void {
+    public subscribe<T = unknown>(eventType: string, callback: WsEventCallback<T>): void {
         if (!this.subscribers.has(eventType)) {
             this.subscribers.set(eventType, new Set());
         }
-        this.subscribers.get(eventType)!.add(callback);
+        this.subscribers.get(eventType)!.add(callback as WsEventCallback<unknown>);
     }
 
     /**
      * Отписывает ранее зарегистрированный коллбэк.
      */
-    public unsubscribe<T = any>(eventType: string, callback: WsEventCallback<T>): void {
-        this.subscribers.get(eventType)?.delete(callback);
+    public unsubscribe<T = unknown>(eventType: string, callback: WsEventCallback<T>): void {
+        this.subscribers.get(eventType)?.delete(callback as WsEventCallback<unknown>);
     }
 
     /**

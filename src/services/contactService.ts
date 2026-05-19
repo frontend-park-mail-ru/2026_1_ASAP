@@ -4,6 +4,15 @@ import { httpClient } from "../core/utils/httpClient";
 import { sanitizeBioText } from "../utils/sanitizeBioText";
 import { SearchContactHit, SearchContactsResult } from '../types/search';
 
+interface SearchContactApiHit {
+    user_id: string | number;
+    display_name?: string;
+    login?: string;
+    avatar_url?: string | null;
+    is_online?: boolean;
+    last_seen_at?: string;
+}
+
 import { BASE_URL } from '../core/utils/apiBase';
 
 const CACHE_KEY = 'current_user_profile';
@@ -119,7 +128,7 @@ export class ContactService {
             const data = await response.json();
             if (data.status !== 'success' || !data.body) return null;
 
-            const items: SearchContactHit[] = (data.body.items || []).map((c: any) => ({
+            const items: SearchContactHit[] = (data.body.items || []).map((c: SearchContactApiHit) => ({
                 userId: Number(c.user_id),
                 displayName: c.display_name || '',
                 login: c.login ?? undefined,

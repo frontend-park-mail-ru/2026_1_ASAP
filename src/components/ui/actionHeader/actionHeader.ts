@@ -25,7 +25,6 @@ export class ActionHeader extends BaseComponent<ActionHeaderProps> {
             return;
         }
         const headerSlot = this.element.querySelector('.action-header__back-button');
-        const contentSlot = this.element.querySelector('.action-header__title');
         
         if (headerSlot) {
             this.props.backButton.mount(headerSlot as HTMLElement);
