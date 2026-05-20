@@ -927,6 +927,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                             this.showAlert?.('No connection, try later');
                         }
                     },
+                    chatId: this.activeChatId
                 });
                 this.activeMessageInput = messageInputComponent;
                 footerComponent = messageInputComponent;
