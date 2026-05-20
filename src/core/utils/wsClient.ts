@@ -141,6 +141,21 @@ export interface ChatUpdatedMembersDto {
     name?: string;
 }
 
+export interface UserStatusPayloadDto {
+    user_id: number;
+    last_seen_at?: string;
+    chat_id?: number;
+    typing?: boolean;
+}
+
+export type PresenceEventType = "presence.Online" | "presence.Offline" | "presence.LastSeen" | "presence.Typing";
+
+export interface PresenceState {
+    isOnline: boolean;
+    lastSeenAt?: Date;
+    typingInChat?: number;
+}
+
 /**
  * @description Тип коллбэка-подписчика на WS-событие.
  */

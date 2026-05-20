@@ -46,6 +46,26 @@
         }
     }
 
+    &__status {
+        font: $text-tertiary;
+        letter-spacing: $text-tertiary-ls;
+        font-size: 12px;
+        color: $color-text-hover;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        &--online {
+            color: $color-background-blur;
+        }
+
+        &--typing {
+            color: $color-primary;
+            font-style: italic;
+        }
+    }
+
     &__actions {
         display: flex;
         align-items: center;
