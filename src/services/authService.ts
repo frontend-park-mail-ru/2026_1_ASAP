@@ -1,5 +1,7 @@
 import { httpClient } from "../core/utils/httpClient";
 import { contactService } from "./contactService";
+import { wsClient } from "../core/utils/wsClient";
+import { notificationService } from "./notificationService";
 
 import { BASE_URL } from '../core/utils/apiBase';
 
@@ -112,6 +114,7 @@ class AuthService {
         const result = await this.sendRequest('login', { login, password });
         if (result.success) {
             this.isAuthStatus = true;
+            await this.startSessionServices();
         }
         contactService.clearCache();
         return result;
@@ -128,6 +131,7 @@ class AuthService {
         const result = await this.sendRequest('register', { email, login, password });
         if (result.success) {
             this.isAuthStatus = true;
+            await this.startSessionServices();
         }
         contactService.clearCache();
         return result;
@@ -142,7 +146,23 @@ class AuthService {
         httpClient.clearToken();
         this.isAuthStatus = false;
         contactService.clearCache();
+        wsClient.disconnect();
+        notificationService.detach();
         return result;
+    }
+
+    /**
+     * Запускает сервисы, привязанные к авторизованной сессии:
+     * WS-коннект и глобальный listener уведомлений.
+     */
+    private async startSessionServices(): Promise<void> {
+        wsClient.connect();
+        try {
+            const profile = await contactService.getMyProfile();
+            notificationService.attach(profile.additionalInfo.id);
+        } catch (e) {
+            console.warn('authService: не удалось получить профиль для уведомлений', e);
+        }
     }
 }
 
