@@ -13,7 +13,6 @@ import { MessageInput } from "../../components/ui/messageInput/messageInput";
 import { Chat, FrontendMessage, DialogChat, GroupChat, ChannelChat, User } from '../../types/chat';
 import { chatService } from "../../services/chatService";
 import { notificationService } from "../../services/notificationService";
-import { getFullUrl } from "../../core/utils/url";
 import { channelService, type ChannelRole } from "../../services/channelService";
 import { GroupHeader } from "../../components/composite/groupHeader/groupHeader";
 import { ChannelHeader } from "../../components/composite/channelHeader/channelHeader";
@@ -124,21 +123,11 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * Хранится как поле класса для корректной отписки.
      */
     private readonly handleNewMessage = async (dto: MessageDto): Promise<void> => {
-        const isOwn = this.currentUserId !== null
-            && String(dto.sender_id) === String(this.currentUserId);
         const dtoChatId = dto.chat_id.toString();
         const isActiveChat = this.activeChatId !== null && dtoChatId === this.activeChatId;
 
-        // браузер-уведомление если сообщение чужое и я не в этом чате (или вкладка не в фокусе)
-        if (!isOwn) {
-            const senderName = dto.first_name
-                ? `${dto.first_name} ${dto.last_name ?? ''}`.trim()
-                : (dto.login || 'Новое сообщение');
-            notificationService.show(senderName, dto.text || '', {
-                chatId: dtoChatId,
-                icon: dto.avatar ? getFullUrl(dto.avatar) : undefined,
-            });
-        }
+        // Уведомления (OS + звук) теперь обрабатывает глобальный notificationService.attach()
+        // — он подписан на message.New на app-уровне и работает на любой странице.
 
         if (!isActiveChat) return;
         if (!this.activeMessageList || this.currentUserId === null) return;
@@ -278,7 +267,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             console.error("ChatsPage: Не удалось получить профиль пользователя", error);
         }
 
-        wsClient.connect();
+        // wsClient.connect() и notificationService.attach() теперь живут на app-уровне
+        // (см. App.start() / authService.login). Здесь только page-specific подписки.
 
         wsClient.subscribe('system.Connected', this.handleWsConnected);
 
@@ -1420,7 +1410,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         this.logoutButton?.unmount();
         
         wsClient.unsubscribe('system.Connected', this.handleWsConnected);
-        wsClient.disconnect();
+        // WS-коннект НЕ рвём — он живёт на app-уровне, нужен для уведомлений на других страницах.
 
         // Отписываемся от глобального события
         document.removeEventListener('keydown', this.handleKeyDown);

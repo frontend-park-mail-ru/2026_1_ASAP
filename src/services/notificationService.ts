@@ -1,3 +1,6 @@
+import { wsClient, MessageDto } from "../core/utils/wsClient";
+import { getFullUrl } from "../core/utils/url";
+
 interface ShowOptions {
     icon?: string;
     chatId?: string;
@@ -8,6 +11,8 @@ class NotificationService {
     private supported: boolean = false;
     private activeNotifications = new Set<Notification>();
     private audio: HTMLAudioElement | null = null;
+    private currentUserId: number | null = null;
+    private attached: boolean = false;
 
     public init(): void {
         this.supported = 'Notification' in window;
@@ -101,6 +106,39 @@ class NotificationService {
         this.activeNotifications.forEach(n => n.close());
         this.activeNotifications.clear();
     }
+
+    /**
+     * Подписывает глобальный listener на message.New для уведомлений.
+     * Зовётся после успешной авторизации, не зависит от страницы.
+     */
+    public attach(currentUserId: number): void {
+        if (this.attached) return;
+        this.currentUserId = currentUserId;
+        this.attached = true;
+        wsClient.subscribe<MessageDto>('message.New', this.handleNewMessage);
+    }
+
+    public detach(): void {
+        if (!this.attached) return;
+        wsClient.unsubscribe('message.New', this.handleNewMessage);
+        this.attached = false;
+        this.currentUserId = null;
+        this.closeAll();
+    }
+
+    private handleNewMessage = (dto: MessageDto): void => {
+        if (this.currentUserId === null) return;
+        if (String(dto.sender_id) === String(this.currentUserId)) return;
+
+        const senderName = dto.first_name
+            ? `${dto.first_name} ${dto.last_name ?? ''}`.trim()
+            : (dto.login || 'Новое сообщение');
+
+        this.show(senderName, dto.text || '', {
+            chatId: dto.chat_id.toString(),
+            icon: dto.avatar ? getFullUrl(dto.avatar) : undefined,
+        });
+    };
 }
 
 export const notificationService = new NotificationService();
