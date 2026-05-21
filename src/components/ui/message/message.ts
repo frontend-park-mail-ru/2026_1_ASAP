@@ -1,5 +1,5 @@
 import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent";
-import { FrontendMessage } from '../../../types/chat';
+import { FrontendMessage, MessageStatus } from '../../../types/chat';
 import template from './message.hbs';
 import { Avatar } from '../../ui/avatar/avatar';
 import { chatService } from "../../../services/chatService";
@@ -196,6 +196,24 @@ export class Message extends BaseComponent<MessageProps> {
         }
     }
 
+    public setStatus(status: MessageStatus): void {
+        this.props.message.status = status;
+        if (!this.element) return;
+        const el = this.element.querySelector('.message__status');
+        if (!el) return;
+
+        el.classList.remove(
+            'message__status--sending',
+            'message__status--sent',
+            'message__status--read',
+        );
+        el.classList.add(`message__status--${status}`);
+
+        el.textContent = status === 'sending' ? '⏱'
+                       : status === 'sent'    ? '✓'
+                       : '✓✓';
+    }
+
     private handleDelete = () => {
         const modal = new ConfirmModal({
             text: "Вы уверены, что хотите удалить это сообщение у всех?",
@@ -248,6 +266,8 @@ export class Message extends BaseComponent<MessageProps> {
         this.element!.addEventListener('touchcancel', this.handleTouchEnd);
 
         if (this.props.isOwn) {
+            // первичный рендер статуса для своих сообщений
+            this.setStatus(this.props.message.status ?? 'sent');
             return;
         }
 

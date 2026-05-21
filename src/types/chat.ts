@@ -44,6 +44,8 @@ export interface BackendMessage {
  * @property {Date} timestamp - Временная метка, преобразованная в объект `Date`.
  * @property {boolean} isOwn - Флаг, указывающий, является ли сообщение отправленным текущим пользователем.
  */
+export type MessageStatus = 'sending' | 'sent' | 'read';
+
 export interface FrontendMessage {
     id: string;
     sender: User;
@@ -51,6 +53,7 @@ export interface FrontendMessage {
     timestamp: Date; // Конвертируем created_at в Date
     isOwn: boolean;
     isEdited?: boolean;
+    status?: MessageStatus;
 }
 
 /**

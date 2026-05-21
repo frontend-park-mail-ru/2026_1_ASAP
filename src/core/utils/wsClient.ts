@@ -36,10 +36,20 @@ export interface MessageDto {
     text: string;
     created_at: string;
     edited: boolean;
+    read?: boolean;
     login?: string;
     first_name?: string;
     last_name?: string;
     avatar?: string | null;
+}
+
+/**
+ * DTO события `message.Read` — кто-то прочитал в чате до сообщения last_read_message_id включительно.
+ */
+export interface MessageReadDto {
+    chat_id: number;
+    reader_user_id: number;
+    last_read_message_id: number;
 }
 
 /**
@@ -139,6 +149,21 @@ export interface ChatUpdatedMembersDto {
     type: 'added' | 'deleted';
     updated_members_id: number[];
     name?: string;
+}
+
+export interface UserStatusPayloadDto {
+    user_id: number;
+    last_seen_at?: string;
+    chat_id?: number;
+    typing?: boolean;
+}
+
+export type PresenceEventType = "presence.Online" | "presence.Offline" | "presence.LastSeen" | "presence.Typing";
+
+export interface PresenceState {
+    isOnline: boolean;
+    lastSeenAt?: Date;
+    typingInChat?: number;
 }
 
 /**

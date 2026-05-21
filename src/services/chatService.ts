@@ -3,6 +3,7 @@ import { SearchChatHit, SearchChatsResult, SearchMessageHit, SearchMessagesResul
 import { httpClient } from '../core/utils/httpClient';
 import { wsClient, MessageDto, ChatInformationDto } from '../core/utils/wsClient';
 import { getFullUrl } from '../core/utils/url';
+import { presenceService } from './presenceService';
 import { offlineQueue, PendingMessage } from './offlineMessageQueue';
 
 import { BASE_URL } from '../core/utils/apiBase';
@@ -119,6 +120,7 @@ export class ChatService {
             timestamp: new Date(dto.created_at || Date.now()),
             isOwn: String(dto.sender_id) === String(currentUserId) || dto.login === currentUserId,
             isEdited: Boolean(dto.edited),
+            status: dto.read ? 'read' : 'sent',
         };
     }
 
@@ -284,6 +286,17 @@ export class ChatService {
             message_id: Number(messageId),
         });
     };
+
+    /**
+     * Отмечает сообщение как прочитанное. Курсор сервера двигается только вперёд.
+     */
+    public markMessageRead(chatId: string, messageId: string): boolean {
+        if (!wsClient.isConnected()) return false;
+        return wsClient.sendIfOpen('message.MarkRead', {
+            chat_id: Number(chatId),
+            message_id: Number(messageId),
+        });
+    }
 
     /**
      * Пере-проталкивает все pending-сообщения в WebSocket.
@@ -913,6 +926,12 @@ export class ChatService {
                         firstName: profile.first_name,
                         lastName: profile.last_name
                     };
+
+                    // заполняем presence-кэш из профиля
+                    presenceService.seed(userId, {
+                        isOnline: Boolean(profile.is_online),
+                        lastSeenAt: profile.last_seen ? new Date(profile.last_seen) : undefined,
+                    });
                     this.profilesCache.set(userId, user);
                     return user;
                 }

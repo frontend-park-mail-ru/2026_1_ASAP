@@ -12,6 +12,8 @@ import { MessageList } from "../../components/composite/messageList/messageList"
 import { MessageInput } from "../../components/ui/messageInput/messageInput";
 import { Chat, FrontendMessage, DialogChat, GroupChat, ChannelChat, User } from '../../types/chat';
 import { chatService } from "../../services/chatService";
+import { notificationService } from "../../services/notificationService";
+import { getFullUrl } from "../../core/utils/url";
 import { channelService, type ChannelRole } from "../../services/channelService";
 import { GroupHeader } from "../../components/composite/groupHeader/groupHeader";
 import { ChannelHeader } from "../../components/composite/channelHeader/channelHeader";
@@ -26,7 +28,7 @@ import { AddMemberWindow } from "../../components/composite/addMemberWindow/addM
 import { contactService } from "../../services/contactService";
 import { ConfirmModal } from "../../components/composite/confirmModal/confirmModal";
 import {
-    wsClient, MessageDto, MessageUpdateDto, MessageClearDto, ChatUpdatedMembersDto,
+    wsClient, MessageDto, MessageUpdateDto, MessageClearDto, ChatUpdatedMembersDto, MessageReadDto,
 } from "../../core/utils/wsClient";
 import { offlineQueue } from "../../services/offlineMessageQueue";
 import { MessageSearchBar } from "../../components/composite/messageSearchBar/messageSearchBar";
@@ -85,6 +87,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private searchRequestId = 0;
     private searchType: '' | 'group' | 'channel' = '';
     private searchTabsEl: HTMLElement | null = null;
+    private notificationBannerEl: HTMLElement | null = null;
     private currentQuery: string = '';
 
     /** ID текущего запроса истории (используется для защиты от гонок). */
@@ -121,13 +124,24 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * Хранится как поле класса для корректной отписки.
      */
     private readonly handleNewMessage = async (dto: MessageDto): Promise<void> => {
-        if (!this.activeChatId || dto.chat_id.toString() !== this.activeChatId) {
-            return;
+        const isOwn = this.currentUserId !== null
+            && String(dto.sender_id) === String(this.currentUserId);
+        const dtoChatId = dto.chat_id.toString();
+        const isActiveChat = this.activeChatId !== null && dtoChatId === this.activeChatId;
+
+        // браузер-уведомление если сообщение чужое и я не в этом чате (или вкладка не в фокусе)
+        if (!isOwn) {
+            const senderName = dto.first_name
+                ? `${dto.first_name} ${dto.last_name ?? ''}`.trim()
+                : (dto.login || 'Новое сообщение');
+            notificationService.show(senderName, dto.text || '', {
+                chatId: dtoChatId,
+                icon: dto.avatar ? getFullUrl(dto.avatar) : undefined,
+            });
         }
 
-        if (!this.activeMessageList || this.currentUserId === null) {
-            return;
-        }
+        if (!isActiveChat) return;
+        if (!this.activeMessageList || this.currentUserId === null) return;
 
         const tempId = await chatService.resolveServerMessage(dto, this.currentUserId);
         const serverTime = dto.created_at ? new Date(dto.created_at) : undefined;
@@ -137,6 +151,11 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
         const frontendMsg = chatService.convertWsMessageDto(dto, this.currentUserId);
         this.activeMessageList.addMessage(frontendMsg);
+
+        // если входящее сообщение и я смотрю на чат — сразу отмечаю как прочитанное
+        if (!frontendMsg.isOwn) {
+            chatService.markMessageRead(this.activeChatId!, dto.id.toString());
+        }
     };
 
     private readonly handleMessageEdited = (dto: MessageUpdateDto): void => {
@@ -184,6 +203,18 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         const name = payload.name?.trim() || 'Пользователь';
         const verb = payload.type === 'added' ? 'добавлен в чат' : 'удалён из чата';
         this.activeMessageList.addSystemMessage(`${name} ${verb}`);
+    };
+
+    /**
+     * Обработчик `message.Read` — кто-то прочитал в чате до last_read_message_id включительно.
+     * Если читатель — не я → обновляю «прочитано» на своих сообщениях с id <= last_read.
+     */
+    private readonly handleMessageRead = (dto: MessageReadDto): void => {
+        if (!this.activeChatId || String(dto.chat_id) !== this.activeChatId) return;
+        if (this.currentUserId === null) return;
+        if (dto.reader_user_id === this.currentUserId) return;
+
+        this.activeMessageList?.markOwnMessagesRead(dto.last_read_message_id);
     };
 
     /**
@@ -258,6 +289,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         await this.handleChatRoute();
 
         document.addEventListener('keydown', this.handleKeyDown);
+
+        this.maybeShowNotificationPrompt();
 
         // Триггеры флаша оффлайн-очереди сообщений
         window.addEventListener('online', this.handleOnline);
@@ -345,6 +378,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         wsClient.unsubscribe('message.New', this.handleNewMessage);
         wsClient.unsubscribe('message.Update', this.handleMessageEdited);
         wsClient.unsubscribe('message.Clear', this.handleMessageDeleted);
+        wsClient.unsubscribe('message.Read', this.handleMessageRead);
         wsClient.unsubscribe('chat.Updated.Members', this.handleActiveChatMembersUpdated);
         this.activeMessageList = null;
         this.activeMessageInput = null;
@@ -629,9 +663,12 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
         switch (type) {
             case 'dialog':
-                this.createChatWindow = new CreateDialogWindow({ 
+                this.createChatWindow = new CreateDialogWindow({
                     router: this.props.router,
                     onSubmit: async (contactId: number, contactName: string) => {
+                        if (myId === contactId) {
+                            return;
+                        }
                         const res = await chatService.createChat(
                             [contactId],
                             "dialog",
@@ -648,85 +685,22 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                             }
                         }
                     },
-                    onSubmitSearch: async (login: string) => {
-                        const targetLogin = login.trim().toLowerCase();
-                        if (this.currentUserProfile && this.currentUserProfile.additionalInfo.login.toLowerCase() === targetLogin) {
-                            return "Вы не можете создать диалог с самим собой!";
-                        }
-
-                        const targetUserRes = await contactService.getIdByLogin(login); 
-                        const targetUser = {"id": targetUserRes.id, "login": login};
-
-                        if (targetUserRes.status === 404 || !targetUser.id) {
-                            return `Пользователь с логином "${login}" не найден!`;
-                        }
-
-                        if (myId === targetUser.id) {
-                            return "Вы не можете создать диалог с самим собой!";
-                        }
-                        const res = await chatService.createChat(
-                            [targetUser.id], 
-                            "dialog",
-                        );
-                        
-                        if (res.status === 409) {
-                            return "Диалог с этим пользователем уже существует";
-                        }
-
-                        if (res.success && res.body?.id) {
-                            this.rebuildSidebar(); 
-                            this.props.router.navigate(`/chats/${res.body.id}`);
-                            return undefined;
-                        } else {
-                            return "Произошла ошибка при создании диалога";
-                        }
-                    }
                 });
                 break;
             case 'group':
-                this.createChatWindow = new CreateGroupWindow({ 
+                this.createChatWindow = new CreateGroupWindow({
                     router: this.props.router,
                     onSubmit: async (userIds: number[], groupName: string) => {
                         const res = await chatService.createChat(
-                            [myId, ...userIds], 
+                            [myId, ...userIds],
                             "group",
                             groupName
                         );
                         if (res.success && res.body?.id) {
-                            this.rebuildSidebar(); 
+                            this.rebuildSidebar();
                             this.props.router.navigate(`/chats/${res.body.id}`);
                         }
                     },
-                    onSubmitSearch: async (login: string) => {
-                        const targetLogin = login.trim().toLowerCase();
-                        if (this.currentUserProfile && this.currentUserProfile.additionalInfo.login.toLowerCase() === targetLogin) {
-                            return "Вы не можете добавить самого себя в контакты!";
-                        }
-
-                        const targetUserRes = await contactService.getIdByLogin(login); 
-                        
-                        if (targetUserRes.status === 404 || !targetUserRes.id) {
-                            return `Пользователь с логином "${login}" не найден!`;
-                        }
-
-                        if (myId === targetUserRes.id) {
-                            return "Вы не можете добавить в контакты самого себя!";
-                        }
-                        
-                        const successRes = await contactService.addContact(login, targetUserRes.id);
-                        
-                        if (successRes.success) {
-                            this.rebuildSidebar(); 
-                            this.props.router.navigate(`/chats/create-group`);
-                            return undefined;
-                        } else if (successRes.code === 'CANT_CREATE_CONTACT_WITH_YOURSELF') {
-                            return "Вы не можете добавить самого себя в контакты";
-                        } else if (successRes.status === 409) {
-                            return `Пользователь "${login}" уже в контактах!`;
-                        } else {
-                            return `Ошибка сервера: ${successRes.status}`;
-                        }
-                    }
                 });
                 break;
             case 'channel':
@@ -975,6 +949,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                             text,
                             timestamp: new Date(pending.createdAt),
                             isOwn: true,
+                            status: 'sending',
                         };
                         this.activeMessageList?.addMessage(optimistic);
                     },
@@ -986,6 +961,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                             this.showAlert?.('No connection, try later');
                         }
                     },
+                    chatId: this.activeChatId
                 });
                 this.activeMessageInput = messageInputComponent;
                 footerComponent = messageInputComponent;
@@ -1009,11 +985,18 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             wsClient.subscribe('message.New', this.handleNewMessage);
             wsClient.subscribe('message.Update', this.handleMessageEdited);
             wsClient.subscribe('message.Clear', this.handleMessageDeleted);
+            wsClient.subscribe('message.Read', this.handleMessageRead);
             wsClient.subscribe('chat.Updated.Members', this.handleActiveChatMembersUpdated);
 
             await this.loadHistory(chatId);
             if (canWriteActiveChat) {
                 await this.restorePendingMessages(chatId);
+            }
+
+            // отмечаем прочитанным последнее входящее сообщение при открытии чата
+            const last = this.activeMessageList?.getLatestMessageData();
+            if (last && !last.isOwn && /^\d+$/.test(last.id)) {
+                chatService.markMessageRead(chatId, last.id);
             }
         } finally {
             this.syncMobileLayoutState();
@@ -1451,7 +1434,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         }
         
         this.activeChatId = null;
-        this.placeholderElement = null; 
+        this.placeholderElement = null;
+        this.hideNotificationBanner();
     }
 
     private showAlert(text: string, onConfirm?: () => void): void {
@@ -1469,6 +1453,52 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             }
         });
         this.modalComponent.mount(document.body);
+    }
+
+    /**
+     * Показывает баннер с предложением включить уведомления, если:
+     * - разрешение ещё не запрошено (`canRequest()`)
+     * - юзер не дёрнул «Не сейчас» за последние 7 дней
+     */
+    private maybeShowNotificationPrompt(): void {
+        if (!notificationService.canRequest()) return;
+
+        const dismissedAt = Number(localStorage.getItem('notification_prompt_dismissed_at') || 0);
+        const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+        if (Date.now() - dismissedAt < SEVEN_DAYS_MS) return;
+
+        const banner = document.createElement('div');
+        banner.className = 'notification-prompt';
+        banner.innerHTML = `
+            <div class="notification-prompt__icon">🔔</div>
+            <div class="notification-prompt__body">
+                <div class="notification-prompt__title">Получать уведомления?</div>
+                <div class="notification-prompt__text">Чтобы не пропустить новые сообщения, пока вы в другой вкладке.</div>
+            </div>
+            <div class="notification-prompt__actions">
+                <button type="button" class="notification-prompt__btn notification-prompt__btn--primary" data-action="allow">Включить</button>
+                <button type="button" class="notification-prompt__btn" data-action="dismiss">Не сейчас</button>
+            </div>
+        `;
+        document.body.appendChild(banner);
+        this.notificationBannerEl = banner;
+
+        banner.addEventListener('click', async (e) => {
+            const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.notification-prompt__btn');
+            if (!btn) return;
+
+            if (btn.dataset.action === 'allow') {
+                await notificationService.requestPermission();
+            } else {
+                localStorage.setItem('notification_prompt_dismissed_at', String(Date.now()));
+            }
+            this.hideNotificationBanner();
+        });
+    }
+
+    private hideNotificationBanner(): void {
+        this.notificationBannerEl?.remove();
+        this.notificationBannerEl = null;
     }
 
     private closeModal(): void {

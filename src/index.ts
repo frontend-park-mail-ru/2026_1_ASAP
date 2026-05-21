@@ -17,8 +17,12 @@ import { authService } from "./services/authService";
 import { themeService } from "./services/themeService";
 import "./styles/main.scss";
 import "./core/handlebars";
+import { presenceService } from "./services/presenceService";
+import { notificationService } from "./services/notificationService";
 
 themeService.init();
+presenceService.init();
+notificationService.init();
 
 /**
  * @function
@@ -33,6 +37,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.addEventListener('unauthorized', () => {
         authService.isAuthStatus = false;
         app.router.navigate('/login');
+    });
+
+    // клик по системному уведомлению → переход в соответствующий чат
+    window.addEventListener('notification:click', (e: Event) => {
+        const ce = e as CustomEvent<{ chatId: string }>;
+        if (ce.detail?.chatId) {
+            app.router.navigate(`/chats/${ce.detail.chatId}`);
+        }
     });
 
     await app.start();
