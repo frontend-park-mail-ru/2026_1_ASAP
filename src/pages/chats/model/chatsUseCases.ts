@@ -1,5 +1,5 @@
 import type { ChannelRole } from "../../../services/channelService";
-import type { ChannelChat, Chat, FrontendMessage, GroupChat, User } from "../../../types/chat";
+import type { ChannelChat, Chat, DialogChat, FrontendMessage, GroupChat, User } from "../../../types/chat";
 import type { FrontendProfile } from "../../../types/profile";
 import { ChatsDataFacade, chatsDataFacade } from "./chatsDataFacade";
 import type {
@@ -70,7 +70,7 @@ function toPermissions(chat: Chat, currentUserId: number, role?: ChannelRole): C
     if (chat.type === "channel") {
         const currentRole = channelRole(chat, role);
         return {
-            canWrite: currentRole !== "guest",
+            canWrite: currentRole === "owner",
             canJoin: currentRole === "guest",
             canLeave: currentRole === "participant",
             canDelete: currentRole === "owner",
@@ -152,7 +152,11 @@ export class ChatsUseCases {
         const chat = await this.data.getChatDetail(chatId);
         if (!chat) return null;
 
-        const channelDetail = chat.type === "channel"
+        const resolvedChat = chat.type === "dialog"
+            ? await this.hydrateDialogChat(chat, currentUser.id)
+            : chat;
+
+        const channelDetail = resolvedChat.type === "channel"
             ? await this.data.getChannel(chatId, currentUser.id)
             : null;
 
@@ -162,14 +166,14 @@ export class ChatsUseCases {
         ]);
 
         const channelCurrentRole = channelDetail?.currentUserRole;
-        const header = this.toHeaderVM(chat, currentUser.id, channelCurrentRole);
+        const header = this.toHeaderVM(resolvedChat, currentUser.id, channelCurrentRole);
 
         return {
-            chat,
+            chat: resolvedChat,
             header,
-            messages: (history?.messages ?? []).map((message) => toMessageVM(message, chat)),
+            messages: (history?.messages ?? []).map((message) => toMessageVM(message, resolvedChat)),
             pendingMessages,
-            permissions: toPermissions(chat, currentUser.id, channelCurrentRole),
+            permissions: toPermissions(resolvedChat, currentUser.id, channelCurrentRole),
             currentUser,
             hasMoreHistory: history?.hasMore ?? false,
             nextBeforeId: history?.nextBeforeId ?? null,
@@ -270,6 +274,42 @@ export class ChatsUseCases {
     private getPromptDismissedAt(): number {
         if (typeof localStorage === "undefined") return 0;
         return Number(localStorage.getItem(NOTIFICATION_PROMPT_DISMISSED_AT_KEY) || 0);
+    }
+
+    private async hydrateDialogChat(chat: DialogChat, currentUserId: number): Promise<DialogChat> {
+        const memberIds = await this.data.getChatMembers(chat.id);
+        const interlocutorId = memberIds.find((id) => id !== currentUserId)
+            || memberIds[0]
+            || chat.interlocutor.id;
+
+        if (!interlocutorId) return chat;
+
+        const user = await this.data.getUserProfile(interlocutorId);
+        if (user) {
+            return {
+                ...chat,
+                avatarUrl: chat.avatarUrl || user.avatarUrl,
+                interlocutor: {
+                    ...chat.interlocutor,
+                    ...user,
+                    id: interlocutorId,
+                },
+            };
+        }
+
+        const profile = await this.data.getProfileInfo(interlocutorId);
+        return {
+            ...chat,
+            avatarUrl: chat.avatarUrl || profile.mainInfo.avatarUrl,
+            interlocutor: {
+                ...chat.interlocutor,
+                id: interlocutorId,
+                login: profile.additionalInfo.login,
+                avatarUrl: profile.mainInfo.avatarUrl || chat.interlocutor.avatarUrl,
+                firstName: profile.mainInfo.firstName,
+                lastName: profile.mainInfo.lastName,
+            },
+        };
     }
 
     private toHeaderVM(chat: Chat, currentUserId: number, channelCurrentRole?: ChannelRole): ChatHeaderVM {

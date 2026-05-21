@@ -31,6 +31,8 @@ import {
 } from "../../core/utils/wsClient";
 import { offlineQueue } from "../../services/offlineMessageQueue";
 import { MessageSearchBar } from "../../components/composite/messageSearchBar/messageSearchBar";
+import { ChatsCoordinator } from "./controllers/chatsCoordinator";
+import type { CreateChatMode } from "./model/chatsViewModels";
 
 
 /**
@@ -101,6 +103,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private activeMessageList: MessageList | null = null;
     private activeMessageInput: MessageInput | null = null;
     private activeChannelRole: ChannelRole | null = null;
+    private chatsCoordinator: ChatsCoordinator | null = null;
 
     /**
      * Обработчик глобальных нажатий клавиш.
@@ -276,7 +279,15 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             chatService.clearInFlight();
         });
 
-        await this.handleChatRoute();
+        this.chatsCoordinator = new ChatsCoordinator({
+            showRoot: () => this.showChatsRoot(),
+            openChat: (chatId) => this.showChatRoute(chatId),
+            openCreate: (mode) => this.showCreateChatRoute(mode),
+            openInvalid: () => this.props.router.navigate('/chats'),
+            afterRoute: () => this.syncMobileLayoutState(),
+        });
+
+        await this.chatsCoordinator.init(this.getCurrentPath());
 
         document.addEventListener('keydown', this.handleKeyDown);
 
@@ -301,7 +312,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      */
     public async updateProps(newProps: ChatsPageProps): Promise<void> {
         this.props = { ...this.props, ...newProps };
-        await this.handleChatRoute();
+        await this.chatsCoordinator?.routeTo(this.getCurrentPath());
     }
 
     /**
@@ -485,65 +496,52 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * существующий чат или окно создания нового чата.
      * @private
      */
-    private async handleChatRoute(): Promise<void> {
-        try {
-            const path = this.props.currentPath || window.location.pathname;
-            const pathParts = path.split('/');
-            const lastParam = pathParts[pathParts.length - 1];
+    private getCurrentPath(): string {
+        return this.props.currentPath || window.location.pathname;
+    }
 
-            const isValidId = /^\d+$/.test(lastParam);
+    private async showChatsRoot(): Promise<void> {
+        this.cleanupMainContent();
+        this.activeChatId = null;
+        this.chatWrapper?.setActiveChat(null);
 
-            // Корень чатов (показываем плейсхолдер или онбординг)
-            if (path === '/chats') {
-                this.cleanupMainContent();
-                this.activeChatId = null;
-                this.chatWrapper?.setActiveChat(null);
-
-                if (this.currentUserId !== null) {
-                    const obKey = `pulse_ob_closed_${this.currentUserId}`;
-                    if (!sessionStorage.getItem(obKey)) {
-                        try {
-                            const chats = await chatService.getChats(this.currentUserId);
-                            if (chats.length === 0) {
-                                this.mountOnboarding(obKey);
-                                return;
-                            }
-                        } catch {
-                            // не удалось проверить — показываем обычный плейсхолдер
-                        }
+        if (this.currentUserId !== null) {
+            const obKey = `pulse_ob_closed_${this.currentUserId}`;
+            if (!sessionStorage.getItem(obKey)) {
+                try {
+                    const chats = await chatService.getChats(this.currentUserId);
+                    if (chats.length === 0) {
+                        this.mountOnboarding(obKey);
+                        return;
                     }
+                } catch {
+                    // не удалось проверить — показываем обычный плейсхолдер
                 }
-
-                if (this.placeholderElement) {
-                    this.placeholderElement.style.display = 'block';
-                }
-                return;
             }
-
-            if (isValidId) {
-                if (lastParam !== this.activeChatId || !this.chatWindow) {
-                    this.cleanupMainContent();
-
-                    this.activeChatId = lastParam;
-                    this.chatWrapper?.setActiveChat(lastParam);
-                    await this.openChat(lastParam);
-                }
-                return;
-            }
-
-            if (path.startsWith('/chats/create-')) {
-                this.cleanupMainContent();
-
-                this.activeChatId = null;
-                this.chatWrapper?.setActiveChat(null);
-
-                const chatType = path.replace('/chats/create-', '');
-                await this.createChat(chatType);
-                return;
-            }
-        } finally {
-            this.syncMobileLayoutState();
         }
+
+        if (this.placeholderElement) {
+            this.placeholderElement.style.display = 'block';
+        }
+    }
+
+    private async showChatRoute(chatId: string): Promise<void> {
+        if (chatId !== this.activeChatId || !this.chatWindow) {
+            this.cleanupMainContent();
+
+            this.activeChatId = chatId;
+            this.chatWrapper?.setActiveChat(chatId);
+            await this.openChat(chatId);
+        }
+    }
+
+    private async showCreateChatRoute(chatType: CreateChatMode): Promise<void> {
+        this.cleanupMainContent();
+
+        this.activeChatId = null;
+        this.chatWrapper?.setActiveChat(null);
+
+        await this.createChat(chatType);
     }
 
     /**
@@ -1399,6 +1397,9 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * @protected
      */
     beforeUnmount() {
+        this.chatsCoordinator?.destroy();
+        this.chatsCoordinator = null;
+
         this.onboardingComponent?.unmount();
         this.onboardingComponent = null;
         this.cleanupMainContent();
