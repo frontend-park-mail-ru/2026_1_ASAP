@@ -26,11 +26,15 @@ class NotificationService {
     }
 
     public isGranted(): boolean {
-        return this.supported && this.permission === 'granted';
+        if (!this.supported) return false;
+        this.permission = Notification.permission;
+        return this.permission === 'granted';
     }
 
     public canRequest(): boolean {
-        return this.supported && this.permission === 'default';
+        if (!this.supported) return false;
+        this.permission = Notification.permission;
+        return this.permission === 'default';
     }
 
     /**
