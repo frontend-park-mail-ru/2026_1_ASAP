@@ -100,6 +100,16 @@
         &[hidden] { display: none; }
     }
 
+    &__status {
+        margin-left: 6px;
+        font-size: 11px;
+        line-height: 1;
+
+        &--sending { color: $color-text-hover; opacity: 0.6; }
+        &--sent    { color: $color-text-hover; }
+        &--read    { color: $color-text; font-weight: 600; }
+    }
+
     &--flash {
         &.message--own .message__content-wrapper {
             animation: message-flash-own 0.35s ease-out forwards;

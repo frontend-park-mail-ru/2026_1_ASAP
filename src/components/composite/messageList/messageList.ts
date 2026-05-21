@@ -305,7 +305,25 @@ export class MessageList extends BaseComponent {
         target.setId(newId);
         this.messages.set(newId, target);
         if (newTimestamp) target.updateTimestamp(newTimestamp);
+        target.setStatus('sent');
         return true;
+    }
+
+    public getLatestMessageData(): FrontendMessage | null {
+        return this.childMessages[0]?.props.message ?? null;
+    }
+
+    /**
+     * Отмечает «прочитано» все собственные сообщения с id <= lastReadId.
+     * Вызывается из обработчика `message.Read` когда кто-то другой прочитал.
+     */
+    public markOwnMessagesRead(lastReadId: number): void {
+        this.childMessages.forEach(msg => {
+            const id = Number(msg.getId());
+            if (msg.props.isOwn && !Number.isNaN(id) && id <= lastReadId) {
+                msg.setStatus('read');
+            }
+        });
     }
 
     /**

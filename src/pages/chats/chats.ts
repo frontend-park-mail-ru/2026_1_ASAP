@@ -27,7 +27,7 @@ import { AddMemberWindow } from "../../components/composite/addMemberWindow/addM
 import { contactService } from "../../services/contactService";
 import { ConfirmModal } from "../../components/composite/confirmModal/confirmModal";
 import {
-    wsClient, MessageDto, MessageUpdateDto, MessageClearDto, ChatUpdatedMembersDto,
+    wsClient, MessageDto, MessageUpdateDto, MessageClearDto, ChatUpdatedMembersDto, MessageReadDto,
 } from "../../core/utils/wsClient";
 import { offlineQueue } from "../../services/offlineMessageQueue";
 import { MessageSearchBar } from "../../components/composite/messageSearchBar/messageSearchBar";
@@ -138,6 +138,11 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
         const frontendMsg = chatService.convertWsMessageDto(dto, this.currentUserId);
         this.activeMessageList.addMessage(frontendMsg);
+
+        // если входящее сообщение и я смотрю на чат — сразу отмечаю как прочитанное
+        if (!frontendMsg.isOwn) {
+            chatService.markMessageRead(this.activeChatId, dto.id.toString());
+        }
     };
 
     private readonly handleMessageEdited = (dto: MessageUpdateDto): void => {
@@ -185,6 +190,18 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         const name = payload.name?.trim() || 'Пользователь';
         const verb = payload.type === 'added' ? 'добавлен в чат' : 'удалён из чата';
         this.activeMessageList.addSystemMessage(`${name} ${verb}`);
+    };
+
+    /**
+     * Обработчик `message.Read` — кто-то прочитал в чате до last_read_message_id включительно.
+     * Если читатель — не я → обновляю «прочитано» на своих сообщениях с id <= last_read.
+     */
+    private readonly handleMessageRead = (dto: MessageReadDto): void => {
+        if (!this.activeChatId || String(dto.chat_id) !== this.activeChatId) return;
+        if (this.currentUserId === null) return;
+        if (dto.reader_user_id === this.currentUserId) return;
+
+        this.activeMessageList?.markOwnMessagesRead(dto.last_read_message_id);
     };
 
     /**
@@ -346,6 +363,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         wsClient.unsubscribe('message.New', this.handleNewMessage);
         wsClient.unsubscribe('message.Update', this.handleMessageEdited);
         wsClient.unsubscribe('message.Clear', this.handleMessageDeleted);
+        wsClient.unsubscribe('message.Read', this.handleMessageRead);
         wsClient.unsubscribe('chat.Updated.Members', this.handleActiveChatMembersUpdated);
         this.activeMessageList = null;
         this.activeMessageInput = null;
@@ -916,6 +934,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                             text,
                             timestamp: new Date(pending.createdAt),
                             isOwn: true,
+                            status: 'sending',
                         };
                         this.activeMessageList?.addMessage(optimistic);
                     },
@@ -951,11 +970,18 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             wsClient.subscribe('message.New', this.handleNewMessage);
             wsClient.subscribe('message.Update', this.handleMessageEdited);
             wsClient.subscribe('message.Clear', this.handleMessageDeleted);
+            wsClient.subscribe('message.Read', this.handleMessageRead);
             wsClient.subscribe('chat.Updated.Members', this.handleActiveChatMembersUpdated);
 
             await this.loadHistory(chatId);
             if (canWriteActiveChat) {
                 await this.restorePendingMessages(chatId);
+            }
+
+            // отмечаем прочитанным последнее входящее сообщение при открытии чата
+            const last = this.activeMessageList?.getLatestMessageData();
+            if (last && !last.isOwn && /^\d+$/.test(last.id)) {
+                chatService.markMessageRead(chatId, last.id);
             }
         } finally {
             this.syncMobileLayoutState();

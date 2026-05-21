@@ -35,6 +35,18 @@
     font: 400 24px/30px $font-primary;
 }
 
+.contact-user-status {
+    font: $text-tertiary;
+    letter-spacing: $text-tertiary-ls;
+    font-size: 13px;
+    color: $color-text-hover;
+    margin: 4px 0 0;
+
+    &--online {
+        color: $color-background-blur;
+    }
+}
+
 .profile-info {
     &__avatar-container {
         position: relative;
