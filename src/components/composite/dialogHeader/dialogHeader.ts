@@ -6,6 +6,7 @@ import { Button } from '../../ui/button/button';
 import { DeleteChatMenu } from '../deleteChatMenu/deleteChatMenu';
 import { ConfirmModal } from '../confirmModal/confirmModal';
 import { presenceService } from '../../../services/presenceService';
+import { chatService } from '../../../services/chatService';
 import { PresenceState } from '../../../core/utils/wsClient';
 
 /**
@@ -117,6 +118,12 @@ export class DialogHeader extends BaseComponent {
             });
             const cached = presenceService.get(interlocutorId);
             if (cached) this.renderPresence(cached);
+
+            // если кэш пустой — дёрнем профиль, он засеет presenceService через seed()
+            // и подписчик выше отрисует статус сразу как профиль загрузится
+            if (!cached) {
+                chatService.getUserProfile(interlocutorId);
+            }
         }
     }
 
@@ -126,7 +133,7 @@ export class DialogHeader extends BaseComponent {
 
         const chatId = String((this.props.chat as DialogChat).id);
         if (state.typingInChat !== undefined && String(state.typingInChat) === chatId) {
-            el.textContent = 'печатает...';
+            el.innerHTML = `печатает<span class="dialog-header__typing-dots"><span></span><span></span><span></span></span>`;
             el.classList.add('dialog-header__status--typing');
             return;
         }

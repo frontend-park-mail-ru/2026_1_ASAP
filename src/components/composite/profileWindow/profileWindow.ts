@@ -44,7 +44,8 @@ export class ProfileWindow extends BaseComponent<ProfileWindowProps> {
 
         this.profileMainInfoBlock = new ProfileMainInfoBlock({
             profileMainInfo: this.props.profileMainInfo,
-            type: "contact"
+            type: "contact",
+            userId: this.props.profileAdditionalInfo.id,
         });
         this.profileMainInfoBlock.mount(this.element!);
 

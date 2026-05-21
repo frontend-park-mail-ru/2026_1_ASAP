@@ -34,6 +34,14 @@ class PresenceService {
         this.listeners!.get(userId)?.forEach(fn => fn(next));
     }
 
+    /**
+     * Внешнее заполнение кэша (например, из HTTP-ответа профиля).
+     * Использует ту же merge-логику что и WS-события.
+     */
+    public seed(userId: number, partial: Partial<PresenceState>): void {
+        this.notify(userId, partial);
+    }
+
     public emitTyping(chatId: string): void {
         const now = Date.now();
         const last = this.typingThrottle.get(chatId) ?? 0;
