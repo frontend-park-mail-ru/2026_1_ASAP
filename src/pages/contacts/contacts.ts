@@ -149,6 +149,7 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
             listMode: 'default',
             hideAddButton: false,
             onAddClick: () => this.contactSearchList?.activateGlobalSearch(),
+            onSearchContacts: (query, scope) => contactService.searchContacts(query, scope),
         });
         this.contactSearchList.mount(sidebar as HTMLElement);
 

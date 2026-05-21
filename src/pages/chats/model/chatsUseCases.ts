@@ -1,6 +1,8 @@
-import type { ChannelRole } from "../../../services/channelService";
+import type { ChannelRole, CreateChannelInput } from "../../../services/channelService";
+import type { ChatInformationDto, MessageDto } from "../../../core/utils/wsClient";
 import type { ChannelChat, Chat, DialogChat, FrontendMessage, GroupChat, User } from "../../../types/chat";
 import type { FrontendProfile } from "../../../types/profile";
+import type { SearchMessageHit, SearchMessagesResult } from "../../../types/search";
 import { ChatsDataFacade, chatsDataFacade } from "./chatsDataFacade";
 import type {
     ActiveChatVM,
@@ -9,6 +11,7 @@ import type {
     ChatHeaderVM,
     ChatPermissionsVM,
     ChatSearchType,
+    ContactSearchScope,
     CurrentUserVM,
     DialogHeaderVM,
     GroupDetailsVM,
@@ -30,6 +33,14 @@ function getProfileDisplayName(profile: FrontendProfile): string {
 
 function getUserDisplayName(user: User): string {
     return [user.firstName, user.lastName].filter(Boolean).join(" ") || user.login;
+}
+
+function hasSenderDisplayName(message?: FrontendMessage): boolean {
+    if (!message) return false;
+    if (message.isOwn) return true;
+
+    const { firstName, lastName, login } = message.sender;
+    return Boolean(firstName || lastName || (login && login !== "unknown" && !login.startsWith("user_")));
 }
 
 function toMessageVM(message: FrontendMessage, chat: Chat): MessageVM {
@@ -137,7 +148,11 @@ export class ChatsUseCases {
 
     public async loadSidebarChats(currentUserId: number, activeChatId: string | null = null): Promise<SidebarChatVM[]> {
         const chats = await this.data.getChats(currentUserId);
-        return chats.map((chat) => toSidebarChatVM(chat, activeChatId));
+        const enrichedChats = await Promise.all(
+            chats.map((chat) => this.enrichSidebarChat(chat, currentUserId)),
+        );
+
+        return enrichedChats.map((chat) => toSidebarChatVM(chat, activeChatId));
     }
 
     public async searchSidebarChats(
@@ -148,17 +163,92 @@ export class ChatsUseCases {
         return this.data.searchChats(query, type, beforeId);
     }
 
+    public async searchContacts(query: string, scope: ContactSearchScope) {
+        return this.data.searchContacts(query, scope);
+    }
+
+    public async loadContacts() {
+        return this.data.getContacts();
+    }
+
+    public async createDialogChat(currentUserId: number, contactId: number, contactLogin?: string) {
+        if (currentUserId === contactId) {
+            return { success: false, status: 400 };
+        }
+
+        const result = await this.data.createChat([contactId], "dialog");
+        const createdChatId = result.body?.id ?? result.body?.chat_id;
+        if (result.success && createdChatId) {
+            return { success: true, status: result.status, chatId: String(createdChatId) };
+        }
+
+        if (result.status === 409) {
+            const existingChatId = await this.data.findExistingDialogChatId(contactId, contactLogin);
+            if (existingChatId) {
+                return { success: true, status: result.status, chatId: existingChatId };
+            }
+        }
+
+        return { success: false, status: result.status };
+    }
+
+    public async createGroupChat(currentUserId: number, userIds: number[], groupName: string) {
+        const memberIds = [currentUserId, ...userIds];
+        const result = await this.data.createChat(memberIds, "group", groupName);
+        const createdChatId = result.body?.id ?? result.body?.chat_id;
+
+        if (result.success && createdChatId) {
+            return { success: true, status: result.status, chatId: String(createdChatId) };
+        }
+
+        return { success: false, status: result.status };
+    }
+
+    public createChannel(input: CreateChannelInput, currentUserId: number) {
+        return this.data.createChannel(input, currentUserId);
+    }
+
+    public async mapRealtimeSidebarChat(dto: ChatInformationDto, currentUserId: number): Promise<Chat> {
+        const chat = this.data.mapChatDtoToChat(dto, currentUserId);
+        return this.enrichSidebarChat(chat, currentUserId);
+    }
+
+    public mapRealtimeSidebarMessage(dto: MessageDto, currentUserId: number): FrontendMessage {
+        return this.data.convertWsMessageDto(dto, currentUserId);
+    }
+
+    public async enrichRealtimeSidebarMessage(
+        chat: Chat,
+        message: FrontendMessage,
+        currentUserId: number,
+    ): Promise<FrontendMessage> {
+        if (chat.type !== "group") return message;
+        return this.enrichMessageSender(message, currentUserId);
+    }
+
+    public subscribeRealtime<T = unknown>(eventType: string, handler: (payload: T) => void): () => void {
+        return this.data.subscribeWs<T>(eventType, handler);
+    }
+
     public async loadActiveChat(chatId: string, currentUser: CurrentUserVM): Promise<ActiveChatVM | null> {
         const chat = await this.data.getChatDetail(chatId);
         if (!chat) return null;
 
-        const resolvedChat = chat.type === "dialog"
+        let resolvedChat = chat.type === "dialog"
             ? await this.hydrateDialogChat(chat, currentUser.id)
             : chat;
 
         const channelDetail = resolvedChat.type === "channel"
             ? await this.data.getChannel(chatId, currentUser.id)
             : null;
+
+        if (resolvedChat.type === "channel" && channelDetail) {
+            resolvedChat = {
+                ...resolvedChat,
+                currentUserRole: channelDetail.currentUserRole,
+                subscribersCount: channelDetail.subscribersCount,
+            };
+        }
 
         const [history, pendingMessages] = await Promise.all([
             this.data.getMessages(chatId, currentUser.id),
@@ -168,10 +258,15 @@ export class ChatsUseCases {
         const channelCurrentRole = channelDetail?.currentUserRole;
         const header = this.toHeaderVM(resolvedChat, currentUser.id, channelCurrentRole);
 
+        const rawMessages = history?.messages ?? [];
+        const messages = await Promise.all(
+            rawMessages.map((message) => this.enrichMessageForChat(resolvedChat, message, currentUser.id)),
+        );
+
         return {
             chat: resolvedChat,
             header,
-            messages: (history?.messages ?? []).map((message) => toMessageVM(message, resolvedChat)),
+            messages: messages.map((message) => toMessageVM(message, resolvedChat)),
             pendingMessages,
             permissions: toPermissions(resolvedChat, currentUser.id, channelCurrentRole),
             currentUser,
@@ -188,15 +283,84 @@ export class ChatsUseCases {
         const history = await this.data.getMessages(chat.id, currentUserId, beforeId);
         if (!history) return null;
 
+        const messages = await Promise.all(
+            history.messages.map((message) => this.enrichMessageForChat(chat, message, currentUserId)),
+        );
+
         return {
-            messages: history.messages.map((message) => toMessageVM(message, chat)),
+            messages: messages.map((message) => toMessageVM(message, chat)),
             hasMore: history.hasMore,
             nextBeforeId: history.nextBeforeId,
         };
     }
 
-    public async searchMessages(chatId: string, query: string, beforeId: number | null = null) {
-        return this.data.searchMessages(chatId, query, beforeId);
+    public sendMessage(chatId: string, text: string, senderId: number) {
+        return this.data.sendMessage(chatId, text, senderId);
+    }
+
+    public editMessage(chatId: string, messageId: string, text: string): boolean {
+        return this.data.editMessage(chatId, messageId, text);
+    }
+
+    public deleteMessage(chatId: string, messageId: string): boolean {
+        return this.data.deleteMessage(chatId, messageId);
+    }
+
+    public markMessageRead(chatId: string, messageId: string): boolean {
+        return this.data.markMessageRead(chatId, messageId);
+    }
+
+    public resolveRealtimeMessage(dto: MessageDto, currentUserId: number): Promise<string | null> {
+        return this.data.resolveServerMessage(dto, currentUserId);
+    }
+
+    public mapRealtimeMessage(dto: MessageDto, currentUserId: number): FrontendMessage {
+        return this.data.convertWsMessageDto(dto, currentUserId);
+    }
+
+    public enrichMessageForChat(
+        chat: Chat,
+        message: FrontendMessage,
+        currentUserId: number,
+    ): Promise<FrontendMessage> {
+        if (chat.type === "channel") {
+            return Promise.resolve(message);
+        }
+
+        return this.enrichMessageSender(message, currentUserId);
+    }
+
+    public emitTyping(chatId: string): void {
+        this.data.emitTyping(chatId);
+    }
+
+    public stopTyping(chatId: string): void {
+        this.data.stopTyping(chatId);
+    }
+
+    public flushPendingMessages(): Promise<void> {
+        return this.data.flushPendingMessages();
+    }
+
+    public clearInFlightMessages(): void {
+        this.data.clearInFlightMessages();
+    }
+
+    public async searchMessages(
+        chatId: string,
+        query: string,
+        currentUserId: number,
+        beforeId: number | null = null,
+    ): Promise<SearchMessagesResult | null> {
+        const result = await this.data.searchMessages(chatId, query, beforeId);
+        if (!result) return null;
+
+        return {
+            ...result,
+            items: await Promise.all(
+                result.items.map((hit) => this.enrichSearchMessageHit(hit, currentUserId)),
+            ),
+        };
     }
 
     public async loadGroupDetails(chat: GroupChat, currentUserId: number): Promise<GroupDetailsVM> {
@@ -309,6 +473,56 @@ export class ChatsUseCases {
                 firstName: profile.mainInfo.firstName,
                 lastName: profile.mainInfo.lastName,
             },
+        };
+    }
+
+    private async enrichSidebarChat(chat: Chat, currentUserId: number): Promise<Chat> {
+        if (chat.type !== "group") return chat;
+        if (!chat.lastMessage) return chat;
+
+        const lastMessage = await this.enrichMessageSender(chat.lastMessage, currentUserId);
+        if (lastMessage === chat.lastMessage) return chat;
+
+        return {
+            ...chat,
+            lastMessage,
+        };
+    }
+
+    private async enrichMessageSender(message: FrontendMessage, currentUserId: number): Promise<FrontendMessage> {
+        if (message.isOwn) return message;
+        if (hasSenderDisplayName(message)) return message;
+
+        const senderId = message.sender.id;
+        if (!senderId || senderId === currentUserId) return message;
+
+        const profile = await this.data.getUserProfile(senderId);
+        if (!profile) return message;
+
+        return {
+            ...message,
+            sender: {
+                ...message.sender,
+                ...profile,
+            },
+        };
+    }
+
+    private async enrichSearchMessageHit(hit: SearchMessageHit, currentUserId: number): Promise<SearchMessageHit> {
+        if (hit.senderId === currentUserId) {
+            return {
+                ...hit,
+                authorName: "Вы",
+            };
+        }
+
+        const profile = await this.data.getUserProfile(hit.senderId);
+        if (!profile) return hit;
+
+        return {
+            ...hit,
+            authorName: getUserDisplayName(profile),
+            authorAvatarUrl: profile.avatarUrl,
         };
     }
 

@@ -5,6 +5,9 @@ import { ActionHeader } from "../../ui/actionHeader/actionHeader";
 import { ContactSearchList } from "../contactSearchList/contactSearchList";
 import { Button } from "../../ui/button/button";
 import { Router } from "../../../core/router";
+import type { SearchContactsResult } from "../../../types/search";
+
+type SearchScope = 'contacts' | 'local';
 
 /**
  * @interface CreateDialogWindowProps
@@ -14,6 +17,7 @@ import { Router } from "../../../core/router";
  */
 interface CreateDialogWindowProps extends IBaseComponentProps {
     router: Router;
+    onSearchContacts: (query: string, scope: SearchScope) => Promise<SearchContactsResult | null>;
     onSubmit: (contactId: number, contactName: string) => void;
 }
 
@@ -57,6 +61,7 @@ export class CreateDialogWindow extends BaseComponent<CreateDialogWindowProps> {
             router: this.props.router,
             listMode: 'createDialog',
             hideAddButton: true,
+            onSearchContacts: this.props.onSearchContacts,
             onAction: (contactId: number, _isSelected?: boolean, contactName?: string) => {
                 this.props.onSubmit(contactId, contactName || "Новый диалог");
             },

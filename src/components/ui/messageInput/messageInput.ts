@@ -2,7 +2,6 @@ import { BaseForm, IBaseFormProps } from '../../../core/base/baseForm';
 import { Button } from '../button/button';
 import { ConfirmModal } from '../../composite/confirmModal/confirmModal';
 import template from './messageInput.hbs';
-import { presenceService } from '../../../services/presenceService';
 
 /**
  * @interface MessageInputProps - Свойства компонента формы ввода сообщения.
@@ -11,6 +10,8 @@ import { presenceService } from '../../../services/presenceService';
 interface MessageInputProps extends IBaseFormProps { 
     onSubmit: (text: string) => void;
     onSubmitEdit?: (messageId: string, text: string) => void;
+    onTyping?: () => void;
+    onStopTyping?: () => void;
     chatId: string;
 }
 
@@ -177,7 +178,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             this.textarea.style.height = '';
             this.textarea.style.height = `${this.textarea.scrollHeight}px`;
         }
-        presenceService.emitTyping(this.props.chatId);
+        this.props.onTyping?.();
     };
 
     private isMobileViewport(): boolean {
@@ -228,11 +229,11 @@ export class MessageInput extends BaseForm<MessageInputProps> {
 
         if (this.editingMessageId) {
             this.props.onSubmitEdit?.(this.editingMessageId, text);
-            presenceService.stopTyping(this.props.chatId);
+            this.props.onStopTyping?.();
             this.exitEditMode();
         } else {
             this.props.onSubmit(text);
-            presenceService.stopTyping(this.props.chatId);
+            this.props.onStopTyping?.();
             if (this.textarea) {
                 this.textarea.value = '';
                 this.textarea.style.height = '';
@@ -250,7 +251,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             this.textarea.removeEventListener('input', this.handleInput);
         }
         document.removeEventListener('pointerdown', this.handleDocumentPointerDown, true);
-        presenceService.stopTyping(this.props.chatId);
+        this.props.onStopTyping?.();
         
         this.modalComponent?.unmount();
         

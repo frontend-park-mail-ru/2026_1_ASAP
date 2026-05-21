@@ -1,9 +1,7 @@
 import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent";
-import { FrontendMessage, MessageStatus } from '../../../types/chat';
+import { FrontendMessage, MessageStatus, User } from '../../../types/chat';
 import template from './message.hbs';
 import { Avatar } from '../../ui/avatar/avatar';
-import { chatService } from "../../../services/chatService";
-import { User } from "../../../types/chat";
 import { EditMsgOverlay } from '../../composite/editMsgOverlay/editMsgOverlay';
 import { ConfirmModal } from "../../composite/confirmModal/confirmModal";
 
@@ -40,6 +38,7 @@ export class Message extends BaseComponent<MessageProps> {
         this.props.isOwn = props.isOwn;
         this.props.showAuthor = props.showAuthor;
         this.props.formattedTime = props.message.timestamp.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', hour12: false });
+        this.props.senderName = props.senderName ?? this.getSenderDisplayName(props.message.sender);
     }
 
     getTemplate() {
@@ -107,47 +106,11 @@ export class Message extends BaseComponent<MessageProps> {
         const { firstName, lastName, login } = user;
         
         if ((!login || login.startsWith('user_')) && !firstName && !lastName) {
-            return null;
+            return user.id ? `User #${user.id}` : null;
         }
 
         const fullName = `${firstName || ''} ${lastName || ''}`.trim();
         return fullName || login;
-    }
-
-    /**
-     * Асинхронно загружает профиль отправителя и обновляет DOM.
-     * @param {number} senderId - ID отправителя.
-     * @private
-     */
-    private async fetchAndSetSenderName(senderId: number) {
-        try {
-            const profile = await chatService.getUserProfile(senderId);
-            
-            if (profile) {
-                this.props.message.sender = {
-                    ...this.props.message.sender,
-                    ...profile
-                };
-
-                if (this.avatarComponent && profile.avatarUrl) {
-                    this.avatarComponent.props.src = profile.avatarUrl;
-                    const el = this.avatarComponent.element;
-                    const img = el?.tagName === 'IMG' ? (el as HTMLImageElement) : el?.querySelector('img');
-                    if (img) {
-                        img.src = profile.avatarUrl;
-                    }
-                }
-
-                this.props.senderName = this.getSenderDisplayName(this.props.message.sender);
-
-                // Точечно обновляем только имя автора в DOM
-                const authorEl = this.element?.querySelector('.message__author');
-                if (authorEl) {
-                    authorEl.textContent = this.props.senderName || '';
-                }
-            }
-        } catch (error) {
-        }
     }
 
     handleRightClick = (e: { preventDefault: () => void; }) => {
@@ -286,16 +249,7 @@ export class Message extends BaseComponent<MessageProps> {
             return;
         }
 
-        const sender = this.props.message.sender;
-        const isDefaultAvatar = !sender.avatarUrl ||
-                                sender.avatarUrl.includes('defaultAvatar.svg');
-
-        if (!this.props.senderName || isDefaultAvatar) {
-            const senderId = sender.id;
-            if (senderId) {
-                this.fetchAndSetSenderName(senderId);
-            }
-        }
+        this.props.senderName = this.getSenderDisplayName(this.props.message.sender);
     }
 
     /**

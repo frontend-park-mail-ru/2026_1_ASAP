@@ -3,7 +3,6 @@ import { Avatar } from "../../ui/avatar/avatar";
 import { ChatInfo } from "../../ui/chatInfo/chatInfo";
 import { MetaChatInfo } from "../../ui/metaChatInfo/metaChatInfo";
 import { Chat as ChatType, FrontendMessage } from '../../../types/chat';
-import { chatService } from "../../../services/chatService";    
 import template from "./chatItem.hbs";
 import { escapeHtml } from "../../../core/utils/escape";
 
@@ -36,7 +35,6 @@ export class ChatItem extends BaseForm<ChatItemProps> {
     private avatar: Avatar | null = null;
     private chatInfo: ChatInfo | null = null;
     private metaChatInfo: MetaChatInfo | null = null;
-    private loadingSenderIds: Set<number> = new Set();
 
     constructor(props: ChatItemProps) {
         super(props);
@@ -87,47 +85,6 @@ export class ChatItem extends BaseForm<ChatItemProps> {
     }
 
     /**
-     * Асинхронно загружает профиль отправителя и обновляет DOM.
-     * @param {number} senderId - ID отправителя.
-     * @private
-     */
-    private async fetchAndSetSenderName(senderId: number) {
-        if (this.loadingSenderIds.has(senderId)) {
-            return;
-        }
-        this.loadingSenderIds.add(senderId);
-
-        try {
-            const profile = await chatService.getUserProfile(senderId);
-            if (profile && this.props.chat.lastMessage) {
-                this.props.chat.lastMessage.sender = {
-                    ...this.props.chat.lastMessage.sender,
-                    ...profile
-                };
-
-                if (this.avatar && profile.avatarUrl) {
-                    this.avatar.props.src = profile.avatarUrl;
-                    const img = this.avatar.element?.querySelector('img');
-                    if (img) {
-                        img.src = profile.avatarUrl;
-                    }
-                }
-
-                const msgTextEl = this.element?.querySelector('.msg-text');
-                if (msgTextEl) {
-                    const senderName = this.getSenderDisplayName(this.props.chat.lastMessage);
-                    if (senderName) {
-                        msgTextEl.innerHTML = `<span class="sender-group">${escapeHtml(senderName)}: </span>${escapeHtml(this.props.chat.lastMessage.text)}`;
-                    }
-                }
-            }
-        } catch (error) {
-        } finally {
-            this.loadingSenderIds.delete(senderId);
-        }
-    }
-
-    /**
      * Выполняется после монтирования компонента.
      * Инициализирует и монтирует дочерние компоненты (аватар, информация о чате, мета-данные)
      * и добавляет обработчик клика.
@@ -154,15 +111,6 @@ export class ChatItem extends BaseForm<ChatItemProps> {
                 sender: this.getSenderDisplayName(this.props.chat.lastMessage),
             });
             this.chatInfo.mount(infoSlot as HTMLElement);
-        }
-
-        if (this.props.chat.type === 'group' && this.props.chat.lastMessage) {
-            const senderName = this.getSenderDisplayName(this.props.chat.lastMessage);
-            const senderId = this.props.chat.lastMessage.sender.id;
-            
-            if (!senderName && senderId && !this.props.chat.lastMessage.isOwn) {
-                this.fetchAndSetSenderName(senderId);
-            }
         }
 
         const metaSlot = this.element.querySelector('[data-component="chat-item-meta-slot"]');
@@ -237,12 +185,6 @@ export class ChatItem extends BaseForm<ChatItemProps> {
                     msgTextEl.innerHTML = `<span class="sender-group">${escapeHtml(senderName)}: </span>${escapeHtml(newData.lastMessage.text)}`;
                 } else {
                     msgTextEl.textContent = newData.lastMessage.text || '';
-                    
-                    // Если имени нет, но есть ID — запускаем загрузку
-                    const senderId = newData.lastMessage.sender.id;
-                    if (senderId && !newData.lastMessage.isOwn) {
-                        this.fetchAndSetSenderName(senderId);
-                    }
                 }
             } else {
                 msgTextEl.textContent = newData.lastMessage?.text || '';

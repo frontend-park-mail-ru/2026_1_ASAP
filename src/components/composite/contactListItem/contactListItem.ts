@@ -20,6 +20,7 @@ import { SearchContactHit } from "../../../types/search";
  */
 interface ContactListItemProps extends IBaseFormProps {
     router: Router,
+    contacts?: FrontendContact[];
     listMode?: 'default' | 'createDialog' | 'createGroup';
     onAction?: (contactId: number, isSelected: boolean, contactName?: string) => void;
 };
@@ -105,6 +106,12 @@ export class ContactListItem extends BaseForm<ContactListItemProps> {
      * @protected
      */
     protected afterMount(): void {
+        if (this.props.contacts) {
+            this.originalContacts = this.props.contacts;
+            this.renderContacts(this.originalContacts);
+            return;
+        }
+
         this.loadContacts();
     };
 

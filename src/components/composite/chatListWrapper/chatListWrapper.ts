@@ -1,19 +1,20 @@
 import { BaseForm } from "../../../core/base/baseForm";
 import { ChatListItem } from "../chatListItem/chatListItem";
-import { Router } from '../../../core/router';
 import template from "./chatListWrapper.hbs";
 import { SearchChatHit } from "../../../types/search";
-import { FrontendMessage } from "../../../types/chat";
+import { Chat, FrontendMessage } from "../../../types/chat";
 
 /**
  * @interface ChatListWrapperProps
  * @description Свойства для компонента-обертки списка чатов.
- * @property {Router} router - Экземпляр роутера для передачи дочерним компонентам.
+ * @property {Chat[]} chats - Данные чатов для передачи дочернему списку.
  * @property {string | null} activeChatId - ID активного чата для начальной установки.
+ * @property {Function} onOpenChat - Колбэк открытия чата.
  */
 interface ChatListWrapperProps {
-    router: Router;
+    chats: Chat[];
     activeChatId: string | null;
+    onOpenChat: (chatId: string) => void;
 }
 
 /**
@@ -56,8 +57,9 @@ export class ChatListWrapper extends BaseForm<ChatListWrapperProps> {
         }
 
         this.chatList = new ChatListItem({ 
-            router: this.props.router,
-            activeChatId: this.props.activeChatId
+            chats: this.props.chats,
+            activeChatId: this.props.activeChatId,
+            onOpenChat: this.props.onOpenChat,
         });
         this.chatList.mount(this.element!);
     }
@@ -78,6 +80,27 @@ export class ChatListWrapper extends BaseForm<ChatListWrapperProps> {
 
     public restoreChatList(): void {
         this.chatList?.restoreChatList();
+    }
+
+    public setChats(chats: Chat[]): void {
+        this.props.chats = chats;
+        this.chatList?.setChats(chats);
+    }
+
+    public addChat(chat: Chat): void {
+        this.chatList?.addChat(chat);
+    }
+
+    public updateChat(chat: Chat): void {
+        this.chatList?.updateChat(chat);
+    }
+
+    public removeChat(chatId: string): void {
+        this.chatList?.removeChat(chatId);
+    }
+
+    public moveChatToTop(chatId: string): void {
+        this.chatList?.moveChatToTop(chatId);
     }
 
     /**

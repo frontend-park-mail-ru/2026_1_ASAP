@@ -25,14 +25,16 @@ import { GroupDetailsWindow } from "../../components/composite/groupDetailsWindo
 import { ChannelDetailsWindow } from "../../components/composite/channelDetailsWindow/channelDetailsWindow";
 import { AddMemberWindow } from "../../components/composite/addMemberWindow/addMemberWindow";
 import { contactService } from "../../services/contactService";
-import { ConfirmModal } from "../../components/composite/confirmModal/confirmModal";
 import {
     wsClient, MessageDto, MessageUpdateDto, MessageClearDto, ChatUpdatedMembersDto, MessageReadDto,
 } from "../../core/utils/wsClient";
-import { offlineQueue } from "../../services/offlineMessageQueue";
 import { MessageSearchBar } from "../../components/composite/messageSearchBar/messageSearchBar";
 import { ChatsCoordinator } from "./controllers/chatsCoordinator";
-import type { CreateChatMode } from "./model/chatsViewModels";
+import { ChatCreationController } from "./controllers/chatCreationController";
+import { ChatSidebarController } from "./controllers/chatSidebarController";
+import { chatsUseCases } from "./model/chatsUseCases";
+import type { ActiveChatVM, ChatSearchType, CreateChatMode, CurrentUserVM } from "./model/chatsViewModels";
+import { ChatsView } from "./chatsView";
 
 
 /**
@@ -73,23 +75,16 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private groupDetailsWindow: GroupDetailsWindow | null = null;
     private channelDetailsWindow: ChannelDetailsWindow | null = null;
     private addMemberWindow: AddMemberWindow | null = null;
-    private modalComponent: ConfirmModal | null = null;
     private onboardingComponent: OnboardingEmpty | null = null;
     
     public activeChatId: string | null = null;
+    private activeChat: Chat | null = null;
     private messageSearchBar: MessageSearchBar | null = null;
-    private mainContentArea: HTMLElement | null = null;
-    private placeholderElement: HTMLElement | null = null;
     private currentUserId: number | null = null;
     private hasMoreHistory: boolean = false;
     private nextBeforeId: number | null = null;
     private currentUserProfile: FrontendProfile | null = null;
-    private searchDebounce: ReturnType<typeof setTimeout> | null = null;
-    private searchRequestId = 0;
-    private searchType: '' | 'group' | 'channel' = '';
     private searchTabsEl: HTMLElement | null = null;
-    private notificationBannerEl: HTMLElement | null = null;
-    private currentQuery: string = '';
 
     /** ID текущего запроса истории (используется для защиты от гонок). */
     private historyRequestId = 0;
@@ -104,6 +99,9 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private activeMessageInput: MessageInput | null = null;
     private activeChannelRole: ChannelRole | null = null;
     private chatsCoordinator: ChatsCoordinator | null = null;
+    private creationController: ChatCreationController | null = null;
+    private sidebarController: ChatSidebarController | null = null;
+    private chatsView: ChatsView | null = null;
 
     /**
      * Обработчик глобальных нажатий клавиш.
@@ -135,18 +133,24 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         if (!isActiveChat) return;
         if (!this.activeMessageList || this.currentUserId === null) return;
 
-        const tempId = await chatService.resolveServerMessage(dto, this.currentUserId);
+        const tempId = await chatsUseCases.resolveRealtimeMessage(dto, this.currentUserId);
         const serverTime = dto.created_at ? new Date(dto.created_at) : undefined;
         if (tempId && this.activeMessageList.replaceMessageId(tempId, dto.id.toString(), serverTime)) {
             return;
         }
 
-        const frontendMsg = chatService.convertWsMessageDto(dto, this.currentUserId);
+        const frontendMsg = this.activeChat
+            ? await chatsUseCases.enrichMessageForChat(
+                this.activeChat,
+                chatsUseCases.mapRealtimeMessage(dto, this.currentUserId),
+                this.currentUserId,
+            )
+            : chatsUseCases.mapRealtimeMessage(dto, this.currentUserId);
         this.activeMessageList.addMessage(frontendMsg);
 
         // если входящее сообщение и я смотрю на чат — сразу отмечаю как прочитанное
         if (!frontendMsg.isOwn) {
-            chatService.markMessageRead(this.activeChatId!, dto.id.toString());
+            chatsUseCases.markMessageRead(this.activeChatId!, dto.id.toString());
         }
     };
 
@@ -214,12 +218,12 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * Перезапрашивает историю для активного чата и флашит offline-очередь.
      */
     private handleWsConnected = () => {
-        chatService.flushQueue();
+        void chatsUseCases.flushPendingMessages();
         if (this.activeChatId) {
             console.log('[ChatsPage] WS переподключен, запрашиваем свежую историю...');
             this.hasMoreHistory = false;
             this.nextBeforeId = null;
-            this.loadHistory(this.activeChatId);
+            void this.reloadActiveChatState(this.activeChatId);
         }
     };
 
@@ -227,7 +231,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * Триггер флаша очереди при восстановлении сети.
      */
     private handleOnline = (): void => {
-        chatService.flushQueue();
+        void chatsUseCases.flushPendingMessages();
     };
 
     /**
@@ -235,7 +239,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      */
     private handleSwMessage = (event: MessageEvent): void => {
         if (event.data?.type === 'flush-messages') {
-            chatService.flushQueue();
+            void chatsUseCases.flushPendingMessages();
         }
     };
 
@@ -257,15 +261,37 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         if (!this.element) return;
 
         this.activeMenuButton = "messages";
+        this.chatsView = new ChatsView(this.element);
+        this.sidebarController = new ChatSidebarController({
+            getActiveChatId: () => this.activeChatId,
+            onChatsLoaded: (chats) => this.chatWrapper?.setChats(chats),
+            onChatAdded: (chat) => this.chatWrapper?.addChat(chat),
+            onChatUpdated: (chat) => this.chatWrapper?.updateChat(chat),
+            onChatRemoved: (chatId) => this.chatWrapper?.removeChat(chatId),
+            onChatMovedToTop: (chatId) => this.chatWrapper?.moveChatToTop(chatId),
+            onActiveChatRemoved: () => this.props.router.navigate('/chats'),
+            onSearchResults: (items) => this.chatWrapper?.showSearchResults(items),
+            onRestoreChatList: () => this.chatWrapper?.restoreChatList(),
+            onSearchActiveChange: (isActive) => {
+                if (this.searchTabsEl) this.searchTabsEl.style.display = isActive ? 'flex' : 'none';
+            },
+        });
+        this.creationController = new ChatCreationController({
+            getCurrentUserId: () => this.currentUserId,
+            onCreated: (chatId) => {
+                this.rebuildSidebar();
+                this.props.router.navigate(`/chats/${chatId}`);
+            },
+            onError: (message) => this.showAlert(message),
+        });
 
         this.rebuildSidebar();
-
-        this.mainContentArea = this.element.querySelector('.chat-page__mainfield') || null;
-        this.placeholderElement = this.mainContentArea?.querySelector('.empty-field') || null;
 
         try {
             this.currentUserProfile = await contactService.getMyProfile();
             this.currentUserId = this.currentUserProfile.additionalInfo.id;
+            await this.sidebarController.loadSidebarChats(this.currentUserId, this.activeChatId);
+            this.sidebarController.startRealtime(this.currentUserId);
         } catch (error) {
             console.error("ChatsPage: Не удалось получить профиль пользователя", error);
         }
@@ -276,7 +302,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         wsClient.subscribe('system.Connected', this.handleWsConnected);
 
         wsClient.subscribe('system.Disconnected', () => {
-            chatService.clearInFlight();
+            chatsUseCases.clearInFlightMessages();
         });
 
         this.chatsCoordinator = new ChatsCoordinator({
@@ -339,6 +365,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             chatType: chat.type,
             currentUserId: this.currentUserId,
             onClose: () => this.closeMessageSearch(),
+            onSearch: (query, beforeId) => chatsUseCases.searchMessages(chat.id, query, this.currentUserId!, beforeId ?? null),
             onResults: (query) => {
                 this.activeMessageList?.setHighlightQuery(query);
             },
@@ -362,8 +389,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         let iterations = 0;
         const MAX_ITERATIONS = 5;
 
-        while (iterations < MAX_ITERATIONS && this.hasMoreHistory && this.nextBeforeId && this.activeChatId && this.currentUserId) {
-            const res = await chatService.getMessages(this.activeChatId, this.currentUserId, this.nextBeforeId);
+        while (iterations < MAX_ITERATIONS && this.hasMoreHistory && this.nextBeforeId && this.activeChat && this.currentUserId) {
+            const res = await chatsUseCases.loadMoreMessages(this.activeChat, this.currentUserId, this.nextBeforeId);
             if (!res) break;
 
             this.hasMoreHistory = res.hasMore;
@@ -383,13 +410,10 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         wsClient.unsubscribe('chat.Updated.Members', this.handleActiveChatMembersUpdated);
         this.activeMessageList = null;
         this.activeMessageInput = null;
+        this.activeChat = null;
         this.activeChannelRole = null;
 
-        if (this.searchDebounce !== null) {
-            clearTimeout(this.searchDebounce);
-            this.searchDebounce = null;
-        }
-        this.searchRequestId += 1;
+        this.sidebarController?.cancelPendingSearch();
 
         if (this.messageSearchBar) {
             this.messageSearchBar.unmount();
@@ -416,23 +440,12 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             this.addMemberWindow.unmount();
             this.addMemberWindow = null;
         }
-        if (this.placeholderElement) {
-            this.placeholderElement.style.display = 'none';
-        }
+        this.chatsView?.hidePlaceholder();
         if (this.onboardingComponent) {
             this.onboardingComponent.unmount();
             this.onboardingComponent = null;
         }
-        this.closeModal();
-    }
-
-    private async runChatSearch(query: string): Promise<void> {
-        this.searchRequestId += 1;
-        const myId = this.searchRequestId;
-        const result = await chatService.searchChats(query, this.searchType);
-        if (myId !== this.searchRequestId) return;
-        if (!result) return;
-        this.chatWrapper?.showSearchResults(result.items);
+        this.chatsView?.closeModal();
     }
 
     private buildSearchTabs(): HTMLElement {
@@ -447,34 +460,19 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         wrap.addEventListener('click', (e) => {
             const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.chats-search-tabs__btn');
             if (!btn) return;
-            const type = (btn.dataset.type ?? '') as '' | 'group' | 'channel';
-            if (type === this.searchType) return;
-            this.searchType = type;
+            const type = (btn.dataset.type ?? '') as ChatSearchType;
+            if (type === this.sidebarController?.getSearchType()) return;
+            this.sidebarController?.setSearchType(type);
 
             wrap.querySelectorAll('.chats-search-tabs__btn').forEach(b =>
                 b.classList.toggle('chats-search-tabs__btn--active', b === btn)
             );
-
-            if (this.currentQuery.trim()) {
-                this.runChatSearch(this.currentQuery);
-            }
         });
         return wrap;
     }
 
     private handleSearchInput = (query: string): void => {
-        if (this.searchDebounce !== null) clearTimeout(this.searchDebounce);
-        this.currentQuery = query;
-
-        if (!query.trim()) {
-            this.searchRequestId += 1;
-            if (this.searchTabsEl) this.searchTabsEl.style.display = 'none';
-            this.chatWrapper?.restoreChatList();
-            return;
-        }
-
-        if (this.searchTabsEl) this.searchTabsEl.style.display = 'flex';
-        this.searchDebounce = setTimeout(() => this.runChatSearch(query), 300);
+        this.sidebarController?.handleSearchInput(query);
     };
 
     private mountOnboarding(obKey: string): void {
@@ -487,7 +485,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 this.props.router.navigate('/chats/create-dialog');
             },
         });
-        this.onboardingComponent.mount(this.element);
+        this.chatsView?.mountInRoot(this.onboardingComponent);
     }
 
     /**
@@ -520,9 +518,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             }
         }
 
-        if (this.placeholderElement) {
-            this.placeholderElement.style.display = 'block';
-        }
+        this.chatsView?.showPlaceholder();
     }
 
     private async showChatRoute(chatId: string): Promise<void> {
@@ -548,31 +544,13 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * На узких экранах переключает вид: список чатов или основная область (чат / создание / детали).
      */
     private syncMobileLayoutState(): void {
-        const pageRoot = this.element?.classList.contains('chat-page')
-            ? this.element
-            : this.element?.querySelector('.chat-page');
-        if (!pageRoot) return;
-
-        const mainVisible =
-            this.activeChatId !== null ||
-            this.createChatWindow !== null ||
-            this.groupDetailsWindow !== null ||
-            this.channelDetailsWindow !== null ||
-            this.addMemberWindow !== null;
-
-        /**
-         * Плавающая ‹ только у экрана открытого чата (в шапке чата нет своей «Назад»).
-         * Детали группы / добавление участника / создание чата — своя кнопка в ActionHeader.
-         */
-        const mobileFloatingBackVisible =
-            this.activeChatId !== null &&
-            this.createChatWindow === null &&
-            this.groupDetailsWindow === null &&
-            this.channelDetailsWindow === null &&
-            this.addMemberWindow === null;
-
-        pageRoot.classList.toggle('chat-page--main-visible', mainVisible);
-        pageRoot.classList.toggle('chat-page--mobile-floating-back', mobileFloatingBackVisible);
+        this.chatsView?.syncMobileLayoutState({
+            activeChatId: this.activeChatId,
+            hasCreateWindow: this.createChatWindow !== null,
+            hasGroupDetailsWindow: this.groupDetailsWindow !== null,
+            hasChannelDetailsWindow: this.channelDetailsWindow !== null,
+            hasAddMemberWindow: this.addMemberWindow !== null,
+        });
     }
 
     private readonly handleMobileBack = (): void => {
@@ -594,7 +572,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * @private
      */
     private rebuildSidebar(): void {
-        const sidebar = this.element?.querySelector('.chat-page__sidebar');
+        const sidebar = this.chatsView?.sidebarElement;
         if (!sidebar) return;
 
         this.searchForm?.unmount();
@@ -614,10 +592,15 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         sidebar.appendChild(this.searchTabsEl);
 
         this.chatWrapper = new ChatListWrapper({ 
-            router: this.props.router,
+            chats: this.sidebarController?.getChats() ?? [],
             activeChatId: this.activeChatId,
+            onOpenChat: (chatId) => this.props.router.navigate(`/chats/${chatId}`),
         });
         this.chatWrapper.mount(sidebar as HTMLElement);
+
+        if (this.currentUserId !== null) {
+            void this.sidebarController?.loadSidebarChats(this.currentUserId, this.activeChatId);
+        }
 
         this.logoutWrapper = document.createElement('div');
         this.logoutWrapper.style.flex = '1';
@@ -644,73 +627,32 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * @private
      */
     private async createChat(type: string) {
-        if (!this.mainContentArea) return;
+        if (!this.chatsView?.hasMainContentArea()) return;
 
-        const myId = await contactService.getMyId();
         this.cleanupMainContent();
 
         switch (type) {
             case 'dialog':
                 this.createChatWindow = new CreateDialogWindow({
                     router: this.props.router,
-                    onSubmit: async (contactId: number, contactName: string) => {
-                        if (myId === contactId) {
-                            return;
-                        }
-                        const res = await chatService.createChat(
-                            [contactId],
-                            "dialog",
-                        );
-                        if (res.success && res.body?.id) {
-                            this.rebuildSidebar();
-                            this.props.router.navigate(`/chats/${res.body.id}`);
-                            return;
-                        }
-                        if (res.status === 409) {
-                            const chatId = await chatService.findExistingDialogChatId(contactId);
-                            if (chatId) {
-                                this.props.router.navigate(`/chats/${chatId}`);
-                            }
-                        }
-                    },
+                    onSearchContacts: (query, scope) => this.creationController!.searchContacts(query, scope),
+                    onSubmit: (contactId: number, _contactName: string) =>
+                        this.creationController?.createDialog(contactId),
                 });
                 break;
             case 'group':
                 this.createChatWindow = new CreateGroupWindow({
                     router: this.props.router,
-                    onSubmit: async (userIds: number[], groupName: string) => {
-                        const res = await chatService.createChat(
-                            [myId, ...userIds],
-                            "group",
-                            groupName
-                        );
-                        if (res.success && res.body?.id) {
-                            this.rebuildSidebar();
-                            this.props.router.navigate(`/chats/${res.body.id}`);
-                        }
-                    },
+                    contacts: await this.creationController!.loadContacts(),
+                    onSubmit: (userIds: number[], groupName: string) =>
+                        this.creationController?.createGroup(userIds, groupName),
                 });
                 break;
             case 'channel':
                 this.createChatWindow = new CreateChannelWindow({
                     router: this.props.router,
-                    onSubmit: async (title: string, _avatar?: File) => {
-                        // TODO: avatar при создании не передаётся на бэк, ставить через "Изменить" после создания
-                        const res = await channelService.createChannel(
-                            { title },
-                            myId
-                        );
-                        if (res.success && res.channelId) {
-                            this.rebuildSidebar();
-                            this.props.router.navigate(`/chats/${res.channelId}`);
-                            return;
-                        }
-
-                        const errorMsg = res.status === 403
-                            ? 'У вас нет прав на создание канала'
-                            : 'Не удалось создать канал. Попробуйте ещё раз';
-                        this.showAlert(errorMsg);
-                    },
+                    onSubmit: (title: string, _avatar?: File) =>
+                        this.creationController?.createChannel(title),
                 });
                 break;
             default:
@@ -718,9 +660,51 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 return;
         }
 
-        if (this.createChatWindow) {
-            this.createChatWindow.mount(this.mainContentArea);
+    if (this.createChatWindow) {
+            this.chatsView.mountInMain(this.createChatWindow);
         }
+    }
+
+    private async getCurrentUserVM(): Promise<CurrentUserVM> {
+        if (!this.currentUserProfile) {
+            this.currentUserProfile = await contactService.getMyProfile();
+        }
+
+        if (this.currentUserId === null) {
+            this.currentUserId = this.currentUserProfile.additionalInfo.id;
+        }
+
+        const profile = this.currentUserProfile;
+        return {
+            id: this.currentUserId,
+            login: profile.additionalInfo.login,
+            displayName: [profile.mainInfo.firstName, profile.mainInfo.lastName].filter(Boolean).join(" ")
+                || profile.additionalInfo.login,
+            avatarUrl: profile.mainInfo.avatarUrl,
+            profile,
+        };
+    }
+
+    private restorePendingMessagesFromState(pendingMessages: ActiveChatVM["pendingMessages"]): void {
+        if (!this.activeMessageList || this.currentUserId === null) return;
+        if (pendingMessages.length === 0) return;
+
+        pendingMessages.forEach((pending) => {
+            this.activeMessageList?.addMessage({
+                id: pending.tempId,
+                sender: {
+                    id: pending.senderId,
+                    login: this.currentUserProfile?.additionalInfo.login || '',
+                    avatarUrl: this.currentUserProfile?.mainInfo.avatarUrl,
+                    firstName: this.currentUserProfile?.mainInfo.firstName,
+                    lastName: this.currentUserProfile?.mainInfo.lastName,
+                },
+                text: pending.text,
+                timestamp: new Date(pending.createdAt),
+                isOwn: true,
+                status: 'sending',
+            });
+        });
     }
 
     /**
@@ -731,44 +715,43 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * @private
      */
     private async openChat(chatId: string): Promise<void> {
-        if (!this.mainContentArea) return;
+        if (!this.chatsView?.hasMainContentArea()) return;
 
         const reqId = ++this.openChatRequestId;
         const isCancelled = () => reqId !== this.openChatRequestId || this.activeChatId !== chatId;
 
         try {
-            const chatDetail = await chatService.getChatDetail(chatId);
+            const currentUser = await this.getCurrentUserVM();
+            if (isCancelled()) return;
 
-            if (isCancelled()) {
-                return;
-            }
-            if (!chatDetail) {
+            const activeState = await chatsUseCases.loadActiveChat(chatId, currentUser);
+            if (isCancelled()) return;
+
+            if (!activeState) {
                 this.props.router.navigate('/chats');
                 return;
             }
             this.cleanupMainContent();
 
+            const chatDetail = activeState.chat;
+            this.activeChat = chatDetail;
+            this.hasMoreHistory = activeState.hasMoreHistory;
+            this.nextBeforeId = activeState.nextBeforeId;
+            this.activeChannelRole = activeState.header.type === 'channel'
+                ? activeState.header.currentUserRole
+                : null;
+
             let headerComponent: BaseComponent;
             let footerComponent: BaseComponent | undefined;
-            let canWriteActiveChat = chatDetail.type !== 'channel';
-            let canJoinActiveChat = false;
+            const canWriteActiveChat = activeState.permissions.canWrite;
+            const canJoinActiveChat = activeState.permissions.canJoin;
 
             switch (chatDetail.type) {
-            case 'dialog':
-                const members = await chatService.getChatMembers(chatId);
-                if (isCancelled()) return;
-                const myId = await contactService.getMyId();
-                if (isCancelled()) return;
-                const interlocutorId = members.find(id => id !== myId) || members[0] || 0;
-
-                (chatDetail as DialogChat).interlocutor.id = interlocutorId;
-
-                const interlocutorProfile = await contactService.getProfileInfo(interlocutorId);
-                if (isCancelled()) return;
-                const interlocutorLogin = interlocutorProfile?.additionalInfo?.login || String(interlocutorId);
-
+            case 'dialog': {
+                const dialogChat = chatDetail as DialogChat;
+                const interlocutorLogin = dialogChat.interlocutor.login || String(dialogChat.interlocutor.id);
                 headerComponent = new DialogHeader({
-                    chat: chatDetail as DialogChat,
+                    chat: dialogChat,
                     onOpenProfile: () => this.props.router.navigate('/contacts/' + interlocutorLogin),
                     onOpenSearch: () => this.toggleMessageSearch(chatDetail),
                     onDeleteChat: async() => {
@@ -786,10 +769,12 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     }
                 });
                 break;
+            }
 
             case 'group': {
-                const groupRole = (this.currentUserId !== null && (chatDetail as GroupChat).owner_id === this.currentUserId)
-                    ? 'owner' : 'member';
+                const groupRole = activeState.header.type === 'group'
+                    ? activeState.header.currentUserRole
+                    : 'member';
                 (chatDetail as GroupChat).currentUserRole = groupRole;
                 headerComponent = new GroupHeader({
                     chat: chatDetail as GroupChat,
@@ -827,22 +812,13 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             }
 
             case 'channel': {
-                if (this.currentUserId === null) return;
-                const channelDetail = await channelService.getChannel(chatId, this.currentUserId);
-                if (isCancelled()) return;
-                if (!channelDetail) {
-                    this.props.router.navigate('/chats');
-                    return;
-                }
-                (chatDetail as ChannelChat).currentUserRole = channelDetail.currentUserRole;
-                (chatDetail as ChannelChat).subscribersCount = channelDetail.subscribersCount;
-                this.activeChannelRole = channelDetail.currentUserRole;
-                canWriteActiveChat = channelDetail.currentUserRole === 'owner';
-                canJoinActiveChat = channelDetail.currentUserRole === 'guest';
+                const channelRole = activeState.header.type === 'channel'
+                    ? activeState.header.currentUserRole
+                    : 'guest';
 
                 headerComponent = new ChannelHeader({
                     chat: chatDetail as ChannelChat,
-                    currentUserRole: channelDetail.currentUserRole,
+                    currentUserRole: channelRole,
                     onDeleteChat: async () => {
                         const res = await channelService.deleteChannel(chatId);
                         if (res.success) {
@@ -857,7 +833,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                         }
                     },
                     onLeaveChannel: async () => {
-                        if (channelDetail.currentUserRole !== 'participant') {
+                        if (channelRole !== 'participant') {
                             this.showAlert('Вы не подписаны на этот канал');
                             return;
                         }
@@ -878,18 +854,18 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             }
 
             const messageListComponent = new MessageList({
-            messages: [],
+            messages: activeState.messages,
             currentUser: {
-                id: this.currentUserId as number,
-                login: this.currentUserProfile?.additionalInfo.login || "",
-                avatarUrl: this.currentUserProfile?.mainInfo.avatarUrl
+                id: activeState.currentUser.id,
+                login: activeState.currentUser.login,
+                avatarUrl: activeState.currentUser.avatarUrl
             },
             chatType: chatDetail.type,
             chatAvatarUrl: chatDetail.type === 'channel' ? (chatDetail.avatarUrl || undefined) : undefined,
             onLoadMore: async () => {
                 if (!this.hasMoreHistory || !this.nextBeforeId || !this.currentUserId || !this.activeChatId) return;
 
-                const res = await chatService.getMessages(this.activeChatId, this.currentUserId as number, this.nextBeforeId);
+                const res = await chatsUseCases.loadMoreMessages(chatDetail, this.currentUserId as number, this.nextBeforeId);
 
                 if (res === null) return;
 
@@ -904,7 +880,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             },
             onRequestDelete: (messageId) => {
                 if (!this.activeChatId) return;
-                const ok = chatService.deleteMessage(this.activeChatId, messageId);
+                const ok = chatsUseCases.deleteMessage(this.activeChatId, messageId);
                 if (!ok) {
                     this.showAlert?.('No connection, try later');
                 }
@@ -919,7 +895,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                         if (!this.activeChatId || this.currentUserId === null) return;
                         if (chatDetail.type === 'channel' && this.activeChannelRole !== 'owner') return;
 
-                        const pending = await chatService.sendMessage(
+                        const pending = await chatsUseCases.sendMessage(
                             this.activeChatId,
                             text,
                             this.currentUserId as number,
@@ -944,10 +920,16 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     onSubmitEdit: (messageId, newText) => {
                         if (!this.activeChatId) return;
                         if (chatDetail.type === 'channel' && this.activeChannelRole !== 'owner') return;
-                        const ok = chatService.editMessage(this.activeChatId, messageId, newText);
+                        const ok = chatsUseCases.editMessage(this.activeChatId, messageId, newText);
                         if (!ok) {
                             this.showAlert?.('No connection, try later');
                         }
+                    },
+                    onTyping: () => {
+                        if (this.activeChatId) chatsUseCases.emitTyping(this.activeChatId);
+                    },
+                    onStopTyping: () => {
+                        if (this.activeChatId) chatsUseCases.stopTyping(this.activeChatId);
                     },
                     chatId: this.activeChatId
                 });
@@ -967,7 +949,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 inputComponent: footerComponent
             });
 
-            this.chatWindow.mount(this.mainContentArea);
+            this.chatsView.mountInMain(this.chatWindow);
 
             // Подписываемся на новые сообщения (соединение уже установлено в afterMount)
             wsClient.subscribe('message.New', this.handleNewMessage);
@@ -976,15 +958,14 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             wsClient.subscribe('message.Read', this.handleMessageRead);
             wsClient.subscribe('chat.Updated.Members', this.handleActiveChatMembersUpdated);
 
-            await this.loadHistory(chatId);
-            if (canWriteActiveChat) {
-                await this.restorePendingMessages(chatId);
+            if (canWriteActiveChat && activeState.permissions.canRestorePending) {
+                this.restorePendingMessagesFromState(activeState.pendingMessages);
             }
 
             // отмечаем прочитанным последнее входящее сообщение при открытии чата
             const last = this.activeMessageList?.getLatestMessageData();
             if (last && !last.isOwn && /^\d+$/.test(last.id)) {
-                chatService.markMessageRead(chatId, last.id);
+                chatsUseCases.markMessageRead(chatId, last.id);
             }
         } finally {
             this.syncMobileLayoutState();
@@ -1012,61 +993,23 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         }
     }
 
-    /**
-     * Догружает оптимистичные сообщения из IndexedDB (если остались с прошлой офлайн-сессии)
-     * и добавляет их в текущий список сообщений.
-     * @private
-     */
-    private async restorePendingMessages(chatId: string): Promise<void> {
-        if (!this.activeMessageList || this.currentUserId === null) return;
-        if (this.activeChatId !== chatId) return;
-
-        const pending = await offlineQueue.getByChat(chatId);
-        if (pending.length === 0) return;
-
-        pending.forEach((p) => {
-            this.activeMessageList?.addMessage({
-                id: p.tempId,
-                sender: {
-                    id: p.senderId,
-                    login: this.currentUserProfile?.additionalInfo.login || '',
-                    avatarUrl: this.currentUserProfile?.mainInfo.avatarUrl,
-                    firstName: this.currentUserProfile?.mainInfo.firstName,
-                    lastName: this.currentUserProfile?.mainInfo.lastName,
-                },
-                text: p.text,
-                timestamp: new Date(p.createdAt),
-                isOwn: true,
-            });
-        });
-    }
-
-    /**
-     * Загружает историю сообщений через WebSocket и обновляет MessageList.
-     * @param {string} chatId - ID чата для загрузки истории.
-     * @private
-     */
-    private async loadHistory(chatId: string): Promise<void> {
-        if (!this.currentUserId) {
-            this.currentUserId = await contactService.getMyId();
-        }
-
+    private async reloadActiveChatState(chatId: string): Promise<void> {
+        if (!this.activeMessageList) return;
         const reqId = ++this.historyRequestId;
+        const currentUser = await this.getCurrentUserVM();
+        const activeState = await chatsUseCases.loadActiveChat(chatId, currentUser);
 
-        const res = await chatService.getMessages(chatId, this.currentUserId as number, null);
-        
-        if (this.activeChatId !== chatId || reqId !== this.historyRequestId) {
+        if (!activeState || this.activeChatId !== chatId || reqId !== this.historyRequestId) {
             return;
         }
 
-        if (res === null) {
-            return;
-        }
+        this.hasMoreHistory = activeState.hasMoreHistory;
+        this.nextBeforeId = activeState.nextBeforeId;
+        this.activeChat = activeState.chat;
+        this.activeMessageList.setMessages(activeState.messages);
 
-        if (this.activeMessageList) {
-            this.hasMoreHistory = res.hasMore;
-            this.nextBeforeId = res.nextBeforeId;
-            this.activeMessageList.setMessages(res.messages);
+        if (activeState.permissions.canWrite && activeState.permissions.canRestorePending) {
+            this.restorePendingMessagesFromState(activeState.pendingMessages);
         }
     }
 
@@ -1079,7 +1022,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * @param initialIsEditing Флаг для открытия сразу в режиме редактирования.
      */
     private async openGroupDetails(chat: GroupChat, initialIsEditing: boolean = false): Promise<void> {
-        if (!this.mainContentArea) return;
+        if (!this.chatsView?.hasMainContentArea()) return;
 
         // Очищаем старый экземпляр, если он есть
         if (this.groupDetailsWindow) {
@@ -1195,7 +1138,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             }
         });
 
-        this.groupDetailsWindow.mount(this.mainContentArea);
+        this.chatsView.mountInMain(this.groupDetailsWindow);
         this.syncMobileLayoutState();
     }
     /**
@@ -1203,7 +1146,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * Загружает свежие данные через channelService, монтирует ChannelDetailsWindow.
      */
     private async openChannelDetails(chat: ChannelChat): Promise<void> {
-        if (!this.mainContentArea || this.currentUserId === null) return;
+        if (!this.chatsView?.hasMainContentArea() || this.currentUserId === null) return;
 
         if (this.channelDetailsWindow) {
             this.channelDetailsWindow.unmount();
@@ -1310,7 +1253,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             },
         });
 
-        this.channelDetailsWindow.mount(this.mainContentArea);
+        this.chatsView.mountInMain(this.channelDetailsWindow);
         this.syncMobileLayoutState();
     }
 
@@ -1320,7 +1263,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * @param chat — Объект группового чата, в который добавляем участника.
      */
     private openAddMemberWindow(chat: GroupChat): void {
-        if (!this.mainContentArea) return;
+        if (!this.chatsView?.hasMainContentArea()) return;
 
         if (this.addMemberWindow) {
             this.addMemberWindow.unmount();
@@ -1387,7 +1330,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             }
         });
 
-        this.addMemberWindow.mount(this.mainContentArea);
+        this.chatsView.mountInMain(this.addMemberWindow);
         this.syncMobileLayoutState();
     }
 
@@ -1399,11 +1342,14 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     beforeUnmount() {
         this.chatsCoordinator?.destroy();
         this.chatsCoordinator = null;
+        this.creationController = null;
+        this.sidebarController?.destroy();
+        this.sidebarController = null;
 
         this.onboardingComponent?.unmount();
         this.onboardingComponent = null;
         this.cleanupMainContent();
-        this.closeModal();
+        this.chatsView?.closeModal();
         this.logoutWrapper?.remove();
         this.searchForm?.unmount();
         this.chatWrapper?.unmount();
@@ -1425,25 +1371,12 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         }
         
         this.activeChatId = null;
-        this.placeholderElement = null;
-        this.hideNotificationBanner();
+        this.chatsView?.destroy();
+        this.chatsView = null;
     }
 
     private showAlert(text: string, onConfirm?: () => void): void {
-        this.closeModal();
-        this.modalComponent = new ConfirmModal({
-            text: text,
-            confirmButtonText: "Ок",
-            hideCancel: true,
-            confirmButtonClass: "confirm-modal__button--submit ui-button",
-            onConfirm: () => {
-                this.closeModal();
-                if (onConfirm) {
-                    onConfirm();
-                }
-            }
-        });
-        this.modalComponent.mount(document.body);
+        this.chatsView?.showAlert(text, onConfirm);
     }
 
     /**
@@ -1458,44 +1391,13 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
         if (Date.now() - dismissedAt < SEVEN_DAYS_MS) return;
 
-        const banner = document.createElement('div');
-        banner.className = 'notification-prompt';
-        banner.innerHTML = `
-            <div class="notification-prompt__icon">🔔</div>
-            <div class="notification-prompt__body">
-                <div class="notification-prompt__title">Получать уведомления?</div>
-                <div class="notification-prompt__text">Чтобы не пропустить новые сообщения, пока вы в другой вкладке.</div>
-            </div>
-            <div class="notification-prompt__actions">
-                <button type="button" class="notification-prompt__btn notification-prompt__btn--primary" data-action="allow">Включить</button>
-                <button type="button" class="notification-prompt__btn" data-action="dismiss">Не сейчас</button>
-            </div>
-        `;
-        document.body.appendChild(banner);
-        this.notificationBannerEl = banner;
-
-        banner.addEventListener('click', async (e) => {
-            const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.notification-prompt__btn');
-            if (!btn) return;
-
-            if (btn.dataset.action === 'allow') {
+        this.chatsView?.showNotificationPrompt({
+            onAllow: async () => {
                 await notificationService.requestPermission();
-            } else {
+            },
+            onDismiss: () => {
                 localStorage.setItem('notification_prompt_dismissed_at', String(Date.now()));
-            }
-            this.hideNotificationBanner();
+            },
         });
-    }
-
-    private hideNotificationBanner(): void {
-        this.notificationBannerEl?.remove();
-        this.notificationBannerEl = null;
-    }
-
-    private closeModal(): void {
-        if (this.modalComponent) {
-            this.modalComponent.unmount();
-            this.modalComponent = null;
-        }
     }
 }
