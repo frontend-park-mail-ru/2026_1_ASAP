@@ -38,6 +38,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     await app.start();
 
     if ("serviceWorker" in navigator && window.isSecureContext) {
+        let hasController = Boolean(navigator.serviceWorker.controller);
+        let refreshing = false;
+
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!hasController) {
+                hasController = true;
+                return;
+            }
+
+            if (refreshing) {
+                return;
+            }
+
+            refreshing = true;
+            window.location.reload();
+        });
+
         window.addEventListener("load", () => {
             navigator.serviceWorker
                 .register("/service-worker.js")

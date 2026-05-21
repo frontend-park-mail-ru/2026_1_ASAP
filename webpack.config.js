@@ -89,6 +89,7 @@ export default {
         new InjectManifest({
             swSrc: resolve(__dirname, 'src/service-worker.ts'),
             swDest: 'service-worker.js',
+            exclude: [/index\.html$/, /support\.html$/],
             maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         }),
     ],
