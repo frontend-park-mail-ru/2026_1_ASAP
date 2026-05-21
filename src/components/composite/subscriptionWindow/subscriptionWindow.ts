@@ -80,10 +80,19 @@ export class SubscriptionWindow extends BaseComponent<SubscriptionWindowProps> {
             label: "Проверить оплату",
             class: "ui-button ui-button__secondary subscription-window__button",
             onClick: () => {
-                void this.syncPayment(false);
+                this.handleStatusButtonClick();
             },
         });
         this.syncButton.mount(this.actionsElement);
+    }
+
+    private handleStatusButtonClick(): void {
+        if (this.isActive) {
+            void this.refreshSubscriptionStatus();
+            return;
+        }
+
+        void this.syncPayment(false);
     }
 
     private async createPayment(): Promise<void> {
