@@ -88,6 +88,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private searchRequestId = 0;
     private searchType: '' | 'group' | 'channel' = '';
     private searchTabsEl: HTMLElement | null = null;
+    private notificationBannerEl: HTMLElement | null = null;
     private currentQuery: string = '';
 
     /** ID текущего запроса истории (используется для защиты от гонок). */
@@ -289,6 +290,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         await this.handleChatRoute();
 
         document.addEventListener('keydown', this.handleKeyDown);
+
+        this.maybeShowNotificationPrompt();
 
         // Триггеры флаша оффлайн-очереди сообщений
         window.addEventListener('online', this.handleOnline);
@@ -1432,7 +1435,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         }
         
         this.activeChatId = null;
-        this.placeholderElement = null; 
+        this.placeholderElement = null;
+        this.hideNotificationBanner();
     }
 
     private showAlert(text: string, onConfirm?: () => void): void {
@@ -1450,6 +1454,52 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             }
         });
         this.modalComponent.mount(document.body);
+    }
+
+    /**
+     * Показывает баннер с предложением включить уведомления, если:
+     * - разрешение ещё не запрошено (`canRequest()`)
+     * - юзер не дёрнул «Не сейчас» за последние 7 дней
+     */
+    private maybeShowNotificationPrompt(): void {
+        if (!notificationService.canRequest()) return;
+
+        const dismissedAt = Number(localStorage.getItem('notification_prompt_dismissed_at') || 0);
+        const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+        if (Date.now() - dismissedAt < SEVEN_DAYS_MS) return;
+
+        const banner = document.createElement('div');
+        banner.className = 'notification-prompt';
+        banner.innerHTML = `
+            <div class="notification-prompt__icon">🔔</div>
+            <div class="notification-prompt__body">
+                <div class="notification-prompt__title">Получать уведомления?</div>
+                <div class="notification-prompt__text">Чтобы не пропустить новые сообщения, пока вы в другой вкладке.</div>
+            </div>
+            <div class="notification-prompt__actions">
+                <button type="button" class="notification-prompt__btn notification-prompt__btn--primary" data-action="allow">Включить</button>
+                <button type="button" class="notification-prompt__btn" data-action="dismiss">Не сейчас</button>
+            </div>
+        `;
+        document.body.appendChild(banner);
+        this.notificationBannerEl = banner;
+
+        banner.addEventListener('click', async (e) => {
+            const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.notification-prompt__btn');
+            if (!btn) return;
+
+            if (btn.dataset.action === 'allow') {
+                await notificationService.requestPermission();
+            } else {
+                localStorage.setItem('notification_prompt_dismissed_at', String(Date.now()));
+            }
+            this.hideNotificationBanner();
+        });
+    }
+
+    private hideNotificationBanner(): void {
+        this.notificationBannerEl?.remove();
+        this.notificationBannerEl = null;
     }
 
     private closeModal(): void {
