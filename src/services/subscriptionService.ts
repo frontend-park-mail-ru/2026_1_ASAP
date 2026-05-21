@@ -77,18 +77,19 @@ class SubscriptionService {
         if (!this.isRecord(raw)) return null;
         const body = raw.body;
         const candidate = this.isRecord(body) ? body : raw;
-        if (typeof candidate.active !== "boolean") return null;
+        const active = this.pickBoolean(candidate, "active", "Active");
+        if (active === null) return null;
 
         return {
-            active: candidate.active,
-            ...(typeof candidate.user_id === "number" ? { user_id: candidate.user_id } : {}),
-            ...(typeof candidate.start_at === "string" ? { start_at: candidate.start_at } : {}),
-            ...(typeof candidate.end_at === "string" ? { end_at: candidate.end_at } : {}),
+            active,
+            ...this.optionalNumber(candidate, "user_id", "UserID", "userId"),
+            ...this.optionalString(candidate, "start_at", "StartAt", "startAt"),
+            ...this.optionalString(candidate, "end_at", "EndAt", "endAt"),
         };
     }
 
     private isSubscriptionNotFound(raw: unknown): boolean {
-        if (!this.isRecord(raw)) return true;
+        if (!this.isRecord(raw)) return false;
 
         if (typeof raw.message === "string" && raw.message === "Subscription not found") {
             return true;
@@ -123,6 +124,37 @@ class SubscriptionService {
 
     private isRecord(value: unknown): value is Record<string, unknown> {
         return typeof value === "object" && value !== null;
+    }
+
+    private pickBoolean(source: Record<string, unknown>, ...keys: string[]): boolean | null {
+        for (const key of keys) {
+            if (typeof source[key] === "boolean") {
+                return source[key];
+            }
+        }
+        return null;
+    }
+
+    private optionalNumber(source: Record<string, unknown>, ...keys: string[]): Pick<SubscriptionDto, "user_id"> {
+        for (const key of keys) {
+            if (typeof source[key] === "number") {
+                return { user_id: source[key] };
+            }
+        }
+        return {};
+    }
+
+    private optionalString(
+        source: Record<string, unknown>,
+        canonicalKey: "start_at" | "end_at",
+        ...keys: string[]
+    ): Pick<SubscriptionDto, "start_at" | "end_at"> {
+        for (const key of [canonicalKey, ...keys]) {
+            if (typeof source[key] === "string") {
+                return { [canonicalKey]: source[key] };
+            }
+        }
+        return {};
     }
 }
 
