@@ -1,5 +1,6 @@
 import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent";
 import { paymentService, PaymentDto } from "../../../services/paymentService";
+import { subscriptionService, SubscriptionDto, SubscriptionServiceResult } from "../../../services/subscriptionService";
 import { Button } from "../../ui/button/button";
 import { ProfileHeader } from "../profileHeader/profileHeader";
 import template from "./subscriptionWindow.hbs";
@@ -9,6 +10,7 @@ interface SubscriptionWindowProps extends IBaseComponentProps {
 }
 
 type SubscriptionStatusKind = "idle" | "loading" | "success" | "error" | "pending";
+type PaymentCheckResult = Awaited<ReturnType<typeof paymentService.syncPayment>>;
 
 const SUBSCRIPTION_TARIFF = {
     amount: 199,
@@ -24,6 +26,7 @@ export class SubscriptionWindow extends BaseComponent<SubscriptionWindowProps> {
     private statusElement: HTMLElement | null = null;
     private actionsElement: HTMLElement | null = null;
     private isProcessing = false;
+    private isActive = false;
 
     constructor(props: SubscriptionWindowProps) {
         super({
@@ -51,11 +54,13 @@ export class SubscriptionWindow extends BaseComponent<SubscriptionWindowProps> {
         this.actionsElement = this.element!.querySelector('[data-component="subscription-actions"]');
 
         this.mountActions();
-        this.setStatus("idle", "Выберите оплату, чтобы перейти на страницу ЮKassa.");
 
         if (this.shouldSyncAfterReturn()) {
             void this.syncPayment(true);
+            return;
         }
+
+        void this.refreshSubscriptionStatus();
     }
 
     private mountActions(): void {
@@ -113,20 +118,79 @@ export class SubscriptionWindow extends BaseComponent<SubscriptionWindowProps> {
         this.setProcessing(true);
         this.setStatus("loading", "Проверяем статус платежа...");
 
-        const result = await paymentService.syncPayment();
+        const paymentResult = await paymentService.syncPayment();
+        const subscriptionResult = await subscriptionService.getSubscription();
 
         if (fromReturnUrl) {
             this.clearReturnQuery();
         }
 
-        if (result.success === false) {
-            this.setStatus("error", result.error);
-            this.setProcessing(false);
+        this.setStatusBySubscriptionAndPayment(subscriptionResult, paymentResult);
+        this.setProcessing(false);
+    }
+
+    private async refreshSubscriptionStatus(): Promise<void> {
+        if (this.isProcessing) return;
+
+        this.setProcessing(true);
+        this.setStatus("loading", "Получаем статус подписки...");
+
+        const result = await subscriptionService.getSubscription();
+        this.setStatusBySubscription(result);
+
+        this.setProcessing(false);
+    }
+
+    private setStatusBySubscriptionAndPayment(
+        subscriptionResult: SubscriptionServiceResult,
+        paymentResult: PaymentCheckResult,
+    ): void {
+        if (this.applySubscriptionStatus(subscriptionResult)) return;
+
+        if (subscriptionResult.success === false) {
+            this.setStatus("error", subscriptionResult.error);
             return;
         }
 
-        this.setStatusByPayment(result.payment);
-        this.setProcessing(false);
+        if (paymentResult.success === false) {
+            if (paymentResult.status === 404) {
+                this.setStatus(
+                    "pending",
+                    "Платёж не найден среди ожидающих. Если оплата прошла недавно, попробуйте проверить ещё раз.",
+                );
+                return;
+            }
+
+            this.setStatus("error", paymentResult.error);
+            return;
+        }
+
+        this.setStatusByPayment(paymentResult.payment);
+    }
+
+    private setStatusBySubscription(result: SubscriptionServiceResult): void {
+        if (this.applySubscriptionStatus(result)) return;
+
+        if (result.success === false) {
+            this.setStatus("error", result.error);
+            return;
+        }
+
+        this.setStatus("idle", "Выберите оплату, чтобы перейти на страницу ЮKassa.");
+    }
+
+    private applySubscriptionStatus(result: SubscriptionServiceResult): boolean {
+        if (result.success === false) return false;
+
+        const subscription = result.subscription;
+        this.isActive = Boolean(subscription?.active);
+        this.updateActionLabels();
+
+        if (!subscription?.active) return false;
+
+        const endLabel = this.formatSubscriptionEnd(subscription);
+        this.setStatus("success", endLabel ? `Подписка активна до ${endLabel}.` : "Подписка активна.");
+        return true;
     }
 
     private setStatusByPayment(payment: PaymentDto): void {
@@ -160,8 +224,33 @@ export class SubscriptionWindow extends BaseComponent<SubscriptionWindowProps> {
         this.isProcessing = value;
         this.payButton?.element?.classList.toggle("ui-button__disabled", value);
         this.syncButton?.element?.classList.toggle("ui-button__disabled", value);
-        this.payButton!.disabled = value;
-        this.syncButton!.disabled = value;
+        if (this.payButton) this.payButton.disabled = value;
+        if (this.syncButton) this.syncButton.disabled = value;
+    }
+
+    private updateActionLabels(): void {
+        this.setButtonLabel(this.payButton, this.isActive ? "Продлить подписку" : "Оплатить подписку");
+        this.setButtonLabel(this.syncButton, this.isActive ? "Обновить статус" : "Проверить оплату");
+    }
+
+    private setButtonLabel(button: Button | null, label: string): void {
+        const labelElement = button?.element?.querySelector("span");
+        if (labelElement) {
+            labelElement.textContent = label;
+        }
+    }
+
+    private formatSubscriptionEnd(subscription: SubscriptionDto): string {
+        if (!subscription.end_at) return "";
+
+        const date = new Date(subscription.end_at);
+        if (Number.isNaN(date.getTime())) return "";
+
+        return new Intl.DateTimeFormat("ru-RU", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+        }).format(date);
     }
 
     private shouldSyncAfterReturn(): boolean {

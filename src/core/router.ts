@@ -8,8 +8,9 @@ import { contactService } from "../services/contactService";
  * и делегирует открытие страниц в PageManager.
  */
 
-const protectedRoutes = ['/chats', '/settings', '/admin'];
+const protectedRoutes = ['/chats', '/settings', '/admin', '/payment'];
 const adminOnlyRoutes = ['/admin'];
+const paymentReturnRoute = '/payment/return';
 
 export class Router {
 
@@ -53,6 +54,15 @@ export class Router {
 
         if (isProtectedRoute && !isAuth && !isOffline) {
             this.navigate('/login');
+            return;
+        }
+
+        if (isAuth && path === paymentReturnRoute) {
+            const params = new URLSearchParams(window.location.search);
+            params.set('payment_return', '1');
+            const query = params.toString();
+            history.replaceState({}, '', `/settings/subscription${query ? `?${query}` : ''}`);
+            await this.handleRoute();
             return;
         }
 
