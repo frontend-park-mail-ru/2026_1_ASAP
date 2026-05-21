@@ -8,6 +8,13 @@ export interface SubscriptionDto {
     end_at?: string;
 }
 
+interface SubscriptionApiBody {
+    UserID?: number;
+    Active: boolean;
+    StartAt?: string;
+    EndAt?: string;
+}
+
 export type SubscriptionServiceResult =
     | { success: true; status: number; subscription: SubscriptionDto | null }
     | { success: false; status: number; error: string };
@@ -76,16 +83,9 @@ class SubscriptionService {
     private extractSubscription(raw: unknown): SubscriptionDto | null {
         if (!this.isRecord(raw)) return null;
         const body = raw.body;
-        const candidate = this.isRecord(body) ? body : raw;
-        const active = this.pickBoolean(candidate, "active", "Active");
-        if (active === null) return null;
+        if (!this.isSubscriptionApiBody(body)) return null;
 
-        return {
-            active,
-            ...this.optionalNumber(candidate, "user_id", "UserID", "userId"),
-            ...this.optionalString(candidate, "start_at", "StartAt", "startAt"),
-            ...this.optionalString(candidate, "end_at", "EndAt", "endAt"),
-        };
+        return this.mapSubscription(body);
     }
 
     private isSubscriptionNotFound(raw: unknown): boolean {
@@ -126,35 +126,18 @@ class SubscriptionService {
         return typeof value === "object" && value !== null;
     }
 
-    private pickBoolean(source: Record<string, unknown>, ...keys: string[]): boolean | null {
-        for (const key of keys) {
-            if (typeof source[key] === "boolean") {
-                return source[key];
-            }
-        }
-        return null;
+    private isSubscriptionApiBody(value: unknown): value is SubscriptionApiBody {
+        if (!this.isRecord(value)) return false;
+        return typeof value.Active === "boolean";
     }
 
-    private optionalNumber(source: Record<string, unknown>, ...keys: string[]): Pick<SubscriptionDto, "user_id"> {
-        for (const key of keys) {
-            if (typeof source[key] === "number") {
-                return { user_id: source[key] };
-            }
-        }
-        return {};
-    }
-
-    private optionalString(
-        source: Record<string, unknown>,
-        canonicalKey: "start_at" | "end_at",
-        ...keys: string[]
-    ): Pick<SubscriptionDto, "start_at" | "end_at"> {
-        for (const key of [canonicalKey, ...keys]) {
-            if (typeof source[key] === "string") {
-                return { [canonicalKey]: source[key] };
-            }
-        }
-        return {};
+    private mapSubscription(body: SubscriptionApiBody): SubscriptionDto {
+        return {
+            active: body.Active,
+            ...(typeof body.UserID === "number" ? { user_id: body.UserID } : {}),
+            ...(typeof body.StartAt === "string" ? { start_at: body.StartAt } : {}),
+            ...(typeof body.EndAt === "string" ? { end_at: body.EndAt } : {}),
+        };
     }
 }
 
