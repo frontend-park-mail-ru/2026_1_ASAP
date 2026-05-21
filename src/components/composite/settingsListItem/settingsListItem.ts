@@ -10,6 +10,7 @@ interface SettingsListItemProps extends IBaseComponentProps {
     router: Router;
     onProfileClick: () => void;
     onSupportClick: () => void;
+    onSubscriptionClick: () => void;
 };
 
 export class SettingsListItem extends BaseComponent<SettingsListItemProps> {
@@ -54,7 +55,7 @@ export class SettingsListItem extends BaseComponent<SettingsListItemProps> {
             case "privacy":
                 this.setActiveSetting(this.privacySetting!);
                 break;
-            case "sub":
+            case "subscription":
                 this.setActiveSetting(this.subscriptionSetting!);
                 break;
             default:
@@ -112,38 +113,15 @@ export class SettingsListItem extends BaseComponent<SettingsListItemProps> {
             if (titleEl) titleEl.textContent = this.getThemeTitle();
         });
 
-        // this.commonSetting = new SettingsItem({
-        //     src: '/assets/images/icons/commonSettings.svg',
-        //     title: 'В разработке',
-        //     disabled: true,
-        //     onClick: () => {
-        //         this.setActiveSetting(this.commonSetting!);
-        //         this.props.router.navigate(`/settings/common`);
-        //     },
-        // });
-        // this.commonSetting.mount(this.mainContentArea);
-
-        // this.privacySetting = new SettingsItem({
-        //     src: '/assets/images/icons/privacySettings.svg',
-        //     title: 'В разработке',
-        //     disabled: true,
-        //     onClick: () => {
-        //         this.setActiveSetting(this.privacySetting!);
-        //         this.props.router.navigate(`/settings/privacy`);
-        //     },
-        // });
-        // this.privacySetting.mount(this.mainContentArea);
-
-        // this.subscriptionSetting = new SettingsItem({
-        //     src: '/assets/images/icons/subscriptionSettings.svg',
-        //     title: 'В разработке',
-        //     disabled: true,
-        //     onClick: () => {
-        //         this.setActiveSetting(this.subscriptionSetting!);
-        //         this.props.router.navigate(`/settings/subscription`);
-        //     },
-        // });
-        // this.subscriptionSetting.mount(this.mainContentArea);
+        this.subscriptionSetting = new SettingsItem({
+            src: '/assets/images/icons/subscriptionSettings.svg',
+            title: 'Подписка',
+            onClick: () => {
+                this.setActiveSetting(this.subscriptionSetting!);
+                this.props.onSubscriptionClick();
+            },
+        });
+        this.subscriptionSetting.mount(this.mainContentArea);
         this.logoutSetting = new SettingsItem({
             src: '/assets/images/icons/logoutSettings__White.svg',
             title: 'Выйти из аккаунта',

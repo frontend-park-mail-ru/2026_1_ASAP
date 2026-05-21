@@ -12,6 +12,7 @@ interface SettingsListWrapperProps extends IBaseComponentProps {
     router: Router;
     onProfileClick: () => void;
     onSupportClick: () => void;
+    onSubscriptionClick: () => void;
 };
 
 /**
@@ -48,6 +49,7 @@ export class SettingsListWrapper extends BaseForm<SettingsListWrapperProps> {
             router: this.props.router,
             onProfileClick: this.props.onProfileClick,
             onSupportClick: this.props.onSupportClick,
+            onSubscriptionClick: this.props.onSubscriptionClick,
         });
         this.settingsListItem.mount(this.element!);
     };
