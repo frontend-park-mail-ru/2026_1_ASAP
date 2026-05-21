@@ -53,6 +53,19 @@ class NotificationService {
         if (this.permission === 'denied') return false;
 
         this.permission = await Notification.requestPermission();
+
+
+        if (this.permission === 'granted' && this.audio) {
+            const oldVolume = this.audio.volume;
+            this.audio.volume = 0;
+            try {
+                await this.audio.play();
+                this.audio.pause();
+                this.audio.currentTime = 0;
+            } catch {}
+            this.audio.volume = oldVolume;
+        }
+
         return this.permission === 'granted';
     }
 
