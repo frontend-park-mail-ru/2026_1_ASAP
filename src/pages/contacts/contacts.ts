@@ -1,5 +1,4 @@
 import template from "./contacts.hbs"
-import { SearchForm } from "../../components/composite/searchForm/searchForm";
 import { BasePage, IBasePageProps } from "../../core/base/basePage"
 import { MenuBar } from "../../components/composite/menuBar/menuBar";
 import { ContactSearchList } from "../../components/composite/contactSearchList/contactSearchList";
