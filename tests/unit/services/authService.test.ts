@@ -7,14 +7,14 @@ import { mockFetchSequence, getFetchCall } from '../../factories/http';
 describe('authService', () => {
     beforeEach(() => {
         // сброс приватного состояния синглтона
-        (authService as any).isAuthStatus = null;
+        authService.isAuthStatus = null;
         contactService.clearCache();
         vi.spyOn(contactService, 'clearCache');
         vi.spyOn(httpClient, 'clearToken');
     });
 
     afterEach(() => {
-        (authService as any).isAuthStatus = null;
+        authService.isAuthStatus = null;
     });
 
     describe('login', () => {

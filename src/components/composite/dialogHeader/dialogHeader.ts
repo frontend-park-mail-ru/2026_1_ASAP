@@ -24,7 +24,7 @@ interface DialogHeaderProps {
  * Компонент шапки для личного диалога.
  * Отображает аватар, имя собеседника и его статус.
  */
-export class DialogHeader extends BaseComponent {
+export class DialogHeader extends BaseComponent<DialogHeaderProps> {
     private avatarComponent: Avatar | null = null;
     private searchButton: Button | null = null;
     private settingsButton: Button | null = null;

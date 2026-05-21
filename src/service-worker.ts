@@ -1,8 +1,8 @@
 /// <reference lib="webworker" />
 
-import { precacheAndRoute, createHandlerBoundToURL } from 'workbox-precaching';
+import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
 import { registerRoute, NavigationRoute } from 'workbox-routing';
-import { CacheFirst, StaleWhileRevalidate, NetworkOnly } from 'workbox-strategies';
+import { CacheFirst, NetworkFirst, NetworkOnly } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { clientsClaim } from 'workbox-core';
 
@@ -10,13 +10,24 @@ declare const self: ServiceWorkerGlobalScope & {
     __WB_MANIFEST: Array<{ url: string; revision: string | null }>;
 };
 
+const appShellStrategy = new NetworkFirst({
+    cacheName: 'app-shell-cache',
+});
+const legacyRuntimeCaches = ['static-resources-cache'];
+
 self.skipWaiting();
 clientsClaim();
 
+cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST || []);
 
 registerRoute(
-    new NavigationRoute(createHandlerBoundToURL('/index.html')),
+    new NavigationRoute(
+        ({ event }) => appShellStrategy.handle({ event, request: '/index.html' }),
+        {
+            denylist: [/^\/support\.html(?:$|\?)/],
+        },
+    ),
 );
 
 registerRoute(
@@ -25,16 +36,11 @@ registerRoute(
         cacheName: 'images-cache',
         plugins: [
             new ExpirationPlugin({
-                maxEntries: 200,
-                maxAgeSeconds: 60 * 60 * 24 * 30,
+                maxEntries: 120,
+                maxAgeSeconds: 60 * 60 * 24 * 14,
             }),
         ],
     }),
-);
-
-registerRoute(
-    ({ request }) => request.destination === 'style' || request.destination === 'script',
-    new StaleWhileRevalidate({ cacheName: 'static-resources-cache' }),
 );
 
 registerRoute(
@@ -42,9 +48,26 @@ registerRoute(
     new NetworkOnly(),
 );
 
-self.addEventListener('sync', (event: any) => {
-    if (event.tag === 'flush-messages') {
-        event.waitUntil(notifyClientsToFlush());
+type ActivateEvent = Event & {
+    waitUntil: (promise: Promise<unknown>) => void;
+};
+
+type BackgroundSyncEvent = Event & {
+    tag: string;
+    waitUntil: (promise: Promise<void>) => void;
+};
+
+self.addEventListener('activate', (event: Event) => {
+    const activateEvent = event as ActivateEvent;
+    activateEvent.waitUntil(
+        Promise.all(legacyRuntimeCaches.map((cacheName) => caches.delete(cacheName))),
+    );
+});
+
+self.addEventListener('sync', (event: Event) => {
+    const syncEvent = event as BackgroundSyncEvent;
+    if (syncEvent.tag === 'flush-messages') {
+        syncEvent.waitUntil(notifyClientsToFlush());
     }
 });
 

@@ -17,7 +17,7 @@ export class FindUserContainer extends BaseComponent<FindUserContainerProps> {
         super(props);
     }
 
-    public getTemplate(): (context?: any) => string {
+    public getTemplate(): (context?: object) => string {
         return template;
     }
 

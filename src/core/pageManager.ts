@@ -1,4 +1,4 @@
-import { BasePage } from './base/basePage';
+import { BasePage, IBasePageProps } from './base/basePage';
 import { Layout } from './layout/layout';
 import { Router } from './router';
 
@@ -16,7 +16,7 @@ import { Router } from './router';
 export class PageManager {
     private layout: Layout;
     private router: Router;
-    private currentPage: BasePage<any> | null = null;
+    private currentPage: BasePage<IBasePageProps> | null = null;
 
     /**
      * @param {Layout} layout - Экземпляр лейаута.
@@ -34,7 +34,7 @@ export class PageManager {
      * @param {object} [props={}] - Дополнительные свойства для страницы.
      * @returns {Promise<void>}
      */
-    public async open(PageClass: { new(props: any): BasePage<any> }, props: any = {}): Promise<void> {
+    public async open(PageClass: { new(props?: IBasePageProps): BasePage<IBasePageProps> }, props: IBasePageProps = {}): Promise<void> {
         const pageProps = {
             ...props,
             pageManager: this,
@@ -52,7 +52,7 @@ export class PageManager {
         this.currentPage = null;
 
         if (oldPage) {
-            await (oldPage as BasePage<any>).unmount();
+            await oldPage.unmount();
         }
 
         const newPage = new PageClass(pageProps);

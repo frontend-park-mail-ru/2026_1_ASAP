@@ -5,7 +5,7 @@
  * расширяя этот интерфейс.
  */
 export interface IBaseComponentProps {
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 /**
@@ -18,7 +18,7 @@ export interface IBaseComponentProps {
  * @property {P} props - Свойства компонента.
  * @property {HTMLElement | null} element - Корневой DOM-элемент компонента после рендеринга.
  */
-export abstract class BaseComponent<P extends IBaseComponentProps = IBaseComponentProps> {
+export abstract class BaseComponent<P extends object = object> {
     /**
      * Свойства компонента, доступные для чтения и записи.
      * @protected

@@ -1,10 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { channelService } from '../../../src/services/channelService';
 import { chatService } from '../../../src/services/chatService';
+import { ChannelChat, GroupChat } from '../../../src/types/chat';
+
+type ChannelServiceTestState = typeof channelService & {
+    extraData: Map<string, { description: string; inviteUrl: string }>;
+};
+
+const channelServiceState = channelService as unknown as ChannelServiceTestState;
 
 beforeEach(() => {
     // очистка приватного extraData между тестами
-    (channelService as any).extraData = new Map();
+    channelServiceState.extraData = new Map();
 });
 
 afterEach(() => {
@@ -28,7 +35,7 @@ describe('channelService.createChannel', () => {
         expect(res.channelId).toBe('42');
         expect(chatService.createChat).toHaveBeenCalledWith([], 'channel', 'My Channel');
 
-        const extra = (channelService as any).extraData.get('42');
+        const extra = channelServiceState.extraData.get('42');
         expect(extra.description).toBe('desc');
         expect(extra.inviteUrl).toContain('/invite/42');
     });
@@ -51,7 +58,7 @@ describe('channelService.createChannel', () => {
             body: { id: 1 },
         });
         await channelService.createChannel({ title: 't' }, 7);
-        const extra = (channelService as any).extraData.get('1');
+        const extra = channelServiceState.extraData.get('1');
         expect(extra.description).toBe('');
     });
 });
@@ -63,7 +70,7 @@ describe('channelService.getChannel', () => {
             type: 'group',
             title: 'g',
             unreadCount: 0,
-        } as any);
+        } as GroupChat);
 
         const res = await channelService.getChannel('5', 7);
         expect(res).toBeNull();
@@ -82,7 +89,7 @@ describe('channelService.getChannel', () => {
             unreadCount: 0,
             owner_id: 7,
             subscribersCount: 1,
-        } as any);
+        } as ChannelChat);
         vi.spyOn(chatService, 'getChatMembers').mockResolvedValue([7]);
         vi.spyOn(chatService, 'getUserProfile').mockResolvedValue({
             id: 7,
@@ -106,7 +113,7 @@ describe('channelService.getChannel', () => {
             title: 'news',
             unreadCount: 0,
             owner_id: 99,
-        } as any);
+        } as ChannelChat);
         vi.spyOn(chatService, 'getChatMembers').mockResolvedValue([99, 7]);
         vi.spyOn(chatService, 'getUserProfile').mockImplementation(async (id: number) => ({
             id,
@@ -128,7 +135,7 @@ describe('channelService.getChannel', () => {
             type: 'channel',
             title: 'news',
             unreadCount: 0,
-        } as any);
+        } as ChannelChat);
         vi.spyOn(chatService, 'getChatMembers').mockResolvedValue([7]);
         vi.spyOn(chatService, 'getUserProfile').mockResolvedValue({
             id: 7, login: 'me', firstName: 'M', lastName: '', avatarUrl: '',
@@ -146,7 +153,7 @@ describe('channelService.getChannel', () => {
             title: 'x',
             unreadCount: 0,
             owner_id: 7,
-        } as any);
+        } as ChannelChat);
         vi.spyOn(chatService, 'getChatMembers').mockResolvedValue([7, 99]);
         vi.spyOn(chatService, 'getUserProfile').mockImplementation(async (id: number) =>
             id === 7 ? { id: 7, login: 'me', firstName: '', lastName: '', avatarUrl: '' } : null
@@ -166,7 +173,7 @@ describe('channelService.updateChannel', () => {
             title: 'old',
             unreadCount: 0,
             owner_id: 7,
-        } as any);
+        } as ChannelChat);
         vi.spyOn(chatService, 'getChatMembers').mockResolvedValue([7]);
         vi.spyOn(chatService, 'getUserProfile').mockResolvedValue({
             id: 7, login: 'me', firstName: '', lastName: '', avatarUrl: '',
@@ -180,7 +187,7 @@ describe('channelService.updateChannel', () => {
             title: 'old',
             unreadCount: 0,
             owner_id: 99,
-        } as any);
+        } as ChannelChat);
         vi.spyOn(chatService, 'getChatMembers').mockResolvedValue([99, 7]);
         vi.spyOn(chatService, 'getUserProfile').mockImplementation(async (id: number) => ({
             id, login: `u${id}`, firstName: '', lastName: '', avatarUrl: '',
@@ -221,7 +228,7 @@ describe('channelService.updateChannel', () => {
         setupAsOwner();
         const res = await channelService.updateChannel('5', { description: 'new desc' }, 7);
         expect(res.success).toBe(true);
-        expect((channelService as any).extraData.get('5').description).toBe('new desc');
+        expect(channelServiceState.extraData.get('5')?.description).toBe('new desc');
     });
 
     it('updateChatTitle вернул false → success=false', async () => {
@@ -243,15 +250,15 @@ describe('channelService.leaveChannel', () => {
 
 describe('channelService.deleteChannel', () => {
     it('успешное удаление → extraData очищается', async () => {
-        (channelService as any).extraData.set('42', { description: 'd', inviteUrl: 'u' });
+        channelServiceState.extraData.set('42', { description: 'd', inviteUrl: 'u' });
         vi.spyOn(chatService, 'deleteChat').mockResolvedValue({ success: true, status: 200 });
         const res = await channelService.deleteChannel('42');
         expect(res.success).toBe(true);
-        expect((channelService as any).extraData.has('42')).toBe(false);
+        expect(channelServiceState.extraData.has('42')).toBe(false);
     });
 
     it('неудача → extraData остаётся, errorCode пробрасывается', async () => {
-        (channelService as any).extraData.set('42', { description: 'd', inviteUrl: 'u' });
+        channelServiceState.extraData.set('42', { description: 'd', inviteUrl: 'u' });
         vi.spyOn(chatService, 'deleteChat').mockResolvedValue({
             success: false,
             status: 403,
@@ -260,7 +267,7 @@ describe('channelService.deleteChannel', () => {
         const res = await channelService.deleteChannel('42');
         expect(res.success).toBe(false);
         expect(res.errorCode).toBe('NOT_OWNER');
-        expect((channelService as any).extraData.has('42')).toBe(true);
+        expect(channelServiceState.extraData.has('42')).toBe(true);
     });
 });
 

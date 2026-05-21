@@ -1,4 +1,4 @@
-import { ChatDetail, FrontendMessage, User, DialogChat, GroupChat, ChannelChat, BackendChat, BackendMessage } from '../types/chat';
+import { ChatDetail, FrontendMessage, User, DialogChat, GroupChat, ChannelChat } from '../types/chat';
 import { SearchChatHit, SearchChatsResult, SearchMessageHit, SearchMessagesResult } from '../types/search';
 import { httpClient } from '../core/utils/httpClient';
 import { wsClient, MessageDto, ChatInformationDto } from '../core/utils/wsClient';
@@ -7,6 +7,60 @@ import { presenceService } from './presenceService';
 import { offlineQueue, PendingMessage } from './offlineMessageQueue';
 
 import { BASE_URL } from '../core/utils/apiBase';
+
+interface BackendMessageLike {
+    id?: string | number;
+    sender?: Partial<User> & {
+        avatar?: string | null;
+        first_name?: string;
+        last_name?: string;
+    };
+    sender_id?: string | number;
+    login?: string;
+    avatar?: string | null;
+    first_name?: string;
+    last_name?: string;
+    text?: string;
+    created_at?: string;
+}
+
+interface SearchChatApiHit {
+    chat_id: string | number;
+    type: SearchChatHit['type'];
+    title?: string;
+    avatar_url?: string | null;
+    last_message_preview?: string;
+    last_message_at?: string;
+    unread_count?: number;
+}
+
+interface SearchMessageApiHit {
+    message_id: string | number;
+    chat_id: string | number;
+    sender_id: string | number;
+    text_preview?: string;
+    created_at: string;
+}
+
+interface ChatListApiItem {
+    id: string | number;
+    title: string;
+    type: ChatDetail['type'];
+    avatar?: string | null;
+    subscribers_count?: number;
+    last_message?: BackendMessageLike;
+}
+
+interface ChatCreateBody {
+    id?: string | number;
+    chat_id?: string | number;
+}
+
+type MessageGetPayload = MessageDto[] | {
+    messages?: MessageDto[];
+    has_more?: boolean;
+    next_before_id?: number | null;
+};
 
 /**
  * @class ChatService
@@ -24,7 +78,7 @@ export class ChatService {
      * @param backendMessage - «сырой» объект сообщения из REST-ответа.
      * @param currentUserId  - ID или логин текущего пользователя для определения авторства.
      */
-    private convertToFrontendMessage(backendMessage: any, currentUserId?: string | number): FrontendMessage {
+    private convertToFrontendMessage(backendMessage: BackendMessageLike, currentUserId?: string | number): FrontendMessage {
         const login = backendMessage.sender?.login || backendMessage.login || (backendMessage.sender_id ? `user_${backendMessage.sender_id}` : 'unknown');
         
         return {
@@ -79,13 +133,13 @@ export class ChatService {
      * @returns {ChatDetail} Объект чата для фронтенда.
      */
     public mapChatDtoToChat(dto: ChatInformationDto, currentUserId: number): ChatDetail {
-        const commonProps: any = {
+        const commonProps = {
             id: dto.id.toString(),
             title: dto.title,
             avatarUrl: getFullUrl(dto.avatar),
             unreadCount: 0,
             type: dto.chat_type as 'dialog' | 'group' | 'channel',
-            owner_id: (dto as any).owner_id,
+            owner_id: dto.owner_id,
         };
 
         let chat: ChatDetail;
@@ -94,14 +148,14 @@ export class ChatService {
             case 'dialog':
                 chat = {
                     ...commonProps,
-                    interlocutor: { login: dto.title, avatarUrl: commonProps.avatarUrl },
+                    interlocutor: { id: 0, login: dto.title, avatarUrl: commonProps.avatarUrl },
                 } as DialogChat;
                 break;
             case 'group':
                 chat = {
                     ...commonProps,
                     members: [],
-                    owner: { id: (dto as any).owner_id || 0, login: 'owner', avatarUrl: getFullUrl() },
+                    owner: { id: dto.owner_id || 0, login: 'owner', avatarUrl: getFullUrl() },
                 } as GroupChat;
                 break;
             case 'channel':
@@ -111,7 +165,7 @@ export class ChatService {
                 } as ChannelChat;
                 break;
             default:
-                chat = { ...commonProps } as any;
+                chat = { ...commonProps, subscribersCount: 0 } as ChannelChat;
         }
 
         if (dto.last_message) {
@@ -158,7 +212,9 @@ export class ChatService {
         if (!navigator.onLine && 'serviceWorker' in navigator && 'SyncManager' in window) {            
             try {
                 const reg = await navigator.serviceWorker.ready;
-                await (reg as any).sync.register('flush-messages');
+                await (reg as ServiceWorkerRegistration & {
+                    sync: { register: (tag: string) => Promise<void> };
+                }).sync.register('flush-messages');
             } catch (e){
                 console.warn('SyncManager failed', e);
             }
@@ -189,7 +245,7 @@ export class ChatService {
             const data = await response.json();
             if (data.status !== 'success' || !data.body) return null;
 
-            const items: SearchChatHit[] = (data.body.items || []).map((c: any) => ({
+            const items: SearchChatHit[] = (data.body.items || []).map((c: SearchChatApiHit) => ({
                 chatId: String(c.chat_id),
                 type: c.type,
                 title: c.title || '',
@@ -338,7 +394,7 @@ export class ChatService {
                 return [];
             }
 
-            const frontendChats: ChatDetail[] = data.body.map((chat: any) => {
+            const frontendChats: ChatDetail[] = data.body.map((chat: ChatListApiItem) => {
                 let frontendChat: ChatDetail;
 
                 const commonProps = {
@@ -364,7 +420,7 @@ export class ChatService {
                         frontendChat = {
                             ...commonProps,
                             members: [], // Пока бек не отдает список участников
-                            owner: { login: 'owner', avatarUrl: getFullUrl() },
+                            owner: { id: 0, login: 'owner', avatarUrl: getFullUrl() },
                         } as GroupChat;
                         break;
                     case 'channel':
@@ -374,7 +430,7 @@ export class ChatService {
                         } as ChannelChat;
                         break;
                     default:
-                        frontendChat = { ...commonProps } as any;
+                        frontendChat = { ...commonProps, subscribersCount: 0 } as ChannelChat;
                 }
 
                 // Бэкенд может прислать пустую заглушку (zero-value) для нового чата, где id = 0 или объект пуст
@@ -471,12 +527,12 @@ export class ChatService {
         return new Promise((resolve) => {
             const timeoutMs = 5000;
             
-            const handleGetMessages = (payload: any) => {
+            const handleGetMessages = (payload: MessageGetPayload) => {
                 clearTimeout(timeout);
                 wsClient.unsubscribe('message.Get', handleGetMessages);
                 
                 // Бэкенд возвращает объект { messages: MessageDto[], has_more: boolean, next_before_id: number }
-                const messagesArray = payload && payload.messages ? payload.messages : payload;
+                const messagesArray = Array.isArray(payload) ? payload : payload.messages;
 
                 if (Array.isArray(messagesArray)) {
                     const messages = messagesArray.map((msg: MessageDto) => 
@@ -485,8 +541,8 @@ export class ChatService {
                     
                     resolve({ 
                         messages, 
-                        hasMore: payload.has_more || false, 
-                        nextBeforeId: payload.next_before_id || null 
+                        hasMore: Array.isArray(payload) ? false : payload.has_more || false,
+                        nextBeforeId: Array.isArray(payload) ? null : payload.next_before_id || null
                     });
                 } else {
                     resolve({ messages: [], hasMore: false, nextBeforeId: null });
@@ -517,7 +573,7 @@ export class ChatService {
      * @param title - Заголовок чата (необязательно).
      * @returns Объект с результатом операции: флаг успеха, HTTP статус и тело ответа.
      */
-    public async createChat(members_id: number[], type: "dialog" | "group" | "channel", title?: string): Promise<{ success: boolean; status: number; body?: any }> {
+    public async createChat(members_id: number[], type: "dialog" | "group" | "channel", title?: string): Promise<{ success: boolean; status: number; body?: ChatCreateBody }> {
         try {
             const response = await httpClient.request(`${BASE_URL}/api/v1/chats`, {
                 method: 'POST',
@@ -531,7 +587,7 @@ export class ChatService {
                 })
             });
 
-            let body: any = null;
+            let body: ChatCreateBody | undefined;
             if (response.ok || response.status === 409) {
                 try {
                     const data = await response.json();
@@ -772,7 +828,7 @@ export class ChatService {
         const dialogs = chats.filter(c => c.type === 'dialog');
 
         if (targetLogin) {
-            const byLogin = dialogs.find(c => (c as any).interlocutor?.login === targetLogin);
+            const byLogin = dialogs.find(c => c.type === 'dialog' && c.interlocutor?.login === targetLogin);
             if (byLogin) return byLogin.id;
         }
 
@@ -912,7 +968,7 @@ export class ChatService {
             const data = await response.json();
             if (data.status !== 'success' || !data.body) return null;
 
-            const items: SearchMessageHit[] = (data.body.items || []).map((m: any) => ({
+            const items: SearchMessageHit[] = (data.body.items || []).map((m: SearchMessageApiHit) => ({
                 messageId: String(m.message_id),
                 chatId: String(m.chat_id),
                 senderId: Number(m.sender_id),

@@ -2,7 +2,6 @@ import { BasePage, IBasePageProps } from '../../core/base/basePage';
 import { AuthForm } from '../../components/composite/authForm/authForm';
 import template from "./login.hbs";
 import { SupportFrame } from '../../components/composite/supportFrame/supportFrame';
-import { BaseComponent } from '../../core/base/baseComponent';
 import { Button } from '../../components/ui/button/button';
 import { PULSE_SUPPORT_CLOSE } from '../../core/constants/supportIframe';
 
@@ -11,7 +10,7 @@ import { PULSE_SUPPORT_CLOSE } from '../../core/constants/supportIframe';
  * @description Свойства для компонента страницы входа.
  * @extends IBasePageProps
  */
-interface LoginPageProps extends IBasePageProps {}
+type LoginPageProps = IBasePageProps;
 
 /**
  * @class LoginPage
@@ -36,7 +35,7 @@ export class LoginPage extends BasePage<LoginPageProps> {
         super(props);
     }
 
-    public getTemplate(): (context?: any) => string {
+    public getTemplate(): (context?: object) => string {
         return template;
     }
 

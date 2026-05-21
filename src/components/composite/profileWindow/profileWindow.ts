@@ -7,13 +7,14 @@ import { Button } from "../../ui/button/button";
 import { ConfirmModal } from "../confirmModal/confirmModal";
 import { contactService } from "../../../services/contactService";
 import { chatService } from "../../../services/chatService";
+import { Router } from "../../../core/router";
 import template from "./profileWindow.hbs"
 
 interface ProfileWindowProps extends IBaseComponentProps {
     profileMainInfo: ProfileMainInfo;
     profileAdditionalInfo: ProfileAdditionalInfo;
     closeWindow: (event: MouseEvent) => void;
-    router?: any;
+    router?: Router;
     onContactsChanged?: () => void;
 };
 

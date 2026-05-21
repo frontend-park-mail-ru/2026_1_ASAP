@@ -63,7 +63,7 @@ class ChannelService {
 
         const channelDetail = chatDetail as ChannelChat;
         const memberIds = await chatService.getChatMembers(channelId);
-        const ownerId: number = (chatDetail as any).owner_id || 0;
+        const ownerId: number = chatDetail.owner_id || 0;
         const currentUserRole: ChannelRole =
             ownerId !== 0 && ownerId === myId
                 ? 'owner'
@@ -96,7 +96,7 @@ class ChannelService {
             description: channelDetail.description ?? '',
             inviteUrl: this.generateInviteUrl(channelId),
             members,
-            subscribersCount: (chatDetail as any).subscribersCount || memberIds.length,
+            subscribersCount: chatDetail.subscribersCount || memberIds.length,
             currentUserRole,
             ownerId,
         };

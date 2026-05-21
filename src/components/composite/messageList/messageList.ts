@@ -1,4 +1,4 @@
-import { BaseComponent } from '../../../core/base/baseComponent';
+import { BaseComponent, IBaseComponentProps } from '../../../core/base/baseComponent';
 import { FrontendMessage, User, Chat} from '../../../types/chat';
 import { Message } from '../../ui/message/message';
 import template from './messageList.hbs';
@@ -12,7 +12,7 @@ import { getFullUrl } from '../../../core/utils/url';
  * @property {Chat['type']} chatType - Тип текущего чата. 
  * @property {() => Promise<void>} [onLoadMore] - Колбэк для подгрузки старых сообщений.
 */
-interface MessageListProps {
+interface MessageListProps extends IBaseComponentProps {
     messages: FrontendMessage[];
     currentUser: User;
     chatType: Chat['type'];
@@ -25,7 +25,14 @@ interface MessageListProps {
 /**
  * Компонент для отображения списка сообщений в диалоге.
  */
-export class MessageList extends BaseComponent {
+interface UserUpdatePayload {
+    id?: number;
+    avatar_url?: string;
+    avatarUrl?: string;
+    avatar?: string;
+}
+
+export class MessageList extends BaseComponent<MessageListProps> {
     private childMessages: Message[] = [];
     private flexContainer: HTMLElement | null = null;
     private emptyStateElement: HTMLElement | null = null;
@@ -106,10 +113,10 @@ export class MessageList extends BaseComponent {
     /**
      * Обработчик события обновления профиля пользователя через WebSocket.
      * Находит все аватарки этого пользователя в DOM и обновляет их URL.
-     * @param {any} payload - Данные обновленного профиля.
+     * @param {UserUpdatePayload} payload - Данные обновленного профиля.
      * @private
      */
-    private handleUserUpdate = (payload: any): void => {
+    private handleUserUpdate = (payload: UserUpdatePayload): void => {
         if (!this.element || !payload.id) return;
 
         const avatarUrl = payload.avatar_url || payload.avatarUrl || payload.avatar;

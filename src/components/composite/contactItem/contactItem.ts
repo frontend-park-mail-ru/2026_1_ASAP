@@ -1,4 +1,4 @@
-import { BaseComponent } from "../../../core/base/baseComponent";
+import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent";
 import { BaseForm, IBaseFormProps } from "../../../core/base/baseForm";
 import { Avatar } from "../../ui/avatar/avatar";
 import template from "./contactItem.hbs";
@@ -18,7 +18,7 @@ interface ContactItemProps extends IBaseFormProps {
     name: string;
     id: number;
     onClick?: (item: ContactItem) => void;
-    rightSlot?: BaseComponent<any>;
+    rightSlot?: BaseComponent<IBaseComponentProps>;
 };
 
 /**
