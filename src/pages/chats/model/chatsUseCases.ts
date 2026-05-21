@@ -1,5 +1,5 @@
-import type { ChannelRole, CreateChannelInput } from "../../../services/channelService";
-import type { ChatInformationDto, MessageDto } from "../../../core/utils/wsClient";
+import type { ChannelRole, CreateChannelInput, UpdateChannelInput } from "../../../services/channelService";
+import type { ChatInformationDto, MessageDto, PresenceState } from "../../../core/utils/wsClient";
 import type { ChannelChat, Chat, DialogChat, FrontendMessage, GroupChat, User } from "../../../types/chat";
 import type { FrontendProfile } from "../../../types/profile";
 import type { SearchMessageHit, SearchMessagesResult } from "../../../types/search";
@@ -155,6 +155,11 @@ export class ChatsUseCases {
         return enrichedChats.map((chat) => toSidebarChatVM(chat, activeChatId));
     }
 
+    public async hasAnyChats(currentUserId: number): Promise<boolean> {
+        const chats = await this.data.getChats(currentUserId);
+        return chats.length > 0;
+    }
+
     public async searchSidebarChats(
         query: string,
         type: ChatSearchType = "",
@@ -241,6 +246,10 @@ export class ChatsUseCases {
         const channelDetail = resolvedChat.type === "channel"
             ? await this.data.getChannel(chatId, currentUser.id)
             : null;
+
+        if (resolvedChat.type === "channel" && !channelDetail) {
+            return null;
+        }
 
         if (resolvedChat.type === "channel" && channelDetail) {
             resolvedChat = {
@@ -338,6 +347,18 @@ export class ChatsUseCases {
         this.data.stopTyping(chatId);
     }
 
+    public subscribePresence(userId: number, handler: (state: PresenceState) => void): () => void {
+        return this.data.subscribePresence(userId, handler);
+    }
+
+    public getPresence(userId: number): PresenceState | null {
+        return this.data.getPresence(userId);
+    }
+
+    public requestUserProfile(userId: number): Promise<User | null> {
+        return this.data.getUserProfile(userId);
+    }
+
     public flushPendingMessages(): Promise<void> {
         return this.data.flushPendingMessages();
     }
@@ -411,6 +432,86 @@ export class ChatsUseCases {
             canDelete: detail.currentUserRole === "owner",
             canRemoveMembers: detail.currentUserRole === "owner",
         };
+    }
+
+    public updateGroup(
+        chatId: string,
+        title?: string,
+        avatar?: File,
+    ): Promise<{ success: boolean; errorCode?: string }> {
+        return this.updateChatMedia(chatId, "group", title, avatar);
+    }
+
+    public deleteChat(chatId: string): Promise<{ success: boolean; status: number; errorCode?: string }> {
+        return this.data.deleteChat(chatId);
+    }
+
+    public leaveChat(chatId: string | number): Promise<{ success: boolean; status: number; errorCode?: string; errorMessage?: string }> {
+        return this.data.leaveChat(chatId);
+    }
+
+    public leaveGroup(chatId: string): Promise<{ success: boolean; status: number; errorCode?: string; errorMessage?: string }> {
+        return this.data.leaveGroup(chatId);
+    }
+
+    public removeGroupMember(chatId: string, userId: number): Promise<{ success: boolean; status: number }> {
+        return this.data.removeMember(chatId, userId);
+    }
+
+    public async getProfileLogin(userId: number): Promise<string> {
+        const profile = await this.data.getProfileInfo(userId);
+        return profile?.additionalInfo?.login || String(userId);
+    }
+
+    public getUserIdByLogin(login: string): Promise<{ id: number | null; status: number }> {
+        return this.data.getIdByLogin(login);
+    }
+
+    public addMembersToGroup(chatId: string, userIds: number[]): Promise<{ success: boolean; status: number; errorCode?: string }> {
+        return this.data.addMembersToChat(chatId, userIds);
+    }
+
+    public updateChannel(
+        channelId: string,
+        input: UpdateChannelInput,
+        currentUserId: number,
+    ): Promise<{ success: boolean; errorCode?: string }> {
+        return this.data.updateChannel(channelId, input, currentUserId);
+    }
+
+    public joinChannel(chatId: string): Promise<{ success: boolean; status: number; errorCode?: string; errorMessage?: string }> {
+        return this.data.joinChannel(chatId);
+    }
+
+    public leaveChannel(chatId: string): Promise<{ success: boolean }> {
+        return this.data.leaveChannel(chatId);
+    }
+
+    public deleteChannel(chatId: string): Promise<{ success: boolean; errorCode?: string }> {
+        return this.data.deleteChannel(chatId);
+    }
+
+    public removeChannelMember(chatId: string, userId: number): Promise<{ success: boolean }> {
+        return this.data.removeChannelMember(chatId, userId);
+    }
+
+    private async updateChatMedia(
+        chatId: string,
+        operation: "group" | "channel",
+        title?: string,
+        avatar?: File,
+    ): Promise<{ success: boolean; errorCode?: string }> {
+        const results: boolean[] = [];
+
+        if (title) {
+            results.push(await this.data.updateChatTitle(chatId, title));
+        }
+        if (avatar) {
+            results.push(await this.data.updateChatAvatar(chatId, avatar));
+        }
+
+        const success = results.length === 0 || results.every(Boolean);
+        return success ? { success: true } : { success: false, errorCode: operation === "group" ? "UPDATE_GROUP_FAILED" : "UPDATE_CHANNEL_FAILED" };
     }
 
     public getNotificationPromptState(now: number = Date.now()): NotificationPromptVM {

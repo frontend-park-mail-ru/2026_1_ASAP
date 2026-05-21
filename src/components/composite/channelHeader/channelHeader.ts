@@ -5,12 +5,6 @@ import { Avatar } from '../../ui/avatar/avatar';
 import { Button } from '../../ui/button/button';
 import { ConfirmModal } from '../confirmModal/confirmModal';
 import { DeleteChatMenu } from '../deleteChatMenu/deleteChatMenu';
-import {
-    wsClient,
-    ChatUpdatedAvatarDto,
-    ChatUpdatedTitleDto,
-    ChatUpdatedMembersDto,
-} from '../../../core/utils/wsClient';
 import { getFullUrl } from '../../../core/utils/url';
 import template from './channelHeader.hbs';
 import './channelHeader.scss';
@@ -109,45 +103,32 @@ export class ChannelHeader extends BaseComponent<ChannelHeaderProps> {
             });
             this.settingsButton.mount(settingsSlot as HTMLElement);
         }
-
-        wsClient.subscribe<ChatUpdatedAvatarDto>('chat.Updated.Avatar', this.handleAvatarUpdated);
-        wsClient.subscribe<ChatUpdatedTitleDto>('chat.Updated.Title', this.handleTitleUpdated);
-        wsClient.subscribe<ChatUpdatedMembersDto>('chat.Updated.Members', this.handleMembersUpdated);
     }
 
-    private isTargetChat(chatId: number): boolean {
-        return !!this.element && String(this.props.chat.id) === String(chatId);
-    }
-
-    private handleAvatarUpdated = (payload: ChatUpdatedAvatarDto): void => {
-        if (!this.isTargetChat(payload.chat_id)) return;
-        const avatarImg = this.element!.querySelector('.channel-header__avatar') as HTMLImageElement;
+    public setAvatar(avatarUrl?: string | null): void {
+        const avatarImg = this.element?.querySelector('.channel-header__avatar') as HTMLImageElement | null;
         if (avatarImg) {
-            avatarImg.src = payload.avatar_url
-                ? getFullUrl(payload.avatar_url)
+            avatarImg.src = avatarUrl
+                ? getFullUrl(avatarUrl)
                 : '/assets/images/avatars/defaultGroup.svg';
         }
-        this.props.chat.avatarUrl = payload.avatar_url;
-    };
+        this.props.chat.avatarUrl = avatarUrl || undefined;
+    }
 
-    private handleTitleUpdated = (payload: ChatUpdatedTitleDto): void => {
-        if (!this.isTargetChat(payload.chat_id)) return;
-        const nameEl = this.element!.querySelector('.channel-header__name');
-        if (nameEl) nameEl.textContent = payload.title;
-        this.props.chat.title = payload.title;
-    };
+    public setTitle(title: string): void {
+        const nameEl = this.element?.querySelector('.channel-header__name');
+        if (nameEl) nameEl.textContent = title;
+        this.props.chat.title = title;
+    }
 
-    private handleMembersUpdated = (payload: ChatUpdatedMembersDto): void => {
-        if (!this.isTargetChat(payload.chat_id)) return;
-
-        const delta = payload.updated_members_id.length;
+    public applySubscribersDelta(type: 'added' | 'deleted', delta: number): void {
         const current = this.props.chat.subscribersCount || 0;
-        this.props.chat.subscribersCount = payload.type === 'added'
+        this.props.chat.subscribersCount = type === 'added'
             ? current + delta
             : Math.max(0, current - delta);
 
         this.loadSubscribersCount();
-    };
+    }
 
     private async loadSubscribersCount(): Promise<void> {
         if (!this.element || this.props.currentUserRole === 'guest') return;
@@ -222,8 +203,5 @@ export class ChannelHeader extends BaseComponent<ChannelHeaderProps> {
         this.settingsButton?.unmount();
         this.closeChatMenu();
         this.closeConfirm();
-        wsClient.unsubscribe('chat.Updated.Avatar', this.handleAvatarUpdated);
-        wsClient.unsubscribe('chat.Updated.Title', this.handleTitleUpdated);
-        wsClient.unsubscribe('chat.Updated.Members', this.handleMembersUpdated);
     }
 }
