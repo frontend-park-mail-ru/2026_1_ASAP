@@ -13,6 +13,8 @@ import { MessageList } from "../../components/composite/messageList/messageList"
 import { MessageInput } from "../../components/ui/messageInput/messageInput";
 import { Chat, FrontendMessage, DialogChat, GroupChat, ChannelChat, User } from '../../types/chat';
 import { chatService } from "../../services/chatService";
+import { notificationService } from "../../services/notificationService";
+import { getFullUrl } from "../../core/utils/url";
 import { channelService, type ChannelRole } from "../../services/channelService";
 import { GroupHeader } from "../../components/composite/groupHeader/groupHeader";
 import { ChannelHeader } from "../../components/composite/channelHeader/channelHeader";
@@ -122,13 +124,24 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * Хранится как поле класса для корректной отписки.
      */
     private readonly handleNewMessage = async (dto: MessageDto): Promise<void> => {
-        if (!this.activeChatId || dto.chat_id.toString() !== this.activeChatId) {
-            return;
+        const isOwn = this.currentUserId !== null
+            && String(dto.sender_id) === String(this.currentUserId);
+        const dtoChatId = dto.chat_id.toString();
+        const isActiveChat = this.activeChatId !== null && dtoChatId === this.activeChatId;
+
+        // браузер-уведомление если сообщение чужое и я не в этом чате (или вкладка не в фокусе)
+        if (!isOwn) {
+            const senderName = dto.first_name
+                ? `${dto.first_name} ${dto.last_name ?? ''}`.trim()
+                : (dto.login || 'Новое сообщение');
+            notificationService.show(senderName, dto.text || '', {
+                chatId: dtoChatId,
+                icon: dto.avatar ? getFullUrl(dto.avatar) : undefined,
+            });
         }
 
-        if (!this.activeMessageList || this.currentUserId === null) {
-            return;
-        }
+        if (!isActiveChat) return;
+        if (!this.activeMessageList || this.currentUserId === null) return;
 
         const tempId = await chatService.resolveServerMessage(dto, this.currentUserId);
         const serverTime = dto.created_at ? new Date(dto.created_at) : undefined;
@@ -141,7 +154,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
         // если входящее сообщение и я смотрю на чат — сразу отмечаю как прочитанное
         if (!frontendMsg.isOwn) {
-            chatService.markMessageRead(this.activeChatId, dto.id.toString());
+            chatService.markMessageRead(this.activeChatId!, dto.id.toString());
         }
     };
 
