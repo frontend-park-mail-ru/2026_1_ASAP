@@ -1,6 +1,6 @@
 import { BaseComponent, IBaseComponentProps } from '../../../core/base/baseComponent';
 import { ChannelChat } from '../../../types/chat';
-import { ChannelRole } from '../../../services/channelService';
+import type { ChannelRole } from '../../../services/channelService';
 import { Avatar } from '../../ui/avatar/avatar';
 import { Button } from '../../ui/button/button';
 import { ConfirmModal } from '../confirmModal/confirmModal';

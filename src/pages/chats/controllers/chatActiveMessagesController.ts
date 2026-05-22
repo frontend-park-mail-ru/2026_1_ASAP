@@ -97,6 +97,37 @@ export class ChatActiveMessagesController {
         };
     }
 
+    public restorePendingMessages(pendingMessages: ActiveChatVM["pendingMessages"]): void {
+        const messageList = this.deps.getMessageList();
+        const currentUserId = this.deps.getCurrentUserId();
+        if (!messageList || currentUserId === null || pendingMessages.length === 0) return;
+
+        const profile = this.deps.getCurrentUserProfile();
+        pendingMessages.forEach((pending) => {
+            messageList.addMessage({
+                id: pending.tempId,
+                sender: {
+                    id: pending.senderId,
+                    login: profile?.additionalInfo.login || "",
+                    avatarUrl: profile?.mainInfo.avatarUrl,
+                    firstName: profile?.mainInfo.firstName,
+                    lastName: profile?.mainInfo.lastName,
+                },
+                text: pending.text,
+                timestamp: new Date(pending.createdAt),
+                isOwn: true,
+                status: "sending",
+            });
+        });
+    }
+
+    public markLatestIncomingRead(chatId: string): void {
+        const last = this.deps.getMessageList()?.getLatestMessageData();
+        if (last && !last.isOwn && /^\d+$/.test(last.id)) {
+            this.deps.sessionController.markMessageRead(chatId, last.id);
+        }
+    }
+
     private buildMessageInput(
         chatId: string,
         activeState: ActiveChatVM,

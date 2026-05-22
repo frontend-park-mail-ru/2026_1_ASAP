@@ -3,6 +3,7 @@ import { Router } from "../../../core/router";
 import { SearchForm } from "../searchForm/searchForm";
 import { ContactListWrapper } from "../contactListWrapper/contactListWrapper";
 import type { SearchContactsResult } from "../../../types/search";
+import type { FrontendContact } from "../../../types/contact";
 import template from "./contactSearchList.hbs";
 
 type SearchScope = 'contacts' | 'local';
@@ -18,6 +19,7 @@ type SearchScope = 'contacts' | 'local';
  */
 interface ContactSearchListProps extends IBaseComponentProps {
     router: Router;
+    contacts?: FrontendContact[];
     listMode?: 'default' | 'createDialog' | 'createGroup';
     hideAddButton?: boolean;
     onAddClick?: () => void;
@@ -70,6 +72,7 @@ export class ContactSearchList extends BaseComponent<ContactSearchListProps> {
 
         this.contactListWrapper = new ContactListWrapper({
             router: this.props.router,
+            contacts: this.props.contacts,
             listMode: this.props.listMode,
             onAction: this.props.onAction,
         });
