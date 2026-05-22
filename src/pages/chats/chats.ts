@@ -89,6 +89,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private historyRequestId = 0;
     /** ID текущего вызова openChat (защита от race condition при быстром переключении чатов). */
     private openChatRequestId = 0;
+    /** ID текущего async-flow создания чата (защита от монтирования после смены route). */
+    private createChatRequestId = 0;
 
     /**
      * Ссылка на активный MessageList-компонент.
@@ -470,6 +472,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     }
 
     private cleanupMainContent(): void {
+        this.createChatRequestId += 1;
         this.realtimeController?.stopActiveChatRealtime();
         this.presenceController?.stop();
         this.activeMessageList = null;
@@ -684,7 +687,15 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         if (!this.chatsView?.hasMainContentArea()) return;
 
         this.cleanupMainContent();
-        this.createChatWindow = await this.createWindowController!.build(type);
+        const requestId = ++this.createChatRequestId;
+        const createWindow = await this.createWindowController!.build(type);
+
+        if (requestId !== this.createChatRequestId || !this.chatsView?.hasMainContentArea()) {
+            createWindow?.unmount();
+            return;
+        }
+
+        this.createChatWindow = createWindow;
         if (this.createChatWindow) {
             this.chatsView.mountInMain(this.createChatWindow);
         }

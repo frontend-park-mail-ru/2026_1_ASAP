@@ -23,10 +23,12 @@ export class ChatDetailsFlowController {
     private groupDetailsWindow: GroupDetailsWindow | null = null;
     private channelDetailsWindow: ChannelDetailsWindow | null = null;
     private addMemberWindow: AddMemberWindow | null = null;
+    private requestId = 0;
 
     constructor(private readonly deps: ChatDetailsFlowControllerDeps) {}
 
     public closeAll(): void {
+        this.invalidateRequests();
         this.closeAddMember();
         this.closeGroupDetails();
         this.closeChannelDetails();
@@ -52,6 +54,7 @@ export class ChatDetailsFlowController {
         const currentUserId = this.deps.getCurrentUserId();
         if (!this.deps.hasMainContentArea() || currentUserId === null) return;
 
+        const requestId = this.nextRequest();
         this.closeGroupDetails();
         this.closeAddMember();
         this.hideChatWindow();
@@ -60,11 +63,14 @@ export class ChatDetailsFlowController {
         try {
             groupDetails = await this.deps.detailsController.loadGroupDetails(chat, currentUserId);
         } catch {
+            if (this.isStaleRequest(requestId)) return;
             this.showChatWindow();
             this.deps.syncLayout();
             this.deps.showAlert("Не удалось загрузить информацию о группе");
             return;
         }
+
+        if (this.isStaleRequest(requestId)) return;
 
         const members = groupDetails.members.map(member => ({
             id: member.id,
@@ -109,10 +115,23 @@ export class ChatDetailsFlowController {
         const currentUserId = this.deps.getCurrentUserId();
         if (!this.deps.hasMainContentArea() || currentUserId === null) return;
 
+        const requestId = this.nextRequest();
         this.closeChannelDetails();
         this.hideChatWindow();
 
-        const channelDetail = await this.deps.detailsController.loadChannelDetails(chat, currentUserId);
+        let channelDetail;
+        try {
+            channelDetail = await this.deps.detailsController.loadChannelDetails(chat, currentUserId);
+        } catch {
+            if (this.isStaleRequest(requestId)) return;
+            this.showChatWindow();
+            this.deps.syncLayout();
+            this.deps.showAlert("Не удалось загрузить информацию о канале");
+            return;
+        }
+
+        if (this.isStaleRequest(requestId)) return;
+
         if (!channelDetail) {
             this.showChatWindow();
             this.deps.syncLayout();
@@ -289,6 +308,7 @@ export class ChatDetailsFlowController {
     }
 
     private closeActiveChat(): void {
+        this.invalidateRequests();
         this.deps.rebuildSidebar();
         this.deps.navigateChatsRoot();
     }
@@ -316,5 +336,18 @@ export class ChatDetailsFlowController {
     private closeAddMember(): void {
         this.addMemberWindow?.unmount();
         this.addMemberWindow = null;
+    }
+
+    private nextRequest(): number {
+        this.requestId += 1;
+        return this.requestId;
+    }
+
+    private invalidateRequests(): void {
+        this.requestId += 1;
+    }
+
+    private isStaleRequest(requestId: number): boolean {
+        return requestId !== this.requestId || !this.deps.hasMainContentArea();
     }
 }
