@@ -7,14 +7,12 @@ import { ChatListWrapper } from "../../components/composite/chatListWrapper/chat
 import { Button } from "../../components/ui/button/button";
 import { BaseComponent } from "../../core/base/baseComponent";
 import { ChatWindow } from "../../components/composite/chatWindow/chatWindow";
-import { DialogHeader } from "../../components/composite/dialogHeader/dialogHeader";
-import { MessageList } from "../../components/composite/messageList/messageList";
-import { MessageInput } from "../../components/ui/messageInput/messageInput";
-import { Chat, FrontendMessage, DialogChat, GroupChat, ChannelChat, User } from '../../types/chat';
+import type { MessageList } from "../../components/composite/messageList/messageList";
+import type { MessageInput } from "../../components/ui/messageInput/messageInput";
+import { Chat, FrontendMessage, GroupChat, ChannelChat, User } from '../../types/chat';
 import type { ChannelRole } from "../../services/channelService";
 import { GroupHeader } from "../../components/composite/groupHeader/groupHeader";
 import { ChannelHeader } from "../../components/composite/channelHeader/channelHeader";
-import { ChannelJoinFooter } from "../../components/composite/channelJoinFooter/channelJoinFooter";
 import { FrontendProfile } from "../../types/profile";
 import { CreateDialogWindow } from "../../components/composite/createDialogWindow/createDialogWindow";
 import { CreateGroupWindow } from "../../components/composite/createGroupWindow/createGroupWindow";
@@ -31,6 +29,8 @@ import {
     ChatUpdatedTitleDto,
     MessageReadDto,
 } from "../../core/utils/wsClient";
+import { ChatActiveHeaderController } from "./controllers/chatActiveHeaderController";
+import { ChatActiveMessagesController } from "./controllers/chatActiveMessagesController";
 import { ChatsCoordinator } from "./controllers/chatsCoordinator";
 import { ChatCreationController } from "./controllers/chatCreationController";
 import { ChatDetailsController } from "./controllers/chatDetailsController";
@@ -106,6 +106,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private activeGroupHeader: GroupHeader | null = null;
     private activeChannelHeader: ChannelHeader | null = null;
     private activeChannelRole: ChannelRole | null = null;
+    private activeHeaderController: ChatActiveHeaderController | null = null;
+    private activeMessagesController: ChatActiveMessagesController | null = null;
     private chatsCoordinator: ChatsCoordinator | null = null;
     private creationController: ChatCreationController | null = null;
     private detailsController: ChatDetailsController | null = null;
@@ -328,6 +330,44 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             },
         });
         this.detailsController = new ChatDetailsController();
+        this.activeHeaderController = new ChatActiveHeaderController({
+            sessionController: this.sessionController,
+            detailsController: this.detailsController,
+            onChatClosed: () => {
+                this.activeChatId = null;
+                this.rebuildSidebar();
+                this.props.router.navigate('/chats');
+            },
+            onNavigateToProfile: (login) => this.props.router.navigate('/contacts/' + login),
+            onOpenSearch: (chat) => this.toggleMessageSearch(chat),
+            onOpenGroupDetails: (chat) => this.openGroupDetails(chat),
+            onOpenChannelDetails: (chat) => this.openChannelDetails(chat),
+            onShowAlert: (text, onConfirm) => this.showAlert(text, onConfirm),
+            onWatchDialogInterlocutor: (userId, onPresence) => {
+                this.presenceController?.watchDialogInterlocutor(userId, onPresence);
+            },
+        });
+        this.activeMessagesController = new ChatActiveMessagesController({
+            sessionController: this.sessionController,
+            getCurrentUserId: () => this.currentUserId,
+            getCurrentUserProfile: () => this.currentUserProfile,
+            getActiveChatId: () => this.activeChatId,
+            getActiveChannelRole: () => this.activeChannelRole,
+            getMessageList: () => this.activeMessageList,
+            getMessageInput: () => this.activeMessageInput,
+            getPaginationState: () => ({
+                hasMoreHistory: this.hasMoreHistory,
+                nextBeforeId: this.nextBeforeId,
+            }),
+            setPaginationState: (state) => {
+                this.hasMoreHistory = state.hasMoreHistory;
+                this.nextBeforeId = state.nextBeforeId;
+            },
+            onShowAlert: (text) => this.showAlert(text),
+            onEmitTyping: (chatId) => this.presenceController?.emitTyping(chatId),
+            onStopTyping: (chatId) => this.presenceController?.stopTyping(chatId),
+            onJoinChannel: (chatId) => this.handleJoinChannel(chatId),
+        });
         this.presenceController = new ChatPresenceController();
         this.notificationPromptController = new ChatNotificationPromptController({
             showPrompt: (handlers) => this.chatsView?.showNotificationPrompt(handlers),
@@ -743,225 +783,23 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 ? activeState.header.currentUserRole
                 : null;
 
-            let headerComponent: BaseComponent;
-            let footerComponent: BaseComponent | undefined;
             const canWriteActiveChat = activeState.permissions.canWrite;
-            const canJoinActiveChat = activeState.permissions.canJoin;
 
-            switch (chatDetail.type) {
-            case 'dialog': {
-                const dialogChat = chatDetail as DialogChat;
-                const interlocutorLogin = dialogChat.interlocutor.login || String(dialogChat.interlocutor.id);
-                const dialogHeader = new DialogHeader({
-                    chat: dialogChat,
-                    initialPresence: activeState.header.type === 'dialog' ? activeState.header.presence : null,
-                    onOpenProfile: () => this.props.router.navigate('/contacts/' + interlocutorLogin),
-                    onOpenSearch: () => this.toggleMessageSearch(chatDetail),
-                    onDeleteChat: async() => {
-                        const res = await this.sessionController!.deleteChat(chatId);
-                        if (res.success) {
-                            this.activeChatId = null;
-                            this.rebuildSidebar();
-                            this.props.router.navigate('/chats');
-                        } else {
-                            const errorMsg = res.errorCode === 'CANT_DELETE_CHAT'
-                                ? "Вы не можете удалить этот чат"
-                                : "Не удалось удалить диалог";
-                            this.showAlert(errorMsg);
-                        }
-                    }
-                });
-                headerComponent = dialogHeader;
-                if (dialogChat.interlocutor.id) {
-                    this.presenceController?.watchDialogInterlocutor(
-                        dialogChat.interlocutor.id,
-                        (state) => dialogHeader.setPresence(state),
-                    );
-                }
-                break;
-            }
+            const headerResult = this.activeHeaderController!.build(chatId, activeState);
+            this.activeGroupHeader = headerResult.groupHeader;
+            this.activeChannelHeader = headerResult.channelHeader;
+            this.activeChannelRole = headerResult.channelRole;
 
-            case 'group': {
-                const groupRole = activeState.header.type === 'group'
-                    ? activeState.header.currentUserRole
-                    : 'member';
-                (chatDetail as GroupChat).currentUserRole = groupRole;
-                const groupHeader = new GroupHeader({
-                    chat: chatDetail as GroupChat,
-                    currentUserRole: groupRole,
-                    membersCount: activeState.header.type === 'group' ? activeState.header.membersCount : 0,
-                    onOpenSearch: () => this.toggleMessageSearch(chatDetail),
-                    onDeleteChat: async () => {
-                        const res = await this.sessionController!.deleteChat(chatId);
-                        if (res.success) {
-                            this.activeChatId = null;
-                            this.rebuildSidebar();
-                            this.props.router.navigate('/chats');
-                        } else {
-                            let errorMsg = "Не удалось удалить группу";
-                            if (res.errorCode === 'CANT_DELETE_CHAT' || res.status === 403) {
-                                errorMsg = "Нет прав на удаление чата (вы не владелец)";
-                            }
-                            this.showAlert(errorMsg, () => {
-                                this.openGroupDetails(chatDetail as GroupChat);
-                            });
-                        }
-                    },
-                    onLeaveGroup: async () => {
-                        const res = await this.sessionController!.leaveChat(Number(chatId));
-                        if (res.success) {
-                            this.activeChatId = null;
-                            this.rebuildSidebar();
-                            this.props.router.navigate('/chats');
-                        } else {
-                            this.showAlert("Не удалось выйти из группы");
-                        }
-                    },
-                    onOpenGroupInfo: () => this.openGroupDetails(chatDetail as GroupChat)
-                });
-                this.activeGroupHeader = groupHeader;
-                headerComponent = groupHeader;
-                break;
-            }
-
-            case 'channel': {
-                const channelRole = activeState.header.type === 'channel'
-                    ? activeState.header.currentUserRole
-                    : 'guest';
-
-                const channelHeader = new ChannelHeader({
-                    chat: chatDetail as ChannelChat,
-                    currentUserRole: channelRole,
-                    onDeleteChat: async () => {
-                        const res = await this.detailsController!.deleteChannel(chatId);
-                        if (res.success) {
-                            this.activeChatId = null;
-                            this.rebuildSidebar();
-                            this.props.router.navigate('/chats');
-                        } else {
-                            const errorMsg = res.errorCode === 'CANT_DELETE_CHAT'
-                                ? 'Вы не можете удалить этот канал'
-                                : 'Не удалось удалить канал';
-                            this.showAlert(errorMsg);
-                        }
-                    },
-                    onLeaveChannel: async () => {
-                        if (channelRole !== 'participant') {
-                            this.showAlert('Вы не подписаны на этот канал');
-                            return;
-                        }
-                        const res = await this.detailsController!.leaveChannel(chatId);
-                        if (res.success) {
-                            this.activeChatId = null;
-                            this.rebuildSidebar();
-                            this.props.router.navigate('/chats');
-                        } else {
-                            this.showAlert('Не удалось покинуть канал');
-                        }
-                    },
-                    onOpenChannelInfo: () => this.openChannelDetails(chatDetail as ChannelChat),
-                    onOpenSearch: () => this.toggleMessageSearch(chatDetail),
-                });
-                this.activeChannelHeader = channelHeader;
-                headerComponent = channelHeader;
-                break;
-            }
-            }
-
-            const messageListComponent = new MessageList({
-            messages: activeState.messages,
-            currentUser: {
-                id: activeState.currentUser.id,
-                login: activeState.currentUser.login,
-                avatarUrl: activeState.currentUser.avatarUrl
-            },
-            chatType: chatDetail.type,
-            chatAvatarUrl: chatDetail.type === 'channel' ? (chatDetail.avatarUrl || undefined) : undefined,
-            onLoadMore: async () => {
-                if (!this.hasMoreHistory || !this.nextBeforeId || !this.currentUserId || !this.activeChatId) return;
-
-                const res = await this.sessionController!.loadMoreMessages(chatDetail, this.currentUserId as number, this.nextBeforeId);
-
-                if (res === null) return;
-
-                if (this.activeChatId === chatDetail.id && this.activeMessageList) {
-                    this.hasMoreHistory = res.hasMore;
-                    this.nextBeforeId = res.nextBeforeId;
-                    this.activeMessageList.prependMessages(res.messages);
-                }
-            },
-            onRequestEdit: (messageId, currentText) => {
-                this.activeMessageInput?.enterEditMode(messageId, currentText);
-            },
-            onRequestDelete: (messageId) => {
-                if (!this.activeChatId) return;
-                const ok = this.sessionController!.deleteMessage(this.activeChatId, messageId);
-                if (!ok) {
-                    this.showAlert?.('No connection, try later');
-                }
-            },
-            });
-
-            this.activeMessageList = messageListComponent;
-
-            if (canWriteActiveChat) {
-                const messageInputComponent = new MessageInput({
-                    onSubmit: async (text: string) => {
-                        if (!this.activeChatId || this.currentUserId === null) return;
-                        if (chatDetail.type === 'channel' && this.activeChannelRole !== 'owner') return;
-
-                        const pending = await this.sessionController!.sendMessage(
-                            this.activeChatId,
-                            text,
-                            this.currentUserId as number,
-                        );
-
-                        const optimistic: FrontendMessage = {
-                            id: pending.tempId,
-                            sender: {
-                                id: this.currentUserId as number,
-                                login: this.currentUserProfile?.additionalInfo.login || '',
-                                avatarUrl: this.currentUserProfile?.mainInfo.avatarUrl,
-                                firstName: this.currentUserProfile?.mainInfo.firstName,
-                                lastName: this.currentUserProfile?.mainInfo.lastName,
-                            },
-                            text,
-                            timestamp: new Date(pending.createdAt),
-                            isOwn: true,
-                            status: 'sending',
-                        };
-                        this.activeMessageList?.addMessage(optimistic);
-                    },
-                    onSubmitEdit: (messageId, newText) => {
-                        if (!this.activeChatId) return;
-                        if (chatDetail.type === 'channel' && this.activeChannelRole !== 'owner') return;
-                        const ok = this.sessionController!.editMessage(this.activeChatId, messageId, newText);
-                        if (!ok) {
-                            this.showAlert?.('No connection, try later');
-                        }
-                    },
-                    onTyping: () => {
-                        if (this.activeChatId) this.presenceController?.emitTyping(this.activeChatId);
-                    },
-                    onStopTyping: () => {
-                        if (this.activeChatId) this.presenceController?.stopTyping(this.activeChatId);
-                    },
-                    chatId: this.activeChatId
-                });
-                this.activeMessageInput = messageInputComponent;
-                footerComponent = messageInputComponent;
-            } else if (canJoinActiveChat) {
-                footerComponent = new ChannelJoinFooter({
-                    onJoin: () => this.handleJoinChannel(chatId),
-                });
-            }
+            const messagesResult = this.activeMessagesController!.build(chatId, activeState);
+            this.activeMessageList = messagesResult.messageListComponent;
+            this.activeMessageInput = messagesResult.messageInputComponent;
 
             if (isCancelled()) return;
 
             this.chatWindow = new ChatWindow({
-                headerComponent: headerComponent,
-                messageListComponent: messageListComponent,
-                inputComponent: footerComponent
+                headerComponent: headerResult.headerComponent,
+                messageListComponent: messagesResult.messageListComponent,
+                inputComponent: messagesResult.footerComponent
             });
 
             this.chatsView.mountInMain(this.chatWindow);
@@ -1357,8 +1195,16 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     beforeUnmount() {
         this.chatsCoordinator?.destroy();
         this.chatsCoordinator = null;
+
+        this.onboardingComponent?.unmount();
+        this.onboardingComponent = null;
+        this.cleanupMainContent();
+        this.chatsView?.closeModal();
+
         this.creationController = null;
         this.detailsController = null;
+        this.activeHeaderController = null;
+        this.activeMessagesController = null;
         this.messageSearchController?.destroy();
         this.messageSearchController = null;
         this.presenceController?.destroy();
@@ -1370,10 +1216,6 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         this.realtimeController = null;
         this.sessionController = null;
 
-        this.onboardingComponent?.unmount();
-        this.onboardingComponent = null;
-        this.cleanupMainContent();
-        this.chatsView?.closeModal();
         this.logoutWrapper?.remove();
         this.searchForm?.unmount();
         this.chatWrapper?.unmount();
