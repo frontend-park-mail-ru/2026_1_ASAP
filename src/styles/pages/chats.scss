@@ -186,7 +186,7 @@
         &--primary {
             background: $gradient-button;
             border-color: transparent;
-            color: $color-text;
+            color: $color-text-inverted;
             font-weight: 600;
 
             &:hover {

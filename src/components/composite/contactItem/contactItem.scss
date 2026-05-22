@@ -56,3 +56,9 @@
         width: 100%;
     }
 }
+
+[data-theme="light"] {
+    .contact-item:hover {
+        background-color: $color-text-hover2;
+    }
+}

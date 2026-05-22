@@ -59,6 +59,10 @@
             box-shadow: none;
         }
 
+        &::placeholder {
+            color: $color-text-tertiary;
+        }
+
         &::-webkit-scrollbar {
             width: 4px;
         }
@@ -174,11 +178,28 @@
         justify-content: center;
         @include hover-transition;
 
-        &:hover { background: rgba(255, 255, 255, 0.08); }
+        &:hover { background: $color-text-hover2; }
 
         & img {
             width: 18px;
             height: 18px;
+        }
+    }
+}
+
+[data-theme="light"] {
+    .message-input {
+        &__input-container {
+            background: $color-base-background;
+            border-color: $color-input-border;
+
+            &:focus-within {
+                border-color: $color-primary;
+            }
+        }
+
+        &__send-button {
+            background: $gradient-button;
         }
     }
 }

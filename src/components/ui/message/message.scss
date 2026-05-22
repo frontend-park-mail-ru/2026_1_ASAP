@@ -135,3 +135,30 @@
     -webkit-user-select: none;
     user-select: none;
 }
+
+[data-theme="light"] {
+    .message {
+        &:not(.message--own) .message__content-wrapper {
+            background: $color-neutral;
+            border: 1px solid $color-border;
+            color: $color-text;
+        }
+
+        &--own {
+            .message__content-wrapper {
+                background: $gradient-msg;
+                color: $color-text-inverted;
+            }
+
+            .message__meta,
+            .message__edited,
+            .message__status,
+            .message__status--sending,
+            .message__status--sent,
+            .message__status--read {
+                color: $color-text-inverted;
+                opacity: 0.78;
+            }
+        }
+    }
+}

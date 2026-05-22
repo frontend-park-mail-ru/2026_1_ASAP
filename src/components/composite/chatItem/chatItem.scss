@@ -72,3 +72,9 @@
     @include flex-center;
     font-size: $font-size-xs;
 }
+
+[data-theme="light"] {
+    .chat-item--default:hover {
+        background-color: $color-text-hover2;
+    }
+}

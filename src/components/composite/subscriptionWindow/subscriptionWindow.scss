@@ -157,3 +157,11 @@
         min-height: 42px;
     }
 }
+
+[data-theme="light"] {
+    .subscription-window {
+        &__feature-icon {
+            background: $gradient-button;
+        }
+    }
+}

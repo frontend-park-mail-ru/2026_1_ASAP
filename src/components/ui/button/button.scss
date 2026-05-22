@@ -24,6 +24,7 @@
     &__primary {
         @include hover-after-gradient($gradient-button-hover);
         background: $gradient-msg;
+        color: $color-text-inverted;
     }
 
     &__secondary {
@@ -33,7 +34,7 @@
         @include hover-after-gradient($gradient-button-hover);
 
         &:hover:not(:disabled) {
-            color: $color-text;
+            color: $color-text-inverted;
         }
     }
 
@@ -57,7 +58,7 @@
         @include hover-after-gradient($gradient-button-hover);
 
         &:hover:not(:disabled) {
-            color: $color-text;
+            color: $color-text-inverted;
         }
     }
 
@@ -172,7 +173,7 @@
         opacity: 0.8;
         background-color: $color-error-border;
         border-color: $color-error-border;
-        color: $color-text;
+        color: $color-text-inverted;
     }
 }
 
@@ -189,7 +190,7 @@
     @include hover-after-gradient($gradient-button-hover);
 
     &:hover:not(:disabled) {
-        color: $color-text;
+        color: $color-text-inverted;
     }
 }
 
@@ -228,5 +229,33 @@
             cursor: pointer;
             border-radius: 10px;
         }
+    }
+}
+
+[data-theme="light"] {
+    .ui-button {
+        &__secondary {
+            background-color: $color-neutral;
+            color: $color-primary;
+
+            &:hover:not(:disabled) {
+                color: $color-text-inverted;
+            }
+        }
+
+        &__secondary2 {
+            box-shadow: inset 0 0 0 1px $color-input-border;
+            color: $color-text;
+
+            &::after {
+                background: $color-text-hover2;
+            }
+        }
+    }
+
+    .save-field-button {
+        background-color: $color-neutral;
+        border-color: $color-input-border;
+        color: $color-primary;
     }
 }

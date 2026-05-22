@@ -18,6 +18,7 @@
 
 .msg-bubble {
     background-color: $color-bubble;
+    color: $color-text-inverted;
     width: 26px;
     height: 26px;
     @include flex-center;

@@ -41,10 +41,10 @@ body:has(#rootSupport) {
         height: 41px;
         border-radius: 10px;
         padding: 0 10px;
-        border: 1px solid #2A2A2A;
+        border: 1px solid $color-input-border;
         box-shadow: 0 0 0 0 $color-primary;
         opacity: 0.5;
-        background: rgba(255, 255, 255, 0.05);
+        background: $color-background-secondary;
         color: $color-text;
         width: 100%;
         box-sizing: border-box;
@@ -65,6 +65,10 @@ body:has(#rootSupport) {
             box-shadow: 0 0 0 0.5px $color-primary;
             border-color: $color-primary;
             opacity: 1;
+        }
+
+        &::placeholder {
+            color: $color-text-tertiary;
         }
     }
 
@@ -203,6 +207,10 @@ body:has(#rootSupport) {
         width: 100%;
     }
 
+    .ui-input-wrapper--error .support-overlay__input {
+        border-color: $color-error-border;
+    }
+
     .edit-profile__edit-input {
         width: 100%;
         min-height: 140px;
@@ -237,7 +245,7 @@ body:has(#rootSupport) {
         padding: 8px 14px;
         border-radius: 10px;
         border: 1px solid $color-border;
-        background: rgba(255, 255, 255, 0.04);
+        background: $color-background-secondary;
         color: $color-text-tertiary;
         cursor: pointer;
         font: $text-tertiary;
@@ -407,7 +415,7 @@ body:has(#rootSupport) {
         height: 40px;
         border-radius: 10px;
         border: 1px solid $color-border;
-        background: rgba(255, 255, 255, 0.04);
+        background: $color-background-secondary;
         @include hover-transition;
 
         &:focus-within {
@@ -492,8 +500,8 @@ body:has(#rootSupport) {
         @include hover-transition;
 
         &:hover {
-            background: rgba(242, 240, 240, 0.07);
-            border-color: rgba(69, 93, 186, 0.5);
+            background: $color-text-hover2;
+            border-color: $color-primary;
         }
     }
 
@@ -689,7 +697,7 @@ body:has(#rootSupport) {
         height: 10px;
         overflow: hidden;
         border-radius: 999px;
-        background: rgba(255, 255, 255, 0.07);
+        background: $color-background-secondary;
     }
 
     &__track-segment {
@@ -759,7 +767,7 @@ body:has(#rootSupport) {
         height: 6px;
         overflow: hidden;
         border-radius: 999px;
-        background: rgba(255, 255, 255, 0.06);
+        background: $color-background-secondary;
     }
 
     &__bar-fill {
@@ -836,6 +844,62 @@ body:has(#rootSupport) {
         &__bar-row {
             grid-template-columns: 8px minmax(72px, 100px) 1fr minmax(20px, max-content);
             gap: 6px;
+        }
+    }
+}
+
+[data-theme="light"] {
+    .support-overlay {
+        box-shadow: 0 16px 48px rgba(24, 32, 51, 0.12);
+
+        &__input {
+            opacity: 1;
+        }
+
+        &__close-btn:hover {
+            background: $color-text-hover2;
+            border-color: $color-stroke;
+        }
+
+        &__nav-btn--active {
+            box-shadow: 0 1px 4px rgba(24, 32, 51, 0.10);
+        }
+
+        &__issue-type-btn--active {
+            background: $color-background-secondary;
+            color: $color-primary;
+            box-shadow: 0 0 0 1px $color-primary;
+        }
+
+        .edit-profile__edit-input {
+            background: $color-background-secondary;
+        }
+    }
+
+    .support-my-tab {
+        &__filter-btn--active {
+            background: $color-background-secondary;
+            color: $color-primary;
+        }
+
+        &__status-badge {
+            &--new {
+                color: $color-primary;
+            }
+
+            &--in_progress {
+                color: $color-text;
+            }
+
+            &--closed {
+                color: $color-background-blur;
+            }
+        }
+    }
+
+    .support-stat-tab {
+        &__stat-value--accent {
+            color: $color-background-blur;
         }
     }
 }
