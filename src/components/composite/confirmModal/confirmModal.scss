@@ -79,6 +79,8 @@
         }
 
         &--submit.ui-button {
+            background-color: $color-error-border;
+            border-color: $color-error-border;
             color: $color-text-inverted;
         }
 
