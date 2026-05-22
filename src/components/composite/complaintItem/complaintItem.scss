@@ -10,7 +10,7 @@
     @include hover-transition;
 
     &:hover {
-        background-color: rgba(242, 240, 240, 0.08);
+        background-color: $color-text-hover2;
         border-color: $color-bubble;
     }
 
@@ -37,7 +37,7 @@
         padding: 2px 8px;
         border-radius: 4px;
         background-color: $color-bubble;
-        color: $color-text;
+        color: $color-text-inverted;
         flex-shrink: 0;
     }
 
@@ -79,6 +79,22 @@
         &__footer {
             justify-content: flex-start;
             width: 100%;
+        }
+    }
+}
+
+[data-theme="light"] {
+    .complaint-status-badge {
+        &--new {
+            color: $color-primary;
+        }
+
+        &--in_progress {
+            color: $color-text;
+        }
+
+        &--closed {
+            color: $color-background-blur;
         }
     }
 }

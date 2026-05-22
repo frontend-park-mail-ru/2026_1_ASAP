@@ -16,21 +16,21 @@
 
 
 @mixin icon-dark {
-    // #1F2722 — основной тёмный текст светлой темы
-    filter: brightness(0) saturate(100%) invert(11%) sepia(8%) saturate(1166%)
-            hue-rotate(102deg) brightness(96%) contrast(89%);
+    // #182033 — основной тёмный текст светлой темы
+    filter: brightness(0) saturate(100%) invert(11%) sepia(47%) saturate(2411%)
+            hue-rotate(207deg) brightness(45%) contrast(86%);
 }
 
 @mixin icon-muted {
-    // #6B6E78 — приглушённый, для placeholder/служебных иконок
-    filter: brightness(0) saturate(100%) invert(45%) sepia(6%) saturate(326%)
-            hue-rotate(202deg) brightness(95%) contrast(85%);
+    // #6F778A — приглушённый, для placeholder/служебных иконок
+    filter: brightness(0) saturate(100%) invert(22%) sepia(15%) saturate(1160%)
+            hue-rotate(184deg) brightness(181%) contrast(39%);
 }
 
 @mixin icon-accent {
-    // #5A8A6E — зелёный акцент
-    filter: brightness(0) saturate(100%) invert(48%) sepia(13%) saturate(945%)
-            hue-rotate(95deg) brightness(95%) contrast(85%);
+    // #455DBA — основной синий акцент
+    filter: brightness(0) saturate(100%) invert(23%) sepia(70%) saturate(4760%)
+            hue-rotate(229deg) brightness(88%) contrast(61%);
 }
 
 @mixin icon-white {
@@ -51,7 +51,7 @@
             @include icon-muted;
         }
 
-        // send-кнопка остаётся на зелёном/синем фоне → иконка белая
+        // send-кнопка остаётся на синем фоне → иконка белая
         &__send-button img {
             @include icon-white;
         }
@@ -79,22 +79,23 @@
     }
 
     .add-button img {
-        // плюс «создать чат» — акцент (как в текущей add-button логике)
+        // плюс «создать чат» — основной синий акцент
         @include icon-accent;
     }
 
     // ─── Нижнее меню (msgs / contacts / settings) ────────────
-    .menu-button img {
+    .menu-button img:not([src$="clickedMenuMsgs.svg"]):not([src$="clickedMenuContacts.svg"]):not([src$="clickedMenuSettings.svg"]) {
         // неактивные пункты — приглушённые
         @include icon-muted;
     }
 
     // активный пункт остаётся в clickedMenu*.svg градиенте
-    // (синий→зелёный, выглядит ок на светлом фоне — НЕ ТРОГАЕМ)
+    // (брендовый SVG, не перекрашиваем фильтром)
 
     // ─── Шапки диалога / группы ──────────────────────────────
     .dialog-header,
-    .group-header {
+    .group-header,
+    .channel-header {
         // три точки / dialogSettings — тёмные
         button img {
             @include icon-dark;
@@ -122,8 +123,20 @@
     // ─── Profile / contacts ──────────────────────────────────
     .profile-header-icon,
     .create-dialog-btn img,
-    .remove-member-btn img {
+    .remove-member-btn img,
+    .remove-channel-member-btn img,
+    .action-header__icon,
+    .channel-details__invite-icon {
         @include icon-dark;
+    }
+
+    .create-channel-window__back-button img {
+        @include icon-dark;
+    }
+
+    img[src$="/assets/images/avatars/defaultAvatar.svg"],
+    img[src$="/assets/images/avatars/defaultGroup.svg"] {
+        @include icon-muted;
     }
 
     // ─── Edit message overlay (контекстное меню сообщения) ───
@@ -166,5 +179,5 @@
 //   • addIcon.svg (в search)    — уже #455DBA, можно оставить или
 //                                  применить @include icon-accent
 //   • Logo.svg                   — бренд-логотип, отдельная история
-//   • аватары (defaultAvatar и т.п.) — это картинки, не иконки
+//   • пользовательские аватары — это картинки, не иконки
 //   • favicon                    — не виден в UI

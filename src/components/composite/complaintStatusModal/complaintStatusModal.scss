@@ -131,6 +131,7 @@
         &--active {
             background: $color-bubble;
             border-color: $color-bubble;
+            color: $color-text-inverted;
 
             &:hover:not(:disabled) {
                 background: $color-bubble;

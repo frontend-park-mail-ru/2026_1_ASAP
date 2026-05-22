@@ -98,6 +98,19 @@
     }
 }
 
+[data-theme="light"] {
+    .msg-search-bar {
+        &__input-row {
+            border-color: $color-input-border;
+            background: $color-base-background;
+
+            &:focus-within {
+                border-color: $color-primary;
+            }
+        }
+    }
+}
+
 @media (max-width: $breakpoint-mobile-max) {
     .msg-search-bar__results--visible {
         max-height: 180px;

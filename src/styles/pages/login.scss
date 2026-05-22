@@ -88,6 +88,43 @@
     }
 }
 
+[data-theme="light"] {
+    .login-card,
+    .register-card {
+        background-color: $color-neutral;
+        border: 1px solid $color-border;
+
+        .ui-input {
+            background: $color-background-secondary;
+            border-color: $color-input-border;
+            color: $color-auth-text;
+            opacity: 1;
+
+            &::placeholder {
+                color: $color-input-placeholder;
+            }
+
+            &:-webkit-autofill,
+            &:-webkit-autofill:hover,
+            &:-webkit-autofill:focus,
+            &:-webkit-autofill:focus-visible,
+            &:-webkit-autofill:active {
+                -webkit-text-fill-color: $color-auth-text;
+                caret-color: $color-auth-text;
+                box-shadow: 0 0 0 1000px $color-background-secondary inset;
+            }
+        }
+
+        .ui-input-wrapper--error .ui-input {
+            border-color: $color-error-border;
+        }
+
+        .ui-checkbox__label {
+            color: $color-auth-text;
+        }
+    }
+}
+
 .auth__logo {
     position: absolute;
     top: 0;

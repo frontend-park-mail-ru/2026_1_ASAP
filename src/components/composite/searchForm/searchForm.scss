@@ -47,6 +47,17 @@
     padding: 0;
 }
 
+[data-theme="light"] {
+    .search-panel {
+        border-color: $color-input-border;
+        background: $color-base-background;
+
+        &:focus-within {
+            border-color: $color-primary;
+        }
+    }
+}
+
 /* Переопределение выравнивания для инпута внутри поиска */
 .ui-input-wrapper {
     align-items: center;
