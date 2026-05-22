@@ -7,10 +7,11 @@ import { Button } from "../../ui/button/button";
 import { Router } from "../../../core/router";
 import { SearchForm } from "../searchForm/searchForm";
 import { InfoMenu } from "../infoMenu/infoMenu";
-import { contactService } from "../../../services/contactService";
+import { FrontendContact } from "../../../types/contact";
 
 interface CreateGroupWindowProps extends IBaseComponentProps {
     router: Router;
+    contacts: FrontendContact[];
     onSubmit: (userIds: number[], contactNames: string) => void;
 }
 
@@ -58,7 +59,7 @@ export class CreateGroupWindow extends BaseComponent<CreateGroupWindowProps> {
             content: "Выберите пользователей"
         });
 
-        const contacts = await contactService.getContacts();
+        const contacts = this.props.contacts;
 
         if (contacts.length === 0) {
             this.element.classList.add('create-group-window--empty');
@@ -82,6 +83,7 @@ export class CreateGroupWindow extends BaseComponent<CreateGroupWindowProps> {
         } else {
             this.contactList = new ContactListWrapper({
                 router: this.props.router,
+                contacts,
                 listMode: "createGroup",
                 onAction: (contactId: number, isSelected?: boolean, contactName?: string) => {
                     if (isSelected && contactName) {

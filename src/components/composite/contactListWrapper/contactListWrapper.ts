@@ -3,6 +3,7 @@ import { Router } from "../../../core/router";
 import { ContactListItem } from "../contactListItem/contactListItem";
 import template from "./contactListWrapper.hbs";
 import { SearchContactHit } from "../../../types/search";
+import { FrontendContact } from "../../../types/contact";
 
 /**
  * @interface ContactListWrapperProps
@@ -14,6 +15,7 @@ import { SearchContactHit } from "../../../types/search";
  */
 interface ContactListWrapperProps extends IBaseFormProps {
     router: Router,
+    contacts?: FrontendContact[];
     listMode?: 'default' | 'createDialog' | 'createGroup';
     onAction?: (contactId: number, isSelected?: boolean, contactName?: string) => void;
 };
@@ -47,6 +49,7 @@ export class ContactListWrapper extends BaseForm<ContactListWrapperProps> {
 
         this.contactListItem = new ContactListItem({
             router: this.props.router,
+            contacts: this.props.contacts,
             listMode: this.props.listMode,
             onAction: this.props.onAction,
         });

@@ -2,7 +2,6 @@ import { BaseComponent, IBaseComponentProps } from '../../../core/base/baseCompo
 import { FrontendMessage, User, Chat} from '../../../types/chat';
 import { Message } from '../../ui/message/message';
 import template from './messageList.hbs';
-import { wsClient } from '../../../core/utils/wsClient';
 import { getFullUrl } from '../../../core/utils/url';
 
 /**
@@ -25,7 +24,7 @@ interface MessageListProps extends IBaseComponentProps {
 /**
  * Компонент для отображения списка сообщений в диалоге.
  */
-interface UserUpdatePayload {
+export interface UserUpdatePayload {
     id?: number;
     avatar_url?: string;
     avatarUrl?: string;
@@ -110,13 +109,7 @@ export class MessageList extends BaseComponent<MessageListProps> {
         this.scrollToBottom();
     }
 
-    /**
-     * Обработчик события обновления профиля пользователя через WebSocket.
-     * Находит все аватарки этого пользователя в DOM и обновляет их URL.
-     * @param {UserUpdatePayload} payload - Данные обновленного профиля.
-     * @private
-     */
-    private handleUserUpdate = (payload: UserUpdatePayload): void => {
+    public updateUserAvatar(payload: UserUpdatePayload): void {
         if (!this.element || !payload.id) return;
 
         const avatarUrl = payload.avatar_url || payload.avatarUrl || payload.avatar;
@@ -130,7 +123,7 @@ export class MessageList extends BaseComponent<MessageListProps> {
         avatars.forEach((img: Element) => {
             (img as HTMLImageElement).src = fullAvatarUrl;
         });
-    };
+    }
 
     /**
      * @override
@@ -153,8 +146,6 @@ export class MessageList extends BaseComponent<MessageListProps> {
 
         this.setMessages(this.props.messages);
         this.scrollToBottom();
-
-        wsClient.subscribe('profile.Updated', this.handleUserUpdate);
     }
 
     /**
@@ -354,7 +345,5 @@ export class MessageList extends BaseComponent<MessageListProps> {
         this.childMessages.forEach(msg => msg.unmount());
         this.childMessages = [];
         this.messages.clear();
-
-        wsClient.unsubscribe('profile.Updated', this.handleUserUpdate);
     }
 }

@@ -1,6 +1,5 @@
 import { BaseComponent, IBaseComponentProps } from '../../../core/base/baseComponent';
 import { Avatar } from '../../ui/avatar/avatar';
-import { chatService } from '../../../services/chatService';
 import { SearchMessageHit } from '../../../types/search';
 import template from './searchResultItem.hbs';
 import './searchResultItem.scss';
@@ -50,14 +49,14 @@ export class SearchResultItem extends BaseComponent<SearchResultItemProps> {
         const avatarSlot = this.element.querySelector('[data-component="sri-avatar-slot"]');
         if (avatarSlot) {
             this.avatarComponent = new Avatar({
-                src: '/assets/images/avatars/defaultAvatar.svg',
+                src: this.props.hit.authorAvatarUrl || '/assets/images/avatars/defaultAvatar.svg',
                 class: 'search-result-item__avatar-img',
             });
             this.avatarComponent.mount(avatarSlot as HTMLElement);
         }
 
         this.renderPreview();
-        this.loadAuthor();
+        this.renderAuthor();
     }
 
     private renderPreview(): void {
@@ -90,24 +89,11 @@ export class SearchResultItem extends BaseComponent<SearchResultItemProps> {
         });
     }
 
-    private async loadAuthor(): Promise<void> {
+    private renderAuthor(): void {
         const nameEl = this.element?.querySelector('.search-result-item__name');
         if (!nameEl) return;
 
-        nameEl.textContent = `User #${this.props.hit.senderId}`;
-
-        const user = await chatService.getUserProfile(this.props.hit.senderId);
-        if (!this.element || !user) return;
-
-        const name = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.login;
-        nameEl.textContent = name;
-
-        if (user.avatarUrl && this.avatarComponent) {
-            const img = this.avatarComponent.element?.tagName === 'IMG'
-                ? this.avatarComponent.element as HTMLImageElement
-                : this.avatarComponent.element?.querySelector('img');
-            if (img) img.src = user.avatarUrl;
-        }
+        nameEl.textContent = this.props.hit.authorName || `User #${this.props.hit.senderId}`;
     }
 
     protected beforeUnmount(): void {

@@ -2,6 +2,8 @@ export interface SearchMessageHit {
     messageId: string;
     chatId: string;
     senderId: number;
+    authorName?: string;
+    authorAvatarUrl?: string;
     textPreview: string;
     createdAt: Date;
 }

@@ -7,7 +7,7 @@ import { ContactItem } from '../contactItem/contactItem';
 import { ConfirmModal } from '../confirmModal/confirmModal';
 import { EditProfileOverlay } from '../editProfileOverlay/editProfileOverlay';
 import { ProfileAdditionalInfoBlock } from '../profileAdditionalInfoBlock/profileAdditionalInfoBlock';
-import { ChannelDetail } from '../../../services/channelService';
+import type { ChannelDetail } from '../../../services/channelService';
 import template from './channelDetailsWindow.hbs';
 import './channelDetailsWindow.scss';
 

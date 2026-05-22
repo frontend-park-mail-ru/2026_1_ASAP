@@ -1,8 +1,9 @@
 import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent";
 import { Router } from "../../../core/router";
-import { contactService } from "../../../services/contactService";
 import { SearchForm } from "../searchForm/searchForm";
 import { ContactListWrapper } from "../contactListWrapper/contactListWrapper";
+import type { SearchContactsResult } from "../../../types/search";
+import type { FrontendContact } from "../../../types/contact";
 import template from "./contactSearchList.hbs";
 
 type SearchScope = 'contacts' | 'local';
@@ -18,9 +19,11 @@ type SearchScope = 'contacts' | 'local';
  */
 interface ContactSearchListProps extends IBaseComponentProps {
     router: Router;
+    contacts?: FrontendContact[];
     listMode?: 'default' | 'createDialog' | 'createGroup';
     hideAddButton?: boolean;
     onAddClick?: () => void;
+    onSearchContacts: (query: string, scope: SearchScope) => Promise<SearchContactsResult | null>;
     onAction?: (contactId: number, isSelected?: boolean, contactName?: string) => void;
 }
 
@@ -69,6 +72,7 @@ export class ContactSearchList extends BaseComponent<ContactSearchListProps> {
 
         this.contactListWrapper = new ContactListWrapper({
             router: this.props.router,
+            contacts: this.props.contacts,
             listMode: this.props.listMode,
             onAction: this.props.onAction,
         });
@@ -123,7 +127,7 @@ export class ContactSearchList extends BaseComponent<ContactSearchListProps> {
     private async runSearch(query: string): Promise<void> {
         this.searchRequestId += 1;
         const myId = this.searchRequestId;
-        const result = await contactService.searchContacts(query, this.searchScope);
+        const result = await this.props.onSearchContacts(query, this.searchScope);
         if (myId !== this.searchRequestId) return;
         if (!result) return;
         this.contactListWrapper?.showSearchResults(result.items);

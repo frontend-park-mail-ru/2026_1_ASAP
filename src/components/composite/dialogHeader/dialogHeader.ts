@@ -5,9 +5,7 @@ import template from './dialogHeader.hbs';
 import { Button } from '../../ui/button/button';
 import { DeleteChatMenu } from '../deleteChatMenu/deleteChatMenu';
 import { ConfirmModal } from '../confirmModal/confirmModal';
-import { presenceService } from '../../../services/presenceService';
-import { chatService } from '../../../services/chatService';
-import { PresenceState } from '../../../core/utils/wsClient';
+import type { PresenceState } from '../../../core/utils/wsClient';
 
 /**
  * @interface DialogHeaderProps - Свойства компонента шапки диалога.
@@ -18,6 +16,7 @@ interface DialogHeaderProps {
     onDeleteChat?: () => void;
     onOpenProfile: () => void;
     onOpenSearch?: () => void;
+    initialPresence?: PresenceState | null;
 }
 
 /**
@@ -32,7 +31,7 @@ export class DialogHeader extends BaseComponent<DialogHeaderProps> {
     private confirmModal: ConfirmModal | null = null;
     isDeleteMenuOpen: boolean = false;
     isDeleteConfirmationOpen: boolean = false;
-    private unsubscribePresence: (() => void) | null = null;
+    private latestPresence: PresenceState | null = null;
 
     /**
      * @param {DialogHeaderProps} props - Свойства компонента.
@@ -110,21 +109,13 @@ export class DialogHeader extends BaseComponent<DialogHeaderProps> {
             this.settingsButton.mount(settingsSlot as HTMLElement);
         }
 
-        // === Presence: статус собеседника ===
-        const interlocutorId = (this.props.chat as DialogChat).interlocutor?.id;
-        if (interlocutorId) {
-            this.unsubscribePresence = presenceService.subscribe(interlocutorId, (state) => {
-                this.renderPresence(state);
-            });
-            const cached = presenceService.get(interlocutorId);
-            if (cached) this.renderPresence(cached);
+        const presence = this.latestPresence ?? this.props.initialPresence;
+        if (presence) this.renderPresence(presence);
+    }
 
-            // если кэш пустой — дёрнем профиль, он засеет presenceService через seed()
-            // и подписчик выше отрисует статус сразу как профиль загрузится
-            if (!cached) {
-                chatService.getUserProfile(interlocutorId);
-            }
-        }
+    public setPresence(state: PresenceState): void {
+        this.latestPresence = state;
+        this.renderPresence(state);
     }
 
     private renderPresence(state: PresenceState): void {
@@ -219,8 +210,5 @@ export class DialogHeader extends BaseComponent<DialogHeaderProps> {
         this.settingsButton?.unmount();
         this.deleteChatMenu?.unmount();
         this.confirmModal?.unmount();
-
-        this.unsubscribePresence?.();
-        this.unsubscribePresence = null;
     }
 }
