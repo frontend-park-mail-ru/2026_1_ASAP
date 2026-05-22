@@ -259,13 +259,19 @@ export class ChatsUseCases {
             };
         }
 
-        const [history, pendingMessages] = await Promise.all([
+        const [history, pendingMessages, groupMemberIds] = await Promise.all([
             this.data.getMessages(chatId, currentUser.id),
             this.data.getPendingMessages(chatId),
+            resolvedChat.type === "group" ? this.data.getChatMembers(chatId) : Promise.resolve(null),
         ]);
 
         const channelCurrentRole = channelDetail?.currentUserRole;
-        const header = this.toHeaderVM(resolvedChat, currentUser.id, channelCurrentRole);
+        const header = this.toHeaderVM(
+            resolvedChat,
+            currentUser.id,
+            channelCurrentRole,
+            groupMemberIds?.length,
+        );
 
         const rawMessages = history?.messages ?? [];
         const messages = await Promise.all(
@@ -627,7 +633,12 @@ export class ChatsUseCases {
         };
     }
 
-    private toHeaderVM(chat: Chat, currentUserId: number, channelCurrentRole?: ChannelRole): ChatHeaderVM {
+    private toHeaderVM(
+        chat: Chat,
+        currentUserId: number,
+        channelCurrentRole?: ChannelRole,
+        groupMembersCount?: number,
+    ): ChatHeaderVM {
         if (chat.type === "dialog") {
             const presence = toPresenceVM(chat.interlocutor.id, chat.id, this.data.getPresence(chat.interlocutor.id));
             return {
@@ -646,7 +657,7 @@ export class ChatsUseCases {
                 avatarUrl: chat.avatarUrl,
                 ownerId: chat.owner_id || chat.owner?.id,
                 currentUserRole: groupRole(chat, currentUserId),
-                membersCount: chat.members.length,
+                membersCount: groupMembersCount ?? chat.members.length,
             } satisfies GroupHeaderVM;
         }
 

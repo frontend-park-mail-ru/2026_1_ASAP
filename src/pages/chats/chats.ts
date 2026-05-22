@@ -31,14 +31,15 @@ import {
     ChatUpdatedTitleDto,
     MessageReadDto,
 } from "../../core/utils/wsClient";
-import { MessageSearchBar } from "../../components/composite/messageSearchBar/messageSearchBar";
 import { ChatsCoordinator } from "./controllers/chatsCoordinator";
 import { ChatCreationController } from "./controllers/chatCreationController";
+import { ChatDetailsController } from "./controllers/chatDetailsController";
+import { ChatMessageSearchController } from "./controllers/chatMessageSearchController";
 import { ChatNotificationPromptController } from "./controllers/chatNotificationPromptController";
 import { ChatPresenceController } from "./controllers/chatPresenceController";
 import { ChatRealtimeController } from "./controllers/chatRealtimeController";
+import { ChatSessionController } from "./controllers/chatSessionController";
 import { ChatSidebarController } from "./controllers/chatSidebarController";
-import { chatsUseCases } from "./model/chatsUseCases";
 import type { ActiveChatVM, ChatSearchType, CreateChatMode, CurrentUserVM } from "./model/chatsViewModels";
 import { ChatsView } from "./chatsView";
 
@@ -85,7 +86,6 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     
     public activeChatId: string | null = null;
     private activeChat: Chat | null = null;
-    private messageSearchBar: MessageSearchBar | null = null;
     private currentUserId: number | null = null;
     private hasMoreHistory: boolean = false;
     private nextBeforeId: number | null = null;
@@ -108,9 +108,12 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private activeChannelRole: ChannelRole | null = null;
     private chatsCoordinator: ChatsCoordinator | null = null;
     private creationController: ChatCreationController | null = null;
+    private detailsController: ChatDetailsController | null = null;
+    private messageSearchController: ChatMessageSearchController | null = null;
     private presenceController: ChatPresenceController | null = null;
     private notificationPromptController: ChatNotificationPromptController | null = null;
     private realtimeController: ChatRealtimeController | null = null;
+    private sessionController: ChatSessionController | null = null;
     private sidebarController: ChatSidebarController | null = null;
     private chatsView: ChatsView | null = null;
 
@@ -120,8 +123,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      */
     private handleKeyDown = (event: KeyboardEvent): void => {
         if (event.key === 'Escape') {
-            if (this.messageSearchBar) {
-                this.closeMessageSearch();
+            if (this.messageSearchController?.isOpen()) {
+                this.messageSearchController.close();
                 return;
             }
             if (this.activeChatId || this.createChatWindow || this.groupDetailsWindow || this.channelDetailsWindow || this.addMemberWindow) {
@@ -145,7 +148,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         if (!this.activeMessageList || this.currentUserId === null) return;
 
         const currentUserId = this.currentUserId;
-        const tempId = await chatsUseCases.resolveRealtimeMessage(dto, currentUserId);
+        const tempId = await this.sessionController!.resolveRealtimeMessage(dto, currentUserId);
         if (!isStillActiveChat() || !this.activeMessageList) return;
 
         const serverTime = dto.created_at ? new Date(dto.created_at) : undefined;
@@ -154,19 +157,19 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         }
 
         const frontendMsg = this.activeChat
-            ? await chatsUseCases.enrichMessageForChat(
+            ? await this.sessionController!.enrichMessageForChat(
                 this.activeChat,
-                chatsUseCases.mapRealtimeMessage(dto, currentUserId),
+                this.sessionController!.mapRealtimeMessage(dto, currentUserId),
                 currentUserId,
             )
-            : chatsUseCases.mapRealtimeMessage(dto, currentUserId);
+            : this.sessionController!.mapRealtimeMessage(dto, currentUserId);
         if (!isStillActiveChat() || !this.activeMessageList) return;
 
         this.activeMessageList.addMessage(frontendMsg);
 
         // если входящее сообщение и я смотрю на чат — сразу отмечаю как прочитанное
         if (!frontendMsg.isOwn) {
-            chatsUseCases.markMessageRead(dtoChatId, dto.id.toString());
+            this.sessionController!.markMessageRead(dtoChatId, dto.id.toString());
         }
     };
 
@@ -258,7 +261,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * Перезапрашивает историю для активного чата и флашит offline-очередь.
      */
     private handleWsConnected = () => {
-        void chatsUseCases.flushPendingMessages();
+        void this.sessionController!.flushPendingMessages();
         if (this.activeChatId) {
             console.log('[ChatsPage] WS переподключен, запрашиваем свежую историю...');
             this.hasMoreHistory = false;
@@ -308,6 +311,23 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             },
             onError: (message) => this.showAlert(message),
         });
+        this.sessionController = new ChatSessionController();
+        this.messageSearchController = new ChatMessageSearchController({
+            sessionController: this.sessionController,
+            getCurrentUserId: () => this.currentUserId,
+            getSearchSlot: () => this.chatWindow?.element?.querySelector('[data-component="chat-search-slot"]') as HTMLElement | null,
+            getMessageList: () => this.activeMessageList,
+            getActiveChat: () => this.activeChat,
+            getPaginationState: () => ({
+                hasMoreHistory: this.hasMoreHistory,
+                nextBeforeId: this.nextBeforeId,
+            }),
+            setPaginationState: (state) => {
+                this.hasMoreHistory = state.hasMoreHistory;
+                this.nextBeforeId = state.nextBeforeId;
+            },
+        });
+        this.detailsController = new ChatDetailsController();
         this.presenceController = new ChatPresenceController();
         this.notificationPromptController = new ChatNotificationPromptController({
             showPrompt: (handlers) => this.chatsView?.showNotificationPrompt(handlers),
@@ -325,13 +345,13 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 this.activeMessageList?.updateUserAvatar(payload);
             },
             onConnected: this.handleWsConnected,
-            onDisconnected: () => chatsUseCases.clearInFlightMessages(),
+            onDisconnected: () => this.sessionController!.clearInFlightMessages(),
         });
 
         this.rebuildSidebar();
 
         try {
-            const currentUser = await chatsUseCases.loadCurrentUser();
+            const currentUser = await this.sessionController.loadCurrentUser();
             this.currentUserProfile = currentUser.profile;
             this.currentUserId = currentUser.id;
             await this.sidebarController.loadSidebarChats(this.currentUserId, this.activeChatId);
@@ -382,58 +402,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * @private
      */
     private toggleMessageSearch(chat: Chat): void {
-        if (this.messageSearchBar) {
-            this.closeMessageSearch();
-        } else {
-            this.openMessageSearch(chat);
-        }
-    }
-
-    private openMessageSearch(chat: Chat): void {
-        if (!this.chatWindow?.element || this.currentUserId === null) return;
-        const slot = this.chatWindow.element.querySelector('[data-component="chat-search-slot"]');
-        if (!slot) return;
-
-        this.messageSearchBar = new MessageSearchBar({
-            chatId: chat.id,
-            chatType: chat.type,
-            currentUserId: this.currentUserId,
-            onClose: () => this.closeMessageSearch(),
-            onSearch: (query, beforeId) => chatsUseCases.searchMessages(chat.id, query, this.currentUserId!, beforeId ?? null),
-            onResults: (query) => {
-                this.activeMessageList?.setHighlightQuery(query);
-            },
-            onJumpTo: (messageId) => this.jumpToMessage(messageId),
-            getLoadedMessages: () => this.activeMessageList?.getLoadedMessages() ?? [],
-        });
-        this.messageSearchBar.mount(slot as HTMLElement);
-    }
-
-    private closeMessageSearch(): void {
-        this.messageSearchBar?.unmount();
-        this.messageSearchBar = null;
-        this.activeMessageList?.setHighlightQuery('');
-    }
-
-    private async jumpToMessage(messageId: string): Promise<void> {
-        if (!this.activeMessageList) return;
-
-        if (this.activeMessageList.scrollToMessage(messageId)) return;
-
-        let iterations = 0;
-        const MAX_ITERATIONS = 5;
-
-        while (iterations < MAX_ITERATIONS && this.hasMoreHistory && this.nextBeforeId && this.activeChat && this.currentUserId) {
-            const res = await chatsUseCases.loadMoreMessages(this.activeChat, this.currentUserId, this.nextBeforeId);
-            if (!res) break;
-
-            this.hasMoreHistory = res.hasMore;
-            this.nextBeforeId = res.nextBeforeId;
-            this.activeMessageList.prependMessages(res.messages);
-
-            if (this.activeMessageList.scrollToMessage(messageId)) return;
-            iterations++;
-        }
+        this.messageSearchController?.toggle(chat);
     }
 
     private cleanupMainContent(): void {
@@ -448,10 +417,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
         this.sidebarController?.cancelPendingSearch();
 
-        if (this.messageSearchBar) {
-            this.messageSearchBar.unmount();
-            this.messageSearchBar = null;
-        }
+        this.messageSearchController?.close();
 
         if (this.chatWindow) {
             this.chatWindow.unmount();
@@ -540,7 +506,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             const obKey = `pulse_ob_closed_${this.currentUserId}`;
             if (!sessionStorage.getItem(obKey)) {
                 try {
-                    const hasChats = await chatsUseCases.hasAnyChats(this.currentUserId);
+                    const hasChats = await this.sessionController!.hasAnyChats(this.currentUserId);
                     if (!hasChats) {
                         this.mountOnboarding(obKey);
                         return;
@@ -700,7 +666,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
     private async getCurrentUserVM(): Promise<CurrentUserVM> {
         if (!this.currentUserProfile) {
-            const currentUser = await chatsUseCases.loadCurrentUser();
+            const currentUser = await this.sessionController!.loadCurrentUser();
             this.currentUserProfile = currentUser.profile;
             this.currentUserId = currentUser.id;
             return currentUser;
@@ -760,7 +726,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             const currentUser = await this.getCurrentUserVM();
             if (isCancelled()) return;
 
-            const activeState = await chatsUseCases.loadActiveChat(chatId, currentUser);
+            const activeState = await this.sessionController!.loadActiveChat(chatId, currentUser);
             if (isCancelled()) return;
 
             if (!activeState) {
@@ -792,7 +758,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     onOpenProfile: () => this.props.router.navigate('/contacts/' + interlocutorLogin),
                     onOpenSearch: () => this.toggleMessageSearch(chatDetail),
                     onDeleteChat: async() => {
-                        const res = await chatsUseCases.deleteChat(chatId);
+                        const res = await this.sessionController!.deleteChat(chatId);
                         if (res.success) {
                             this.activeChatId = null;
                             this.rebuildSidebar();
@@ -826,7 +792,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     membersCount: activeState.header.type === 'group' ? activeState.header.membersCount : 0,
                     onOpenSearch: () => this.toggleMessageSearch(chatDetail),
                     onDeleteChat: async () => {
-                        const res = await chatsUseCases.deleteChat(chatId);
+                        const res = await this.sessionController!.deleteChat(chatId);
                         if (res.success) {
                             this.activeChatId = null;
                             this.rebuildSidebar();
@@ -842,7 +808,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                         }
                     },
                     onLeaveGroup: async () => {
-                        const res = await chatsUseCases.leaveChat(Number(chatId));
+                        const res = await this.sessionController!.leaveChat(Number(chatId));
                         if (res.success) {
                             this.activeChatId = null;
                             this.rebuildSidebar();
@@ -867,7 +833,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     chat: chatDetail as ChannelChat,
                     currentUserRole: channelRole,
                     onDeleteChat: async () => {
-                        const res = await chatsUseCases.deleteChannel(chatId);
+                        const res = await this.detailsController!.deleteChannel(chatId);
                         if (res.success) {
                             this.activeChatId = null;
                             this.rebuildSidebar();
@@ -884,7 +850,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                             this.showAlert('Вы не подписаны на этот канал');
                             return;
                         }
-                        const res = await chatsUseCases.leaveChannel(chatId);
+                        const res = await this.detailsController!.leaveChannel(chatId);
                         if (res.success) {
                             this.activeChatId = null;
                             this.rebuildSidebar();
@@ -914,7 +880,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             onLoadMore: async () => {
                 if (!this.hasMoreHistory || !this.nextBeforeId || !this.currentUserId || !this.activeChatId) return;
 
-                const res = await chatsUseCases.loadMoreMessages(chatDetail, this.currentUserId as number, this.nextBeforeId);
+                const res = await this.sessionController!.loadMoreMessages(chatDetail, this.currentUserId as number, this.nextBeforeId);
 
                 if (res === null) return;
 
@@ -929,7 +895,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             },
             onRequestDelete: (messageId) => {
                 if (!this.activeChatId) return;
-                const ok = chatsUseCases.deleteMessage(this.activeChatId, messageId);
+                const ok = this.sessionController!.deleteMessage(this.activeChatId, messageId);
                 if (!ok) {
                     this.showAlert?.('No connection, try later');
                 }
@@ -944,7 +910,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                         if (!this.activeChatId || this.currentUserId === null) return;
                         if (chatDetail.type === 'channel' && this.activeChannelRole !== 'owner') return;
 
-                        const pending = await chatsUseCases.sendMessage(
+                        const pending = await this.sessionController!.sendMessage(
                             this.activeChatId,
                             text,
                             this.currentUserId as number,
@@ -969,7 +935,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     onSubmitEdit: (messageId, newText) => {
                         if (!this.activeChatId) return;
                         if (chatDetail.type === 'channel' && this.activeChannelRole !== 'owner') return;
-                        const ok = chatsUseCases.editMessage(this.activeChatId, messageId, newText);
+                        const ok = this.sessionController!.editMessage(this.activeChatId, messageId, newText);
                         if (!ok) {
                             this.showAlert?.('No connection, try later');
                         }
@@ -1009,7 +975,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             // отмечаем прочитанным последнее входящее сообщение при открытии чата
             const last = this.activeMessageList?.getLatestMessageData();
             if (last && !last.isOwn && /^\d+$/.test(last.id)) {
-                chatsUseCases.markMessageRead(chatId, last.id);
+                this.sessionController!.markMessageRead(chatId, last.id);
             }
         } finally {
             this.syncMobileLayoutState();
@@ -1017,7 +983,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     }
 
     private async handleJoinChannel(chatId: string): Promise<void> {
-        const res = await chatsUseCases.joinChannel(chatId);
+        const res = await this.detailsController!.joinChannel(chatId);
         if (!res.success) {
             let errorMsg = 'Не удалось подписаться на канал';
             if (res.status === 404) {
@@ -1041,7 +1007,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         if (!this.activeMessageList) return;
         const reqId = ++this.historyRequestId;
         const currentUser = await this.getCurrentUserVM();
-        const activeState = await chatsUseCases.loadActiveChat(chatId, currentUser);
+        const activeState = await this.sessionController!.loadActiveChat(chatId, currentUser);
 
         if (!activeState || this.activeChatId !== chatId || reqId !== this.historyRequestId) {
             return;
@@ -1084,7 +1050,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
         let groupDetails;
         try {
-            groupDetails = await chatsUseCases.loadGroupDetails(chat, this.currentUserId);
+            groupDetails = await this.detailsController!.loadGroupDetails(chat, this.currentUserId);
         } catch {
             if (this.chatWindow?.element) {
                 this.chatWindow.element.style.display = 'flex';
@@ -1118,10 +1084,10 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 this.syncMobileLayoutState();
             },
             onUpdateGroup: (newName?: string, newAvatar?: File) => {
-                return chatsUseCases.updateGroup(chat.id, newName, newAvatar);
+                return this.detailsController!.updateGroup(chat.id, newName, newAvatar);
             },
             onLeaveGroup: async () => {
-                const res = await chatsUseCases.leaveGroup(chat.id);
+                const res = await this.detailsController!.leaveGroup(chat.id);
                 if (res.success) {
                     if (this.groupDetailsWindow) {
                         this.groupDetailsWindow.unmount();
@@ -1163,7 +1129,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 }
             },
             onRemoveMember: async (userId: number) => {
-                const res = await chatsUseCases.removeGroupMember(chat.id, userId);
+                const res = await this.detailsController!.removeGroupMember(chat.id, userId);
                 if (!res.success) {
                     let errorMsg = 'Произошла ошибка при удалении участника';
                     if (res.status === 403) {
@@ -1183,7 +1149,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 this.openAddMemberWindow(chat);
             },
             onMemberClick: async (userId: number) => {
-                const memberLogin = await chatsUseCases.getProfileLogin(userId);
+                const memberLogin = await this.detailsController!.getProfileLogin(userId);
                 this.props.router.navigate(`/contacts/${memberLogin}`);
             }
         });
@@ -1207,7 +1173,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             this.chatWindow.element.style.display = 'none';
         }
 
-        const channelDetail = await chatsUseCases.loadChannelDetails(chat, this.currentUserId);
+        const channelDetail = await this.detailsController!.loadChannelDetails(chat, this.currentUserId);
         if (!channelDetail) {
             if (this.chatWindow?.element) {
                 this.chatWindow.element.style.display = 'flex';
@@ -1236,7 +1202,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     });
                     return;
                 }
-                const res = await chatsUseCases.leaveChannel(chat.id);
+                const res = await this.detailsController!.leaveChannel(chat.id);
                 if (res.success) {
                     if (this.channelDetailsWindow) {
                         this.channelDetailsWindow.unmount();
@@ -1252,7 +1218,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 }
             },
             onDeleteChannel: async () => {
-                const res = await chatsUseCases.deleteChannel(chat.id);
+                const res = await this.detailsController!.deleteChannel(chat.id);
                 if (res.success) {
                     if (this.channelDetailsWindow) {
                         this.channelDetailsWindow.unmount();
@@ -1272,7 +1238,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             },
             onUpdateChannel: async (title?: string, description?: string, avatar?: File) => {
                 if (this.currentUserId === null) return { success: false };
-                return chatsUseCases.updateChannel(chat.id, { title, description, avatar }, this.currentUserId);
+                return this.detailsController!.updateChannel(chat.id, { title, description, avatar }, this.currentUserId);
             },
             onChannelUpdated: () => {
                 this.rebuildSidebar();
@@ -1287,7 +1253,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 }
             },
             onRemoveMember: async (userId: number) => {
-                const res = await chatsUseCases.removeChannelMember(chat.id, userId);
+                const res = await this.detailsController!.removeChannelMember(chat.id, userId);
                 if (!res.success) {
                     this.showAlert('Не удалось удалить участника', () => {
                         this.openChannelDetails(chat);
@@ -1297,7 +1263,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 return true;
             },
             onMemberClick: async (userId: number) => {
-                const memberLogin = await chatsUseCases.getProfileLogin(userId);
+                const memberLogin = await this.detailsController!.getProfileLogin(userId);
                 this.props.router.navigate(`/contacts/${memberLogin}`);
             },
         });
@@ -1340,13 +1306,13 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     return "Вы не можете добавить самого себя в чат!";
                 }
 
-                const targetUserRes = await chatsUseCases.getUserIdByLogin(login);
+                const targetUserRes = await this.detailsController!.getUserIdByLogin(login);
 
                 if (targetUserRes.status === 404 || !targetUserRes.id) {
                     return `Пользователь с логином "${login}" не найден!`;
                 }
 
-                const res = await chatsUseCases.addMembersToGroup(chat.id, [targetUserRes.id]);
+                const res = await this.detailsController!.addMembersToGroup(chat.id, [targetUserRes.id]);
 
                 if (res.success) {
                     if (this.addMemberWindow) {
@@ -1392,6 +1358,9 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         this.chatsCoordinator?.destroy();
         this.chatsCoordinator = null;
         this.creationController = null;
+        this.detailsController = null;
+        this.messageSearchController?.destroy();
+        this.messageSearchController = null;
         this.presenceController?.destroy();
         this.presenceController = null;
         this.notificationPromptController = null;
@@ -1399,6 +1368,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         this.sidebarController = null;
         this.realtimeController?.destroy();
         this.realtimeController = null;
+        this.sessionController = null;
 
         this.onboardingComponent?.unmount();
         this.onboardingComponent = null;
