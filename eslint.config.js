@@ -10,7 +10,9 @@ export default [
       "coverage/**",
       "node_modules/**",
       "src/templates.js",
-      "src/**/*.precompiled.js"
+      "src/**/*.precompiled.js",
+      "src/**/*.js",
+      "src/**/*.js.map"
     ]
   },
   {

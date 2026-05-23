@@ -53,16 +53,28 @@ export class MessageList extends BaseComponent<MessageListProps> {
 
     /**
      * Обработчик скролла для подгрузки истории.
+     * Внешний .message-list — обычный flow (без column-reverse), поэтому
+     * scrollTop≈0 = «наверху списка» = пора грузить старые.
      * @private
      */
     private handleScroll = async () => {
         if (!this.element || this.isLoadingMore) return;
-        
+        if (!this.props.onLoadMore) return;
 
-        const { scrollTop, scrollHeight, clientHeight } = this.element;
-        if (scrollTop + clientHeight >= scrollHeight - 10 && this.props.onLoadMore) {
-            this.isLoadingMore = true;
+        if (this.element.scrollTop > 40) return;
+
+        this.isLoadingMore = true;
+        const heightBefore = this.element.scrollHeight;
+        const topBefore = this.element.scrollTop;
+        try {
             await this.props.onLoadMore();
+            // Сохраняем визуальную позицию: смещаем scrollTop на дельту высоты,
+            // иначе пользователя «вышвырнет» в самый верх и подгрузка зациклится.
+            if (this.element) {
+                const heightAfter = this.element.scrollHeight;
+                this.element.scrollTop = topBefore + (heightAfter - heightBefore);
+            }
+        } finally {
             this.isLoadingMore = false;
         }
     };
@@ -325,13 +337,12 @@ export class MessageList extends BaseComponent<MessageListProps> {
     }
 
     /**
-     * Прокручивает список сообщений до конца.
-     * Используется setTimeout, чтобы дать браузеру время отрисовать новые элементы
-     * и обновить scrollHeight контейнера.
+     * Прокручивает список сообщений до самого низа (к самым новым).
+     * Внешний контейнер без column-reverse, поэтому «низ» — это scrollHeight.
      */
     public scrollToBottom(): void {
         if (this.element) {
-            this.element.scrollTop = 0;
+            this.element.scrollTop = this.element.scrollHeight;
         }
     }
 
