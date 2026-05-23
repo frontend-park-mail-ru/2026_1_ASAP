@@ -70,8 +70,6 @@ export class ChatRealtimeController {
             this.useCases.subscribeRealtime<ChatUpdatedTitleDto>("chat.Updated.Title", this.deps.onChatTitleUpdated),
             this.useCases.subscribeRealtime<ChatUpdatedMembersDto>("chat.Updated.Members", this.deps.onMembersUpdated),
             this.useCases.subscribeRealtime<ProfileUpdatedPayload>("profile.Updated", this.deps.onProfileUpdated),
-            this.useCases.subscribeRealtime<WsErrorDto>("message.Error", this.deps.onMessageError),
-            this.useCases.subscribeRealtime<WsErrorDto>("system.Error", this.deps.onMessageError),
             this.useCases.subscribeRealtime<WsErrorDto>("error", this.deps.onMessageError),
         ];
     }

@@ -21,6 +21,7 @@ import type {
     ChatUpdatedAvatarDto,
     ChatUpdatedMembersDto,
     ChatUpdatedTitleDto,
+    LastMessageDto,
     MessageReadDto,
     WsErrorDto,
 } from "../../core/utils/wsClient";
@@ -176,7 +177,11 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
     private readonly handleMessageEdited = (dto: MessageUpdateDto): void => {
         if (dto.last_message_edited) {
-            this.chatWrapper?.updateChatLastMessageText(dto.chat_id.toString(), dto.text);
+            if (dto.last_message) {
+                this.chatWrapper?.setChatLastMessage(dto.chat_id.toString(), this.toSidebarLastMessage(dto.last_message));
+            } else {
+                this.chatWrapper?.updateChatLastMessageText(dto.chat_id.toString(), dto.text);
+            }
         }
 
         if (!this.activeChatId || dto.chat_id.toString() !== this.activeChatId) return;
@@ -193,19 +198,32 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         }
 
         if (dto.last_message_edited) {
-            const newLast: FrontendMessage | undefined = dto.last_message
-                ? {
-                    id: '',
-                    text: dto.last_message.text,
-                    timestamp: new Date(dto.last_message.created_at),
-                    sender: { id: dto.last_message.sender_id } as User,
-                    isOwn: this.currentUserId !== null
-                        && Number(dto.last_message.sender_id) === Number(this.currentUserId),
-                }
-                : undefined;
+            const newLast = dto.last_message ? this.toSidebarLastMessage(dto.last_message) : undefined;
             this.chatWrapper?.setChatLastMessage(dtoChatId, newLast);
         }
     };
+
+    private toSidebarLastMessage(lastMessage: LastMessageDto): FrontendMessage {
+        return {
+            id: '',
+            text: lastMessage.text,
+            timestamp: new Date(lastMessage.created_at),
+            sender: { id: lastMessage.sender_id } as User,
+            isOwn: this.currentUserId !== null
+                && Number(lastMessage.sender_id) === Number(this.currentUserId),
+            attachments: lastMessage.attachments?.map(attachment => ({
+                type: attachment.type,
+                url: attachment.url,
+                fileName: attachment.file_name,
+                mimeType: attachment.mime_type,
+                fileSize: attachment.file_size,
+                contactUserId: attachment.contact_user_id,
+                contactFirstName: attachment.contact_first_name,
+                contactLastName: attachment.contact_last_name,
+                contactAvatarUrl: attachment.contact_avatar_url,
+            })),
+        };
+    }
 
     private readonly handleActiveChatAvatarUpdated = (payload: ChatUpdatedAvatarDto): void => {
         if (!this.activeChatId || String(payload.chat_id) !== this.activeChatId) return;

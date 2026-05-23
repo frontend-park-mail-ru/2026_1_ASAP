@@ -43,6 +43,27 @@ function hasSenderDisplayName(message?: FrontendMessage): boolean {
     return Boolean(firstName || lastName || (login && login !== "unknown" && !login.startsWith("user_")));
 }
 
+function getMessagePreview(message?: FrontendMessage): string | undefined {
+    if (!message) return undefined;
+    if (message.text) return message.text;
+
+    const attachment = message.attachments?.[0];
+    if (!attachment) return undefined;
+
+    switch (attachment.type) {
+        case "photo":
+            return "Фото";
+        case "video":
+            return "Видео";
+        case "file":
+            return attachment.fileName || "Файл";
+        case "contact":
+            return [attachment.contactFirstName, attachment.contactLastName].filter(Boolean).join(" ") || "Контакт";
+        default:
+            return undefined;
+    }
+}
+
 function toMessageVM(message: FrontendMessage, chat: Chat): MessageVM {
     const sender = {
         ...message.sender,
@@ -124,7 +145,7 @@ function toSidebarChatVM(chat: Chat, activeChatId: string | null): SidebarChatVM
         type: chat.type,
         title: chat.title,
         avatarUrl: chat.avatarUrl,
-        lastMessageText: chat.lastMessage?.text,
+        lastMessageText: getMessagePreview(chat.lastMessage),
         lastMessageAt: chat.lastMessage?.timestamp,
         unreadCount: chat.unreadCount ?? 0,
         isActive: chat.id === activeChatId,
