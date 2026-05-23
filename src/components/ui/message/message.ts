@@ -21,6 +21,7 @@ interface MessageProps extends IBaseComponentProps {
     onEdit?: (id: string) => void;
     onDelete?: (id: string) => void;
     onDownloadAttachment?: (url: string, fileName: string) => void | Promise<void>;
+    onMediaClick?: (attachments: MessageAttachment[], initialIndex: number) => void;
 }
 
 /**
@@ -227,13 +228,16 @@ export class Message extends BaseComponent<MessageProps> {
         container.textContent = '';
         container.hidden = attachments.length === 0;
 
+        const mediaAttachments = attachments.filter(a => a.type === 'photo' || a.type === 'video');
+        let currentMediaIndex = 0;
+
         attachments.forEach((attachment) => {
             switch (attachment.type) {
                 case 'photo':
-                    container.appendChild(this.createPhotoAttachment(attachment));
+                    container.appendChild(this.createPhotoAttachment(attachment, currentMediaIndex++, mediaAttachments));
                     break;
                 case 'video':
-                    container.appendChild(this.createVideoAttachment(attachment));
+                    container.appendChild(this.createVideoAttachment(attachment, currentMediaIndex++, mediaAttachments));
                     break;
                 case 'file':
                     container.appendChild(this.createFileAttachment(attachment.url, attachment.fileName));
@@ -274,12 +278,11 @@ export class Message extends BaseComponent<MessageProps> {
         return card;
     }
 
-    private createPhotoAttachment(attachment: MessageAttachment): HTMLElement {
-        const wrapper = document.createElement('a');
+    private createPhotoAttachment(attachment: MessageAttachment, mediaIndex: number, allMedia: MessageAttachment[]): HTMLElement {
+        const wrapper = document.createElement('div');
         wrapper.className = 'message__attachment-media-link';
-        wrapper.href = attachment.url || '#';
-        wrapper.target = '_blank';
-        wrapper.rel = 'noopener';
+        wrapper.setAttribute('role', 'button');
+        wrapper.setAttribute('tabindex', '0');
         wrapper.setAttribute('aria-label', attachment.fileName || 'Фото');
 
         const image = document.createElement('img');
@@ -296,21 +299,50 @@ export class Message extends BaseComponent<MessageProps> {
             image.classList.add('message__attachment-media--broken');
         }, { once: true });
 
+        wrapper.addEventListener('click', () => {
+            this.props.onMediaClick?.(allMedia, mediaIndex);
+        });
+
+        wrapper.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.props.onMediaClick?.(allMedia, mediaIndex);
+            }
+        });
+
         wrapper.appendChild(image);
         return wrapper;
     }
 
-    private createVideoAttachment(attachment: MessageAttachment): HTMLElement {
+    private createVideoAttachment(attachment: MessageAttachment, mediaIndex: number, allMedia: MessageAttachment[]): HTMLElement {
         const wrapper = document.createElement('div');
         wrapper.className = 'message__attachment-video';
+        wrapper.setAttribute('role', 'button');
+        wrapper.setAttribute('tabindex', '0');
 
         const video = document.createElement('video');
         video.className = 'message__attachment-media message__attachment-media--video';
         video.src = attachment.url || '';
-        video.controls = true;
         video.preload = 'metadata';
         video.crossOrigin = 'use-credentials';
         if (attachment.fileName) video.setAttribute('aria-label', attachment.fileName);
+
+        const playOverlay = document.createElement('div');
+        playOverlay.className = 'message__attachment-video-play';
+        const playTriangle = document.createElement('div');
+        playTriangle.className = 'message__attachment-video-play-icon';
+        playOverlay.appendChild(playTriangle);
+
+        wrapper.addEventListener('click', () => {
+            this.props.onMediaClick?.(allMedia, mediaIndex);
+        });
+
+        wrapper.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.props.onMediaClick?.(allMedia, mediaIndex);
+            }
+        });
 
         // Фоллбэк при ошибке загрузки: заменяем плеер div-заглушкой, чтобы не торчал пустой controls-бар
         video.addEventListener('error', () => {
@@ -318,9 +350,11 @@ export class Message extends BaseComponent<MessageProps> {
             errEl.className = 'message__attachment-video-error';
             errEl.textContent = 'Не удалось загрузить видео';
             if (wrapper.contains(video)) wrapper.replaceChild(errEl, video);
+            if (wrapper.contains(playOverlay)) playOverlay.remove();
         }, { once: true });
 
         wrapper.appendChild(video);
+        wrapper.appendChild(playOverlay);
         return wrapper;
     }
 

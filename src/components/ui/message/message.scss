@@ -183,14 +183,20 @@
     &__attachment-media-link,
     &__attachment-video {
         display: block;
+        position: relative;
+        cursor: pointer;
+        outline: none;
         max-width: min(360px, 68vw);
         border-radius: 8px;
         overflow: hidden;
         background: rgba(0, 0, 0, 0.18);
+        
+        &:focus-visible {
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+        }
     }
 
     &__attachment-media-link {
-        cursor: pointer;
         line-height: 0;
     }
 
@@ -208,6 +214,28 @@
 
     &__attachment-media--video {
         min-width: 240px;
+    }
+
+    &__attachment-video-play {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 48px;
+        height: 48px;
+        background: rgba(0, 0, 0, 0.5);
+        border-radius: 50%;
+        @include flex-center;
+        pointer-events: none;
+    }
+
+    &__attachment-video-play-icon {
+        width: 0;
+        height: 0;
+        border-style: solid;
+        border-width: 8px 0 8px 14px;
+        border-color: transparent transparent transparent white;
+        margin-left: 4px;
     }
 
     // Состояние broken-фото: загрузка не удалась (403, 404, сеть)
