@@ -46,6 +46,27 @@ export interface BackendMessage {
  */
 export type MessageStatus = 'sending' | 'sent' | 'read';
 
+export type MessageAttachmentType = 'photo' | 'video' | 'file' | 'contact';
+
+export interface MessageAttachment {
+    type: MessageAttachmentType;
+    url?: string;
+    fileName?: string;
+    mimeType?: string;
+    fileSize?: number;
+    contactUserId?: number;
+    contactFirstName?: string;
+    contactLastName?: string;
+    contactAvatarUrl?: string;
+}
+
+export interface OutgoingMessageAttachment {
+    type: MessageAttachmentType;
+    url?: string;
+    file_name?: string;
+    contact_user_id?: number;
+}
+
 export interface FrontendMessage {
     id: string;
     sender: User;
@@ -54,6 +75,7 @@ export interface FrontendMessage {
     isOwn: boolean;
     isEdited?: boolean;
     status?: MessageStatus;
+    attachments?: MessageAttachment[];
 }
 
 /**

@@ -1,14 +1,25 @@
 import { BaseForm, IBaseFormProps } from '../../../core/base/baseForm'; 
 import { Button } from '../button/button';
 import { ConfirmModal } from '../../composite/confirmModal/confirmModal';
+import type { MessageAttachment, OutgoingMessageAttachment } from '../../../types/chat';
 import template from './messageInput.hbs';
+
+type DraftAttachment = {
+    id: string;
+    attachment: MessageAttachment;
+    outgoing: OutgoingMessageAttachment;
+};
 
 /**
  * @interface MessageInputProps - Свойства компонента формы ввода сообщения.
  * @property {Function} onSubmit - Колбэк, вызываемый при отправке сообщения. Принимает текст сообщения.
  */
 interface MessageInputProps extends IBaseFormProps { 
-    onSubmit: (text: string) => void;
+    onSubmit: (text: string, attachments: OutgoingMessageAttachment[], draftAttachments: MessageAttachment[]) => void | Promise<void>;
+    onUploadFile?: (file: File, type: 'file') => Promise<
+        | { success: true; attachment: MessageAttachment; outgoing: OutgoingMessageAttachment }
+        | { success: false; errorMessage: string }
+    >;
     onSubmitEdit?: (messageId: string, text: string) => void;
     onTyping?: () => void;
     onStopTyping?: () => void;
@@ -26,8 +37,15 @@ export class MessageInput extends BaseForm<MessageInputProps> {
     private uplodadButton: Button | null = null;
     private stikerButton: Button | null = null;
     private sendButton: Button | null = null;
+    private fileInput: HTMLInputElement | null = null;
+    private attachmentMenu: HTMLElement | null = null;
+    private draftAttachmentsContainer: HTMLElement | null = null;
+    private errorElement: HTMLElement | null = null;
     private modalComponent: ConfirmModal | null = null;
+    private draftAttachments: DraftAttachment[] = [];
+    private isUploading = false;
     private readonly mobileQuery = '(max-width: 767px)';
+    private readonly maxAttachments = 10;
 
     /**
      * @param {MessageInputProps} props - Свойства компонента.
@@ -73,9 +91,35 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             icon: '/assets/images/icons/upload.svg',
             class: 'message-input__upload-button-container',
             type: 'button',
-            title: 'В разработке',
+            title: 'Вложения',
+            onClick: this.handleUploadButtonClick,
         });
         this.uplodadButton.mount(uploadButtonContainer as HTMLElement);
+
+        this.fileInput = document.createElement('input');
+        this.fileInput.type = 'file';
+        this.fileInput.accept = [
+            'application/pdf',
+            'application/zip',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'text/plain',
+            '.pdf',
+            '.zip',
+            '.doc',
+            '.docx',
+            '.xls',
+            '.xlsx',
+            '.txt',
+        ].join(',');
+        this.fileInput.hidden = true;
+        this.fileInput.addEventListener('change', this.handleFileInputChange);
+        this.element.appendChild(this.fileInput);
+
+        this.draftAttachmentsContainer = this.element.querySelector('[data-component="draft-attachments"]');
+        this.errorElement = this.element.querySelector('[data-component="message-input-error"]');
 
         const sendButtonContainer = this.element.querySelector('[data-component="send-button-container"]');
         this.sendButton = new Button({
@@ -87,6 +131,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         this.sendButton.mount(sendButtonContainer as HTMLElement);
 
         document.addEventListener('pointerdown', this.handleDocumentPointerDown, true);
+        document.addEventListener('keydown', this.handleDocumentKeyDown);
 
         if (!this.isMobileViewport()) {
             this.textarea?.focus({ preventScroll: true });
@@ -96,6 +141,180 @@ export class MessageInput extends BaseForm<MessageInputProps> {
     private handleCancelEdit = (): void => {
         this.exitEditMode();
     };
+
+    private handleUploadButtonClick = (event: MouseEvent): void => {
+        event.preventDefault();
+        if (this.editingMessageId) {
+            this.showInlineError('Завершите редактирование сообщения перед добавлением вложений');
+            return;
+        }
+        this.toggleAttachmentMenu();
+    };
+
+    private toggleAttachmentMenu(): void {
+        if (this.attachmentMenu) {
+            this.closeAttachmentMenu();
+            return;
+        }
+        this.openAttachmentMenu();
+    }
+
+    private openAttachmentMenu(): void {
+        if (!this.element || !this.uplodadButton?.element) return;
+
+        this.attachmentMenu = document.createElement('div');
+        this.attachmentMenu.className = 'message-input__attachment-menu';
+        this.attachmentMenu.innerHTML = `
+            <button type="button" class="message-input__attachment-menu-item" data-action="media">Фото или видео</button>
+            <button type="button" class="message-input__attachment-menu-item" data-action="file">Файл</button>
+            <button type="button" class="message-input__attachment-menu-item" data-action="contact">Контакт</button>
+        `;
+        this.attachmentMenu.addEventListener('click', this.handleAttachmentMenuClick);
+        this.element.appendChild(this.attachmentMenu);
+
+        const anchor = this.uplodadButton.element.getBoundingClientRect();
+        const root = this.element.getBoundingClientRect();
+        this.attachmentMenu.style.right = `${Math.max(0, root.right - anchor.right)}px`;
+        this.attachmentMenu.style.bottom = `${root.bottom - anchor.top + 8}px`;
+    }
+
+    private closeAttachmentMenu(): void {
+        this.attachmentMenu?.removeEventListener('click', this.handleAttachmentMenuClick);
+        this.attachmentMenu?.remove();
+        this.attachmentMenu = null;
+    }
+
+    private handleAttachmentMenuClick = (event: Event): void => {
+        const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-action]');
+        if (!button) return;
+
+        const action = button.dataset.action;
+        this.closeAttachmentMenu();
+
+        if (action === 'file') {
+            this.fileInput?.click();
+            return;
+        }
+
+        this.showInlineError(action === 'media'
+            ? 'Фото и видео будут добавлены следующим шагом'
+            : 'Контакты будут добавлены следующим шагом');
+    };
+
+    private handleFileInputChange = (): void => {
+        const file = this.fileInput?.files?.[0];
+        if (this.fileInput) this.fileInput.value = '';
+        if (!file) return;
+        void this.attachFile(file);
+    };
+
+    private async attachFile(file: File): Promise<void> {
+        if (!this.props.onUploadFile) {
+            this.showInlineError('Загрузка вложений недоступна');
+            return;
+        }
+        if (this.draftAttachments.length >= this.maxAttachments) {
+            this.showInlineError('В одном сообщении можно отправить не больше 10 вложений');
+            return;
+        }
+        if (!this.validateFileAttachment(file)) return;
+
+        this.isUploading = true;
+        this.updateSendButtonState();
+        this.showInlineError(`Загружаем ${file.name}...`, false);
+
+        const result = await this.props.onUploadFile(file, 'file');
+        this.isUploading = false;
+        this.updateSendButtonState();
+
+        if (result.success === false) {
+            this.showInlineError(result.errorMessage);
+            return;
+        }
+
+        this.clearInlineError();
+        this.draftAttachments.push({
+            id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            attachment: result.attachment,
+            outgoing: result.outgoing,
+        });
+        this.renderDraftAttachments();
+    }
+
+    private validateFileAttachment(file: File): boolean {
+        const allowedMimeTypes = new Set([
+            'application/pdf',
+            'application/zip',
+            'application/x-zip-compressed',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'text/plain',
+        ]);
+        const allowedExtensions = /\.(pdf|zip|doc|docx|xls|xlsx|txt)$/i;
+        const maxSize = 20 * 1024 * 1024;
+
+        if (file.size === 0) {
+            this.showInlineError('Нельзя прикрепить пустой файл');
+            return false;
+        }
+        if (file.size > maxSize) {
+            this.showInlineError('Файл должен быть не больше 20 МиБ');
+            return false;
+        }
+        if (!allowedMimeTypes.has(file.type) && !allowedExtensions.test(file.name)) {
+            this.showInlineError('Можно прикрепить PDF, ZIP, DOC/DOCX, XLS/XLSX или TXT');
+            return false;
+        }
+        return true;
+    }
+
+    private renderDraftAttachments(): void {
+        if (!this.draftAttachmentsContainer) return;
+        this.draftAttachmentsContainer.textContent = '';
+        this.draftAttachmentsContainer.hidden = this.draftAttachments.length === 0;
+
+        this.draftAttachments.forEach((draft) => {
+            const item = document.createElement('div');
+            item.className = 'message-input__draft-attachment';
+
+            const name = document.createElement('span');
+            name.className = 'message-input__draft-attachment-name';
+            name.textContent = draft.attachment.fileName || 'Файл';
+
+            const removeButton = document.createElement('button');
+            removeButton.type = 'button';
+            removeButton.className = 'message-input__draft-attachment-remove';
+            removeButton.setAttribute('aria-label', 'Удалить вложение');
+            removeButton.textContent = '×';
+            removeButton.addEventListener('click', () => {
+                this.draftAttachments = this.draftAttachments.filter(item => item.id !== draft.id);
+                this.renderDraftAttachments();
+            });
+
+            item.append(name, removeButton);
+            this.draftAttachmentsContainer!.appendChild(item);
+        });
+    }
+
+    private showInlineError(message: string, isError = true): void {
+        if (!this.errorElement) return;
+        this.errorElement.textContent = message;
+        this.errorElement.hidden = false;
+        this.errorElement.classList.toggle('message-input__error--muted', !isError);
+    }
+
+    private clearInlineError(): void {
+        if (!this.errorElement) return;
+        this.errorElement.textContent = '';
+        this.errorElement.hidden = true;
+        this.errorElement.classList.remove('message-input__error--muted');
+    }
+
+    private updateSendButtonState(): void {
+        if (this.sendButton) this.sendButton.disabled = this.isUploading;
+    }
 
     private showEditIndicator(currentText: string): void {
         if (!this.element || this.editIndicator) return;
@@ -186,16 +405,30 @@ export class MessageInput extends BaseForm<MessageInputProps> {
     }
 
     private handleDocumentPointerDown = (event: PointerEvent): void => {
+        const target = event.target;
+        if (this.attachmentMenu && target instanceof Node) {
+            const clickedInsideMenu = this.attachmentMenu.contains(target);
+            const clickedUploadButton = Boolean(this.uplodadButton?.element?.contains(target));
+            if (!clickedInsideMenu && !clickedUploadButton) {
+                this.closeAttachmentMenu();
+            }
+        }
+
         if (!this.isMobileViewport() || !this.textarea || document.activeElement !== this.textarea) {
             return;
         }
 
-        const target = event.target;
         if (target instanceof Node && this.element?.contains(target)) {
             return;
         }
 
         this.textarea.blur();
+    };
+
+    private handleDocumentKeyDown = (event: KeyboardEvent): void => {
+        if (event.key === 'Escape') {
+            this.closeAttachmentMenu();
+        }
     };
 
     /**
@@ -205,7 +438,13 @@ export class MessageInput extends BaseForm<MessageInputProps> {
      */
     protected async onSubmit(data: { messageText: string }): Promise<void> { 
         const text = data.messageText?.trim();
-        if (!text) return;
+        const attachments = this.draftAttachments.map(item => item.outgoing);
+        const attachmentModels = this.draftAttachments.map(item => item.attachment);
+        if (!text && attachments.length === 0) return;
+        if (this.isUploading) {
+            this.showInlineError('Дождитесь окончания загрузки вложения');
+            return;
+        }
 
         if (text.length > 2000) {
             if (this.modalComponent) this.modalComponent.unmount();
@@ -232,11 +471,19 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             this.props.onStopTyping?.();
             this.exitEditMode();
         } else {
-            this.props.onSubmit(text);
-            this.props.onStopTyping?.();
-            if (this.textarea) {
-                this.textarea.value = '';
-                this.textarea.style.height = '';
+            try {
+                await this.props.onSubmit(text, attachments, attachmentModels);
+                this.props.onStopTyping?.();
+                this.draftAttachments = [];
+                this.renderDraftAttachments();
+                this.clearInlineError();
+                if (this.textarea) {
+                    this.textarea.value = '';
+                    this.textarea.style.height = '';
+                }
+            } catch {
+                // Ошибка отправки: показываем пользователю, не сбрасываем черновик
+                this.showInlineError('Не удалось отправить сообщение. Попробуйте ещё раз');
             }
         }
     }
@@ -251,7 +498,11 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             this.textarea.removeEventListener('input', this.handleInput);
         }
         document.removeEventListener('pointerdown', this.handleDocumentPointerDown, true);
+        document.removeEventListener('keydown', this.handleDocumentKeyDown);
         this.props.onStopTyping?.();
+        this.closeAttachmentMenu();
+        this.fileInput?.removeEventListener('change', this.handleFileInputChange);
+        this.fileInput?.remove();
         
         this.modalComponent?.unmount();
         
@@ -264,5 +515,9 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         this.stikerButton = null;
         this.uplodadButton = null;
         this.sendButton = null;
+        this.fileInput = null;
+        this.draftAttachmentsContainer = null;
+        this.errorElement = null;
+        this.draftAttachments = [];
     }
 }

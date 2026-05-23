@@ -1,7 +1,17 @@
-import { ChatDetail, FrontendMessage, User, DialogChat, GroupChat, ChannelChat } from '../types/chat';
+import {
+    ChatDetail,
+    FrontendMessage,
+    User,
+    DialogChat,
+    GroupChat,
+    ChannelChat,
+    MessageAttachment,
+    OutgoingMessageAttachment,
+    MessageAttachmentType,
+} from '../types/chat';
 import { SearchChatHit, SearchChatsResult, SearchMessageHit, SearchMessagesResult } from '../types/search';
 import { httpClient } from '../core/utils/httpClient';
-import { wsClient, MessageDto, ChatInformationDto } from '../core/utils/wsClient';
+import { wsClient, MessageDto, ChatInformationDto, MessageAttachmentDto } from '../core/utils/wsClient';
 import { getFullUrl } from '../core/utils/url';
 import { presenceService } from './presenceService';
 import { offlineQueue, PendingMessage } from './offlineMessageQueue';
@@ -22,6 +32,7 @@ interface BackendMessageLike {
     last_name?: string;
     text?: string;
     created_at?: string;
+    attachments?: MessageAttachmentDto[];
 }
 
 interface SearchChatApiHit {
@@ -62,6 +73,60 @@ type MessageGetPayload = MessageDto[] | {
     next_before_id?: number | null;
 };
 
+interface AttachmentUploadBody {
+    attachment_url: string;
+    object_key: string;
+    mime_type: string;
+    file_size: number;
+    file_name: string;
+}
+
+type AttachmentUploadResult =
+    | { success: true; attachment: MessageAttachment; outgoing: OutgoingMessageAttachment; body: AttachmentUploadBody }
+    | { success: false; status: number; errorCode?: string; errorMessage: string };
+
+function mapAttachmentDto(attachment: MessageAttachmentDto): MessageAttachment {
+    return {
+        type: attachment.type,
+        url: attachment.url,
+        fileName: attachment.file_name,
+        mimeType: attachment.mime_type,
+        fileSize: attachment.file_size,
+        contactUserId: attachment.contact_user_id,
+        contactFirstName: attachment.contact_first_name,
+        contactLastName: attachment.contact_last_name,
+        contactAvatarUrl: attachment.contact_avatar_url,
+    };
+}
+
+function toOutgoingAttachment(attachment: MessageAttachment): OutgoingMessageAttachment {
+    if (attachment.type === 'contact') {
+        return {
+            type: 'contact',
+            contact_user_id: attachment.contactUserId,
+        };
+    }
+
+    return {
+        type: attachment.type,
+        url: attachment.url,
+        file_name: attachment.fileName,
+    };
+}
+
+function attachmentsMatch(a?: OutgoingMessageAttachment[], b?: MessageAttachmentDto[]): boolean {
+    const left = a || [];
+    const right = b || [];
+    if (left.length !== right.length) return false;
+
+    return left.every((item, index) => {
+        const other = right[index];
+        if (!other || item.type !== other.type) return false;
+        if (item.type === 'contact') return item.contact_user_id === other.contact_user_id;
+        return item.url === other.url;
+    });
+}
+
 /**
  * @class ChatService
  * @description Сервис для управления чатами. Предоставляет методы для получения списка чатов,
@@ -95,6 +160,7 @@ export class ChatService {
             isOwn: (backendMessage.sender?.login === currentUserId) || 
                    (backendMessage.login === currentUserId) ||
                    (String(backendMessage.sender_id) === String(currentUserId)),
+            attachments: backendMessage.attachments?.map(mapAttachmentDto),
         };
     }
 
@@ -121,6 +187,7 @@ export class ChatService {
             isOwn: String(dto.sender_id) === String(currentUserId) || dto.login === currentUserId,
             isEdited: Boolean(dto.edited),
             status: dto.read ? 'read' : 'sent',
+            attachments: dto.attachments?.map(mapAttachmentDto),
         };
     }
 
@@ -175,6 +242,7 @@ export class ChatService {
                 timestamp: new Date(dto.last_message.created_at),
                 sender: { id: dto.last_message.sender_id } as User,
                 isOwn: Number(dto.last_message.sender_id) === Number(currentUserId),
+                attachments: dto.last_message.attachments?.map(mapAttachmentDto),
             };
         }
 
@@ -191,22 +259,25 @@ export class ChatService {
      * @param senderId - ID текущего пользователя (нужен для оптимистичной модели и дедупа).
      * @returns PendingMessage с tempId для привязки оптимистичного DOM-узла.
      */
-    public async sendMessage(chatId: string, text: string, senderId: number): Promise<PendingMessage> {
+    public async sendMessage(
+        chatId: string,
+        text: string,
+        senderId: number,
+        attachments: OutgoingMessageAttachment[] = [],
+    ): Promise<PendingMessage> {
         const pending: PendingMessage = {
             tempId: `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
             chatId,
             text,
             senderId,
             createdAt: Date.now(),
+            attachments,
         };
 
         await offlineQueue.enqueue(pending);
         if (wsClient.isConnected()) {
             this.inFlightMessages.add(pending.tempId);
-            wsClient.sendIfOpen('message.Send', {
-                chat_id: Number(chatId),
-                text,
-            });
+            this.sendPendingMessage(pending);
         }
 
         if (!navigator.onLine && 'serviceWorker' in navigator && 'SyncManager' in window) {            
@@ -221,6 +292,85 @@ export class ChatService {
         }
 
         return pending;
+    }
+
+    private sendPendingMessage(message: PendingMessage): boolean {
+        const attachments = message.attachments || [];
+        if (attachments.length > 0) {
+            return wsClient.sendIfOpen('message.SendAttachments', {
+                chat_id: Number(message.chatId),
+                text: message.text,
+                attachments,
+            });
+        }
+
+        return wsClient.sendIfOpen('message.Send', {
+            chat_id: Number(message.chatId),
+            text: message.text,
+        });
+    }
+
+    public async uploadMessageAttachment(file: File, type: Extract<MessageAttachmentType, 'photo' | 'video' | 'file'>): Promise<AttachmentUploadResult> {
+        const form = new FormData();
+        form.append('file', file);
+
+        try {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/messages/attachments/upload?type=${type}`, {
+                method: 'POST',
+                body: form,
+            });
+
+            const data = await response.json().catch(() => null);
+
+            if (!response.ok || data?.status !== 'success' || !data?.body?.attachment_url) {
+                const errorCode = data?.errors?.[0]?.code;
+                const errorMessage = data?.errors?.[0]?.message || this.getUploadErrorMessage(errorCode, response.status);
+                return {
+                    success: false,
+                    status: response.status,
+                    errorCode,
+                    errorMessage,
+                };
+            }
+
+            const body = data.body as AttachmentUploadBody;
+            const attachment: MessageAttachment = {
+                type,
+                url: body.attachment_url,
+                fileName: body.file_name,
+                mimeType: body.mime_type,
+                fileSize: body.file_size,
+            };
+
+            return {
+                success: true,
+                body,
+                attachment,
+                outgoing: toOutgoingAttachment(attachment),
+            };
+        } catch (error) {
+            return {
+                success: false,
+                status: 0,
+                errorMessage: error instanceof Error ? error.message : 'Не удалось загрузить вложение',
+            };
+        }
+    }
+
+    private getUploadErrorMessage(errorCode: string | undefined, status: number): string {
+        switch (errorCode) {
+            case 'FILE_TOO_LARGE':
+                return 'Файл превышает допустимый размер';
+            case 'INVALID_FILE_FORMAT':
+                return 'Этот формат файла не поддерживается';
+            case 'EMPTY_FILE':
+                return 'Нельзя прикрепить пустой файл';
+            case 'UNAUTHORIZED':
+                return 'Нужно войти в аккаунт заново';
+            default:
+                if (errorCode?.startsWith('CSRF_')) return 'Сессия устарела. Повторите загрузку';
+                return status ? `Не удалось загрузить файл (код ${status})` : 'Не удалось загрузить файл';
+        }
     }
 
     public async searchChats(
@@ -318,10 +468,7 @@ export class ChatService {
                 
                 this.inFlightMessages.add(m.tempId);
                 
-                const sent = wsClient.sendIfOpen('message.Send', {
-                    chat_id: Number(m.chatId),
-                    text: m.text,
-                });
+                const sent = this.sendPendingMessage(m);
                 
                 // Если внезапно сокет закрылся во время цикла
                 if (!sent) {
@@ -353,7 +500,12 @@ export class ChatService {
 
         const pending = await offlineQueue.getByChat(dto.chat_id.toString());
         const unescapedText = this.unescapeHtml(dto.text ?? '');
-        const match = pending.find((m) => m.text === unescapedText);
+        const dtoAttachments = dto.attachments || [];
+        const match = pending.find((m) => {
+            const hasAttachments = (m.attachments || []).length > 0;
+            if (m.text !== unescapedText && !(hasAttachments && m.text === '')) return false;
+            return attachmentsMatch(m.attachments, dtoAttachments);
+        });
 
         if (!match) return null;
 

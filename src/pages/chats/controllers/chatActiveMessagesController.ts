@@ -1,7 +1,8 @@
 import type { BaseComponent } from "../../../core/base/baseComponent";
 import type { ChannelRole } from "../../../services/channelService";
 import type { FrontendProfile } from "../../../types/profile";
-import type { FrontendMessage } from "../../../types/chat";
+import type { FrontendMessage, MessageAttachment } from "../../../types/chat";
+import { httpClient } from "../../../core/utils/httpClient";
 import { ChannelJoinFooter } from "../../../components/composite/channelJoinFooter/channelJoinFooter";
 import { MessageList } from "../../../components/composite/messageList/messageList";
 import { MessageInput } from "../../../components/ui/messageInput/messageInput";
@@ -45,6 +46,7 @@ export class ChatActiveMessagesController {
             },
             chatType: chatDetail.type,
             chatAvatarUrl: chatDetail.type === "channel" ? (chatDetail.avatarUrl || undefined) : undefined,
+            onDownloadAttachment: (url, fileName) => this.downloadAttachment(url, fileName),
             onLoadMore: async () => {
                 const { hasMoreHistory, nextBeforeId } = this.deps.getPaginationState();
                 const currentUserId = this.deps.getCurrentUserId();
@@ -117,6 +119,12 @@ export class ChatActiveMessagesController {
                 timestamp: new Date(pending.createdAt),
                 isOwn: true,
                 status: "sending",
+                attachments: pending.attachments?.map((attachment): MessageAttachment => ({
+                    type: attachment.type,
+                    url: attachment.url,
+                    fileName: attachment.file_name,
+                    contactUserId: attachment.contact_user_id,
+                })),
             });
         });
     }
@@ -136,13 +144,13 @@ export class ChatActiveMessagesController {
         const chatDetail = activeState.chat;
 
         return new MessageInput({
-            onSubmit: async (text: string) => {
+            onSubmit: async (text, attachments, draftAttachments) => {
                 const activeChatId = this.deps.getActiveChatId();
                 const currentUserId = this.deps.getCurrentUserId();
                 if (!activeChatId || activeChatId !== chatId || currentUserId === null) return;
                 if (chatDetail.type === "channel" && this.deps.getActiveChannelRole() !== "owner") return;
 
-                const pending = await this.deps.sessionController.sendMessage(activeChatId, text, currentUserId);
+                const pending = await this.deps.sessionController.sendMessage(activeChatId, text, currentUserId, attachments);
                 if (this.deps.getActiveChatId() !== chatId || this.deps.getMessageList() !== messageListComponent) {
                     return;
                 }
@@ -161,8 +169,18 @@ export class ChatActiveMessagesController {
                     timestamp: new Date(pending.createdAt),
                     isOwn: true,
                     status: "sending",
+                    attachments: draftAttachments,
                 };
                 messageListComponent.addMessage(optimistic);
+            },
+            onUploadFile: async (file, type) => {
+                const result = await this.deps.sessionController.uploadMessageAttachment(file, type);
+                if (!result.success) return result;
+                return {
+                    success: true,
+                    attachment: result.attachment,
+                    outgoing: result.outgoing,
+                };
             },
             onSubmitEdit: (messageId, newText) => {
                 const activeChatId = this.deps.getActiveChatId();
@@ -184,5 +202,33 @@ export class ChatActiveMessagesController {
             },
             chatId,
         });
+    }
+    /**
+     * Скачивает вложение через httpClient (CSRF-safe) с fallback на window.open.
+     * Blob-ссылка ревокируется сразу после инициации скачивания.
+     */
+    private async downloadAttachment(url: string, fileName: string): Promise<void> {
+        try {
+            const response = await httpClient.request(url, { credentials: 'include' });
+            if (!response.ok) {
+                window.open(url, '_blank', 'noopener');
+                return;
+            }
+            const blob = await response.blob();
+            const objectUrl = URL.createObjectURL(blob);
+
+            const link = document.createElement('a');
+            link.href = objectUrl;
+            link.download = fileName;
+            link.rel = 'noopener';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            // Ревокируем сразу — утечки памяти нет
+            URL.revokeObjectURL(objectUrl);
+        } catch {
+            window.open(url, '_blank', 'noopener');
+        }
     }
 }

@@ -47,6 +47,84 @@ describe('chatService.getChats', () => {
     });
 });
 
+describe('chatService attachments', () => {
+    it('uploadMessageAttachment отправляет multipart на upload endpoint и возвращает outgoing attachment', async () => {
+        const fetchMock = mockFetchSequence([
+            {
+                status: 200,
+                json: {
+                    status: 'success',
+                    body: {
+                        attachment_url: 'http://localhost/api/v1/messages/attachments/message/5/report.pdf',
+                        object_key: 'message/5/report.pdf',
+                        mime_type: 'application/pdf',
+                        file_size: 12,
+                        file_name: 'report.pdf',
+                    },
+                },
+            },
+        ]);
+
+        const file = new File(['hello'], 'report.pdf', { type: 'application/pdf' });
+        const result = await svc.uploadMessageAttachment(file, 'file');
+
+        expect(result.success).toBe(true);
+        if (!result.success) return;
+        expect(result.attachment).toMatchObject({
+            type: 'file',
+            url: 'http://localhost/api/v1/messages/attachments/message/5/report.pdf',
+            fileName: 'report.pdf',
+            mimeType: 'application/pdf',
+            fileSize: 12,
+        });
+        expect(result.outgoing).toEqual({
+            type: 'file',
+            url: 'http://localhost/api/v1/messages/attachments/message/5/report.pdf',
+            file_name: 'report.pdf',
+        });
+
+        const call = getFetchCall(fetchMock);
+        expect(call.method).toBe('POST');
+        expect(call.url).toContain('/api/v1/messages/attachments/upload?type=file');
+        expect(call.body).toBeInstanceOf(FormData);
+        expect(call.headers.has('Content-Type')).toBe(false);
+    });
+
+    it('convertWsMessageDto сохраняет attachments из message.New/message.Get DTO', () => {
+        const message = svc.convertWsMessageDto({
+            id: 10,
+            chat_id: 1,
+            sender_id: 7,
+            text: '',
+            created_at: '2026-05-23T12:00:00Z',
+            edited: false,
+            attachments: [
+                {
+                    type: 'file',
+                    url: 'http://localhost/file.txt',
+                    file_name: 'file.txt',
+                    mime_type: 'text/plain',
+                    file_size: 5,
+                },
+            ],
+        }, 7);
+
+        expect(message.attachments).toEqual([
+            {
+                type: 'file',
+                url: 'http://localhost/file.txt',
+                fileName: 'file.txt',
+                mimeType: 'text/plain',
+                fileSize: 5,
+                contactUserId: undefined,
+                contactFirstName: undefined,
+                contactLastName: undefined,
+                contactAvatarUrl: undefined,
+            },
+        ]);
+    });
+});
+
 describe('chatService.getChatDetail', () => {
     it('200 success channel → ChatDetail', async () => {
         mockFetchSequence([

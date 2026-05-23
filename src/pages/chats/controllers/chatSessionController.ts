@@ -1,5 +1,5 @@
 import type { MessageDto } from "../../../core/utils/wsClient";
-import type { Chat, FrontendMessage } from "../../../types/chat";
+import type { Chat, FrontendMessage, OutgoingMessageAttachment } from "../../../types/chat";
 import { chatsUseCases, type ChatsUseCases } from "../model/chatsUseCases";
 import type { ActiveChatVM, CurrentUserVM } from "../model/chatsViewModels";
 
@@ -79,8 +79,17 @@ export class ChatSessionController {
         return this.useCases.deleteMessage(chatId, messageId);
     }
 
-    public sendMessage(chatId: string, text: string, senderId: number) {
-        return this.useCases.sendMessage(chatId, text, senderId);
+    public sendMessage(
+        chatId: string,
+        text: string,
+        senderId: number,
+        attachments: OutgoingMessageAttachment[] = [],
+    ) {
+        return this.useCases.sendMessage(chatId, text, senderId, attachments);
+    }
+
+    public uploadMessageAttachment(file: File, type: "photo" | "video" | "file") {
+        return this.useCases.uploadMessageAttachment(file, type);
     }
 
     public editMessage(chatId: string, messageId: string, text: string): boolean {

@@ -10,6 +10,7 @@ import { ConfirmModal } from "../../composite/confirmModal/confirmModal";
  * @property {FrontendMessage} message - Объект сообщения.
  * @property {boolean} isOwn - Флаг, является ли сообщение текущего пользователя.
  * @property {boolean} showAuthor - Флаг, нужно ли показывать имя автора.
+ * @property {Function} [onDownloadAttachment] - Колбэк для скачивания вложения; реализация на уровне controller.
  */
 interface MessageProps extends IBaseComponentProps {
     message: FrontendMessage;
@@ -19,6 +20,7 @@ interface MessageProps extends IBaseComponentProps {
     chatAvatarUrl?: string;
     onEdit?: (id: string) => void;
     onDelete?: (id: string) => void;
+    onDownloadAttachment?: (url: string, fileName: string) => void | Promise<void>;
 }
 
 /**
@@ -129,6 +131,7 @@ export class Message extends BaseComponent<MessageProps> {
 
         if (!query) {
             textEl.textContent = rawText;
+            (textEl as HTMLElement).hidden = rawText.length === 0;
             return;
         }
 
@@ -152,7 +155,10 @@ export class Message extends BaseComponent<MessageProps> {
     public updateText(newText: string, edited = true): void {
         this.props.message.text = newText;
         const textEl = this.element?.querySelector('.message__text');
-        if (textEl) textEl.textContent = newText;
+        if (textEl) {
+            textEl.textContent = newText;
+            (textEl as HTMLElement).hidden = newText.length === 0;
+        }
         const editedEl = this.element?.querySelector<HTMLElement>('.message__edited');
         if (editedEl) {
             editedEl.hidden = !edited;
@@ -213,6 +219,48 @@ export class Message extends BaseComponent<MessageProps> {
         this.editMsgOverlay = null;
     }
 
+    private renderAttachments(): void {
+        const container = this.element?.querySelector<HTMLElement>('[data-component="message-attachments"]');
+        if (!container) return;
+
+        const attachments = this.props.message.attachments || [];
+        container.textContent = '';
+        container.hidden = attachments.length === 0;
+
+        attachments.forEach((attachment) => {
+            if (attachment.type === 'file') {
+                container.appendChild(this.createFileAttachment(attachment.url, attachment.fileName));
+            }
+        });
+
+        const textEl = this.element?.querySelector<HTMLElement>('.message__text');
+        if (textEl) textEl.hidden = !this.props.message.text;
+    }
+
+    private createFileAttachment(url?: string, fileName?: string): HTMLElement {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'message__attachment message__attachment--file';
+
+        const icon = document.createElement('img');
+        icon.className = 'message__attachment-icon';
+        icon.src = '/assets/images/icons/upload.svg';
+        icon.alt = '';
+
+        const name = document.createElement('span');
+        name.className = 'message__attachment-name';
+        name.textContent = fileName || 'Файл';
+
+        card.append(icon, name);
+        card.addEventListener('click', () => {
+            if (!url) return;
+            // Скачивание делегируется контроллеру через callback — компонент остаётся пассивным
+            void this.props.onDownloadAttachment?.(url, fileName || 'file');
+        });
+
+        return card;
+    }
+
     /**
      * @override
      */
@@ -227,6 +275,7 @@ export class Message extends BaseComponent<MessageProps> {
         this.element!.addEventListener('touchmove', this.handleTouchMove, { passive: true });
         this.element!.addEventListener('touchend', this.handleTouchEnd);
         this.element!.addEventListener('touchcancel', this.handleTouchEnd);
+        this.renderAttachments();
 
         if (this.props.isOwn) {
             // первичный рендер статуса для своих сообщений

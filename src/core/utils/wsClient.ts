@@ -17,6 +17,18 @@ export interface WsPacket {
     payload: unknown;
 }
 
+export interface MessageAttachmentDto {
+    type: 'photo' | 'video' | 'file' | 'contact';
+    url?: string;
+    file_name?: string;
+    mime_type?: string;
+    file_size?: number;
+    contact_user_id?: number;
+    contact_first_name?: string;
+    contact_last_name?: string;
+    contact_avatar_url?: string;
+}
+
 /**
  * @interface MessageDto
  * @description DTO входящего сообщения от бэкенда.
@@ -41,6 +53,7 @@ export interface MessageDto {
     first_name?: string;
     last_name?: string;
     avatar?: string | null;
+    attachments?: MessageAttachmentDto[];
 }
 
 /**
@@ -60,6 +73,7 @@ export interface LastMessageDto {
     sender_id: number;
     text: string;
     created_at: string;
+    attachments?: MessageAttachmentDto[];
 }
 
 /**

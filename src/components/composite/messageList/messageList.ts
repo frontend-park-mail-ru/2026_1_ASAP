@@ -19,6 +19,8 @@ interface MessageListProps extends IBaseComponentProps {
     onLoadMore?: () => Promise<void>;
     onRequestEdit?: (messageId: string, currentText: string) => void;
     onRequestDelete?: (messageId: string) => void;
+    /** Колбэк для скачивания вложения; реализация на уровне controller */
+    onDownloadAttachment?: (url: string, fileName: string) => void | Promise<void>;
 }
 
 /**
@@ -179,6 +181,7 @@ export class MessageList extends BaseComponent<MessageListProps> {
                 chatAvatarUrl: this.props.chatAvatarUrl,
                 onEdit: (id) => this.props.onRequestEdit?.(id, msgData.text),
                 onDelete: (id) => this.props.onRequestDelete?.(id),
+                onDownloadAttachment: this.props.onDownloadAttachment,
             });
             messageComponent.mount(this.flexContainer!);
             this.messages.set(msgData.id, messageComponent);
@@ -211,6 +214,7 @@ export class MessageList extends BaseComponent<MessageListProps> {
                 chatAvatarUrl: this.props.chatAvatarUrl,
                 onEdit: (id) => this.props.onRequestEdit?.(id, msgData.text),
                 onDelete: (id) => this.props.onRequestDelete?.(id),
+                onDownloadAttachment: this.props.onDownloadAttachment,
             });
             const tempDiv = document.createElement('div');
             comp.mount(tempDiv);
@@ -252,6 +256,7 @@ export class MessageList extends BaseComponent<MessageListProps> {
             chatAvatarUrl: this.props.chatAvatarUrl,
             onEdit: (id) => this.props.onRequestEdit?.(id, newMessage.text),
             onDelete: (id) => this.props.onRequestDelete?.(id),
+            onDownloadAttachment: this.props.onDownloadAttachment,
         });
         
         // Новое сообщение всегда в начало DOM (визуальный низ)

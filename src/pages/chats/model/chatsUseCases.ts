@@ -1,6 +1,6 @@
 import type { ChannelRole, CreateChannelInput, UpdateChannelInput } from "../../../services/channelService";
 import type { ChatInformationDto, MessageDto, PresenceState } from "../../../core/utils/wsClient";
-import type { ChannelChat, Chat, DialogChat, FrontendMessage, GroupChat, User } from "../../../types/chat";
+import type { ChannelChat, Chat, DialogChat, FrontendMessage, GroupChat, OutgoingMessageAttachment, User } from "../../../types/chat";
 import type { FrontendProfile } from "../../../types/profile";
 import type { SearchMessageHit, SearchMessagesResult } from "../../../types/search";
 import { ChatsDataFacade, chatsDataFacade } from "./chatsDataFacade";
@@ -309,8 +309,17 @@ export class ChatsUseCases {
         };
     }
 
-    public sendMessage(chatId: string, text: string, senderId: number) {
-        return this.data.sendMessage(chatId, text, senderId);
+    public sendMessage(
+        chatId: string,
+        text: string,
+        senderId: number,
+        attachments: OutgoingMessageAttachment[] = [],
+    ) {
+        return this.data.sendMessage(chatId, text, senderId, attachments);
+    }
+
+    public uploadMessageAttachment(file: File, type: "photo" | "video" | "file") {
+        return this.data.uploadMessageAttachment(file, type);
     }
 
     public editMessage(chatId: string, messageId: string, text: string): boolean {
