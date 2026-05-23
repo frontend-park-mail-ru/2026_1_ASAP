@@ -24,6 +24,15 @@ themeService.init();
 presenceService.init();
 notificationService.init();
 
+const updateAppHeight = (): void => {
+    const h = window.visualViewport?.height ?? window.innerHeight;
+    document.documentElement.style.setProperty('--app-height', `${h}px`);
+};
+updateAppHeight();
+window.visualViewport?.addEventListener('resize', updateAppHeight);
+window.visualViewport?.addEventListener('scroll', updateAppHeight);
+window.addEventListener('orientationchange', updateAppHeight);
+
 /**
  * @function
  * @description Главная функция, выполняемая после загрузки DOM.

@@ -86,6 +86,11 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         });
         this.sendButton.mount(sendButtonContainer as HTMLElement);
 
+        // Не даём кнопке забирать фокус с textarea — иначе на мобилках
+        // клавиатура схлопывается при каждом тапе по «отправить».
+        this.sendButton.element?.addEventListener('pointerdown', this.handleSendPointerDown);
+        this.sendButton.element?.addEventListener('mousedown', this.handleSendPointerDown);
+
         document.addEventListener('pointerdown', this.handleDocumentPointerDown, true);
 
         if (!this.isMobileViewport()) {
@@ -185,6 +190,14 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         return window.matchMedia(this.mobileQuery).matches;
     }
 
+    private handleSendPointerDown = (event: Event): void => {
+        // Перенос фокуса на кнопку = blur у textarea = клавиатура схлопывается.
+        // Стандартный паттерн для тулбар-кнопок рядом с полем ввода.
+        if (document.activeElement === this.textarea) {
+            event.preventDefault();
+        }
+    };
+
     private handleDocumentPointerDown = (event: PointerEvent): void => {
         if (!this.isMobileViewport() || !this.textarea || document.activeElement !== this.textarea) {
             return;
@@ -239,6 +252,10 @@ export class MessageInput extends BaseForm<MessageInputProps> {
                 this.textarea.style.height = '';
             }
         }
+
+        // Удерживаем фокус на textarea — на мобилках это предотвращает
+        // схлопывание виртуальной клавиатуры после каждой отправки.
+        this.textarea?.focus({ preventScroll: true });
     }
 
     /**
@@ -251,6 +268,8 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             this.textarea.removeEventListener('input', this.handleInput);
         }
         document.removeEventListener('pointerdown', this.handleDocumentPointerDown, true);
+        this.sendButton?.element?.removeEventListener('pointerdown', this.handleSendPointerDown);
+        this.sendButton?.element?.removeEventListener('mousedown', this.handleSendPointerDown);
         this.props.onStopTyping?.();
         
         this.modalComponent?.unmount();
