@@ -1,4 +1,4 @@
-import type { MessageDto } from "../../../core/utils/wsClient";
+import type { MessageDto, WsErrorDto } from "../../../core/utils/wsClient";
 import type { Chat, FrontendMessage, OutgoingMessageAttachment } from "../../../types/chat";
 import { chatsUseCases, type ChatsUseCases } from "../model/chatsUseCases";
 import type { ActiveChatVM, CurrentUserVM } from "../model/chatsViewModels";
@@ -94,6 +94,10 @@ export class ChatSessionController {
 
     public loadContacts() {
         return this.useCases.loadContacts();
+    }
+
+    public rejectPendingMessageFromError(error: WsErrorDto, activeChatId?: string | null) {
+        return this.useCases.rejectPendingMessageFromError(error, activeChatId);
     }
 
     public editMessage(chatId: string, messageId: string, text: string): boolean {

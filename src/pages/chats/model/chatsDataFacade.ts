@@ -1,5 +1,5 @@
 import { wsClient } from "../../../core/utils/wsClient";
-import type { ChatInformationDto, MessageDto, PresenceState } from "../../../core/utils/wsClient";
+import type { ChatInformationDto, MessageDto, PresenceState, WsErrorDto } from "../../../core/utils/wsClient";
 import { channelService } from "../../../services/channelService";
 import type { ChannelDetail, CreateChannelInput, UpdateChannelInput } from "../../../services/channelService";
 import { chatService } from "../../../services/chatService";
@@ -212,6 +212,10 @@ export class ChatsDataFacade {
 
     public removePendingMessage(tempId: string): Promise<void> {
         return this.deps.offlineQueue.remove(tempId);
+    }
+
+    public rejectPendingMessageFromError(error: WsErrorDto, activeChatId?: string | null): Promise<string | null> {
+        return this.deps.chatService.rejectPendingMessageFromError(error, activeChatId);
     }
 
     public createChannel(

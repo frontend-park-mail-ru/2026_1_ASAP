@@ -658,6 +658,10 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         this.hideEditIndicator();
     };
 
+    public showSendError(message: string): void {
+        this.showInlineError(message);
+    }
+
     /**
      * Обработчик нажатия клавиш в текстовой области.
      * @param {KeyboardEvent} event - Событие клавиатуры.

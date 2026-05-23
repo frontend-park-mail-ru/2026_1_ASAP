@@ -22,6 +22,7 @@ import type {
     ChatUpdatedMembersDto,
     ChatUpdatedTitleDto,
     MessageReadDto,
+    WsErrorDto,
 } from "../../core/utils/wsClient";
 import { ChatActiveHeaderController } from "./controllers/chatActiveHeaderController";
 import { ChatActiveMessagesController } from "./controllers/chatActiveMessagesController";
@@ -36,6 +37,7 @@ import { ChatPresenceController } from "./controllers/chatPresenceController";
 import { ChatRealtimeController } from "./controllers/chatRealtimeController";
 import { ChatSessionController } from "./controllers/chatSessionController";
 import { ChatSidebarController } from "./controllers/chatSidebarController";
+import { getChatErrorMessage, type ServiceErrorLike } from "./model/chatsErrors";
 import type { ChatSearchType, CreateChatMode, CurrentUserVM } from "./model/chatsViewModels";
 import { ChatsView } from "./chatsView";
 
@@ -255,6 +257,49 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         this.activeMessageList?.markOwnMessagesRead(dto.last_read_message_id);
     };
 
+    private readonly handleMessageError = async (payload: WsErrorDto): Promise<void> => {
+        const errorChatId = payload.chat_id !== undefined ? String(payload.chat_id) : null;
+
+        // Удаляем из локальной БД в любом случае
+        const tempId = await this.sessionController?.rejectPendingMessageFromError(payload, this.activeChatId);
+
+        // Игнорируем UI-обновления, если чат неактивен
+        if (errorChatId && this.activeChatId && errorChatId !== this.activeChatId) return;
+
+        const message = getChatErrorMessage(
+            "sendMessage",
+            this.normalizeWsError(payload),
+            "Не удалось отправить сообщение",
+        );
+
+        if (tempId) {
+            this.activeMessageList?.deleteMessage(tempId);
+        }
+
+        if (this.activeMessageInput) {
+            this.activeMessageInput.showSendError(message);
+            return;
+        }
+
+        this.showAlert(message);
+    };
+
+    private normalizeWsError(payload: WsErrorDto): ServiceErrorLike {
+        const nestedError = typeof payload.error === 'object' ? payload.error : null;
+        const firstError = payload.errors?.[0];
+
+        return {
+            errorCode: payload.code
+                || payload.error_code
+                || (typeof payload.error === 'string' ? payload.error : undefined)
+                || nestedError?.code
+                || firstError?.code,
+            errorMessage: payload.message
+                || nestedError?.message
+                || firstError?.message,
+        };
+    }
+
     /**
      * Обработчик системного события переподключения WS.
      * Перезапрашивает историю для активного чата и флашит offline-очередь.
@@ -410,6 +455,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 if (this.activeChat?.type === 'channel') return;
                 this.activeMessageList?.updateUserAvatar(payload);
             },
+            onMessageError: this.handleMessageError,
             onConnected: this.handleWsConnected,
             onDisconnected: () => this.sessionController!.clearInFlightMessages(),
         });

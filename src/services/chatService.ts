@@ -11,7 +11,7 @@ import {
 } from '../types/chat';
 import { SearchChatHit, SearchChatsResult, SearchMessageHit, SearchMessagesResult } from '../types/search';
 import { httpClient } from '../core/utils/httpClient';
-import { wsClient, MessageDto, ChatInformationDto, MessageAttachmentDto } from '../core/utils/wsClient';
+import { wsClient, MessageDto, ChatInformationDto, MessageAttachmentDto, WsErrorDto } from '../core/utils/wsClient';
 import { getFullUrl } from '../core/utils/url';
 import { presenceService } from './presenceService';
 import { offlineQueue, PendingMessage } from './offlineMessageQueue';
@@ -512,6 +512,30 @@ export class ChatService {
         await offlineQueue.remove(match.tempId);
         this.inFlightMessages.delete(match.tempId);
 
+        return match.tempId;
+    }
+
+    public async rejectPendingMessageFromError(error: WsErrorDto, activeChatId?: string | null): Promise<string | null> {
+        const exactTempId = error.temp_id || error.tempId || error.client_temp_id;
+        if (exactTempId) {
+            await offlineQueue.remove(exactTempId);
+            this.inFlightMessages.delete(exactTempId);
+            return exactTempId;
+        }
+
+        const chatId = error.chat_id !== undefined ? String(error.chat_id) : activeChatId;
+        if (!chatId) return null;
+
+        const pending = await offlineQueue.getByChat(chatId);
+        const match = pending
+            .slice()
+            .reverse()
+            .find(message => this.inFlightMessages.has(message.tempId));
+
+        if (!match) return null;
+
+        await offlineQueue.remove(match.tempId);
+        this.inFlightMessages.delete(match.tempId);
         return match.tempId;
     }
 

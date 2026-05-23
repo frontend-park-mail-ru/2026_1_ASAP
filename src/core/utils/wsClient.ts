@@ -29,6 +29,19 @@ export interface MessageAttachmentDto {
     contact_avatar_url?: string;
 }
 
+export interface WsErrorDto {
+    chat_id?: number | string;
+    message_id?: number | string;
+    temp_id?: string;
+    tempId?: string;
+    client_temp_id?: string;
+    code?: string;
+    error_code?: string;
+    error?: string | { code?: string; message?: string };
+    message?: string;
+    errors?: Array<{ code?: string; message?: string }>;
+}
+
 /**
  * @interface MessageDto
  * @description DTO входящего сообщения от бэкенда.

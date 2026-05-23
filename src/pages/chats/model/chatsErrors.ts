@@ -76,6 +76,16 @@ const OPERATION_CODE_MESSAGES: Partial<Record<ChatOperation, Record<string, stri
         MEMBER_ALREADY_IN_CHAT: "Этот пользователь уже добавлен",
         USER_ALREADY_IN_CHAT: "Этот пользователь уже добавлен",
     },
+    sendMessage: {
+        EMPTY_TEXT: "Добавьте текст или вложение",
+        TOO_MANY_ATTACHMENTS: "В одном сообщении можно отправить не больше 10 вложений",
+        INVALID_ATTACHMENT: "Одно из вложений не удалось отправить",
+        ATTACHMENT_NOT_OWNED: "Это вложение недоступно для отправки",
+        CONTACT_NOT_FOUND: "Контакт не найден или больше не доступен",
+        NOT_MEMBER_OF_CHAT: "Вы больше не участник этого чата",
+        YOU_CANT_SEND_MESSAGE: "Вы не можете писать в этот чат",
+        MESSAGE_TOO_LONG: "Сообщение должно быть не длиннее 2000 символов",
+    },
     updateGroup: {
         YOU_CANT_CHANGE_TITLE: "Название группы может менять только владелец",
         YOU_CANT_CHANGE_AVATAR: "Аватар группы может менять только владелец",

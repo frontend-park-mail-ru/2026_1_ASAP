@@ -1,5 +1,5 @@
 import type { ChannelRole, CreateChannelInput, UpdateChannelInput } from "../../../services/channelService";
-import type { ChatInformationDto, MessageDto, PresenceState } from "../../../core/utils/wsClient";
+import type { ChatInformationDto, MessageDto, PresenceState, WsErrorDto } from "../../../core/utils/wsClient";
 import type { ChannelChat, Chat, DialogChat, FrontendMessage, GroupChat, OutgoingMessageAttachment, User } from "../../../types/chat";
 import type { FrontendProfile } from "../../../types/profile";
 import type { SearchMessageHit, SearchMessagesResult } from "../../../types/search";
@@ -174,6 +174,10 @@ export class ChatsUseCases {
 
     public async loadContacts() {
         return this.data.getContacts();
+    }
+
+    public rejectPendingMessageFromError(error: WsErrorDto, activeChatId?: string | null): Promise<string | null> {
+        return this.data.rejectPendingMessageFromError(error, activeChatId);
     }
 
     public async createDialogChat(currentUserId: number, contactId: number, contactLogin?: string) {
