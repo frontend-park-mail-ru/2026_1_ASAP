@@ -261,7 +261,10 @@ export class ChatsUseCases {
 
         const [history, pendingMessages, groupMemberIds] = await Promise.all([
             this.data.getMessages(chatId, currentUser.id),
-            this.data.getPendingMessages(chatId),
+            this.data.getPendingMessages(chatId).catch((err) => {
+                console.warn('chatsUseCases: getPendingMessages failed', err);
+                return [];
+            }),
             resolvedChat.type === "group" ? this.data.getChatMembers(chatId) : Promise.resolve(null),
         ]);
 
