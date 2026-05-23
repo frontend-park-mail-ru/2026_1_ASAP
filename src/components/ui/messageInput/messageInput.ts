@@ -1,8 +1,10 @@
 import { BaseForm, IBaseFormProps } from '../../../core/base/baseForm'; 
 import { Button } from '../button/button';
 import { ConfirmModal } from '../../composite/confirmModal/confirmModal';
-import type { MessageAttachment, OutgoingMessageAttachment } from '../../../types/chat';
+import type { MessageAttachment, MessageAttachmentType, OutgoingMessageAttachment } from '../../../types/chat';
 import template from './messageInput.hbs';
+
+type UploadableAttachmentType = Extract<MessageAttachmentType, 'photo' | 'video' | 'file'>;
 
 type DraftAttachment = {
     id: string;
@@ -16,7 +18,7 @@ type DraftAttachment = {
  */
 interface MessageInputProps extends IBaseFormProps { 
     onSubmit: (text: string, attachments: OutgoingMessageAttachment[], draftAttachments: MessageAttachment[]) => void | Promise<void>;
-    onUploadFile?: (file: File, type: 'file') => Promise<
+    onUploadFile?: (file: File, type: UploadableAttachmentType) => Promise<
         | { success: true; attachment: MessageAttachment; outgoing: OutgoingMessageAttachment }
         | { success: false; errorMessage: string }
     >;
@@ -38,6 +40,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
     private stikerButton: Button | null = null;
     private sendButton: Button | null = null;
     private fileInput: HTMLInputElement | null = null;
+    private mediaInput: HTMLInputElement | null = null;
     private attachmentMenu: HTMLElement | null = null;
     private draftAttachmentsContainer: HTMLElement | null = null;
     private errorElement: HTMLElement | null = null;
@@ -118,6 +121,30 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         this.fileInput.addEventListener('change', this.handleFileInputChange);
         this.element.appendChild(this.fileInput);
 
+        this.mediaInput = document.createElement('input');
+        this.mediaInput.type = 'file';
+        this.mediaInput.accept = [
+            'image/jpeg',
+            'image/png',
+            'image/webp',
+            'image/gif',
+            'video/mp4',
+            'video/webm',
+            'video/quicktime',
+            '.jpg',
+            '.jpeg',
+            '.png',
+            '.webp',
+            '.gif',
+            '.mp4',
+            '.webm',
+            '.mov',
+            '.qt',
+        ].join(',');
+        this.mediaInput.hidden = true;
+        this.mediaInput.addEventListener('change', this.handleMediaInputChange);
+        this.element.appendChild(this.mediaInput);
+
         this.draftAttachmentsContainer = this.element.querySelector('[data-component="draft-attachments"]');
         this.errorElement = this.element.querySelector('[data-component="message-input-error"]');
 
@@ -191,24 +218,41 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         const action = button.dataset.action;
         this.closeAttachmentMenu();
 
+        if (action === 'media') {
+            this.mediaInput?.click();
+            return;
+        }
+
         if (action === 'file') {
             this.fileInput?.click();
             return;
         }
 
-        this.showInlineError(action === 'media'
-            ? 'Фото и видео будут добавлены следующим шагом'
-            : 'Контакты будут добавлены следующим шагом');
+        this.showInlineError('Контакты будут добавлены следующим шагом');
     };
 
     private handleFileInputChange = (): void => {
         const file = this.fileInput?.files?.[0];
         if (this.fileInput) this.fileInput.value = '';
         if (!file) return;
-        void this.attachFile(file);
+        void this.attachUpload(file, 'file');
     };
 
-    private async attachFile(file: File): Promise<void> {
+    private handleMediaInputChange = (): void => {
+        const file = this.mediaInput?.files?.[0];
+        if (this.mediaInput) this.mediaInput.value = '';
+        if (!file) return;
+
+        const type = this.detectMediaAttachmentType(file);
+        if (!type) {
+            this.showInlineError('Можно прикрепить изображение JPEG, PNG, WebP, GIF или видео MP4, WebM, MOV');
+            return;
+        }
+
+        void this.attachUpload(file, type);
+    };
+
+    private async attachUpload(file: File, type: UploadableAttachmentType): Promise<void> {
         if (!this.props.onUploadFile) {
             this.showInlineError('Загрузка вложений недоступна');
             return;
@@ -217,28 +261,51 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             this.showInlineError('В одном сообщении можно отправить не больше 10 вложений');
             return;
         }
-        if (!this.validateFileAttachment(file)) return;
+        if (!this.validateAttachment(file, type)) return;
 
         this.isUploading = true;
         this.updateSendButtonState();
         this.showInlineError(`Загружаем ${file.name}...`, false);
 
-        const result = await this.props.onUploadFile(file, 'file');
-        this.isUploading = false;
-        this.updateSendButtonState();
+        try {
+            const result = await this.props.onUploadFile(file, type);
+            if (result.success === false) {
+                this.showInlineError(result.errorMessage);
+                return;
+            }
 
-        if (result.success === false) {
-            this.showInlineError(result.errorMessage);
-            return;
+            this.clearInlineError();
+            this.draftAttachments.push({
+                id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                attachment: result.attachment,
+                outgoing: result.outgoing,
+            });
+            this.renderDraftAttachments();
+        } catch {
+            this.showInlineError('Не удалось загрузить вложение. Попробуйте ещё раз');
+        } finally {
+            this.isUploading = false;
+            this.updateSendButtonState();
+        }
+    }
+
+    private detectMediaAttachmentType(file: File): Extract<MessageAttachmentType, 'photo' | 'video'> | null {
+        if (file.type.startsWith('image/')) return 'photo';
+        if (file.type.startsWith('video/')) return 'video';
+        if (/\.(jpe?g|png|webp|gif)$/i.test(file.name)) return 'photo';
+        if (/\.(mp4|webm|mov|qt)$/i.test(file.name)) return 'video';
+        return null;
+    }
+
+    private validateAttachment(file: File, type: UploadableAttachmentType): boolean {
+        if (file.size === 0) {
+            this.showInlineError('Нельзя прикрепить пустой файл');
+            return false;
         }
 
-        this.clearInlineError();
-        this.draftAttachments.push({
-            id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-            attachment: result.attachment,
-            outgoing: result.outgoing,
-        });
-        this.renderDraftAttachments();
+        if (type === 'photo') return this.validatePhotoAttachment(file);
+        if (type === 'video') return this.validateVideoAttachment(file);
+        return this.validateFileAttachment(file);
     }
 
     private validateFileAttachment(file: File): boolean {
@@ -255,16 +322,44 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         const allowedExtensions = /\.(pdf|zip|doc|docx|xls|xlsx|txt)$/i;
         const maxSize = 20 * 1024 * 1024;
 
-        if (file.size === 0) {
-            this.showInlineError('Нельзя прикрепить пустой файл');
-            return false;
-        }
         if (file.size > maxSize) {
             this.showInlineError('Файл должен быть не больше 20 МиБ');
             return false;
         }
         if (!allowedMimeTypes.has(file.type) && !allowedExtensions.test(file.name)) {
             this.showInlineError('Можно прикрепить PDF, ZIP, DOC/DOCX, XLS/XLSX или TXT');
+            return false;
+        }
+        return true;
+    }
+
+    private validatePhotoAttachment(file: File): boolean {
+        const allowedMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+        const allowedExtensions = /\.(jpe?g|png|webp|gif)$/i;
+        const maxSize = 10 * 1024 * 1024;
+
+        if (file.size > maxSize) {
+            this.showInlineError('Фото должно быть не больше 10 МиБ');
+            return false;
+        }
+        if (!allowedMimeTypes.has(file.type) && !allowedExtensions.test(file.name)) {
+            this.showInlineError('Можно прикрепить изображение JPEG, PNG, WebP или GIF');
+            return false;
+        }
+        return true;
+    }
+
+    private validateVideoAttachment(file: File): boolean {
+        const allowedMimeTypes = new Set(['video/mp4', 'video/webm', 'video/quicktime']);
+        const allowedExtensions = /\.(mp4|webm|mov|qt)$/i;
+        const maxSize = 50 * 1024 * 1024;
+
+        if (file.size > maxSize) {
+            this.showInlineError('Видео должно быть не больше 50 МиБ');
+            return false;
+        }
+        if (!allowedMimeTypes.has(file.type) && !allowedExtensions.test(file.name)) {
+            this.showInlineError('Можно прикрепить видео MP4, WebM или MOV');
             return false;
         }
         return true;
@@ -281,7 +376,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
 
             const name = document.createElement('span');
             name.className = 'message-input__draft-attachment-name';
-            name.textContent = draft.attachment.fileName || 'Файл';
+            name.textContent = this.getDraftAttachmentLabel(draft.attachment);
 
             const removeButton = document.createElement('button');
             removeButton.type = 'button';
@@ -296,6 +391,21 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             item.append(name, removeButton);
             this.draftAttachmentsContainer!.appendChild(item);
         });
+    }
+
+    private getDraftAttachmentLabel(attachment: MessageAttachment): string {
+        switch (attachment.type) {
+            case 'photo':
+                return `Фото: ${attachment.fileName || 'изображение'}`;
+            case 'video':
+                return `Видео: ${attachment.fileName || 'видео'}`;
+            case 'file':
+                return attachment.fileName || 'Файл';
+            case 'contact':
+                return [attachment.contactFirstName, attachment.contactLastName].filter(Boolean).join(' ') || 'Контакт';
+            default:
+                return 'Вложение';
+        }
     }
 
     private showInlineError(message: string, isError = true): void {
@@ -503,6 +613,8 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         this.closeAttachmentMenu();
         this.fileInput?.removeEventListener('change', this.handleFileInputChange);
         this.fileInput?.remove();
+        this.mediaInput?.removeEventListener('change', this.handleMediaInputChange);
+        this.mediaInput?.remove();
         
         this.modalComponent?.unmount();
         
@@ -516,6 +628,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         this.uplodadButton = null;
         this.sendButton = null;
         this.fileInput = null;
+        this.mediaInput = null;
         this.draftAttachmentsContainer = null;
         this.errorElement = null;
         this.draftAttachments = [];

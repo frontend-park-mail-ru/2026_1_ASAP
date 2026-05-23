@@ -1,5 +1,5 @@
 import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent";
-import { FrontendMessage, MessageStatus, User } from '../../../types/chat';
+import { FrontendMessage, MessageAttachment, MessageStatus, User } from '../../../types/chat';
 import template from './message.hbs';
 import { Avatar } from '../../ui/avatar/avatar';
 import { EditMsgOverlay } from '../../composite/editMsgOverlay/editMsgOverlay';
@@ -228,8 +228,18 @@ export class Message extends BaseComponent<MessageProps> {
         container.hidden = attachments.length === 0;
 
         attachments.forEach((attachment) => {
-            if (attachment.type === 'file') {
-                container.appendChild(this.createFileAttachment(attachment.url, attachment.fileName));
+            switch (attachment.type) {
+                case 'photo':
+                    container.appendChild(this.createPhotoAttachment(attachment));
+                    break;
+                case 'video':
+                    container.appendChild(this.createVideoAttachment(attachment));
+                    break;
+                case 'file':
+                    container.appendChild(this.createFileAttachment(attachment.url, attachment.fileName));
+                    break;
+                default:
+                    break;
             }
         });
 
@@ -259,6 +269,56 @@ export class Message extends BaseComponent<MessageProps> {
         });
 
         return card;
+    }
+
+    private createPhotoAttachment(attachment: MessageAttachment): HTMLElement {
+        const wrapper = document.createElement('a');
+        wrapper.className = 'message__attachment-media-link';
+        wrapper.href = attachment.url || '#';
+        wrapper.target = '_blank';
+        wrapper.rel = 'noopener';
+        wrapper.setAttribute('aria-label', attachment.fileName || 'Фото');
+
+        const image = document.createElement('img');
+        image.className = 'message__attachment-media message__attachment-media--photo';
+        image.src = attachment.url || '';
+        image.alt = attachment.fileName || 'Фото';
+        image.loading = 'lazy';
+        image.decoding = 'async';
+        image.crossOrigin = 'use-credentials';
+
+        // Фоллбэк при ошибке загрузки (403, 404, сеть): показываем подсказку, не broken-иконку браузера
+        image.addEventListener('error', () => {
+            image.alt = 'Не удалось загрузить фото';
+            image.classList.add('message__attachment-media--broken');
+        }, { once: true });
+
+        wrapper.appendChild(image);
+        return wrapper;
+    }
+
+    private createVideoAttachment(attachment: MessageAttachment): HTMLElement {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'message__attachment-video';
+
+        const video = document.createElement('video');
+        video.className = 'message__attachment-media message__attachment-media--video';
+        video.src = attachment.url || '';
+        video.controls = true;
+        video.preload = 'metadata';
+        video.crossOrigin = 'use-credentials';
+        if (attachment.fileName) video.setAttribute('aria-label', attachment.fileName);
+
+        // Фоллбэк при ошибке загрузки: заменяем плеер div-заглушкой, чтобы не торчал пустой controls-бар
+        video.addEventListener('error', () => {
+            const errEl = document.createElement('div');
+            errEl.className = 'message__attachment-video-error';
+            errEl.textContent = 'Не удалось загрузить видео';
+            if (wrapper.contains(video)) wrapper.replaceChild(errEl, video);
+        }, { once: true });
+
+        wrapper.appendChild(video);
+        return wrapper;
     }
 
     /**

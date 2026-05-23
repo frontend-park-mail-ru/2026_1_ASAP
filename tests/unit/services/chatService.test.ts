@@ -90,6 +90,40 @@ describe('chatService attachments', () => {
         expect(call.headers.has('Content-Type')).toBe(false);
     });
 
+    it('uploadMessageAttachment поддерживает media type в upload endpoint', async () => {
+        const fetchMock = mockFetchSequence([
+            {
+                status: 200,
+                json: {
+                    status: 'success',
+                    body: {
+                        attachment_url: 'http://localhost/api/v1/messages/attachments/message/5/photo.jpg',
+                        object_key: 'message/5/photo.jpg',
+                        mime_type: 'image/jpeg',
+                        file_size: 42,
+                        file_name: 'photo.jpg',
+                    },
+                },
+            },
+        ]);
+
+        const file = new File(['image'], 'photo.jpg', { type: 'image/jpeg' });
+        const result = await svc.uploadMessageAttachment(file, 'photo');
+
+        expect(result.success).toBe(true);
+        if (!result.success) return;
+        expect(result.attachment.type).toBe('photo');
+        expect(result.outgoing).toEqual({
+            type: 'photo',
+            url: 'http://localhost/api/v1/messages/attachments/message/5/photo.jpg',
+            file_name: 'photo.jpg',
+        });
+
+        const call = getFetchCall(fetchMock);
+        expect(call.url).toContain('/api/v1/messages/attachments/upload?type=photo');
+        expect(call.body).toBeInstanceOf(FormData);
+    });
+
     it('convertWsMessageDto сохраняет attachments из message.New/message.Get DTO', () => {
         const message = svc.convertWsMessageDto({
             id: 10,
@@ -106,6 +140,20 @@ describe('chatService attachments', () => {
                     mime_type: 'text/plain',
                     file_size: 5,
                 },
+                {
+                    type: 'photo',
+                    url: 'http://localhost/photo.jpg',
+                    file_name: 'photo.jpg',
+                    mime_type: 'image/jpeg',
+                    file_size: 10,
+                },
+                {
+                    type: 'video',
+                    url: 'http://localhost/video.mp4',
+                    file_name: 'video.mp4',
+                    mime_type: 'video/mp4',
+                    file_size: 20,
+                },
             ],
         }, 7);
 
@@ -116,6 +164,28 @@ describe('chatService attachments', () => {
                 fileName: 'file.txt',
                 mimeType: 'text/plain',
                 fileSize: 5,
+                contactUserId: undefined,
+                contactFirstName: undefined,
+                contactLastName: undefined,
+                contactAvatarUrl: undefined,
+            },
+            {
+                type: 'photo',
+                url: 'http://localhost/photo.jpg',
+                fileName: 'photo.jpg',
+                mimeType: 'image/jpeg',
+                fileSize: 10,
+                contactUserId: undefined,
+                contactFirstName: undefined,
+                contactLastName: undefined,
+                contactAvatarUrl: undefined,
+            },
+            {
+                type: 'video',
+                url: 'http://localhost/video.mp4',
+                fileName: 'video.mp4',
+                mimeType: 'video/mp4',
+                fileSize: 20,
                 contactUserId: undefined,
                 contactFirstName: undefined,
                 contactLastName: undefined,
