@@ -86,6 +86,15 @@
     }
 
     @media (max-width: $breakpoint-mobile-max) {
+        /* Прижимаем чат к visual viewport: при появлении клавиатуры на iOS
+           offsetTop становится > 0, и без fixed-позиционирования верх .chat-page
+           уезжает выше видимой области, унося с собой хедер диалога. */
+        position: fixed;
+        top: var(--app-offset-top, 0);
+        left: 0;
+        right: 0;
+        width: 100%;
+
         &__sidebar {
             min-width: 0;
             max-width: none;
