@@ -154,6 +154,13 @@ describe('chatService attachments', () => {
                     mime_type: 'video/mp4',
                     file_size: 20,
                 },
+                {
+                    type: 'contact',
+                    contact_user_id: 77,
+                    contact_first_name: 'Иван',
+                    contact_last_name: 'Петров',
+                    contact_avatar_url: 'http://localhost/avatar.jpg',
+                },
             ],
         }, 7);
 
@@ -190,6 +197,17 @@ describe('chatService attachments', () => {
                 contactFirstName: undefined,
                 contactLastName: undefined,
                 contactAvatarUrl: undefined,
+            },
+            {
+                type: 'contact',
+                url: undefined,
+                fileName: undefined,
+                mimeType: undefined,
+                fileSize: undefined,
+                contactUserId: 77,
+                contactFirstName: 'Иван',
+                contactLastName: 'Петров',
+                contactAvatarUrl: 'http://localhost/avatar.jpg',
             },
         ]);
     });

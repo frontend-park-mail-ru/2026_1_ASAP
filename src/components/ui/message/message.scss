@@ -143,6 +143,43 @@
         text-overflow: ellipsis;
     }
 
+    &__attachment--contact {
+        cursor: default;
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.14);
+        }
+    }
+
+    &__attachment-contact-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    &__attachment-contact-info {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    &__attachment-contact-name {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        color: inherit;
+    }
+
+    &__attachment-contact-label {
+        font-size: 12px;
+        line-height: 1.2;
+        opacity: 0.65;
+    }
+
     &__attachment-media-link,
     &__attachment-video {
         display: block;

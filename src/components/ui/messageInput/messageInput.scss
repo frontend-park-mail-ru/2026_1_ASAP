@@ -218,6 +218,137 @@
         }
     }
 
+    &__contact-picker-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 120;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+        background: rgba(0, 0, 0, 0.45);
+    }
+
+    &__contact-picker {
+        width: min(420px, 100%);
+        max-height: min(560px, 88vh);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px;
+        border-radius: 10px;
+        background: $color-neutral;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.38);
+        box-sizing: border-box;
+    }
+
+    &__contact-picker-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    &__contact-picker-title {
+        color: $color-text;
+        font: $text-main-style;
+        letter-spacing: $text-main-ls;
+        font-weight: 600;
+    }
+
+    &__contact-picker-close {
+        @include btn-reset;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: $color-text;
+        cursor: pointer;
+        font-size: 22px;
+        line-height: 1;
+
+        &:hover {
+            background: $color-text-hover2;
+        }
+    }
+
+    &__contact-picker-search {
+        width: 100%;
+        height: 38px;
+        padding: 0 12px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.06);
+        color: $color-text;
+        font: $text-tertiary;
+        letter-spacing: $text-tertiary-ls;
+        outline: none;
+        box-sizing: border-box;
+
+        &:focus {
+            border-color: $color-primary;
+        }
+
+        &::placeholder {
+            color: $color-text-tertiary;
+        }
+    }
+
+    &__contact-picker-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-height: 80px;
+        overflow-y: auto;
+    }
+
+    &__contact-picker-item {
+        @include btn-reset;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        min-height: 48px;
+        padding: 6px 8px;
+        border-radius: 8px;
+        color: $color-text;
+        cursor: pointer;
+        text-align: left;
+
+        &:hover {
+            background: $color-text-hover2;
+        }
+    }
+
+    &__contact-picker-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    &__contact-picker-name {
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        font: $text-tertiary;
+        letter-spacing: $text-tertiary-ls;
+    }
+
+    &__contact-picker-state {
+        margin: auto;
+        padding: 16px;
+        color: $color-text-tertiary;
+        font: $text-tertiary;
+        letter-spacing: $text-tertiary-ls;
+        text-align: center;
+    }
+
     &__edit-indicator {
         display: flex;
         align-items: center;

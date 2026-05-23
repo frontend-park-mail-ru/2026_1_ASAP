@@ -2,6 +2,7 @@ import { BaseForm, IBaseFormProps } from '../../../core/base/baseForm';
 import { Button } from '../button/button';
 import { ConfirmModal } from '../../composite/confirmModal/confirmModal';
 import type { MessageAttachment, MessageAttachmentType, OutgoingMessageAttachment } from '../../../types/chat';
+import type { FrontendContact } from '../../../types/contact';
 import template from './messageInput.hbs';
 
 type UploadableAttachmentType = Extract<MessageAttachmentType, 'photo' | 'video' | 'file'>;
@@ -22,6 +23,7 @@ interface MessageInputProps extends IBaseFormProps {
         | { success: true; attachment: MessageAttachment; outgoing: OutgoingMessageAttachment }
         | { success: false; errorMessage: string }
     >;
+    onLoadContacts?: () => Promise<FrontendContact[]>;
     onSubmitEdit?: (messageId: string, text: string) => void;
     onTyping?: () => void;
     onStopTyping?: () => void;
@@ -45,6 +47,9 @@ export class MessageInput extends BaseForm<MessageInputProps> {
     private draftAttachmentsContainer: HTMLElement | null = null;
     private errorElement: HTMLElement | null = null;
     private modalComponent: ConfirmModal | null = null;
+    private contactPickerOverlay: HTMLElement | null = null;
+    private contactPickerContacts: FrontendContact[] = [];
+    private contactPickerRequestId = 0;
     private draftAttachments: DraftAttachment[] = [];
     private isUploading = false;
     private readonly mobileQuery = '(max-width: 767px)';
@@ -228,7 +233,9 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             return;
         }
 
-        this.showInlineError('Контакты будут добавлены следующим шагом');
+        if (action === 'contact') {
+            void this.openContactPicker();
+        }
     };
 
     private handleFileInputChange = (): void => {
@@ -408,6 +415,171 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         }
     }
 
+    private async openContactPicker(): Promise<void> {
+        if (this.editingMessageId) {
+            this.showInlineError('Завершите редактирование сообщения перед добавлением вложений');
+            return;
+        }
+        if (this.draftAttachments.length >= this.maxAttachments) {
+            this.showInlineError('В одном сообщении можно отправить не больше 10 вложений');
+            return;
+        }
+        if (!this.props.onLoadContacts) {
+            this.showInlineError('Список контактов недоступен');
+            return;
+        }
+
+        this.closeContactPicker();
+        this.contactPickerRequestId += 1;
+        const requestId = this.contactPickerRequestId;
+
+        const overlay = document.createElement('div');
+        overlay.className = 'message-input__contact-picker-overlay';
+        overlay.innerHTML = `
+            <div class="message-input__contact-picker" role="dialog" aria-modal="true" aria-label="Выбор контакта">
+                <div class="message-input__contact-picker-header">
+                    <span class="message-input__contact-picker-title">Выберите контакт</span>
+                    <button type="button" class="message-input__contact-picker-close" aria-label="Закрыть">×</button>
+                </div>
+                <input class="message-input__contact-picker-search" type="search" placeholder="Поиск" autocomplete="off">
+                <div class="message-input__contact-picker-list" data-component="contact-picker-list">
+                    <p class="message-input__contact-picker-state">Загружаем контакты...</p>
+                </div>
+            </div>
+        `;
+
+        overlay.addEventListener('click', this.handleContactPickerClick);
+        document.body.appendChild(overlay);
+        this.contactPickerOverlay = overlay;
+
+        const input = overlay.querySelector<HTMLInputElement>('.message-input__contact-picker-search');
+        input?.addEventListener('input', this.handleContactPickerSearch);
+        input?.focus({ preventScroll: true });
+
+        try {
+            const contacts = await this.props.onLoadContacts();
+            if (requestId !== this.contactPickerRequestId || this.contactPickerOverlay !== overlay) return;
+            this.contactPickerContacts = contacts;
+            this.renderContactPickerList(contacts);
+        } catch {
+            if (requestId !== this.contactPickerRequestId || this.contactPickerOverlay !== overlay) return;
+            this.renderContactPickerState('Не удалось загрузить контакты');
+        }
+    }
+
+    private closeContactPicker(): void {
+        this.contactPickerRequestId += 1;
+        const input = this.contactPickerOverlay?.querySelector<HTMLInputElement>('.message-input__contact-picker-search');
+        input?.removeEventListener('input', this.handleContactPickerSearch);
+        this.contactPickerOverlay?.removeEventListener('click', this.handleContactPickerClick);
+        this.contactPickerOverlay?.remove();
+        this.contactPickerOverlay = null;
+        this.contactPickerContacts = [];
+    }
+
+    private handleContactPickerClick = (event: Event): void => {
+        if (event.target === this.contactPickerOverlay) {
+            this.closeContactPicker();
+            return;
+        }
+
+        const target = event.target as HTMLElement;
+        if (target.closest('.message-input__contact-picker-close')) {
+            this.closeContactPicker();
+            return;
+        }
+
+        const item = target.closest<HTMLButtonElement>('[data-contact-id]');
+        if (!item) return;
+
+        const contactId = Number(item.dataset.contactId);
+        const contact = this.contactPickerContacts.find(contact => contact.contact_user_id === contactId);
+        if (!contact) return;
+
+        this.attachContact(contact);
+    };
+
+    private handleContactPickerSearch = (event: Event): void => {
+        const query = ((event.target as HTMLInputElement).value || '').trim().toLowerCase();
+        if (!query) {
+            this.renderContactPickerList(this.contactPickerContacts);
+            return;
+        }
+
+        const filtered = this.contactPickerContacts.filter(contact =>
+            contact.contact_name.toLowerCase().includes(query)
+            || String(contact.contact_user_id).includes(query)
+        );
+        this.renderContactPickerList(filtered);
+    };
+
+    private renderContactPickerList(contacts: FrontendContact[]): void {
+        if (contacts.length === 0) {
+            this.renderContactPickerState('Контакты не найдены');
+            return;
+        }
+
+        const list = this.contactPickerOverlay?.querySelector<HTMLElement>('[data-component="contact-picker-list"]');
+        if (!list) return;
+        list.textContent = '';
+
+        contacts.forEach((contact) => {
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'message-input__contact-picker-item';
+            item.dataset.contactId = String(contact.contact_user_id);
+
+            const avatar = document.createElement('img');
+            avatar.className = 'message-input__contact-picker-avatar';
+            avatar.src = contact.avatarURL || '/assets/images/avatars/defaultAvatar.svg';
+            avatar.alt = '';
+
+            const name = document.createElement('span');
+            name.className = 'message-input__contact-picker-name';
+            name.textContent = contact.contact_name || `User #${contact.contact_user_id}`;
+
+            item.append(avatar, name);
+            list.appendChild(item);
+        });
+    }
+
+    private renderContactPickerState(text: string): void {
+        const list = this.contactPickerOverlay?.querySelector<HTMLElement>('[data-component="contact-picker-list"]');
+        if (!list) return;
+        list.textContent = '';
+        const state = document.createElement('p');
+        state.className = 'message-input__contact-picker-state';
+        state.textContent = text;
+        list.appendChild(state);
+    }
+
+    private attachContact(contact: FrontendContact): void {
+        if (this.draftAttachments.length >= this.maxAttachments) {
+            this.showInlineError('В одном сообщении можно отправить не больше 10 вложений');
+            return;
+        }
+
+        const name = contact.contact_name || `User #${contact.contact_user_id}`;
+        const attachment: MessageAttachment = {
+            type: 'contact',
+            contactUserId: contact.contact_user_id,
+            contactFirstName: name,
+            contactAvatarUrl: contact.avatarURL,
+        };
+
+        this.draftAttachments.push({
+            id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            attachment,
+            outgoing: {
+                type: 'contact',
+                contact_user_id: contact.contact_user_id,
+            },
+        });
+        this.renderDraftAttachments();
+        this.clearInlineError();
+        this.closeContactPicker();
+    }
+
     private showInlineError(message: string, isError = true): void {
         if (!this.errorElement) return;
         this.errorElement.textContent = message;
@@ -538,6 +710,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
     private handleDocumentKeyDown = (event: KeyboardEvent): void => {
         if (event.key === 'Escape') {
             this.closeAttachmentMenu();
+            this.closeContactPicker();
         }
     };
 
@@ -611,6 +784,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         document.removeEventListener('keydown', this.handleDocumentKeyDown);
         this.props.onStopTyping?.();
         this.closeAttachmentMenu();
+        this.closeContactPicker();
         this.fileInput?.removeEventListener('change', this.handleFileInputChange);
         this.fileInput?.remove();
         this.mediaInput?.removeEventListener('change', this.handleMediaInputChange);

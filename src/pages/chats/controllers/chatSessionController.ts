@@ -92,6 +92,10 @@ export class ChatSessionController {
         return this.useCases.uploadMessageAttachment(file, type);
     }
 
+    public loadContacts() {
+        return this.useCases.loadContacts();
+    }
+
     public editMessage(chatId: string, messageId: string, text: string): boolean {
         return this.useCases.editMessage(chatId, messageId, text);
     }

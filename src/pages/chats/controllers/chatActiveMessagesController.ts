@@ -182,6 +182,7 @@ export class ChatActiveMessagesController {
                     outgoing: result.outgoing,
                 };
             },
+            onLoadContacts: () => this.deps.sessionController.loadContacts(),
             onSubmitEdit: (messageId, newText) => {
                 const activeChatId = this.deps.getActiveChatId();
                 if (!activeChatId || activeChatId !== chatId) return;
