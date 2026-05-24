@@ -39,6 +39,7 @@ export class MessageList extends BaseComponent<MessageListProps> {
     private messages: Map<string, Message> = new Map();
     private currentHighlightQuery = '';
     private selectedMessageEl: HTMLElement | null = null;
+    private pinnedToBottom = true;
 
     /**
      * @param {MessageListProps} props - Свойства компонента.
@@ -59,8 +60,11 @@ export class MessageList extends BaseComponent<MessageListProps> {
      */
     private handleScroll = async () => {
         if (!this.element || this.isLoadingMore) return;
-        if (!this.props.onLoadMore) return;
 
+
+        this.pinnedToBottom = this.isNearBottom();
+
+        if (!this.props.onLoadMore) return;
         if (this.element.scrollTop > 40) return;
 
         this.isLoadingMore = true;
@@ -78,6 +82,31 @@ export class MessageList extends BaseComponent<MessageListProps> {
             this.isLoadingMore = false;
         }
     };
+
+    private isNearBottom(): boolean {
+        if (!this.element) return false;
+        return this.element.scrollHeight - this.element.scrollTop - this.element.clientHeight < 40;
+    }
+
+    /**
+     * Подвешивает onload/onerror на все ещё не загруженные картинки внутри
+     * flex-container. При завершении загрузки — если пользователь всё ещё
+     * "приклеен к низу", добивает скролл до конца. Решает проблему "первое
+     * открытие чата показывает не самые новые сообщения": к моменту первого
+     * scrollToBottom() аватары/стикеры ещё грузятся, scrollHeight растёт уже после.
+     */
+    private anchorImagesToBottom(): void {
+        if (!this.flexContainer) return;
+        const imgs = this.flexContainer.querySelectorAll<HTMLImageElement>('img');
+        imgs.forEach((img) => {
+            if (img.complete && img.naturalWidth > 0) return;
+            const onSettle = () => {
+                if (this.pinnedToBottom) this.scrollToBottom();
+            };
+            img.addEventListener('load', onSettle, { once: true });
+            img.addEventListener('error', onSettle, { once: true });
+        });
+    }
 
     public updateMessage(id: string, text: string): boolean {
         const msg = this.messages.get(id);
@@ -200,7 +229,9 @@ export class MessageList extends BaseComponent<MessageListProps> {
             if (this.currentHighlightQuery) messageComponent.applyHighlight(this.currentHighlightQuery);
             this.childMessages.unshift(messageComponent);
         });
+        this.pinnedToBottom = true;
         this.scrollToBottom();
+        this.anchorImagesToBottom();
     }
 
     /**
@@ -274,7 +305,11 @@ export class MessageList extends BaseComponent<MessageListProps> {
             this.flexContainer!.prepend(messageComponent.element);
         }
         this.childMessages.unshift(messageComponent);
-        this.scrollToBottom();
+        if (this.isNearBottom()) {
+            this.pinnedToBottom = true;
+            this.scrollToBottom();
+            this.anchorImagesToBottom();
+        }
     }
 
     /**
@@ -336,14 +371,12 @@ export class MessageList extends BaseComponent<MessageListProps> {
         });
     }
 
-    /**
-     * Прокручивает список сообщений до самого низа (к самым новым).
-     * Внешний контейнер без column-reverse, поэтому «низ» — это scrollHeight.
-     */
     public scrollToBottom(): void {
-        if (this.element) {
-            this.element.scrollTop = this.element.scrollHeight;
-        }
+        if (!this.element) return;
+        const el = this.element;
+        requestAnimationFrame(() => {
+            el.scrollTop = el.scrollHeight;
+        });
     }
 
     /**
