@@ -7,6 +7,8 @@ import CopyWebpackPlugin from 'copy-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import { InjectManifest } from 'workbox-webpack-plugin';
 import CompressionPlugin from 'compression-webpack-plugin';
+import CssMinimizerPlugin from 'css-minimizer-webpack-plugin';
+import ImageMinimizerPlugin from 'image-minimizer-webpack-plugin';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -17,6 +19,29 @@ export default {
     mode: 'production',
     optimization: {
         minimize: true,
+        minimizer: [
+            '...',
+            new CssMinimizerPlugin(),
+            new ImageMinimizerPlugin({
+                test: /\.svg$/i,
+                minimizer: {
+                    implementation: ImageMinimizerPlugin.svgoMinify,
+                    options: {
+                        encodeOptions: {
+                            multipass: true,
+                            plugins: [
+                                {
+                                    name: 'preset-default',
+                                    params: {
+                                        overrides: { removeViewBox: false },
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                },
+            }),
+        ],
     },
     entry: {
         main: './src/index.ts',
