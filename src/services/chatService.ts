@@ -138,6 +138,17 @@ export class ChatService {
     private inFlightMessages = new Set<string>(); //сообщения, которые уже отправлены и ждут ответа
     private isFlushing = false; //блокировка от параллельного запуска 
 
+    private stripAttachmentLabel(text: string | undefined, attachments: MessageAttachmentDto[] | undefined): string {
+        const t = (text || '').trim();
+        if (!t || !attachments || attachments.length === 0) return t;
+
+        const labels = ['[Фото]', '[Видео]', '[Файл]', '[Контакт]', '[Вложение]'];
+        if (labels.includes(t)) {
+            return '';
+        }
+        return t;
+    }
+
     /**
      * Преобразует BackendMessage (REST) в FrontendMessage.
      * @param backendMessage - «сырой» объект сообщения из REST-ответа.
@@ -155,7 +166,7 @@ export class ChatService {
                 firstName: backendMessage.sender?.first_name || backendMessage.first_name,
                 lastName: backendMessage.sender?.last_name || backendMessage.last_name,
             },
-            text: backendMessage.text,
+            text: this.stripAttachmentLabel(backendMessage.text, backendMessage.attachments),
             timestamp: new Date(backendMessage.created_at || Date.now()),
             isOwn: (backendMessage.sender?.login === currentUserId) || 
                    (backendMessage.login === currentUserId) ||
@@ -182,7 +193,7 @@ export class ChatService {
                 firstName: dto.first_name,
                 lastName: dto.last_name,
             },
-            text: dto.text || '',
+            text: this.stripAttachmentLabel(dto.text, dto.attachments),
             timestamp: new Date(dto.created_at || Date.now()),
             isOwn: String(dto.sender_id) === String(currentUserId) || dto.login === currentUserId,
             isEdited: Boolean(dto.edited),
@@ -238,7 +249,7 @@ export class ChatService {
         if (dto.last_message) {
             chat.lastMessage = {
                 id: '',
-                text: dto.last_message.text,
+                text: this.stripAttachmentLabel(dto.last_message.text, dto.last_message.attachments),
                 timestamp: new Date(dto.last_message.created_at),
                 sender: { id: dto.last_message.sender_id } as User,
                 isOwn: Number(dto.last_message.sender_id) === Number(currentUserId),
