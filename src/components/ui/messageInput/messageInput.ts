@@ -21,7 +21,7 @@ interface MessageInputProps extends IBaseFormProps {
     onSubmit: (text: string, attachments: OutgoingMessageAttachment[], draftAttachments: MessageAttachment[]) => void | Promise<void>;
     onUploadFile?: (file: File, type: UploadableAttachmentType) => Promise<
         | { success: true; attachment: MessageAttachment; outgoing: OutgoingMessageAttachment }
-        | { success: false; errorMessage: string }
+        | { success: false; errorMessage: string; status?: number }
     >;
     onLoadContacts?: () => Promise<FrontendContact[]>;
     onSubmitEdit?: (messageId: string, text: string) => void;
@@ -277,7 +277,27 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         try {
             const result = await this.props.onUploadFile(file, type);
             if (result.success === false) {
-                this.showInlineError(result.errorMessage);
+                if (result.status === 413) {
+                    if (this.modalComponent) this.modalComponent.unmount();
+                    this.modalComponent = new ConfirmModal({
+                        text: 'Файл слишком большой для загрузки на сервер',
+                        confirmButtonText: 'ОК',
+                        hideCancel: true,
+                        confirmButtonClass: 'confirm-modal__button--submit ui-button',
+                        onConfirm: () => {
+                            this.modalComponent?.unmount();
+                            this.modalComponent = null;
+                        },
+                        onCancel: () => {
+                            this.modalComponent?.unmount();
+                            this.modalComponent = null;
+                        }
+                    });
+                    this.modalComponent.mount(document.body);
+                    this.clearInlineError();
+                } else {
+                    this.showInlineError(result.errorMessage);
+                }
                 return;
             }
 
