@@ -1013,7 +1013,10 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         
         this.sendButton?.element?.removeEventListener('pointerdown', this.handleSendPointerDown);
         this.sendButton?.element?.removeEventListener('mousedown', this.handleSendPointerDown);
-        this.props.onStopTyping?.();
+        if (this.voiceRecorder) {
+            this.voiceRecorder.unmount();
+            this.voiceRecorder = null;
+        }
 
         this.modalComponent?.unmount();
 
