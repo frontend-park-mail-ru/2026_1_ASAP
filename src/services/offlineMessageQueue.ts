@@ -15,7 +15,7 @@ export interface PendingMessage {
 }
 
 const DB_NAME = 'asap-offline-queue';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const STORE_NAME = 'pending-messages';
 
 class OfflineMessageQueue {
@@ -24,7 +24,17 @@ class OfflineMessageQueue {
     private openDb(): Promise<IDBDatabase> {
         if (this.dbPromise) return this.dbPromise;
 
-        this.dbPromise = new Promise((resolve, reject) => {
+        this.dbPromise = this.tryOpen().catch(async (err) => {
+            console.warn('offlineQueue: re-creating IndexedDB after error', err);
+            await this.deleteDb().catch(() => {});
+            return this.tryOpen();
+        });
+
+        return this.dbPromise;
+    }
+
+    private tryOpen(): Promise<IDBDatabase> {
+        return new Promise((resolve, reject) => {
             const request = indexedDB.open(DB_NAME, DB_VERSION);
 
             request.onupgradeneeded = (event) => {
@@ -46,9 +56,17 @@ class OfflineMessageQueue {
 
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => reject(request.error);
+            request.onblocked = () => reject(new Error('IndexedDB open blocked'));
         });
+    }
 
-        return this.dbPromise;
+    private deleteDb(): Promise<void> {
+        return new Promise((resolve, reject) => {
+            const req = indexedDB.deleteDatabase(DB_NAME);
+            req.onsuccess = () => resolve();
+            req.onerror = () => reject(req.error);
+            req.onblocked = () => resolve();
+        });
     }
 
     private async tx<T>(mode: IDBTransactionMode, fn: (store: IDBObjectStore) => IDBRequest<T> | Promise<T>): Promise<T> {

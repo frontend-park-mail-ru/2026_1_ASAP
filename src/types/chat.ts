@@ -65,17 +65,35 @@ export interface OutgoingMessageAttachment {
     url?: string;
     file_name?: string;
     contact_user_id?: number;
+export interface Sticker {
+    id: number;
+    packId: number;
+    fileUrl: string;
+    slug?: string;
+    emoji?: string;
+    width?: number;
+    height?: number;
+}
+
+export interface StickerPack {
+    id: number;
+    name: string;
+    title: string;
+    slug?: string;
+    thumbnailUrl?: string;
+    stickers: Sticker[];
 }
 
 export interface FrontendMessage {
     id: string;
     sender: User;
     text: string;
-    timestamp: Date; // Конвертируем created_at в Date
+    timestamp: Date;
     isOwn: boolean;
     isEdited?: boolean;
     status?: MessageStatus;
     attachments?: MessageAttachment[];
+    sticker?: Sticker;
 }
 
 /**

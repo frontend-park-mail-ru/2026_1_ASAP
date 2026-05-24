@@ -314,6 +314,36 @@
             animation: message-flash-other 0.35s ease-out forwards;
         }
     }
+
+    // Сообщение-стикер: без баббл-фона, картинка 200×200.
+    &--sticker .message__content-wrapper {
+        background: transparent !important;
+        padding: 0;
+        box-shadow: none;
+    }
+
+    &__sticker {
+        display: block;
+        width: 200px;
+        height: 200px;
+        max-width: 60vw;
+        max-height: 60vw;
+        object-fit: contain;
+        user-select: none;
+        -webkit-user-drag: none;
+    }
+}
+
+// На прозрачном баббле стикера время рисуется поверх фона чата.
+// В светлой теме фон почти белый, обычный $color-text-hover плохо читается.
+[data-theme="light"] .message--sticker {
+    .message__meta,
+    .message__time,
+    .message__edited,
+    .message__status--sending,
+    .message__status--sent {
+        color: rgba(24, 32, 51, 0.85);
+    }
 }
 
 @keyframes message-flash-own {

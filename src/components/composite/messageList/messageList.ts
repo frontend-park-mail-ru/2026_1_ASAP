@@ -43,6 +43,8 @@ export class MessageList extends BaseComponent<MessageListProps> {
     private messages: Map<string, Message> = new Map();
     private currentHighlightQuery = '';
     private selectedMessageEl: HTMLElement | null = null;
+    private pinnedToBottom = true;
+    private resizeObserver: ResizeObserver | null = null;
 
     private handleMediaClick = (attachments: MessageAttachment[], initialIndex: number) => {
         const overlay = new MediaViewerOverlay({
@@ -68,19 +70,59 @@ export class MessageList extends BaseComponent<MessageListProps> {
 
     /**
      * Обработчик скролла для подгрузки истории.
+     * Внешний .message-list — обычный flow (без column-reverse), поэтому
+     * scrollTop≈0 = «наверху списка» = пора грузить старые.
      * @private
      */
     private handleScroll = async () => {
         if (!this.element || this.isLoadingMore) return;
-        
 
-        const { scrollTop, scrollHeight, clientHeight } = this.element;
-        if (scrollTop + clientHeight >= scrollHeight - 10 && this.props.onLoadMore) {
-            this.isLoadingMore = true;
+
+        this.pinnedToBottom = this.isNearBottom();
+
+        if (!this.props.onLoadMore) return;
+        if (this.element.scrollTop > 40) return;
+
+        this.isLoadingMore = true;
+        const heightBefore = this.element.scrollHeight;
+        const topBefore = this.element.scrollTop;
+        try {
             await this.props.onLoadMore();
+            // Сохраняем визуальную позицию: смещаем scrollTop на дельту высоты,
+            // иначе пользователя «вышвырнет» в самый верх и подгрузка зациклится.
+            if (this.element) {
+                const heightAfter = this.element.scrollHeight;
+                this.element.scrollTop = topBefore + (heightAfter - heightBefore);
+            }
+        } finally {
             this.isLoadingMore = false;
         }
     };
+
+    private isNearBottom(): boolean {
+        if (!this.element) return false;
+        return this.element.scrollHeight - this.element.scrollTop - this.element.clientHeight < 40;
+    }
+
+    /**
+     * Подвешивает onload/onerror на все ещё не загруженные картинки внутри
+     * flex-container. При завершении загрузки — если пользователь всё ещё
+     * "приклеен к низу", добивает скролл до конца. Решает проблему "первое
+     * открытие чата показывает не самые новые сообщения": к моменту первого
+     * scrollToBottom() аватары/стикеры ещё грузятся, scrollHeight растёт уже после.
+     */
+    private anchorImagesToBottom(): void {
+        if (!this.flexContainer) return;
+        const imgs = this.flexContainer.querySelectorAll<HTMLImageElement>('img');
+        imgs.forEach((img) => {
+            if (img.complete && img.naturalWidth > 0) return;
+            const onSettle = () => {
+                if (this.pinnedToBottom) this.scrollToBottom();
+            };
+            img.addEventListener('load', onSettle, { once: true });
+            img.addEventListener('error', onSettle, { once: true });
+        });
+    }
 
     public updateMessage(id: string, text: string): boolean {
         const msg = this.messages.get(id);
@@ -159,6 +201,16 @@ export class MessageList extends BaseComponent<MessageListProps> {
 
         this.element.addEventListener('scroll', this.handleScroll);
 
+        // Список сжимается, когда поднимается мобильная клавиатура. Если юзер
+        // был у нижнего края — удерживаем его там же, иначе свежие сообщения
+        // уходят под клавиатуру и становятся не видны.
+        if (typeof ResizeObserver !== 'undefined') {
+            this.resizeObserver = new ResizeObserver(() => {
+                if (this.pinnedToBottom) this.scrollToBottom();
+            });
+            this.resizeObserver.observe(this.element);
+        }
+
         this.setMessages(this.props.messages);
         this.scrollToBottom();
     }
@@ -206,7 +258,9 @@ export class MessageList extends BaseComponent<MessageListProps> {
             if (this.currentHighlightQuery) messageComponent.applyHighlight(this.currentHighlightQuery);
             this.childMessages.unshift(messageComponent);
         });
+        this.pinnedToBottom = true;
         this.scrollToBottom();
+        this.anchorImagesToBottom();
     }
 
     /**
@@ -277,7 +331,9 @@ export class MessageList extends BaseComponent<MessageListProps> {
             onMediaClick: this.handleMediaClick,
             onContactClick: this.props.onContactClick,
         });
-        
+
+        const wasAtBottom = this.isNearBottom();
+
         // Новое сообщение всегда в начало DOM (визуальный низ)
         messageComponent.mount(this.flexContainer!);
         if (this.currentHighlightQuery) messageComponent.applyHighlight(this.currentHighlightQuery);
@@ -286,7 +342,12 @@ export class MessageList extends BaseComponent<MessageListProps> {
             this.flexContainer!.prepend(messageComponent.element);
         }
         this.childMessages.unshift(messageComponent);
-        this.scrollToBottom();
+
+        if (newMessage.isOwn || wasAtBottom) {
+            this.pinnedToBottom = true;
+            this.scrollToBottom();
+            this.anchorImagesToBottom();
+        }
     }
 
     /**
@@ -348,15 +409,12 @@ export class MessageList extends BaseComponent<MessageListProps> {
         });
     }
 
-    /**
-     * Прокручивает список сообщений до конца.
-     * Используется setTimeout, чтобы дать браузеру время отрисовать новые элементы
-     * и обновить scrollHeight контейнера.
-     */
     public scrollToBottom(): void {
-        if (this.element) {
-            this.element.scrollTop = 0;
-        }
+        if (!this.element) return;
+        const el = this.element;
+        requestAnimationFrame(() => {
+            el.scrollTop = el.scrollHeight;
+        });
     }
 
     /**
@@ -366,6 +424,8 @@ export class MessageList extends BaseComponent<MessageListProps> {
         if (this.element) {
             this.element.removeEventListener('scroll', this.handleScroll);
         }
+        this.resizeObserver?.disconnect();
+        this.resizeObserver = null;
         this.childMessages.forEach(msg => msg.unmount());
         this.childMessages = [];
         this.messages.clear();

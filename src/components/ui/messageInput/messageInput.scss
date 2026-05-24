@@ -18,29 +18,37 @@
         gap: 10px;
     }
 
+    // Поле ввода: одна большая rounded-полоса с заливкой, без бордера.
     &__input-container {
         display: flex;
-        align-items: center;
-        justify-content: center;
+        align-items: flex-end;
         flex-direction: row;
         width: 100%;
-        height: auto;
         flex-grow: 1;
-        border: 1px solid $color-text;
-        border-radius: 10px;
-        padding: 0 10px;
+        border: none;
+        border-radius: 14px;
+        padding: 0 12px;
         gap: 10px;
-        align-items: flex-end;
-        transition: border-color 0.2s;
+        background: #454343;
+        transition: background-color 0.2s;
 
         &:focus-within {
-            border-color: $color-text-hover;
+            background: #525050;
         }
+    }
+
+    // Боксы-обёртки слотов: центрируем иконки по вертикали независимо от высоты textarea.
+    [data-component="message-input__sticker-button-container"],
+    [data-component="upload-button-container"] {
+        display: flex;
+        align-items: center;
+        align-self: center;
+        flex-shrink: 0;
     }
 
     &__textarea {
         width: 100%;
-        padding: 9.5px 0;
+        padding: 11px 0;
         background: transparent;
         font: $text-tertiary;
         letter-spacing: $text-tertiary-ls;
@@ -74,39 +82,21 @@
         }
     }
 
-    &__send-button {
-        width: 40px;
-        height: 40px;
+    // Кнопка стикеров: натуральный размер иконки, без жёстко заданных width/height.
+    &__sticker-button {
+        @include btn-reset;
+        display: flex;
         padding: 0;
-        border-radius: 50%;
-        @include flex-center;
-        background-color: $color-primary;
         border: none;
+        background: transparent;
         cursor: pointer;
         @include hover-transition;
 
-        &:hover {
-            filter: brightness(1.1);
-        }
-
-        & img {
-            width: 30px;
-            height: 30px;
+        &:hover, &--active {
+            opacity: 0.75;
         }
     }
 
-
-    &__sticker-button {
-        background: none;
-        display: flex;
-        height: fit-content;
-        border: none;
-        opacity: 0.5;
-        cursor: not-allowed;
-        padding: 0;
-        pointer-events: none;
-    }
-    
     &__upload-button-container {
         display: flex;
         height: fit-content;
@@ -456,6 +446,25 @@
         font: $text-tertiary;
         letter-spacing: $text-tertiary-ls;
         text-align: center;
+    &__send-button {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border-radius: 50%;
+        @include flex-center;
+        background-color: $color-primary;
+        border: none;
+        cursor: pointer;
+        @include hover-transition;
+
+        &:hover {
+            filter: brightness(1.1);
+        }
+
+        & img {
+            width: 30px;
+            height: 30px;
+        }
     }
 
     &__edit-indicator {
@@ -527,11 +536,10 @@
 [data-theme="light"] {
     .message-input {
         &__input-container {
-            background: $color-base-background;
-            border-color: $color-input-border;
+            background: rgba(24, 32, 51, 0.06);
 
             &:focus-within {
-                border-color: $color-primary;
+                background: rgba(24, 32, 51, 0.1);
             }
         }
 

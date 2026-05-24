@@ -244,7 +244,14 @@ export class ChatsUseCases {
     }
 
     public mapRealtimeSidebarMessage(dto: MessageDto, currentUserId: number): FrontendMessage {
-        return this.data.convertWsMessageDto(dto, currentUserId);
+        const message = this.data.convertWsMessageDto(dto, currentUserId);
+        // Для sidebar preview у стикеровых сообщений подменяем пустой текст на «Стикер».
+        if (message.sticker && !message.text) {
+            message.text = message.sticker.emoji
+                ? `${message.sticker.emoji} Стикер`
+                : 'Стикер';
+        }
+        return message;
     }
 
     public async enrichRealtimeSidebarMessage(
@@ -286,7 +293,10 @@ export class ChatsUseCases {
 
         const [history, pendingMessages, groupMemberIds] = await Promise.all([
             this.data.getMessages(chatId, currentUser.id),
-            this.data.getPendingMessages(chatId),
+            this.data.getPendingMessages(chatId).catch((err) => {
+                console.warn('chatsUseCases: getPendingMessages failed', err);
+                return [];
+            }),
             resolvedChat.type === "group" ? this.data.getChatMembers(chatId) : Promise.resolve(null),
         ]);
 

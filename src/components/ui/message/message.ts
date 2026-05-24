@@ -212,6 +212,8 @@ export class Message extends BaseComponent<MessageProps> {
             },
             onDelete: this.handleDelete,
             onClose: () => this.closeEditOverlay(),
+            // У стикеров текст пустой — редактировать нечего.
+            hideEdit: Boolean(this.props.message.sticker),
         });
         this.editMsgOverlay.mount(document.body);
     }
@@ -413,6 +415,28 @@ export class Message extends BaseComponent<MessageProps> {
     }
 
     /**
+     * Если сообщение — стикер, подменяет блок .message__text на <img> со стикером.
+     * Текст для стикеровых сообщений с бэка приходит пустым.
+     */
+    private renderStickerIfPresent(): void {
+        const sticker = this.props.message.sticker;
+        if (!sticker || !this.element) return;
+
+        const wrapper = this.element.querySelector('.message__content-wrapper');
+        const textEl = this.element.querySelector('.message__text');
+        if (!wrapper || !textEl) return;
+
+        const stickerEl = document.createElement('img');
+        stickerEl.className = 'message__sticker';
+        stickerEl.src = sticker.fileUrl;
+        stickerEl.alt = sticker.emoji || sticker.slug || 'стикер';
+        stickerEl.loading = 'lazy';
+
+        textEl.replaceWith(stickerEl);
+        this.element.classList.add('message--sticker');
+    }
+
+    /**
      * @override
      */
     protected afterMount(): void {
@@ -427,6 +451,8 @@ export class Message extends BaseComponent<MessageProps> {
         this.element!.addEventListener('touchend', this.handleTouchEnd);
         this.element!.addEventListener('touchcancel', this.handleTouchEnd);
         this.renderAttachments();
+
+        this.renderStickerIfPresent();
 
         if (this.props.isOwn) {
             // первичный рендер статуса для своих сообщений

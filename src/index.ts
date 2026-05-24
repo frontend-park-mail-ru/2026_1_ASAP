@@ -24,6 +24,18 @@ themeService.init();
 presenceService.init();
 notificationService.init();
 
+const updateAppViewport = (): void => {
+    const vv = window.visualViewport;
+    const h = vv?.height ?? window.innerHeight;
+    const top = vv?.offsetTop ?? 0;
+    document.documentElement.style.setProperty('--app-height', `${h}px`);
+    document.documentElement.style.setProperty('--app-offset-top', `${top}px`);
+};
+updateAppViewport();
+window.visualViewport?.addEventListener('resize', updateAppViewport);
+window.visualViewport?.addEventListener('scroll', updateAppViewport);
+window.addEventListener('orientationchange', updateAppViewport);
+
 /**
  * @function
  * @description Главная функция, выполняемая после загрузки DOM.

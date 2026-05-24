@@ -8,13 +8,15 @@
 
 .message-list {
     display: flex;
-    flex-direction: column-reverse;
-    flex: 1 1 auto;
+    flex-direction: column;
+    flex: 1 1 0;
     min-height: 0;
     width: 100%;
     overflow-y: auto;
     overflow-x: hidden;
-    position: relative; /* Чтобы дочерние абсолютные элементы не ломали поток */
+    overscroll-behavior: contain;
+    overflow-anchor: none; /* иначе браузер сам «якорит» скролл и ломает наш сценарий подгрузки */
+    position: relative;
 
     &::-webkit-scrollbar {
         width: 10px;
@@ -32,7 +34,9 @@
     &__flex-container {
         display: flex;
         flex-direction: column-reverse;
-        min-height: 100%; 
+        /* min-height + column-reverse прижимают сообщения к низу, когда их мало. */
+        min-height: 100%;
+        flex-shrink: 0;
         padding: $spacing-md;
         gap: 10px;
     }

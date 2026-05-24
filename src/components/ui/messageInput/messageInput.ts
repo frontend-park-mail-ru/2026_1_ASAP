@@ -1,8 +1,10 @@
-import { BaseForm, IBaseFormProps } from '../../../core/base/baseForm'; 
+import { BaseForm, IBaseFormProps } from '../../../core/base/baseForm';
 import { Button } from '../button/button';
 import { ConfirmModal } from '../../composite/confirmModal/confirmModal';
 import type { MessageAttachment, MessageAttachmentType, OutgoingMessageAttachment } from '../../../types/chat';
 import type { FrontendContact } from '../../../types/contact';
+import { StickerEmojiOverlay } from '../../composite/stickerEmojiOverlay/stickerEmojiOverlay';
+import { Sticker } from '../../../types/chat';
 import template from './messageInput.hbs';
 
 type UploadableAttachmentType = Extract<MessageAttachmentType, 'photo' | 'video' | 'file'>;
@@ -15,7 +17,6 @@ type DraftAttachment = {
 
 /**
  * @interface MessageInputProps - Свойства компонента формы ввода сообщения.
- * @property {Function} onSubmit - Колбэк, вызываемый при отправке сообщения. Принимает текст сообщения.
  */
 interface MessageInputProps extends IBaseFormProps { 
     onSubmit: (text: string, attachments: OutgoingMessageAttachment[], draftAttachments: MessageAttachment[]) => void | Promise<void>;
@@ -25,6 +26,7 @@ interface MessageInputProps extends IBaseFormProps {
     >;
     onLoadContacts?: () => Promise<FrontendContact[]>;
     onSubmitEdit?: (messageId: string, text: string) => void;
+    onSendSticker?: (sticker: Sticker) => void;
     onTyping?: () => void;
     onStopTyping?: () => void;
     chatId: string;
@@ -33,7 +35,7 @@ interface MessageInputProps extends IBaseFormProps {
 /**
  * Компонент формы для ввода и отправки текстовых сообщений.
  */
-export class MessageInput extends BaseForm<MessageInputProps> { 
+export class MessageInput extends BaseForm<MessageInputProps> {
     private editingMessageId: string | null = null;
     private editIndicator: HTMLElement | null = null;
     private cancelEditButton: HTMLButtonElement | null = null;
@@ -52,12 +54,10 @@ export class MessageInput extends BaseForm<MessageInputProps> {
     private contactPickerRequestId = 0;
     private draftAttachments: DraftAttachment[] = [];
     private isUploading = false;
+    private stickerOverlay: StickerEmojiOverlay | null = null;
     private readonly mobileQuery = '(max-width: 767px)';
     private readonly maxAttachments = 10;
 
-    /**
-     * @param {MessageInputProps} props - Свойства компонента.
-     */
     constructor(props: MessageInputProps) {
         super(props);
     }
@@ -66,10 +66,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         return template;
     }
 
-    /**
-     * @override
-     */
-    protected afterMount(): void { 
+    protected afterMount(): void {
         super.afterMount();
 
         if (!this.element) {
@@ -78,12 +75,13 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         }
 
         const stickerButtonContainer = this.element.querySelector('[data-component="message-input__sticker-button-container"]');
-        this.stikerButton = new Button({    
+        this.stikerButton = new Button({
             label: '',
             icon: '/assets/images/icons/sticker.svg',
             class: 'message-input__sticker-button',
             type: 'button',
-            title: 'В разработке',
+            title: 'Стикеры и эмодзи',
+            onClick: this.handleStickerButtonClick,
         });
         this.stikerButton.mount(stickerButtonContainer as HTMLElement);
 
@@ -161,6 +159,11 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             type: 'submit',
         });
         this.sendButton.mount(sendButtonContainer as HTMLElement);
+
+        // Не даём кнопке забирать фокус с textarea — иначе на мобилках
+        // клавиатура схлопывается при каждом тапе по «отправить».
+        this.sendButton.element?.addEventListener('pointerdown', this.handleSendPointerDown);
+        this.sendButton.element?.addEventListener('mousedown', this.handleSendPointerDown);
 
         document.addEventListener('pointerdown', this.handleDocumentPointerDown, true);
         document.addEventListener('keydown', this.handleDocumentKeyDown);
@@ -654,6 +657,58 @@ export class MessageInput extends BaseForm<MessageInputProps> {
 
     private updateSendButtonState(): void {
         if (this.sendButton) this.sendButton.disabled = this.isUploading;
+    private handleStickerButtonClick = (event: MouseEvent): void => {
+        event.preventDefault();
+        if (this.stickerOverlay) {
+            this.closeStickerOverlay();
+        } else {
+            this.openStickerOverlay();
+        }
+    };
+
+    private openStickerOverlay(): void {
+        if (this.stickerOverlay || !this.stikerButton?.element) return;
+
+        const anchorEl = this.stikerButton.element;
+        const anchorRect = anchorEl.getBoundingClientRect();
+        this.stickerOverlay = new StickerEmojiOverlay({
+            anchorRect,
+            anchorElement: anchorEl,
+            initialTab: 'stickers',
+            onSelectSticker: (sticker) => {
+                this.props.onSendSticker?.(sticker);
+                this.closeStickerOverlay();
+            },
+            onSelectEmoji: (emoji) => {
+                this.insertAtCursor(emoji);
+            },
+            onClose: () => this.closeStickerOverlay(),
+        });
+        this.stickerOverlay.mount(document.body);
+        this.stikerButton.element.classList.add('message-input__sticker-button--active');
+    }
+
+    private closeStickerOverlay(): void {
+        if (!this.stickerOverlay) return;
+        this.stickerOverlay.unmount();
+        this.stickerOverlay = null;
+        this.stikerButton?.element?.classList.remove('message-input__sticker-button--active');
+    }
+
+    private insertAtCursor(text: string): void {
+        if (!this.textarea) return;
+        const start = this.textarea.selectionStart ?? this.textarea.value.length;
+        const end = this.textarea.selectionEnd ?? this.textarea.value.length;
+        const before = this.textarea.value.slice(0, start);
+        const after = this.textarea.value.slice(end);
+        this.textarea.value = before + text + after;
+        const caret = start + text.length;
+        this.textarea.focus({ preventScroll: true });
+        this.textarea.setSelectionRange(caret, caret);
+        // авто-ресайз
+        this.textarea.style.height = '';
+        this.textarea.style.height = `${this.textarea.scrollHeight}px`;
+        this.props.onTyping?.();
     }
 
     private showEditIndicator(currentText: string): void {
@@ -672,7 +727,6 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             </button>
         `;
 
-        // textContent — защита от XSS, текст пользовательский
         const previewEl = this.editIndicator.querySelector('.message-input__edit-indicator-preview');
         if (previewEl) previewEl.textContent = currentText;
 
@@ -732,10 +786,6 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         }
     };
 
-    /**
-     * Обработчик ввода текста для автоматического изменения высоты.
-     * @private
-     */
     private handleInput = (): void => {
         if (this.textarea) {
             this.textarea.style.height = '';
@@ -747,6 +797,12 @@ export class MessageInput extends BaseForm<MessageInputProps> {
     private isMobileViewport(): boolean {
         return window.matchMedia(this.mobileQuery).matches;
     }
+
+    private handleSendPointerDown = (event: Event): void => {
+        if (document.activeElement === this.textarea) {
+            event.preventDefault();
+        }
+    };
 
     private handleDocumentPointerDown = (event: PointerEvent): void => {
         const target = event.target;
@@ -765,6 +821,10 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         if (target instanceof Node && this.element?.contains(target)) {
             return;
         }
+        // Не блюрим, если кликнули внутрь открытого стикер-оверлея.
+        if (target instanceof Node && this.stickerOverlay?.element?.contains(target)) {
+            return;
+        }
 
         this.textarea.blur();
     };
@@ -781,7 +841,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
      * @param {{messageText: string}} data - Данные формы.
      * @returns {Promise<void>}
      */
-    protected async onSubmit(data: { messageText: string }): Promise<void> { 
+    protected async onSubmit(data: { messageText: string }): Promise<void> {
         const text = data.messageText?.trim();
         const attachments = this.draftAttachments.map(item => item.outgoing);
         const attachmentModels = this.draftAttachments.map(item => item.attachment);
@@ -831,12 +891,12 @@ export class MessageInput extends BaseForm<MessageInputProps> {
                 this.showInlineError('Не удалось отправить сообщение. Попробуйте ещё раз');
             }
         }
+
+        this.textarea?.focus({ preventScroll: true });
     }
 
-    /**
-     * @override
-     */
-    protected beforeUnmount(): void { 
+    protected beforeUnmount(): void {
+        this.closeStickerOverlay();
         this.exitEditMode();
         if (this.textarea) {
             this.textarea.removeEventListener('keydown', this.handleKeyDown);
@@ -852,13 +912,17 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         this.mediaInput?.removeEventListener('change', this.handleMediaInputChange);
         this.mediaInput?.remove();
         
+        this.sendButton?.element?.removeEventListener('pointerdown', this.handleSendPointerDown);
+        this.sendButton?.element?.removeEventListener('mousedown', this.handleSendPointerDown);
+        this.props.onStopTyping?.();
+
         this.modalComponent?.unmount();
-        
+
         super.beforeUnmount();
         this.stikerButton?.unmount();
         this.uplodadButton?.unmount();
         this.sendButton?.unmount();
-        
+
         this.textarea = null;
         this.stikerButton = null;
         this.uplodadButton = null;

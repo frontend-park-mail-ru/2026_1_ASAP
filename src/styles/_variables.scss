@@ -81,6 +81,9 @@
     --gradient-button: linear-gradient(to right, #6583FA 0%, #5A8A6E 100%);
     --gradient-button-hover: linear-gradient(to right, #3D5D4A 0%, #324487 100%);
     --gradient-selected-chat: linear-gradient(to right, #455DBA 11%, #5A8A6E 100%);
+
+    // На странице входа в dark — обычный непрозрачный тёмный фон + блобы поверх.
+    --login-background: var(--color-background);
 }
 
 [data-theme="light"] {
@@ -123,6 +126,10 @@
         rgba(69, 93, 186, 0.13) 0%,
         rgba(78, 111, 216, 0.09) 100%
     );
+
+    // В светлой теме на странице входа фон заполняет весь экран
+    // переливанием синий→зелёный, а блобы поверх дают живость.
+    --login-background: linear-gradient(135deg, #455DBA 0%, #5A8A6E 100%);
 }
 
 
@@ -183,6 +190,7 @@ $gradient-button:        var(--gradient-button);
 $gradient-button-hover:  var(--gradient-button-hover);
 $gradient-selected-chat: var(--gradient-selected-chat);
 $gradient-background-chats: var(--gradient-background-chats);
+$login-background:       var(--login-background);
 
 
 // ═══════════ ШРИФТЫ И РАЗМЕРЫ ═══════════
