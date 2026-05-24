@@ -17,6 +17,31 @@ export interface WsPacket {
     payload: unknown;
 }
 
+export interface MessageAttachmentDto {
+    type: 'photo' | 'video' | 'file' | 'contact';
+    url?: string;
+    file_name?: string;
+    mime_type?: string;
+    file_size?: number;
+    contact_user_id?: number;
+    contact_first_name?: string;
+    contact_last_name?: string;
+    contact_avatar_url?: string;
+}
+
+export interface WsErrorDto {
+    chat_id?: number | string;
+    message_id?: number | string;
+    temp_id?: string;
+    tempId?: string;
+    client_temp_id?: string;
+    code?: string;
+    error_code?: string;
+    error?: string | { code?: string; message?: string };
+    message?: string;
+    errors?: Array<{ code?: string; message?: string }>;
+}
+
 /**
  * DTO стикера (приходит в составе MessageDto / LastMessageDto, и в GET /api/v1/sticker-packs).
  */
@@ -58,6 +83,7 @@ export interface MessageDto {
     first_name?: string;
     last_name?: string;
     avatar?: string | null;
+    attachments?: MessageAttachmentDto[];
     sticker?: StickerDto | null;
 }
 
@@ -78,6 +104,7 @@ export interface LastMessageDto {
     sender_id: number;
     text: string;
     created_at: string;
+    attachments?: MessageAttachmentDto[];
     sticker?: StickerDto | null;
 }
 

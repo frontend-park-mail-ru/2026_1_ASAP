@@ -1,5 +1,5 @@
 import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseComponent";
-import { FrontendMessage, MessageStatus, User } from '../../../types/chat';
+import { FrontendMessage, MessageAttachment, MessageStatus, User } from '../../../types/chat';
 import template from './message.hbs';
 import { Avatar } from '../../ui/avatar/avatar';
 import { EditMsgOverlay } from '../../composite/editMsgOverlay/editMsgOverlay';
@@ -10,6 +10,7 @@ import { ConfirmModal } from "../../composite/confirmModal/confirmModal";
  * @property {FrontendMessage} message - Объект сообщения.
  * @property {boolean} isOwn - Флаг, является ли сообщение текущего пользователя.
  * @property {boolean} showAuthor - Флаг, нужно ли показывать имя автора.
+ * @property {Function} [onDownloadAttachment] - Колбэк для скачивания вложения; реализация на уровне controller.
  */
 interface MessageProps extends IBaseComponentProps {
     message: FrontendMessage;
@@ -19,6 +20,9 @@ interface MessageProps extends IBaseComponentProps {
     chatAvatarUrl?: string;
     onEdit?: (id: string) => void;
     onDelete?: (id: string) => void;
+    onDownloadAttachment?: (url: string, fileName: string) => void | Promise<void>;
+    onMediaClick?: (attachments: MessageAttachment[], initialIndex: number) => void;
+    onContactClick?: (userId: number) => void;
 }
 
 /**
@@ -129,6 +133,7 @@ export class Message extends BaseComponent<MessageProps> {
 
         if (!query) {
             textEl.textContent = rawText;
+            (textEl as HTMLElement).hidden = rawText.length === 0;
             return;
         }
 
@@ -152,7 +157,10 @@ export class Message extends BaseComponent<MessageProps> {
     public updateText(newText: string, edited = true): void {
         this.props.message.text = newText;
         const textEl = this.element?.querySelector('.message__text');
-        if (textEl) textEl.textContent = newText;
+        if (textEl) {
+            textEl.textContent = newText;
+            (textEl as HTMLElement).hidden = newText.length === 0;
+        }
         const editedEl = this.element?.querySelector<HTMLElement>('.message__edited');
         if (editedEl) {
             editedEl.hidden = !edited;
@@ -215,6 +223,197 @@ export class Message extends BaseComponent<MessageProps> {
         this.editMsgOverlay = null;
     }
 
+    private renderAttachments(): void {
+        const container = this.element?.querySelector<HTMLElement>('[data-component="message-attachments"]');
+        if (!container) return;
+
+        const attachments = this.props.message.attachments || [];
+        container.textContent = '';
+        container.hidden = attachments.length === 0;
+
+        const mediaAttachments = attachments.filter(a => a.type === 'photo' || a.type === 'video');
+        let currentMediaIndex = 0;
+
+        attachments.forEach((attachment) => {
+            switch (attachment.type) {
+                case 'photo':
+                    container.appendChild(this.createPhotoAttachment(attachment, currentMediaIndex++, mediaAttachments));
+                    break;
+                case 'video':
+                    container.appendChild(this.createVideoAttachment(attachment, currentMediaIndex++, mediaAttachments));
+                    break;
+                case 'file':
+                    container.appendChild(this.createFileAttachment(attachment.url, attachment.fileName));
+                    break;
+                case 'contact':
+                    container.appendChild(this.createContactAttachment(attachment));
+                    break;
+                default:
+                    break;
+            }
+        });
+
+        const textEl = this.element?.querySelector<HTMLElement>('.message__text');
+        if (textEl) textEl.hidden = !this.props.message.text;
+    }
+
+    private createFileAttachment(url?: string, fileName?: string): HTMLElement {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'message__attachment message__attachment--file';
+
+        const icon = document.createElement('img');
+        icon.className = 'message__attachment-icon';
+        icon.src = '/assets/images/icons/upload.svg';
+        icon.alt = '';
+
+        const name = document.createElement('span');
+        name.className = 'message__attachment-name';
+        name.textContent = fileName || 'Файл';
+
+        card.append(icon, name);
+        card.addEventListener('click', () => {
+            if (!url) return;
+            // Скачивание делегируется контроллеру через callback — компонент остаётся пассивным
+            void this.props.onDownloadAttachment?.(url, fileName || 'file');
+        });
+
+        return card;
+    }
+
+    private createPhotoAttachment(attachment: MessageAttachment, mediaIndex: number, allMedia: MessageAttachment[]): HTMLElement {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'message__attachment-media-link';
+        wrapper.setAttribute('role', 'button');
+        wrapper.setAttribute('tabindex', '0');
+        wrapper.setAttribute('aria-label', attachment.fileName || 'Фото');
+
+        wrapper.classList.add('message__attachment-media-link--loading');
+        
+        const image = document.createElement('img');
+        image.className = 'message__attachment-media message__attachment-media--photo';
+        image.src = attachment.url || '';
+        image.alt = attachment.fileName || 'Фото';
+        image.loading = 'lazy';
+        image.decoding = 'async';
+        image.crossOrigin = 'use-credentials';
+        image.style.opacity = '0';
+        image.style.transition = 'opacity 0.3s ease';
+
+        image.addEventListener('load', () => {
+            wrapper.classList.remove('message__attachment-media-link--loading');
+            image.style.opacity = '1';
+        }, { once: true });
+
+        // Фоллбэк при ошибке загрузки (403, 404, сеть): показываем подсказку, не broken-иконку браузера
+        image.addEventListener('error', () => {
+            wrapper.classList.remove('message__attachment-media-link--loading');
+            image.style.opacity = '1';
+            image.alt = 'Не удалось загрузить фото';
+            image.classList.add('message__attachment-media--broken');
+        }, { once: true });
+
+        wrapper.addEventListener('click', () => {
+            this.props.onMediaClick?.(allMedia, mediaIndex);
+        });
+
+        wrapper.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.props.onMediaClick?.(allMedia, mediaIndex);
+            }
+        });
+
+        wrapper.appendChild(image);
+        return wrapper;
+    }
+
+    private createVideoAttachment(attachment: MessageAttachment, mediaIndex: number, allMedia: MessageAttachment[]): HTMLElement {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'message__attachment-video';
+        wrapper.setAttribute('role', 'button');
+        wrapper.setAttribute('tabindex', '0');
+
+        wrapper.classList.add('message__attachment-video--loading');
+
+        const video = document.createElement('video');
+        video.className = 'message__attachment-media message__attachment-media--video';
+        video.src = attachment.url || '';
+        video.preload = 'metadata';
+        video.crossOrigin = 'use-credentials';
+        video.style.opacity = '0';
+        video.style.transition = 'opacity 0.3s ease';
+        if (attachment.fileName) video.setAttribute('aria-label', attachment.fileName);
+
+        video.addEventListener('loadeddata', () => {
+            wrapper.classList.remove('message__attachment-video--loading');
+            video.style.opacity = '1';
+        }, { once: true });
+
+        const playOverlay = document.createElement('div');
+        playOverlay.className = 'message__attachment-video-play';
+        const playTriangle = document.createElement('div');
+        playTriangle.className = 'message__attachment-video-play-icon';
+        playOverlay.appendChild(playTriangle);
+
+        wrapper.addEventListener('click', () => {
+            this.props.onMediaClick?.(allMedia, mediaIndex);
+        });
+
+        wrapper.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.props.onMediaClick?.(allMedia, mediaIndex);
+            }
+        });
+
+        // Фоллбэк при ошибке загрузки: заменяем плеер div-заглушкой, чтобы не торчал пустой controls-бар
+        video.addEventListener('error', () => {
+            wrapper.classList.remove('message__attachment-video--loading');
+            video.style.opacity = '1';
+            const errEl = document.createElement('div');
+            errEl.className = 'message__attachment-video-error';
+            errEl.textContent = 'Не удалось загрузить видео';
+            if (wrapper.contains(video)) wrapper.replaceChild(errEl, video);
+            if (wrapper.contains(playOverlay)) playOverlay.remove();
+        }, { once: true });
+
+        wrapper.appendChild(video);
+        wrapper.appendChild(playOverlay);
+        return wrapper;
+    }
+
+    private createContactAttachment(attachment: MessageAttachment): HTMLElement {
+        const card = document.createElement('div');
+        card.className = 'message__attachment message__attachment--contact';
+
+        const icon = document.createElement('img');
+        if (attachment.contactAvatarUrl) {
+            icon.className = 'message__attachment-icon message__attachment-avatar';
+            icon.src = attachment.contactAvatarUrl;
+        } else {
+            icon.className = 'message__attachment-icon';
+            icon.src = '/assets/images/icons/profile.svg';
+        }
+        icon.alt = '';
+
+        const name = document.createElement('span');
+        name.className = 'message__attachment-name';
+        name.textContent = [attachment.contactFirstName, attachment.contactLastName].filter(Boolean).join(' ')
+            || (attachment.contactUserId ? `User #${attachment.contactUserId}` : 'Контакт');
+
+        card.append(icon, name);
+        
+        if (attachment.contactUserId && this.props.onContactClick) {
+            card.addEventListener('click', () => {
+                this.props.onContactClick!(attachment.contactUserId!);
+            });
+            card.style.cursor = 'pointer';
+        }
+        
+        return card;
+    }
+
     /**
      * Если сообщение — стикер, подменяет блок .message__text на <img> со стикером.
      * Текст для стикеровых сообщений с бэка приходит пустым.
@@ -251,6 +450,7 @@ export class Message extends BaseComponent<MessageProps> {
         this.element!.addEventListener('touchmove', this.handleTouchMove, { passive: true });
         this.element!.addEventListener('touchend', this.handleTouchEnd);
         this.element!.addEventListener('touchcancel', this.handleTouchEnd);
+        this.renderAttachments();
 
         this.renderStickerIfPresent();
 

@@ -1,3 +1,5 @@
+import type { OutgoingMessageAttachment } from "../types/chat";
+
 /**
  * @file Persistent-очередь исходящих сообщений на IndexedDB.
  * @module services/offlineMessageQueue
@@ -9,6 +11,7 @@ export interface PendingMessage {
     text: string;
     senderId: number;
     createdAt: number;
+    attachments?: OutgoingMessageAttachment[];
 }
 
 const DB_NAME = 'asap-offline-queue';
@@ -34,13 +37,21 @@ class OfflineMessageQueue {
         return new Promise((resolve, reject) => {
             const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-            request.onupgradeneeded = () => {
+            request.onupgradeneeded = (event) => {
                 const db = request.result;
-                if (!db.objectStoreNames.contains(STORE_NAME)) {
+                const oldVersion = (event as IDBVersionChangeEvent).oldVersion;
+
+                if (oldVersion < 1) {
+                    // Версия 1: создаём store и индексы
                     const store = db.createObjectStore(STORE_NAME, { keyPath: 'tempId' });
                     store.createIndex('chatId', 'chatId', { unique: false });
                     store.createIndex('createdAt', 'createdAt', { unique: false });
                 }
+
+                // Версия 2: добавлено optional-поле `attachments` в PendingMessage.
+                // IndexedDB хранит записи как есть (schema-less), поэтому изменений
+                // структуры objectStore не требуется — старые записи без attachments
+                // продолжают читаться корректно.
             };
 
             request.onsuccess = () => resolve(request.result);

@@ -6,6 +6,7 @@ import type {
     MessageDto,
     MessageReadDto,
     MessageUpdateDto,
+    WsErrorDto,
 } from "../../../core/utils/wsClient";
 import { ChatsUseCases, chatsUseCases } from "../model/chatsUseCases";
 
@@ -26,6 +27,7 @@ interface ChatRealtimeControllerDeps {
     onChatTitleUpdated: (payload: ChatUpdatedTitleDto) => void;
     onMembersUpdated: (payload: ChatUpdatedMembersDto) => void;
     onProfileUpdated: (payload: ProfileUpdatedPayload) => void;
+    onMessageError: (payload: WsErrorDto) => void | Promise<void>;
     onConnected: () => void;
     onDisconnected: () => void;
 }
@@ -68,6 +70,7 @@ export class ChatRealtimeController {
             this.useCases.subscribeRealtime<ChatUpdatedTitleDto>("chat.Updated.Title", this.deps.onChatTitleUpdated),
             this.useCases.subscribeRealtime<ChatUpdatedMembersDto>("chat.Updated.Members", this.deps.onMembersUpdated),
             this.useCases.subscribeRealtime<ProfileUpdatedPayload>("profile.Updated", this.deps.onProfileUpdated),
+            this.useCases.subscribeRealtime<WsErrorDto>("error", this.deps.onMessageError),
         ];
     }
 

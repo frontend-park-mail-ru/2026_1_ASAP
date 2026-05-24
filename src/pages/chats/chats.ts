@@ -21,7 +21,9 @@ import type {
     ChatUpdatedAvatarDto,
     ChatUpdatedMembersDto,
     ChatUpdatedTitleDto,
+    LastMessageDto,
     MessageReadDto,
+    WsErrorDto,
 } from "../../core/utils/wsClient";
 import { ChatActiveHeaderController } from "./controllers/chatActiveHeaderController";
 import { ChatActiveMessagesController } from "./controllers/chatActiveMessagesController";
@@ -36,8 +38,10 @@ import { ChatPresenceController } from "./controllers/chatPresenceController";
 import { ChatRealtimeController } from "./controllers/chatRealtimeController";
 import { ChatSessionController } from "./controllers/chatSessionController";
 import { ChatSidebarController } from "./controllers/chatSidebarController";
+import { getChatErrorMessage, type ServiceErrorLike } from "./model/chatsErrors";
 import type { ChatSearchType, CreateChatMode, CurrentUserVM } from "./model/chatsViewModels";
 import { ChatsView } from "./chatsView";
+import { contactService } from "../../services/contactService";
 
 
 /**
@@ -174,7 +178,11 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
     private readonly handleMessageEdited = (dto: MessageUpdateDto): void => {
         if (dto.last_message_edited) {
-            this.chatWrapper?.updateChatLastMessageText(dto.chat_id.toString(), dto.text);
+            if (dto.last_message) {
+                this.chatWrapper?.setChatLastMessage(dto.chat_id.toString(), this.toSidebarLastMessage(dto.last_message));
+            } else {
+                this.chatWrapper?.updateChatLastMessageText(dto.chat_id.toString(), dto.text);
+            }
         }
 
         if (!this.activeChatId || dto.chat_id.toString() !== this.activeChatId) return;
@@ -191,19 +199,32 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         }
 
         if (dto.last_message_edited) {
-            const newLast: FrontendMessage | undefined = dto.last_message
-                ? {
-                    id: '',
-                    text: dto.last_message.text,
-                    timestamp: new Date(dto.last_message.created_at),
-                    sender: { id: dto.last_message.sender_id } as User,
-                    isOwn: this.currentUserId !== null
-                        && Number(dto.last_message.sender_id) === Number(this.currentUserId),
-                }
-                : undefined;
+            const newLast = dto.last_message ? this.toSidebarLastMessage(dto.last_message) : undefined;
             this.chatWrapper?.setChatLastMessage(dtoChatId, newLast);
         }
     };
+
+    private toSidebarLastMessage(lastMessage: LastMessageDto): FrontendMessage {
+        return {
+            id: '',
+            text: lastMessage.text,
+            timestamp: new Date(lastMessage.created_at),
+            sender: { id: lastMessage.sender_id } as User,
+            isOwn: this.currentUserId !== null
+                && Number(lastMessage.sender_id) === Number(this.currentUserId),
+            attachments: lastMessage.attachments?.map(attachment => ({
+                type: attachment.type,
+                url: attachment.url,
+                fileName: attachment.file_name,
+                mimeType: attachment.mime_type,
+                fileSize: attachment.file_size,
+                contactUserId: attachment.contact_user_id,
+                contactFirstName: attachment.contact_first_name,
+                contactLastName: attachment.contact_last_name,
+                contactAvatarUrl: attachment.contact_avatar_url,
+            })),
+        };
+    }
 
     private readonly handleActiveChatAvatarUpdated = (payload: ChatUpdatedAvatarDto): void => {
         if (!this.activeChatId || String(payload.chat_id) !== this.activeChatId) return;
@@ -254,6 +275,49 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
         this.activeMessageList?.markOwnMessagesRead(dto.last_read_message_id);
     };
+
+    private readonly handleMessageError = async (payload: WsErrorDto): Promise<void> => {
+        const errorChatId = payload.chat_id !== undefined ? String(payload.chat_id) : null;
+
+        // Удаляем из локальной БД в любом случае
+        const tempId = await this.sessionController?.rejectPendingMessageFromError(payload, this.activeChatId);
+
+        // Игнорируем UI-обновления, если чат неактивен
+        if (errorChatId && this.activeChatId && errorChatId !== this.activeChatId) return;
+
+        const message = getChatErrorMessage(
+            "sendMessage",
+            this.normalizeWsError(payload),
+            "Не удалось отправить сообщение",
+        );
+
+        if (tempId) {
+            this.activeMessageList?.deleteMessage(tempId);
+        }
+
+        if (this.activeMessageInput) {
+            this.activeMessageInput.showSendError(message);
+            return;
+        }
+
+        this.showAlert(message);
+    };
+
+    private normalizeWsError(payload: WsErrorDto): ServiceErrorLike {
+        const nestedError = typeof payload.error === 'object' ? payload.error : null;
+        const firstError = payload.errors?.[0];
+
+        return {
+            errorCode: payload.code
+                || payload.error_code
+                || (typeof payload.error === 'string' ? payload.error : undefined)
+                || nestedError?.code
+                || firstError?.code,
+            errorMessage: payload.message
+                || nestedError?.message
+                || firstError?.message,
+        };
+    }
 
     /**
      * Обработчик системного события переподключения WS.
@@ -393,6 +457,16 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             onEmitTyping: (chatId) => this.presenceController?.emitTyping(chatId),
             onStopTyping: (chatId) => this.presenceController?.stopTyping(chatId),
             onJoinChannel: (chatId) => this.handleJoinChannel(chatId),
+            onContactClick: async (userId) => {
+                try {
+                    const profileInfo = await contactService.getProfileInfo(userId);
+                    if (profileInfo?.additionalInfo?.login) {
+                        this.props.router.navigate('/contacts/' + profileInfo.additionalInfo.login);
+                    }
+                } catch (e) {
+                    console.error("Failed to load profile for contact click", e);
+                }
+            },
         });
         this.presenceController = new ChatPresenceController();
         this.notificationPromptController = new ChatNotificationPromptController({
@@ -410,6 +484,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 if (this.activeChat?.type === 'channel') return;
                 this.activeMessageList?.updateUserAvatar(payload);
             },
+            onMessageError: this.handleMessageError,
             onConnected: this.handleWsConnected,
             onDisconnected: () => this.sessionController!.clearInFlightMessages(),
         });

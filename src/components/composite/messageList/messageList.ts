@@ -1,6 +1,7 @@
 import { BaseComponent, IBaseComponentProps } from '../../../core/base/baseComponent';
-import { FrontendMessage, User, Chat} from '../../../types/chat';
+import { FrontendMessage, User, Chat, MessageAttachment } from '../../../types/chat';
 import { Message } from '../../ui/message/message';
+import { MediaViewerOverlay } from '../mediaViewerOverlay/mediaViewerOverlay';
 import template from './messageList.hbs';
 import { getFullUrl } from '../../../core/utils/url';
 
@@ -19,6 +20,9 @@ interface MessageListProps extends IBaseComponentProps {
     onLoadMore?: () => Promise<void>;
     onRequestEdit?: (messageId: string, currentText: string) => void;
     onRequestDelete?: (messageId: string) => void;
+    /** Колбэк для скачивания вложения; реализация на уровне controller */
+    onDownloadAttachment?: (url: string, fileName: string) => void | Promise<void>;
+    onContactClick?: (userId: number) => void;
 }
 
 /**
@@ -41,6 +45,17 @@ export class MessageList extends BaseComponent<MessageListProps> {
     private selectedMessageEl: HTMLElement | null = null;
     private pinnedToBottom = true;
     private resizeObserver: ResizeObserver | null = null;
+
+    private handleMediaClick = (attachments: MessageAttachment[], initialIndex: number) => {
+        const overlay = new MediaViewerOverlay({
+            attachments,
+            initialIndex,
+            onClose: () => {
+                overlay.unmount();
+            }
+        });
+        overlay.mount(document.body);
+    };
 
     /**
      * @param {MessageListProps} props - Свойства компонента.
@@ -231,6 +246,9 @@ export class MessageList extends BaseComponent<MessageListProps> {
                 chatAvatarUrl: this.props.chatAvatarUrl,
                 onEdit: (id) => this.props.onRequestEdit?.(id, msgData.text),
                 onDelete: (id) => this.props.onRequestDelete?.(id),
+                onDownloadAttachment: this.props.onDownloadAttachment,
+                onMediaClick: this.handleMediaClick,
+                onContactClick: this.props.onContactClick,
             });
             messageComponent.mount(this.flexContainer!);
             this.messages.set(msgData.id, messageComponent);
@@ -265,6 +283,9 @@ export class MessageList extends BaseComponent<MessageListProps> {
                 chatAvatarUrl: this.props.chatAvatarUrl,
                 onEdit: (id) => this.props.onRequestEdit?.(id, msgData.text),
                 onDelete: (id) => this.props.onRequestDelete?.(id),
+                onDownloadAttachment: this.props.onDownloadAttachment,
+                onMediaClick: this.handleMediaClick,
+                onContactClick: this.props.onContactClick,
             });
             const tempDiv = document.createElement('div');
             comp.mount(tempDiv);
@@ -306,6 +327,9 @@ export class MessageList extends BaseComponent<MessageListProps> {
             chatAvatarUrl: this.props.chatAvatarUrl,
             onEdit: (id) => this.props.onRequestEdit?.(id, newMessage.text),
             onDelete: (id) => this.props.onRequestDelete?.(id),
+            onDownloadAttachment: this.props.onDownloadAttachment,
+            onMediaClick: this.handleMediaClick,
+            onContactClick: this.props.onContactClick,
         });
 
         const wasAtBottom = this.isNearBottom();

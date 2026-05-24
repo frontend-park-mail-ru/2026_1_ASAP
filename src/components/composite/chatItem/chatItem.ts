@@ -84,6 +84,27 @@ export class ChatItem extends BaseForm<ChatItemProps> {
         return fullName || login;
     }
 
+    private getMessagePreview(message?: FrontendMessage): string {
+        if (!message) return '';
+        if (message.text) return message.text;
+
+        const attachment = message.attachments?.[0];
+        if (!attachment) return '';
+
+        switch (attachment.type) {
+            case 'photo':
+                return 'Фото';
+            case 'video':
+                return 'Видео';
+            case 'file':
+                return attachment.fileName || 'Файл';
+            case 'contact':
+                return [attachment.contactFirstName, attachment.contactLastName].filter(Boolean).join(' ') || 'Контакт';
+            default:
+                return '';
+        }
+    }
+
     /**
      * Выполняется после монтирования компонента.
      * Инициализирует и монтирует дочерние компоненты (аватар, информация о чате, мета-данные)
@@ -107,7 +128,7 @@ export class ChatItem extends BaseForm<ChatItemProps> {
             this.chatInfo = new ChatInfo({
                 class: this.typeToClass(this.props.chat.type),
                 name: this.props.chat.title,
-                lastMessage: this.props.chat.lastMessage?.text,
+                lastMessage: this.getMessagePreview(this.props.chat.lastMessage),
                 sender: this.getSenderDisplayName(this.props.chat.lastMessage),
             });
             this.chatInfo.mount(infoSlot as HTMLElement);
@@ -182,12 +203,12 @@ export class ChatItem extends BaseForm<ChatItemProps> {
             if (newData.type === 'group' && newData.lastMessage) {
                 const senderName = this.getSenderDisplayName(newData.lastMessage);
                 if (senderName) {
-                    msgTextEl.innerHTML = `<span class="sender-group">${escapeHtml(senderName)}: </span>${escapeHtml(newData.lastMessage.text)}`;
+                    msgTextEl.innerHTML = `<span class="sender-group">${escapeHtml(senderName)}: </span>${escapeHtml(this.getMessagePreview(newData.lastMessage))}`;
                 } else {
-                    msgTextEl.textContent = newData.lastMessage.text || '';
+                    msgTextEl.textContent = this.getMessagePreview(newData.lastMessage);
                 }
             } else {
-                msgTextEl.textContent = newData.lastMessage?.text || '';
+                msgTextEl.textContent = this.getMessagePreview(newData.lastMessage);
             }
         }
 

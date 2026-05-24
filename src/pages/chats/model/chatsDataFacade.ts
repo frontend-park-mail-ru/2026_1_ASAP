@@ -1,5 +1,5 @@
 import { wsClient } from "../../../core/utils/wsClient";
-import type { ChatInformationDto, MessageDto, PresenceState } from "../../../core/utils/wsClient";
+import type { ChatInformationDto, MessageDto, PresenceState, WsErrorDto } from "../../../core/utils/wsClient";
 import { channelService } from "../../../services/channelService";
 import type { ChannelDetail, CreateChannelInput, UpdateChannelInput } from "../../../services/channelService";
 import { chatService } from "../../../services/chatService";
@@ -8,7 +8,7 @@ import { notificationService } from "../../../services/notificationService";
 import { offlineQueue } from "../../../services/offlineMessageQueue";
 import type { PendingMessage } from "../../../services/offlineMessageQueue";
 import { presenceService } from "../../../services/presenceService";
-import type { ChatDetail, FrontendMessage, User } from "../../../types/chat";
+import type { ChatDetail, FrontendMessage, OutgoingMessageAttachment, User } from "../../../types/chat";
 import type { FrontendContact } from "../../../types/contact";
 import type { FrontendProfile } from "../../../types/profile";
 import type { SearchChatsResult, SearchContactsResult, SearchMessagesResult } from "../../../types/search";
@@ -148,8 +148,17 @@ export class ChatsDataFacade {
         return this.deps.chatService.getMessages(chatId, currentUserId, beforeId);
     }
 
-    public sendMessage(chatId: string, text: string, senderId: number): Promise<PendingMessage> {
-        return this.deps.chatService.sendMessage(chatId, text, senderId);
+    public sendMessage(
+        chatId: string,
+        text: string,
+        senderId: number,
+        attachments: OutgoingMessageAttachment[] = [],
+    ): Promise<PendingMessage> {
+        return this.deps.chatService.sendMessage(chatId, text, senderId, attachments);
+    }
+
+    public uploadMessageAttachment(file: File, type: "photo" | "video" | "file") {
+        return this.deps.chatService.uploadMessageAttachment(file, type);
     }
 
     public editMessage(chatId: string, messageId: string, text: string): boolean {
@@ -203,6 +212,10 @@ export class ChatsDataFacade {
 
     public removePendingMessage(tempId: string): Promise<void> {
         return this.deps.offlineQueue.remove(tempId);
+    }
+
+    public rejectPendingMessageFromError(error: WsErrorDto, activeChatId?: string | null): Promise<string | null> {
+        return this.deps.chatService.rejectPendingMessageFromError(error, activeChatId);
     }
 
     public createChannel(

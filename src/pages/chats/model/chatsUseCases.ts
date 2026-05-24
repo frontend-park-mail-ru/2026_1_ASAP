@@ -1,6 +1,6 @@
 import type { ChannelRole, CreateChannelInput, UpdateChannelInput } from "../../../services/channelService";
-import type { ChatInformationDto, MessageDto, PresenceState } from "../../../core/utils/wsClient";
-import type { ChannelChat, Chat, DialogChat, FrontendMessage, GroupChat, User } from "../../../types/chat";
+import type { ChatInformationDto, MessageDto, PresenceState, WsErrorDto } from "../../../core/utils/wsClient";
+import type { ChannelChat, Chat, DialogChat, FrontendMessage, GroupChat, OutgoingMessageAttachment, User } from "../../../types/chat";
 import type { FrontendProfile } from "../../../types/profile";
 import type { SearchMessageHit, SearchMessagesResult } from "../../../types/search";
 import { ChatsDataFacade, chatsDataFacade } from "./chatsDataFacade";
@@ -41,6 +41,27 @@ function hasSenderDisplayName(message?: FrontendMessage): boolean {
 
     const { firstName, lastName, login } = message.sender;
     return Boolean(firstName || lastName || (login && login !== "unknown" && !login.startsWith("user_")));
+}
+
+function getMessagePreview(message?: FrontendMessage): string | undefined {
+    if (!message) return undefined;
+    if (message.text) return message.text;
+
+    const attachment = message.attachments?.[0];
+    if (!attachment) return undefined;
+
+    switch (attachment.type) {
+        case "photo":
+            return "Фото";
+        case "video":
+            return "Видео";
+        case "file":
+            return attachment.fileName || "Файл";
+        case "contact":
+            return [attachment.contactFirstName, attachment.contactLastName].filter(Boolean).join(" ") || "Контакт";
+        default:
+            return undefined;
+    }
 }
 
 function toMessageVM(message: FrontendMessage, chat: Chat): MessageVM {
@@ -124,7 +145,7 @@ function toSidebarChatVM(chat: Chat, activeChatId: string | null): SidebarChatVM
         type: chat.type,
         title: chat.title,
         avatarUrl: chat.avatarUrl,
-        lastMessageText: chat.lastMessage?.text,
+        lastMessageText: getMessagePreview(chat.lastMessage),
         lastMessageAt: chat.lastMessage?.timestamp,
         unreadCount: chat.unreadCount ?? 0,
         isActive: chat.id === activeChatId,
@@ -174,6 +195,10 @@ export class ChatsUseCases {
 
     public async loadContacts() {
         return this.data.getContacts();
+    }
+
+    public rejectPendingMessageFromError(error: WsErrorDto, activeChatId?: string | null): Promise<string | null> {
+        return this.data.rejectPendingMessageFromError(error, activeChatId);
     }
 
     public async createDialogChat(currentUserId: number, contactId: number, contactLogin?: string) {
@@ -319,8 +344,17 @@ export class ChatsUseCases {
         };
     }
 
-    public sendMessage(chatId: string, text: string, senderId: number) {
-        return this.data.sendMessage(chatId, text, senderId);
+    public sendMessage(
+        chatId: string,
+        text: string,
+        senderId: number,
+        attachments: OutgoingMessageAttachment[] = [],
+    ) {
+        return this.data.sendMessage(chatId, text, senderId, attachments);
+    }
+
+    public uploadMessageAttachment(file: File, type: "photo" | "video" | "file") {
+        return this.data.uploadMessageAttachment(file, type);
     }
 
     public editMessage(chatId: string, messageId: string, text: string): boolean {
