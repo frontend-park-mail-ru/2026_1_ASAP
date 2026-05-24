@@ -213,6 +213,13 @@
                 height: 100%;
                 object-fit: cover;
                 border-radius: 8px;
+
+                &--fallback {
+                    object-fit: contain;
+                    padding: 14px;
+                    background: rgba(0, 0, 0, 0.15);
+                    box-sizing: border-box;
+                }
             }
 
             .message-input__draft-attachment-remove {

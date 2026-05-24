@@ -420,6 +420,12 @@ export class MessageInput extends BaseForm<MessageInputProps> {
                 const img = document.createElement('img');
                 img.className = 'message-input__draft-attachment-media';
                 img.src = draft.attachment.url || '';
+
+                img.addEventListener('error', () => {
+                    img.src = '/assets/images/icons/videoFallback.svg';
+                    img.classList.add('message-input__draft-attachment-media--fallback');
+                }, { once: true });
+
                 item.append(img, removeButton);
             } else {
                 const icon = document.createElement('img');
