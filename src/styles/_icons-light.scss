@@ -169,6 +169,12 @@
             @include icon-dark;
         }
     }
+
+    // ─── Превью чатов в sidebar: иконки типа «группа» / «канал» ─
+    .chat-info__group-icon,
+    .chat-info__channel-icon {
+        @include icon-muted;
+    }
 }
 
 

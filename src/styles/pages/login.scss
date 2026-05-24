@@ -14,10 +14,34 @@
     position: fixed;
     inset: 0;
     @include flex-center;
-    background: $color-background;
+    background: $login-background;
     box-sizing: border-box;
     padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px))
         max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+
+    // Вращающийся conic-gradient: даёт ощущение «переливания по кругу».
+    // По умолчанию скрыт; включается через [data-theme="light"] ниже.
+    &::before {
+        content: "";
+        position: absolute;
+        // Квадрат, описанный вокруг диагонали viewport, чтобы при вращении
+        // углы не оголяли края.
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: conic-gradient(
+            from 0deg at 50% 50%,
+            #455DBA,
+            #5A8A6E,
+            #6583FA,
+            #5A8A6E,
+            #455DBA
+        );
+        animation: login-bg-spin 20s linear infinite;
+        pointer-events: none;
+        display: none;
+    }
 
     &__support-button-container {
         position: fixed;
@@ -163,3 +187,20 @@
         margin: 0 auto;
     }
 }
+
+
+@keyframes login-bg-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+[data-theme="light"] .login-page::before {
+    display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .login-page::before {
+        animation: none;
+    }
+}
+

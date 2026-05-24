@@ -40,6 +40,7 @@ export class MessageList extends BaseComponent<MessageListProps> {
     private currentHighlightQuery = '';
     private selectedMessageEl: HTMLElement | null = null;
     private pinnedToBottom = true;
+    private resizeObserver: ResizeObserver | null = null;
 
     /**
      * @param {MessageListProps} props - Свойства компонента.
@@ -184,6 +185,16 @@ export class MessageList extends BaseComponent<MessageListProps> {
         }
 
         this.element.addEventListener('scroll', this.handleScroll);
+
+        // Список сжимается, когда поднимается мобильная клавиатура. Если юзер
+        // был у нижнего края — удерживаем его там же, иначе свежие сообщения
+        // уходят под клавиатуру и становятся не видны.
+        if (typeof ResizeObserver !== 'undefined') {
+            this.resizeObserver = new ResizeObserver(() => {
+                if (this.pinnedToBottom) this.scrollToBottom();
+            });
+            this.resizeObserver.observe(this.element);
+        }
 
         this.setMessages(this.props.messages);
         this.scrollToBottom();
@@ -389,6 +400,8 @@ export class MessageList extends BaseComponent<MessageListProps> {
         if (this.element) {
             this.element.removeEventListener('scroll', this.handleScroll);
         }
+        this.resizeObserver?.disconnect();
+        this.resizeObserver = null;
         this.childMessages.forEach(msg => msg.unmount());
         this.childMessages = [];
         this.messages.clear();
