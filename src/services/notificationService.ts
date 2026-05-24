@@ -1,9 +1,15 @@
-import { wsClient, MessageDto } from "../core/utils/wsClient";
+import { wsClient, MessageDto, ChatInformationDto, ChatUpdatedTitleDto } from "../core/utils/wsClient";
 import { getFullUrl } from "../core/utils/url";
+import { chatService } from "./chatService";
 
 interface ShowOptions {
     icon?: string;
     chatId?: string;
+}
+
+interface ChatMeta {
+    title: string;
+    type: 'dialog' | 'group' | 'channel';
 }
 
 class NotificationService {
@@ -13,6 +19,7 @@ class NotificationService {
     private audio: HTMLAudioElement | null = null;
     private currentUserId: number | null = null;
     private attached: boolean = false;
+    private chatMeta: Map<string, ChatMeta> = new Map();
 
     public init(): void {
         this.supported = 'Notification' in window;
@@ -129,26 +136,77 @@ class NotificationService {
         this.currentUserId = currentUserId;
         this.attached = true;
         wsClient.subscribe<MessageDto>('message.New', this.handleNewMessage);
+        wsClient.subscribe<ChatInformationDto>('chat.New', this.handleChatNew);
+        wsClient.subscribe<ChatUpdatedTitleDto>('chat.Updated.Title', this.handleChatTitleUpdated);
+
+        // Предзагружаем список чатов, чтобы для group/channel сразу знать
+        // название чата и тип. handleNewMessage умеет fallback'нуться без них.
+        this.preloadChatMeta(currentUserId);
     }
 
     public detach(): void {
         if (!this.attached) return;
         wsClient.unsubscribe('message.New', this.handleNewMessage);
+        wsClient.unsubscribe('chat.New', this.handleChatNew);
+        wsClient.unsubscribe('chat.Updated.Title', this.handleChatTitleUpdated);
         this.attached = false;
         this.currentUserId = null;
+        this.chatMeta.clear();
         this.closeAll();
+    }
+
+    private async preloadChatMeta(currentUserId: number): Promise<void> {
+        try {
+            const chats = await chatService.getChats(currentUserId);
+            chats.forEach((c) => {
+                this.chatMeta.set(String(c.id), { title: c.title, type: c.type });
+            });
+        } catch (e) {
+            console.warn('notificationService: preloadChatMeta failed', e);
+        }
+    }
+
+    private handleChatNew = (dto: ChatInformationDto): void => {
+        this.chatMeta.set(String(dto.id), { title: dto.title, type: dto.chat_type });
+    };
+
+    private handleChatTitleUpdated = (dto: ChatUpdatedTitleDto): void => {
+        const existing = this.chatMeta.get(String(dto.chat_id));
+        if (existing) {
+            this.chatMeta.set(String(dto.chat_id), { ...existing, title: dto.title });
+        }
+    };
+
+    private getSenderName(dto: MessageDto): string {
+        const full = dto.first_name
+            ? `${dto.first_name} ${dto.last_name ?? ''}`.trim()
+            : '';
+        return full || dto.login || `User #${dto.sender_id}`;
     }
 
     private handleNewMessage = (dto: MessageDto): void => {
         if (this.currentUserId === null) return;
         if (String(dto.sender_id) === String(this.currentUserId)) return;
 
-        const senderName = dto.first_name
-            ? `${dto.first_name} ${dto.last_name ?? ''}`.trim()
-            : (dto.login || 'Новое сообщение');
+        const chatId = String(dto.chat_id);
+        const chat = this.chatMeta.get(chatId);
+        const senderName = this.getSenderName(dto);
+        const bodyText = dto.text || (dto.sticker ? (dto.sticker.emoji ? `${dto.sticker.emoji} Стикер` : 'Стикер') : '');
 
-        this.show(senderName, dto.text || '', {
-            chatId: dto.chat_id.toString(),
+        let title: string;
+        let body: string;
+
+        if (chat && (chat.type === 'group' || chat.type === 'channel')) {
+            title = chat.title || senderName;
+            body = chat.type === 'group' ? `${senderName}: ${bodyText}` : bodyText;
+        } else {
+            // Диалог (или ещё не подгрузился meta) — title = имя отправителя.
+            title = senderName;
+            body = bodyText;
+        }
+
+        this.show(title, body, {
+            chatId,
             icon: dto.avatar ? getFullUrl(dto.avatar) : undefined,
         });
     };
