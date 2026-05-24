@@ -1,25 +1,20 @@
-import { LoginPage } from "../pages/login/login";
-import { ChatsPage } from "../pages/chats/chats";
-import { RegisterPage } from "../pages/register/register";
 import { Layout } from "./layout/layout";
 import { PageManager } from "./pageManager";
-import { Router } from "./router";
-import { ContactsPage } from "../pages/contacts/contacts";
-import { SettingsPage } from "../pages/settings/settings";
-import { AdminPage } from "../pages/adminPage/adminPage";
+import { Router, PageLoader } from "./router";
 import { authService } from "../services/authService";
 import { wsClient } from "./utils/wsClient";
 import { notificationService } from "../services/notificationService";
 import { contactService } from "../services/contactService";
 
-const routes = {
-    '/': LoginPage,
-    '/login': LoginPage,
-    '/register': RegisterPage,
-    '/chats': ChatsPage,
-    '/contacts': ContactsPage,
-    '/settings': SettingsPage,
-    '/admin': AdminPage,
+
+const routes: Record<string, PageLoader> = {
+    '/':         () => import(/* webpackChunkName: "login" */ "../pages/login/login").then(m => m.LoginPage),
+    '/login':    () => import(/* webpackChunkName: "login" */ "../pages/login/login").then(m => m.LoginPage),
+    '/register': () => import(/* webpackChunkName: "register" */ "../pages/register/register").then(m => m.RegisterPage),
+    '/chats':    () => import(/* webpackChunkName: "chats", webpackPrefetch: true */ "../pages/chats/chats").then(m => m.ChatsPage),
+    '/contacts': () => import(/* webpackChunkName: "contacts" */ "../pages/contacts/contacts").then(m => m.ContactsPage),
+    '/settings': () => import(/* webpackChunkName: "settings" */ "../pages/settings/settings").then(m => m.SettingsPage),
+    '/admin':    () => import(/* webpackChunkName: "admin" */ "../pages/adminPage/adminPage").then(m => m.AdminPage),
 };
 
 /**
