@@ -4,6 +4,7 @@ import template from './message.hbs';
 import { Avatar } from '../../ui/avatar/avatar';
 import { EditMsgOverlay } from '../../composite/editMsgOverlay/editMsgOverlay';
 import { ConfirmModal } from "../../composite/confirmModal/confirmModal";
+import { VoiceMessage } from '../voiceMessage/voiceMessage';
 
 /**
  * @interface MessageProps - Свойства компонента сообщения.
@@ -32,6 +33,7 @@ export class Message extends BaseComponent<MessageProps> {
     private longPressTimer: ReturnType<typeof setTimeout> | null = null;
     private touchStartX = 0;
     private touchStartY = 0;
+    private childComponents: BaseComponent[] = [];
 
     /**
      * @param {MessageProps} props - Свойства компонента.
@@ -234,6 +236,10 @@ export class Message extends BaseComponent<MessageProps> {
         const mediaAttachments = attachments.filter(a => a.type === 'photo' || a.type === 'video');
         let currentMediaIndex = 0;
 
+        // Clear previous child components unmounting them properly
+        this.childComponents.forEach(c => c.unmount());
+        this.childComponents = [];
+
         attachments.forEach((attachment) => {
             switch (attachment.type) {
                 case 'photo':
@@ -248,6 +254,14 @@ export class Message extends BaseComponent<MessageProps> {
                 case 'contact':
                     container.appendChild(this.createContactAttachment(attachment));
                     break;
+                case 'voice': {
+                    const voiceWrapper = document.createElement('div');
+                    container.appendChild(voiceWrapper);
+                    const voiceMsg = new VoiceMessage({ url: attachment.url });
+                    voiceMsg.mount(voiceWrapper);
+                    this.childComponents.push(voiceMsg);
+                    break;
+                }
                 default:
                     break;
             }
@@ -489,5 +503,8 @@ export class Message extends BaseComponent<MessageProps> {
         this.element!.removeEventListener('touchcancel', this.handleTouchEnd);
         if (this.longPressTimer) clearTimeout(this.longPressTimer);
         this.closeEditOverlay();
+        
+        this.childComponents.forEach(c => c.unmount());
+        this.childComponents = [];
     }
 }

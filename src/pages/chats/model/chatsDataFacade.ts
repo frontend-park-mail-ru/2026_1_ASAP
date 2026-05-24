@@ -157,7 +157,7 @@ export class ChatsDataFacade {
         return this.deps.chatService.sendMessage(chatId, text, senderId, attachments);
     }
 
-    public uploadMessageAttachment(file: File, type: "photo" | "video" | "file") {
+    public uploadMessageAttachment(file: File, type: "photo" | "video" | "file" | "voice") {
         return this.deps.chatService.uploadMessageAttachment(file, type);
     }
 
