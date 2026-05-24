@@ -379,33 +379,46 @@ export class MessageInput extends BaseForm<MessageInputProps> {
 
         this.draftAttachments.forEach((draft) => {
             const item = document.createElement('div');
-            item.className = 'message-input__draft-attachment';
-
-            const name = document.createElement('span');
-            name.className = 'message-input__draft-attachment-name';
-            name.textContent = this.getDraftAttachmentLabel(draft.attachment);
+            const type = draft.attachment.type;
+            const isMedia = type === 'photo' || type === 'video';
+            item.className = `message-input__draft-attachment message-input__draft-attachment--${isMedia ? 'media' : type}`;
 
             const removeButton = document.createElement('button');
             removeButton.type = 'button';
             removeButton.className = 'message-input__draft-attachment-remove';
             removeButton.setAttribute('aria-label', 'Удалить вложение');
-            removeButton.textContent = '×';
             removeButton.addEventListener('click', () => {
-                this.draftAttachments = this.draftAttachments.filter(item => item.id !== draft.id);
+                this.draftAttachments = this.draftAttachments.filter(d => d.id !== draft.id);
                 this.renderDraftAttachments();
             });
+            const removeIcon = document.createElement('img');
+            removeIcon.src = '/assets/images/icons/deleteIcon.svg';
+            removeIcon.className = 'message-input__draft-attachment-remove-icon';
+            removeButton.appendChild(removeIcon);
 
-            item.append(name, removeButton);
+            if (isMedia) {
+                const img = document.createElement('img');
+                img.className = 'message-input__draft-attachment-media';
+                img.src = draft.attachment.url || '';
+                item.append(img, removeButton);
+            } else {
+                const icon = document.createElement('img');
+                icon.className = 'message-input__draft-attachment-icon';
+                icon.src = type === 'contact' ? '/assets/images/icons/profile.svg' : '/assets/images/icons/upload.svg';
+
+                const name = document.createElement('span');
+                name.className = 'message-input__draft-attachment-name';
+                name.textContent = this.getDraftAttachmentLabel(draft.attachment);
+
+                item.append(icon, name, removeButton);
+            }
+
             this.draftAttachmentsContainer!.appendChild(item);
         });
     }
 
     private getDraftAttachmentLabel(attachment: MessageAttachment): string {
         switch (attachment.type) {
-            case 'photo':
-                return `Фото: ${attachment.fileName || 'изображение'}`;
-            case 'video':
-                return `Видео: ${attachment.fileName || 'видео'}`;
             case 'file':
                 return attachment.fileName || 'Файл';
             case 'contact':

@@ -100,40 +100,31 @@
     }
 
     &__attachment {
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
         max-width: 320px;
-        min-height: 42px;
-        padding: 8px 10px;
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        border-radius: 8px;
-        background: rgba(255, 255, 255, 0.08);
-        color: inherit;
+        min-height: 32px;
+        padding: 4px 10px 4px 8px;
+        border-radius: 16px;
+        color: #ffffff;
         cursor: pointer;
         text-align: left;
         font: $text-main-style;
         letter-spacing: $text-main-ls;
-        transition: background-color 0.2s ease, border-color 0.2s ease;
+        transition: filter 0.2s ease;
 
         &:hover {
-            background: rgba(255, 255, 255, 0.14);
-            border-color: rgba(255, 255, 255, 0.24);
+            filter: brightness(1.1);
         }
     }
 
     &__attachment-icon {
         flex-shrink: 0;
-        width: 26px;
-        height: 26px;
-        border-radius: 7px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(69, 93, 186, 0.28);
-        padding: 5px;
+        width: 18px;
+        height: 18px;
         object-fit: contain;
-        box-sizing: border-box;
+        filter: brightness(0) invert(1);
     }
 
     &__attachment-name {
@@ -143,41 +134,17 @@
         text-overflow: ellipsis;
     }
 
+    &__attachment--file {
+        background: #5A8A6E;
+    }
+
     &__attachment--contact {
+        background: $gradient-msg;
         cursor: default;
 
         &:hover {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 255, 255, 0.14);
+            filter: none;
         }
-    }
-
-    &__attachment-contact-avatar {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        object-fit: cover;
-        flex-shrink: 0;
-    }
-
-    &__attachment-contact-info {
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-    }
-
-    &__attachment-contact-name {
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        color: inherit;
-    }
-
-    &__attachment-contact-label {
-        font-size: 12px;
-        line-height: 1.2;
-        opacity: 0.65;
     }
 
     &__attachment-media-link,

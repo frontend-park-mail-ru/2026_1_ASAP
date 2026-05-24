@@ -384,25 +384,17 @@ export class Message extends BaseComponent<MessageProps> {
         const card = document.createElement('div');
         card.className = 'message__attachment message__attachment--contact';
 
-        const avatar = document.createElement('img');
-        avatar.className = 'message__attachment-contact-avatar';
-        avatar.src = attachment.contactAvatarUrl || '/assets/images/avatars/defaultAvatar.svg';
-        avatar.alt = '';
-
-        const info = document.createElement('span');
-        info.className = 'message__attachment-contact-info';
+        const icon = document.createElement('img');
+        icon.className = 'message__attachment-icon';
+        icon.src = '/assets/images/icons/profile.svg';
+        icon.alt = '';
 
         const name = document.createElement('span');
-        name.className = 'message__attachment-contact-name';
+        name.className = 'message__attachment-name';
         name.textContent = [attachment.contactFirstName, attachment.contactLastName].filter(Boolean).join(' ')
             || (attachment.contactUserId ? `User #${attachment.contactUserId}` : 'Контакт');
 
-        const label = document.createElement('span');
-        label.className = 'message__attachment-contact-label';
-        label.textContent = 'Контакт';
-
-        info.append(name, label);
-        card.append(avatar, info);
+        card.append(icon, name);
         return card;
     }
 
