@@ -101,10 +101,20 @@ export class VoiceRecorder extends BaseComponent<VoiceRecorderProps> {
 
         this.mediaRecorder.onstop = () => {
             if (!this.isCancelled && this.audioChunks.length > 0) {
-                const mimeType = this.mediaRecorder?.mimeType || 'audio/webm';
+                let mimeType = this.mediaRecorder?.mimeType || 'audio/webm';
+                if (mimeType.includes('mp4')) {
+                    mimeType = 'audio/mp4';
+                } else if (mimeType.includes('webm')) {
+                    mimeType = 'audio/webm';
+                } else if (mimeType.includes('ogg')) {
+                    mimeType = 'audio/ogg';
+                }
+
                 const blob = new Blob(this.audioChunks, { type: mimeType });
                 let ext = 'webm';
                 if (mimeType.includes('mp4')) ext = 'mp4';
+                else if (mimeType.includes('ogg')) ext = 'ogg';
+
                 const file = new File([blob], `voice.${ext}`, { type: mimeType });
                 this.props.onRecorded(file);
             }

@@ -60,6 +60,8 @@
 @use "../components/ui/actionHeader/actionHeader" as *;
 @use "../components/ui/actionLayout/actionLayout" as *;
 @use "../components/ui/checkbox/checkbox" as *;
+@use "../components/ui/voiceMessage/voiceMessage" as *;
+@use "../components/ui/voiceRecorder/voiceRecorder" as *;
 
 @use "pages/login" as *;
 @use "pages/chats" as *;
