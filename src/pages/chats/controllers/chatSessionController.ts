@@ -88,7 +88,7 @@ export class ChatSessionController {
         return this.useCases.sendMessage(chatId, text, senderId, attachments);
     }
 
-    public uploadMessageAttachment(file: File, type: "photo" | "video" | "file") {
+    public uploadMessageAttachment(file: File, type: "photo" | "video" | "file" | "voice") {
         return this.useCases.uploadMessageAttachment(file, type);
     }
 

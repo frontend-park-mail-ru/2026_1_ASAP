@@ -14,7 +14,7 @@
 
     &__row {
         display: flex;
-        align-items: flex-end;
+        align-items: center;
         gap: 10px;
     }
 
@@ -35,6 +35,20 @@
         &:focus-within {
             background: #525050;
         }
+    }
+
+    &__record-button-container,
+    &__send-button-container {
+        display: flex;
+        &[hidden] {
+            display: none !important;
+        }
+    }
+
+    &__record-button {
+        background: none;
+        border: none;
+        height: 40px;
     }
 
     // Боксы-обёртки слотов: центрируем иконки по вертикали независимо от высоты textarea.

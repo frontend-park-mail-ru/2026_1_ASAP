@@ -353,7 +353,7 @@ export class ChatsUseCases {
         return this.data.sendMessage(chatId, text, senderId, attachments);
     }
 
-    public uploadMessageAttachment(file: File, type: "photo" | "video" | "file") {
+    public uploadMessageAttachment(file: File, type: "photo" | "video" | "file" | "voice") {
         return this.data.uploadMessageAttachment(file, type);
     }
 

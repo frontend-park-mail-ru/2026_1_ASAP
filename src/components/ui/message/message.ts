@@ -4,6 +4,7 @@ import template from './message.hbs';
 import { Avatar } from '../../ui/avatar/avatar';
 import { EditMsgOverlay } from '../../composite/editMsgOverlay/editMsgOverlay';
 import { ConfirmModal } from "../../composite/confirmModal/confirmModal";
+import { VoiceMessage } from '../voiceMessage/voiceMessage';
 
 /**
  * @interface MessageProps - Свойства компонента сообщения.
@@ -32,6 +33,7 @@ export class Message extends BaseComponent<MessageProps> {
     private longPressTimer: ReturnType<typeof setTimeout> | null = null;
     private touchStartX = 0;
     private touchStartY = 0;
+    private childComponents: BaseComponent[] = [];
 
     /**
      * @param {MessageProps} props - Свойства компонента.
@@ -159,7 +161,14 @@ export class Message extends BaseComponent<MessageProps> {
         const textEl = this.element?.querySelector('.message__text');
         if (textEl) {
             textEl.textContent = newText;
-            (textEl as HTMLElement).hidden = newText.length === 0;
+            const hasVoice = this.props.message.attachments?.some(a => a.type === 'voice');
+            const isVoiceOnlyText = newText.match(/^\[Голосовое[^\d]*(\d+:\d+)?\]$/i);
+            
+            if (hasVoice && isVoiceOnlyText) {
+                (textEl as HTMLElement).hidden = true;
+            } else {
+                (textEl as HTMLElement).hidden = newText.length === 0;
+            }
         }
         const editedEl = this.element?.querySelector<HTMLElement>('.message__edited');
         if (editedEl) {
@@ -234,6 +243,10 @@ export class Message extends BaseComponent<MessageProps> {
         const mediaAttachments = attachments.filter(a => a.type === 'photo' || a.type === 'video');
         let currentMediaIndex = 0;
 
+        // Clear previous child components unmounting them properly
+        this.childComponents.forEach(c => c.unmount());
+        this.childComponents = [];
+
         attachments.forEach((attachment) => {
             switch (attachment.type) {
                 case 'photo':
@@ -248,13 +261,40 @@ export class Message extends BaseComponent<MessageProps> {
                 case 'contact':
                     container.appendChild(this.createContactAttachment(attachment));
                     break;
+                case 'voice': {
+                    const voiceWrapper = document.createElement('div');
+                    container.appendChild(voiceWrapper);
+                    
+                    let durationText = undefined;
+                    const match = this.props.message.text?.match(/\[Голосовое[^\d]*(\d+:\d+)\]/i);
+                    if (match) {
+                        durationText = match[1];
+                    }
+
+                    const voiceMsg = new VoiceMessage({ 
+                        url: attachment.url,
+                        durationStr: durationText
+                    });
+                    voiceMsg.mount(voiceWrapper);
+                    this.childComponents.push(voiceMsg);
+                    break;
+                }
                 default:
                     break;
             }
         });
 
         const textEl = this.element?.querySelector<HTMLElement>('.message__text');
-        if (textEl) textEl.hidden = !this.props.message.text;
+        if (textEl) {
+            const hasVoice = attachments.some(a => a.type === 'voice');
+            const isVoiceOnlyText = this.props.message.text?.match(/^\[Голосовое[^\d]*(\d+:\d+)?\]$/i);
+            
+            if (hasVoice && isVoiceOnlyText) {
+                textEl.hidden = true;
+            } else {
+                textEl.hidden = !this.props.message.text;
+            }
+        }
     }
 
     private createFileAttachment(url?: string, fileName?: string): HTMLElement {
@@ -489,5 +529,8 @@ export class Message extends BaseComponent<MessageProps> {
         this.element!.removeEventListener('touchcancel', this.handleTouchEnd);
         if (this.longPressTimer) clearTimeout(this.longPressTimer);
         this.closeEditOverlay();
+        
+        this.childComponents.forEach(c => c.unmount());
+        this.childComponents = [];
     }
 }
