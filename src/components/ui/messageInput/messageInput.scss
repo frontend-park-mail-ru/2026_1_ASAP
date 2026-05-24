@@ -17,29 +17,28 @@
         gap: 10px;
     }
 
+    // Поле ввода: одна большая rounded-полоса с заливкой, без бордера.
     &__input-container {
         display: flex;
-        align-items: center;
-        justify-content: center;
+        align-items: flex-end;
         flex-direction: row;
         width: 100%;
-        height: auto;
         flex-grow: 1;
-        border: 1px solid $color-text;
-        border-radius: 10px;
-        padding: 0 10px;
+        border: none;
+        border-radius: 14px;
+        padding: 0 12px;
         gap: 10px;
-        align-items: flex-end;
-        transition: border-color 0.2s;
+        background: $color-base-background;
+        transition: background-color 0.2s;
 
         &:focus-within {
-            border-color: $color-text-hover;
+            background: $color-text-hover2;
         }
     }
 
     &__textarea {
         width: 100%;
-        padding: 9.5px 0;
+        padding: 11px 0;
         background: transparent;
         font: $text-tertiary;
         letter-spacing: $text-tertiary-ls;
@@ -73,6 +72,51 @@
         }
     }
 
+    // Кнопка стикеров (внутри input-container, слева от textarea).
+    &__sticker-button {
+        @include btn-reset;
+        @include flex-center;
+        flex-shrink: 0;
+        align-self: center;
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 8px;
+        background: transparent;
+        cursor: pointer;
+        @include hover-transition;
+
+        img {
+            width: 22px;
+            height: 22px;
+            object-fit: contain;
+            pointer-events: none;
+        }
+
+        &:hover {
+            background: $color-text-hover2;
+        }
+
+        &--active {
+            background: $color-text-hover2;
+        }
+    }
+
+    &__upload-button-container {
+        display: flex;
+        height: fit-content;
+        align-self: center;
+        @include btn-reset;
+        @include hover-transition;
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+
+        &:hover {
+            opacity: 0.5;
+        }
+    }
+
     &__send-button {
         width: 40px;
         height: 40px;
@@ -91,33 +135,6 @@
         & img {
             width: 30px;
             height: 30px;
-        }
-    }
-
-
-    &__sticker-button {
-        background: none;
-        display: flex;
-        height: fit-content;
-        border: none;
-        opacity: 0.5;
-        cursor: not-allowed;
-        padding: 0;
-        pointer-events: none;
-    }
-    
-    &__upload-button-container {
-        display: flex;
-        height: fit-content;
-        // margin-bottom: 2.5px;
-        @include btn-reset;
-        @include hover-transition;
-        opacity: 0.5;
-        cursor: not-allowed;
-        pointer-events: none;
-
-        &:hover {
-            opacity: 0.5;
         }
     }
 
@@ -191,10 +208,9 @@
     .message-input {
         &__input-container {
             background: $color-base-background;
-            border-color: $color-input-border;
 
             &:focus-within {
-                border-color: $color-primary;
+                background: $color-text-hover2;
             }
         }
 

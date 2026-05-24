@@ -5,6 +5,7 @@ import type { FrontendMessage } from "../../../types/chat";
 import { ChannelJoinFooter } from "../../../components/composite/channelJoinFooter/channelJoinFooter";
 import { MessageList } from "../../../components/composite/messageList/messageList";
 import { MessageInput } from "../../../components/ui/messageInput/messageInput";
+import { stickerService } from "../../../services/stickerService";
 import type { ActiveChatVM } from "../model/chatsViewModels";
 import type { ChatSessionController } from "./chatSessionController";
 
@@ -172,6 +173,16 @@ export class ChatActiveMessagesController {
                 const ok = this.deps.sessionController.editMessage(activeChatId, messageId, newText);
                 if (!ok) {
                     this.deps.onShowAlert("No connection, try later");
+                }
+            },
+            onSendSticker: (sticker) => {
+                const activeChatId = this.deps.getActiveChatId();
+                if (!activeChatId || activeChatId !== chatId) return;
+                if (chatDetail.type === "channel" && this.deps.getActiveChannelRole() !== "owner") return;
+
+                const ok = stickerService.sendSticker(activeChatId, sticker.id);
+                if (!ok) {
+                    this.deps.onShowAlert("Нет соединения, попробуйте позже");
                 }
             },
             onTyping: () => {

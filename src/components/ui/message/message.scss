@@ -118,6 +118,24 @@
             animation: message-flash-other 0.35s ease-out forwards;
         }
     }
+
+    // Сообщение-стикер: без баббл-фона, картинка 200×200.
+    &--sticker .message__content-wrapper {
+        background: transparent !important;
+        padding: 0;
+        box-shadow: none;
+    }
+
+    &__sticker {
+        display: block;
+        width: 200px;
+        height: 200px;
+        max-width: 60vw;
+        max-height: 60vw;
+        object-fit: contain;
+        user-select: none;
+        -webkit-user-drag: none;
+    }
 }
 
 @keyframes message-flash-own {

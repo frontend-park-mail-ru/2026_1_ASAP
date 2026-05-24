@@ -18,16 +18,33 @@ export interface WsPacket {
 }
 
 /**
+ * DTO стикера (приходит в составе MessageDto / LastMessageDto, и в GET /api/v1/sticker-packs).
+ */
+export interface StickerDto {
+    id: number;
+    pack_id: number;
+    file_url: string;
+    slug?: string;
+    emoji?: string;
+    width?: number;
+    height?: number;
+}
+
+/**
+ * DTO стикерпака (REST GET /api/v1/sticker-packs).
+ */
+export interface StickerPackDto {
+    id: number;
+    name: string;
+    title: string;
+    slug?: string;
+    thumbnail_url?: string;
+    stickers: StickerDto[];
+}
+
+/**
  * @interface MessageDto
  * @description DTO входящего сообщения от бэкенда.
- * @property {number} id         - Числовой ID сообщения.
- * @property {number} chat_id    - ID чата, к которому относится сообщение.
- * @property {number} sender_id  - ID отправителя.
- * @property {string} text       - Текст сообщения.
- * @property {string} created_at - ISO-строка даты создания.
- * @property {string} [login]      - Логин отправителя.
- * @property {string} [first_name] - Имя отправителя.
- * @property {string} [last_name]  - Фамилия отправителя.
  */
 export interface MessageDto {
     id: number;
@@ -41,6 +58,7 @@ export interface MessageDto {
     first_name?: string;
     last_name?: string;
     avatar?: string | null;
+    sticker?: StickerDto | null;
 }
 
 /**
@@ -60,6 +78,7 @@ export interface LastMessageDto {
     sender_id: number;
     text: string;
     created_at: string;
+    sticker?: StickerDto | null;
 }
 
 /**

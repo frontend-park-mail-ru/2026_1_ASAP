@@ -219,7 +219,14 @@ export class ChatsUseCases {
     }
 
     public mapRealtimeSidebarMessage(dto: MessageDto, currentUserId: number): FrontendMessage {
-        return this.data.convertWsMessageDto(dto, currentUserId);
+        const message = this.data.convertWsMessageDto(dto, currentUserId);
+        // Для sidebar preview у стикеровых сообщений подменяем пустой текст на «Стикер».
+        if (message.sticker && !message.text) {
+            message.text = message.sticker.emoji
+                ? `${message.sticker.emoji} Стикер`
+                : 'Стикер';
+        }
+        return message;
     }
 
     public async enrichRealtimeSidebarMessage(

@@ -1,0 +1,183 @@
+@use "variables" as *;
+@use "mixins" as *;
+
+@keyframes sticker-emoji-overlay-slide-up {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+.sticker-emoji-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    pointer-events: none;
+
+    &__backdrop {
+        position: fixed;
+        inset: 0;
+        background-color: $color-empty;
+        z-index: 999;
+        pointer-events: auto;
+    }
+
+    &__panel {
+        position: fixed;
+        z-index: 1000;
+        width: 340px;
+        max-width: calc(100vw - 16px);
+        height: 460px;
+        max-height: calc(100vh - 100px);
+        display: flex;
+        flex-direction: column;
+        background-color: $color-neutral;
+        border: 1px solid $color-border;
+        border-radius: 16px;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+        pointer-events: auto;
+        overflow: hidden;
+    }
+
+    &__content {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 14px 14px 8px;
+
+        &::-webkit-scrollbar { width: 6px; }
+        &::-webkit-scrollbar-thumb {
+            background: $color-scroll;
+            border-radius: 50px;
+        }
+    }
+
+    // Стикерпак
+    &__pack-title {
+        font: $text-tertiary;
+        color: $color-text-hover;
+        margin: 0 4px 12px;
+    }
+
+    &__sticker-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    &__sticker-button {
+        @include btn-reset;
+        @include flex-center;
+        aspect-ratio: 1 / 1;
+        background: transparent;
+        border-radius: 14px;
+        padding: 6px;
+        cursor: pointer;
+        @include hover-transition;
+
+        img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+        }
+
+        &:hover, &:focus-visible {
+            background: $color-text-hover2;
+        }
+    }
+
+    // Эмодзи
+    &__emoji-category {
+        margin-bottom: 14px;
+
+        &-title {
+            font: $text-tertiary;
+            color: $color-text;
+            font-weight: 600;
+            margin: 0 4px 8px;
+        }
+
+        &-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 4px;
+        }
+    }
+
+    &__emoji-button {
+        @include btn-reset;
+        @include flex-center;
+        aspect-ratio: 1 / 1;
+        font-size: 22px;
+        line-height: 1;
+        border-radius: 8px;
+        cursor: pointer;
+        background: transparent;
+        @include hover-transition;
+
+        &:hover, &:focus-visible {
+            background: $color-text-hover2;
+        }
+    }
+
+    &__empty {
+        font: $text-tertiary;
+        color: $color-text-hover;
+        text-align: center;
+        padding: 24px 12px;
+    }
+
+    // Нижний переключатель «Стикеры / Эмодзи»
+    &__tabs {
+        display: flex;
+        flex-shrink: 0;
+        margin: 8px 14px 14px;
+        padding: 4px;
+        gap: 4px;
+        background: $color-base-background;
+        border-radius: 999px;
+    }
+
+    &__tab {
+        @include btn-reset;
+        flex: 1 1 0;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font: $text-tertiary;
+        color: $color-text-hover;
+        cursor: pointer;
+        @include hover-transition;
+
+        &--active {
+            background: $color-neutral;
+            color: $color-text;
+        }
+
+        &:hover:not(&--active) {
+            color: $color-text;
+        }
+    }
+
+    // Мобильный bottom-sheet
+    @media (max-width: $breakpoint-mobile-max) {
+        &__backdrop {
+            background-color: $color-overlay-medium;
+        }
+
+        &__panel {
+            top: auto !important;
+            left: 0 !important;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            max-width: none;
+            height: 60vh;
+            max-height: 70vh;
+            border: none;
+            border-top: 1px solid $color-border;
+            border-radius: 16px 16px 0 0;
+            animation: sticker-emoji-overlay-slide-up 0.22s ease-out;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+    }
+}
