@@ -269,10 +269,15 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * Если читатель — не я → обновляю «прочитано» на своих сообщениях с id <= last_read.
      */
     private readonly handleMessageRead = (dto: MessageReadDto): void => {
-        if (!this.activeChatId || String(dto.chat_id) !== this.activeChatId) return;
         if (this.currentUserId === null) return;
-        if (dto.reader_user_id === this.currentUserId) return;
 
+        // Я прочитал (возможно — в другой вкладке): синхронизируем sidebar.
+        if (dto.reader_user_id === this.currentUserId) {
+            this.sidebarController?.resetUnread(String(dto.chat_id));
+            return;
+        }
+
+        if (!this.activeChatId || String(dto.chat_id) !== this.activeChatId) return;
         this.activeMessageList?.markOwnMessagesRead(dto.last_read_message_id);
     };
 
@@ -657,6 +662,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
             this.activeChatId = chatId;
             this.chatWrapper?.setActiveChat(chatId);
+            // Открыли чат — у него больше нет «непрочитанных» в превью.
+            this.sidebarController?.resetUnread(chatId);
             await this.openChat(chatId);
         }
     }

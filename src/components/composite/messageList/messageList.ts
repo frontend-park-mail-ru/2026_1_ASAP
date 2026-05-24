@@ -45,6 +45,7 @@ export class MessageList extends BaseComponent<MessageListProps> {
     private selectedMessageEl: HTMLElement | null = null;
     private pinnedToBottom = true;
     private resizeObserver: ResizeObserver | null = null;
+    private unreadDividerEl: HTMLElement | null = null;
 
     private handleMediaClick = (attachments: MessageAttachment[], initialIndex: number) => {
         const overlay = new MediaViewerOverlay({
@@ -258,8 +259,35 @@ export class MessageList extends BaseComponent<MessageListProps> {
             if (this.currentHighlightQuery) messageComponent.applyHighlight(this.currentHighlightQuery);
             this.childMessages.unshift(messageComponent);
         });
-        this.pinnedToBottom = true;
-        this.scrollToBottom();
+
+        this.unreadDividerEl?.remove();
+        this.unreadDividerEl = null;
+        const firstUnread = messages.find((m) => !m.isOwn && m.status !== 'read');
+        const unreadEl = firstUnread ? this.messages.get(firstUnread.id)?.element ?? null : null;
+
+        if (firstUnread && unreadEl && this.flexContainer) {
+            const divider = document.createElement('div');
+            divider.className = 'message-list__unread-divider';
+            divider.textContent = 'Новые сообщения';
+            this.flexContainer.insertBefore(divider, unreadEl.nextSibling);
+            this.unreadDividerEl = divider;
+
+            requestAnimationFrame(() => {
+                if (!this.element) return;
+                const dividerTop = this.unreadDividerEl?.offsetTop ?? 0;
+                const remaining = this.element.scrollHeight - dividerTop;
+                if (remaining > this.element.clientHeight) {
+                    this.element.scrollTop = Math.max(0, dividerTop);
+                    this.pinnedToBottom = false;
+                } else {
+                    this.pinnedToBottom = true;
+                    this.element.scrollTop = this.element.scrollHeight;
+                }
+            });
+        } else {
+            this.pinnedToBottom = true;
+            this.scrollToBottom();
+        }
         this.anchorImagesToBottom();
     }
 
