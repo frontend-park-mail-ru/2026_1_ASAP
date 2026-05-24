@@ -483,6 +483,9 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     .find((c) => String(c.id) === String(chatId));
                 return chat?.lastReadMessageId ?? 0;
             },
+            onLocalMarkRead: (chatId, lastReadMessageId) => {
+                this.sidebarController?.applyOwnRead(chatId, lastReadMessageId);
+            },
         });
         this.presenceController = new ChatPresenceController();
         this.notificationPromptController = new ChatNotificationPromptController({

@@ -29,6 +29,8 @@ interface ChatActiveMessagesControllerDeps {
     getPendingUnreadCount: (chatId: string) => number;
     /** ID последнего прочитанного сообщения — главный источник истины для якоря «новые». */
     getLastReadMessageId: (chatId: string) => number;
+    /** Локально применить «я прочитал до этого id» (не дожидаясь WS-broadcast). */
+    onLocalMarkRead: (chatId: string, lastReadMessageId: number) => void;
 }
 
 export interface ActiveChatMessagesResult {
@@ -139,10 +141,23 @@ export class ChatActiveMessagesController {
     }
 
     public markLatestIncomingRead(chatId: string): void {
-        const last = this.deps.getMessageList()?.getLatestMessageData();
-        if (last && !last.isOwn && /^\d+$/.test(last.id)) {
-            this.deps.sessionController.markMessageRead(chatId, last.id);
-        }
+        // Берём самое свежее ВХОДЯЩЕЕ сообщение, даже если последнее в чате —
+        // моё. Иначе бэк не сдвинет last_read_message_id и после перезагрузки
+        // непрочитанные «оживут» снова.
+        const latestIncoming = this.deps.getMessageList()?.getLatestIncomingMessageData();
+        if (!latestIncoming) return;
+
+        const lastReadId = Number(latestIncoming.id);
+        if (!Number.isFinite(lastReadId) || lastReadId <= 0) return;
+
+        // Уже отмечено — не повторяемся (бэк проигнорирует, мы не дёргаем зря).
+        if (this.deps.getLastReadMessageId(chatId) >= lastReadId) return;
+
+        this.deps.sessionController.markMessageRead(chatId, latestIncoming.id);
+        // Оптимистичный апдейт — на случай если WS-broadcast не дойдёт сразу.
+        // Иначе при повторном входе в чат до прихода эхо-события divider
+        // покажется снова на тех же сообщениях.
+        this.deps.onLocalMarkRead(chatId, lastReadId);
     }
 
     private buildMessageInput(

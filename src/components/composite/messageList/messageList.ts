@@ -461,6 +461,20 @@ export class MessageList extends BaseComponent<MessageListProps> {
     }
 
     /**
+     * Возвращает самое свежее ВХОДЯЩЕЕ сообщение (не своё) с числовым id.
+     * Нужно, чтобы корректно отметить прочитанным даже когда последнее
+     * сообщение в чате — моё (иначе бэк не обновит last_read_message_id
+     * и после перезагрузки сообщения снова станут «непрочитанными»).
+     */
+    public getLatestIncomingMessageData(): FrontendMessage | null {
+        for (const child of this.childMessages) {
+            const msg = child.props.message;
+            if (!msg.isOwn && /^\d+$/.test(msg.id)) return msg;
+        }
+        return null;
+    }
+
+    /**
      * Отмечает «прочитано» все собственные сообщения с id <= lastReadId.
      * Вызывается из обработчика `message.Read` когда кто-то другой прочитал.
      */
