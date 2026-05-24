@@ -1,6 +1,7 @@
 import { wsClient, MessageDto, ChatInformationDto, ChatUpdatedTitleDto } from "../core/utils/wsClient";
 import { getFullUrl } from "../core/utils/url";
 import { chatService } from "./chatService";
+import { contactService } from "./contactService";
 
 interface ShowOptions {
     icon?: string;
@@ -12,6 +13,13 @@ interface ChatMeta {
     type: 'dialog' | 'group' | 'channel';
 }
 
+interface SenderMeta {
+    firstName?: string;
+    lastName?: string;
+    login?: string;
+    avatarUrl?: string;
+}
+
 class NotificationService {
     private permission: NotificationPermission = 'default';
     private supported: boolean = false;
@@ -20,6 +28,8 @@ class NotificationService {
     private currentUserId: number | null = null;
     private attached: boolean = false;
     private chatMeta: Map<string, ChatMeta> = new Map();
+    private senderCache: Map<number, SenderMeta> = new Map();
+    private senderInflight: Map<number, Promise<SenderMeta>> = new Map();
 
     public init(): void {
         this.supported = 'Notification' in window;
@@ -152,6 +162,8 @@ class NotificationService {
         this.attached = false;
         this.currentUserId = null;
         this.chatMeta.clear();
+        this.senderCache.clear();
+        this.senderInflight.clear();
         this.closeAll();
     }
 
@@ -177,20 +189,61 @@ class NotificationService {
         }
     };
 
-    private getSenderName(dto: MessageDto): string {
-        const full = dto.first_name
-            ? `${dto.first_name} ${dto.last_name ?? ''}`.trim()
-            : '';
-        return full || dto.login || `User #${dto.sender_id}`;
+    private buildSenderName(meta: SenderMeta, senderId: number): string {
+        const full = meta.firstName ? `${meta.firstName} ${meta.lastName ?? ''}`.trim() : '';
+        if (full) return full;
+        if (meta.login && !meta.login.startsWith('user_')) return meta.login;
+        return `User #${senderId}`;
     }
 
-    private handleNewMessage = (dto: MessageDto): void => {
+    /**
+     * Собирает meta отправителя: из самого DTO (если бэк положил поля),
+     * иначе из кеша, иначе — REST-запрос с дедупом.
+     */
+    private async resolveSenderMeta(dto: MessageDto): Promise<SenderMeta> {
+        if (dto.first_name || dto.last_name || (dto.login && !dto.login.startsWith('user_'))) {
+            const meta: SenderMeta = {
+                firstName: dto.first_name,
+                lastName: dto.last_name,
+                login: dto.login,
+                avatarUrl: dto.avatar ?? undefined,
+            };
+            this.senderCache.set(dto.sender_id, meta);
+            return meta;
+        }
+        const cached = this.senderCache.get(dto.sender_id);
+        if (cached) return cached;
+
+        const inflight = this.senderInflight.get(dto.sender_id);
+        if (inflight) return inflight;
+
+        const promise = contactService.getProfileInfo(dto.sender_id)
+            .then((profile) => {
+                const meta: SenderMeta = {
+                    firstName: profile.mainInfo.firstName,
+                    lastName: profile.mainInfo.lastName,
+                    login: profile.additionalInfo.login,
+                    avatarUrl: profile.mainInfo.avatarUrl,
+                };
+                this.senderCache.set(dto.sender_id, meta);
+                return meta;
+            })
+            .catch(() => ({} as SenderMeta))
+            .finally(() => {
+                this.senderInflight.delete(dto.sender_id);
+            });
+        this.senderInflight.set(dto.sender_id, promise);
+        return promise;
+    }
+
+    private handleNewMessage = async (dto: MessageDto): Promise<void> => {
         if (this.currentUserId === null) return;
         if (String(dto.sender_id) === String(this.currentUserId)) return;
 
         const chatId = String(dto.chat_id);
         const chat = this.chatMeta.get(chatId);
-        const senderName = this.getSenderName(dto);
+        const senderMeta = await this.resolveSenderMeta(dto);
+        const senderName = this.buildSenderName(senderMeta, dto.sender_id);
         const bodyText = dto.text || (dto.sticker ? (dto.sticker.emoji ? `${dto.sticker.emoji} Стикер` : 'Стикер') : '');
 
         let title: string;
@@ -205,10 +258,11 @@ class NotificationService {
             body = bodyText;
         }
 
-        this.show(title, body, {
-            chatId,
-            icon: dto.avatar ? getFullUrl(dto.avatar) : undefined,
-        });
+        const icon = dto.avatar
+            ? getFullUrl(dto.avatar)
+            : (senderMeta.avatarUrl ? getFullUrl(senderMeta.avatarUrl) : undefined);
+
+        this.show(title, body, { chatId, icon });
     };
 }
 
