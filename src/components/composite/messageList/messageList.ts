@@ -296,7 +296,9 @@ export class MessageList extends BaseComponent<MessageListProps> {
             onEdit: (id) => this.props.onRequestEdit?.(id, newMessage.text),
             onDelete: (id) => this.props.onRequestDelete?.(id),
         });
-        
+
+        const wasAtBottom = this.isNearBottom();
+
         // Новое сообщение всегда в начало DOM (визуальный низ)
         messageComponent.mount(this.flexContainer!);
         if (this.currentHighlightQuery) messageComponent.applyHighlight(this.currentHighlightQuery);
@@ -305,7 +307,8 @@ export class MessageList extends BaseComponent<MessageListProps> {
             this.flexContainer!.prepend(messageComponent.element);
         }
         this.childMessages.unshift(messageComponent);
-        if (this.isNearBottom()) {
+
+        if (newMessage.isOwn || wasAtBottom) {
             this.pinnedToBottom = true;
             this.scrollToBottom();
             this.anchorImagesToBottom();

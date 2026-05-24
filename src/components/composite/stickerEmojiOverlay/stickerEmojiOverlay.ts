@@ -254,11 +254,18 @@ export class StickerEmojiOverlay extends BaseComponent<StickerEmojiOverlayProps>
     private positionPanel(): void {
         if (!this.panel) return;
         const isMobile = window.matchMedia("(max-width: 767px)").matches;
-        // На мобиле панель прижата CSS-ом к низу, JS-позиционирование пропускаем.
-        if (isMobile) return;
-
         const { anchorRect } = this.props;
         const margin = 8;
+
+        if (isMobile) {
+            // Bottom-sheet поднимаем НАД полем ввода (anchor — кнопка стикеров),
+            // чтобы textarea оставалась видимой. Высоту тоже ограничиваем сверху.
+            const bottomOffset = Math.max(margin, window.innerHeight - anchorRect.top + margin);
+            this.panel.style.bottom = `${bottomOffset}px`;
+            this.panel.style.maxHeight = `${Math.max(160, anchorRect.top - margin * 2)}px`;
+            return;
+        }
+
         const w = this.panel.offsetWidth || 340;
         const h = this.panel.offsetHeight || 460;
 
