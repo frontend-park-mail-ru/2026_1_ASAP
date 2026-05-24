@@ -1,0 +1,58 @@
+.voice-recorder {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    padding: 0 16px;
+    background: var(--bg-secondary);
+    border-radius: 16px;
+    height: 48px;
+    width: 100%;
+}
+
+.voice-recorder__cancel {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.2s;
+
+    &:hover {
+        background: var(--bg-tertiary);
+    }
+
+    img {
+        width: 24px;
+        height: 24px;
+        filter: invert(30%) sepia(90%) saturate(3000%) hue-rotate(340deg) brightness(95%) contrast(100%);
+    }
+}
+
+.voice-recorder__visualizer {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex: 1;
+    height: 24px;
+    overflow: hidden;
+}
+
+.voice-recorder__bar {
+    flex: 1;
+    background: var(--brand-primary);
+    border-radius: 2px;
+    transition: height 0.15s ease;
+    min-width: 2px;
+}
+
+.voice-recorder__time {
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    min-width: 45px;
+    text-align: center;
+}

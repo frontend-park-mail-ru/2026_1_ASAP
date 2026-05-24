@@ -1,0 +1,69 @@
+.voice-message {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-hover) 100%);
+    border-radius: 20px;
+    padding: 8px 16px 8px 8px;
+    margin-top: 8px;
+    min-width: 200px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.voice-message__play {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    flex-shrink: 0;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.05);
+    }
+
+    &:active {
+        transform: scale(0.95);
+    }
+
+    img {
+        width: 20px;
+        height: 20px;
+        filter: brightness(0) invert(1);
+    }
+}
+
+.voice-message__visualizer {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 24px;
+    flex: 1;
+}
+
+.voice-message__bar {
+    flex: 1;
+    min-width: 3px;
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 2px;
+    transition: background 0.1s;
+
+    &--active {
+        background: #fff;
+    }
+}
+
+.voice-message__duration {
+    font-size: 13px;
+    color: #fff;
+    font-weight: 500;
+    min-width: 40px;
+    text-align: right;
+    font-family: monospace;
+}

@@ -310,7 +310,7 @@ export class ChatService {
         });
     }
 
-    public async uploadMessageAttachment(file: File, type: Extract<MessageAttachmentType, 'photo' | 'video' | 'file'>): Promise<AttachmentUploadResult> {
+    public async uploadMessageAttachment(file: File, type: Extract<MessageAttachmentType, 'photo' | 'video' | 'file' | 'voice'>): Promise<AttachmentUploadResult> {
         const form = new FormData();
         form.append('file', file);
 

@@ -3,9 +3,10 @@ import { Button } from '../button/button';
 import { ConfirmModal } from '../../composite/confirmModal/confirmModal';
 import type { MessageAttachment, MessageAttachmentType, OutgoingMessageAttachment } from '../../../types/chat';
 import type { FrontendContact } from '../../../types/contact';
+import { VoiceRecorder } from '../voiceRecorder/voiceRecorder';
 import template from './messageInput.hbs';
 
-type UploadableAttachmentType = Extract<MessageAttachmentType, 'photo' | 'video' | 'file'>;
+type UploadableAttachmentType = Extract<MessageAttachmentType, 'photo' | 'video' | 'file' | 'voice'>;
 
 type DraftAttachment = {
     id: string;
@@ -41,6 +42,10 @@ export class MessageInput extends BaseForm<MessageInputProps> {
     private uplodadButton: Button | null = null;
     private stikerButton: Button | null = null;
     private sendButton: Button | null = null;
+    private recordButton: Button | null = null;
+    private voiceRecorder: VoiceRecorder | null = null;
+    private inputContainer: HTMLElement | null = null;
+    private recorderSlot: HTMLElement | null = null;
     private fileInput: HTMLInputElement | null = null;
     private mediaInput: HTMLInputElement | null = null;
     private attachmentMenu: HTMLElement | null = null;
@@ -92,6 +97,9 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             this.textarea.addEventListener('keydown', this.handleKeyDown);
             this.textarea.addEventListener('input', this.handleInput);
         }
+
+        this.inputContainer = this.element.querySelector('[data-component="input-container"]');
+        this.recorderSlot = this.element.querySelector('[data-component="recorder-slot"]');
 
         const uploadButtonContainer = this.element.querySelector('[data-component="upload-button-container"]');
         this.uplodadButton = new Button({
@@ -162,6 +170,20 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         });
         this.sendButton.mount(sendButtonContainer as HTMLElement);
 
+        const recordButtonContainer = this.element.querySelector('[data-component="record-button-container"]');
+        if (recordButtonContainer) {
+            this.recordButton = new Button({
+                label: '',
+                icon: '/assets/images/icons/micIcon.svg',
+                class: 'message-input__record-button',
+                type: 'button',
+                onClick: this.startVoiceRecording,
+            });
+            this.recordButton.mount(recordButtonContainer as HTMLElement);
+        }
+
+        this.updateButtonsVisibility();
+
         document.addEventListener('pointerdown', this.handleDocumentPointerDown, true);
         document.addEventListener('keydown', this.handleDocumentKeyDown);
 
@@ -169,6 +191,62 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             this.textarea?.focus({ preventScroll: true });
         }
     }
+
+    private updateButtonsVisibility(): void {
+        const text = this.textarea?.value.trim() || '';
+        const hasText = text.length > 0;
+        const hasAttachments = this.draftAttachments.length > 0;
+        const canSend = hasText || hasAttachments;
+
+        if (this.voiceRecorder) {
+            this.recordButton?.element?.parentElement?.setAttribute('hidden', '');
+            this.sendButton?.element?.parentElement?.removeAttribute('hidden');
+            this.inputContainer?.setAttribute('hidden', '');
+            this.recorderSlot?.removeAttribute('hidden');
+        } else {
+            this.inputContainer?.removeAttribute('hidden');
+            this.recorderSlot?.setAttribute('hidden', '');
+            
+            if (canSend || this.editingMessageId) {
+                this.recordButton?.element?.parentElement?.setAttribute('hidden', '');
+                this.sendButton?.element?.parentElement?.removeAttribute('hidden');
+            } else {
+                this.sendButton?.element?.parentElement?.setAttribute('hidden', '');
+                this.recordButton?.element?.parentElement?.removeAttribute('hidden');
+            }
+        }
+    }
+
+    private startVoiceRecording = (event?: Event): void => {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        if (this.voiceRecorder) return;
+
+        this.voiceRecorder = new VoiceRecorder({
+            onRecorded: async (file: File) => {
+                this.voiceRecorder?.unmount();
+                this.voiceRecorder = null;
+                this.updateButtonsVisibility();
+                await this.attachUpload(file, 'voice');
+                this.form?.requestSubmit();
+            },
+            onCancel: () => {
+                this.voiceRecorder?.unmount();
+                this.voiceRecorder = null;
+                this.updateButtonsVisibility();
+            },
+            onError: (msg: string) => {
+                this.showInlineError(msg);
+            }
+        });
+
+        if (this.recorderSlot) {
+            this.voiceRecorder.mount(this.recorderSlot);
+        }
+        this.updateButtonsVisibility();
+    };
 
     private handleCancelEdit = (): void => {
         this.exitEditMode();
@@ -288,6 +366,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
                 outgoing: result.outgoing,
             });
             this.renderDraftAttachments();
+            this.updateButtonsVisibility();
         } catch {
             this.showInlineError('Не удалось загрузить вложение. Попробуйте ещё раз');
         } finally {
@@ -308,6 +387,14 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         if (file.size === 0) {
             this.showInlineError('Нельзя прикрепить пустой файл');
             return false;
+        }
+
+        if (type === 'voice') {
+            if (file.size > 5 * 1024 * 1024) {
+                this.showInlineError('Голосовое сообщение должно быть не больше 5 МиБ');
+                return false;
+            }
+            return true;
         }
 
         if (type === 'photo') return this.validatePhotoAttachment(file);
@@ -390,6 +477,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             removeButton.addEventListener('click', () => {
                 this.draftAttachments = this.draftAttachments.filter(d => d.id !== draft.id);
                 this.renderDraftAttachments();
+                this.updateButtonsVisibility();
             });
             const removeIcon = document.createElement('img');
             removeIcon.src = '/assets/images/icons/deleteIcon.svg';
@@ -591,6 +679,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         this.renderDraftAttachments();
         this.clearInlineError();
         this.closeContactPicker();
+        this.updateButtonsVisibility();
     }
 
     private showInlineError(message: string, isError = true): void {
@@ -659,6 +748,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         }
         this.setSendButtonIcon('/assets/images/icons/editMsgOverlayIcons/editMsgBtn.svg');
         this.showEditIndicator(currentText);
+        this.updateButtonsVisibility();
     };
 
     public exitEditMode(): void {
@@ -669,6 +759,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         }
         this.setSendButtonIcon('/assets/images/icons/sendIcon.svg');
         this.hideEditIndicator();
+        this.updateButtonsVisibility();
     };
 
     public showSendError(message: string): void {
@@ -692,12 +783,17 @@ export class MessageInput extends BaseForm<MessageInputProps> {
      * @private
      */
     private handleInput = (): void => {
+        this.autoResizeTextarea();
+        this.props.onTyping?.();
+        this.updateButtonsVisibility();
+    };
+
+    private autoResizeTextarea(): void {
         if (this.textarea) {
             this.textarea.style.height = '';
             this.textarea.style.height = `${this.textarea.scrollHeight}px`;
         }
-        this.props.onTyping?.();
-    };
+    }
 
     private isMobileViewport(): boolean {
         return window.matchMedia(this.mobileQuery).matches;
@@ -737,6 +833,10 @@ export class MessageInput extends BaseForm<MessageInputProps> {
      * @returns {Promise<void>}
      */
     protected async onSubmit(data: { messageText: string }): Promise<void> { 
+        if (this.voiceRecorder) {
+            this.voiceRecorder.finishRecording();
+            return;
+        }
         const text = data.messageText?.trim();
         const attachments = this.draftAttachments.map(item => item.outgoing);
         const attachmentModels = this.draftAttachments.map(item => item.attachment);

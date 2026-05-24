@@ -46,7 +46,7 @@ export interface BackendMessage {
  */
 export type MessageStatus = 'sending' | 'sent' | 'read';
 
-export type MessageAttachmentType = 'photo' | 'video' | 'file' | 'contact';
+export type MessageAttachmentType = 'photo' | 'video' | 'file' | 'contact' | 'voice';
 
 export interface MessageAttachment {
     type: MessageAttachmentType;
