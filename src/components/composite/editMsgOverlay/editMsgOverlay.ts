@@ -7,6 +7,7 @@ interface EditMsgOverlayProps extends IBaseComponentProps {
     onEdit: () => void;
     onDelete: () => void;
     onClose: () => void;
+    hideEdit?: boolean;
 };
 
 export class EditMsgOverlay extends BaseComponent<EditMsgOverlayProps> {
@@ -28,13 +29,15 @@ export class EditMsgOverlay extends BaseComponent<EditMsgOverlayProps> {
         this.overlay?.addEventListener('click', this.handleOverlayClick);
 
         const buttonsContainer = this.element!.querySelector<HTMLElement>('.edit-msg-overlay__buttons-container');
-        this.editButton = new Button({
-            label: "Изменить сообщение",
-            icon: "/assets/images/icons/editMsgOverlayIcons/edit.svg",
-            class: "edit-msg-overlay__buttons-container-edit-button",
-            onClick: () => this.props.onEdit(),
-        });
-        this.editButton.mount(buttonsContainer as HTMLElement);
+        if (!this.props.hideEdit) {
+            this.editButton = new Button({
+                label: "Изменить сообщение",
+                icon: "/assets/images/icons/editMsgOverlayIcons/edit.svg",
+                class: "edit-msg-overlay__buttons-container-edit-button",
+                onClick: () => this.props.onEdit(),
+            });
+            this.editButton.mount(buttonsContainer as HTMLElement);
+        }
 
         this.deleteButton = new Button({
             label: "Удалить сообщение",

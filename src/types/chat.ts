@@ -46,14 +46,34 @@ export interface BackendMessage {
  */
 export type MessageStatus = 'sending' | 'sent' | 'read';
 
+export interface Sticker {
+    id: number;
+    packId: number;
+    fileUrl: string;
+    slug?: string;
+    emoji?: string;
+    width?: number;
+    height?: number;
+}
+
+export interface StickerPack {
+    id: number;
+    name: string;
+    title: string;
+    slug?: string;
+    thumbnailUrl?: string;
+    stickers: Sticker[];
+}
+
 export interface FrontendMessage {
     id: string;
     sender: User;
     text: string;
-    timestamp: Date; // Конвертируем created_at в Date
+    timestamp: Date;
     isOwn: boolean;
     isEdited?: boolean;
     status?: MessageStatus;
+    sticker?: Sticker;
 }
 
 /**

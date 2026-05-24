@@ -107,6 +107,7 @@ export class ChatService {
      * @returns {FrontendMessage} Сообщение в формате фронтенда.
      */
     public convertWsMessageDto(dto: MessageDto, currentUserId: number | string): FrontendMessage {
+        const stickerDto = dto.sticker;
         return {
             id: dto.id?.toString(),
             sender: {
@@ -121,6 +122,15 @@ export class ChatService {
             isOwn: String(dto.sender_id) === String(currentUserId) || dto.login === currentUserId,
             isEdited: Boolean(dto.edited),
             status: dto.read ? 'read' : 'sent',
+            sticker: stickerDto ? {
+                id: stickerDto.id,
+                packId: stickerDto.pack_id,
+                fileUrl: stickerDto.file_url,
+                slug: stickerDto.slug,
+                emoji: stickerDto.emoji,
+                width: stickerDto.width,
+                height: stickerDto.height,
+            } : undefined,
         };
     }
 
@@ -169,12 +179,25 @@ export class ChatService {
         }
 
         if (dto.last_message) {
+            const lastSticker = dto.last_message.sticker;
+            const stickerPreview = lastSticker
+                ? (lastSticker.emoji ? `${lastSticker.emoji} Стикер` : 'Стикер')
+                : '';
             chat.lastMessage = {
                 id: '',
-                text: dto.last_message.text,
+                text: dto.last_message.text || stickerPreview,
                 timestamp: new Date(dto.last_message.created_at),
                 sender: { id: dto.last_message.sender_id } as User,
                 isOwn: Number(dto.last_message.sender_id) === Number(currentUserId),
+                sticker: lastSticker ? {
+                    id: lastSticker.id,
+                    packId: lastSticker.pack_id,
+                    fileUrl: lastSticker.file_url,
+                    slug: lastSticker.slug,
+                    emoji: lastSticker.emoji,
+                    width: lastSticker.width,
+                    height: lastSticker.height,
+                } : undefined,
             };
         }
 
