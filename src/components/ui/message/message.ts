@@ -285,6 +285,8 @@ export class Message extends BaseComponent<MessageProps> {
         wrapper.setAttribute('tabindex', '0');
         wrapper.setAttribute('aria-label', attachment.fileName || 'Фото');
 
+        wrapper.classList.add('message__attachment-media-link--loading');
+        
         const image = document.createElement('img');
         image.className = 'message__attachment-media message__attachment-media--photo';
         image.src = attachment.url || '';
@@ -292,9 +294,18 @@ export class Message extends BaseComponent<MessageProps> {
         image.loading = 'lazy';
         image.decoding = 'async';
         image.crossOrigin = 'use-credentials';
+        image.style.opacity = '0';
+        image.style.transition = 'opacity 0.3s ease';
+
+        image.addEventListener('load', () => {
+            wrapper.classList.remove('message__attachment-media-link--loading');
+            image.style.opacity = '1';
+        }, { once: true });
 
         // Фоллбэк при ошибке загрузки (403, 404, сеть): показываем подсказку, не broken-иконку браузера
         image.addEventListener('error', () => {
+            wrapper.classList.remove('message__attachment-media-link--loading');
+            image.style.opacity = '1';
             image.alt = 'Не удалось загрузить фото';
             image.classList.add('message__attachment-media--broken');
         }, { once: true });
@@ -320,12 +331,21 @@ export class Message extends BaseComponent<MessageProps> {
         wrapper.setAttribute('role', 'button');
         wrapper.setAttribute('tabindex', '0');
 
+        wrapper.classList.add('message__attachment-video--loading');
+
         const video = document.createElement('video');
         video.className = 'message__attachment-media message__attachment-media--video';
         video.src = attachment.url || '';
         video.preload = 'metadata';
         video.crossOrigin = 'use-credentials';
+        video.style.opacity = '0';
+        video.style.transition = 'opacity 0.3s ease';
         if (attachment.fileName) video.setAttribute('aria-label', attachment.fileName);
+
+        video.addEventListener('loadeddata', () => {
+            wrapper.classList.remove('message__attachment-video--loading');
+            video.style.opacity = '1';
+        }, { once: true });
 
         const playOverlay = document.createElement('div');
         playOverlay.className = 'message__attachment-video-play';
@@ -346,6 +366,8 @@ export class Message extends BaseComponent<MessageProps> {
 
         // Фоллбэк при ошибке загрузки: заменяем плеер div-заглушкой, чтобы не торчал пустой controls-бар
         video.addEventListener('error', () => {
+            wrapper.classList.remove('message__attachment-video--loading');
+            video.style.opacity = '1';
             const errEl = document.createElement('div');
             errEl.className = 'message__attachment-video-error';
             errEl.textContent = 'Не удалось загрузить видео';
