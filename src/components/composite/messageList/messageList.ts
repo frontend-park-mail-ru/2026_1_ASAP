@@ -308,23 +308,36 @@ export class MessageList extends BaseComponent<MessageListProps> {
             this.flexContainer.insertBefore(divider, unreadEl.nextSibling);
             this.unreadDividerEl = divider;
 
-            requestAnimationFrame(() => {
-                if (!this.element) return;
-                const dividerTop = this.unreadDividerEl?.offsetTop ?? 0;
-                const remaining = this.element.scrollHeight - dividerTop;
-                if (remaining > this.element.clientHeight) {
-                    this.element.scrollTop = Math.max(0, dividerTop);
-                    this.pinnedToBottom = false;
-                } else {
-                    this.pinnedToBottom = true;
-                    this.element.scrollTop = this.element.scrollHeight;
-                }
-            });
+            // Есть непрочитанные — всегда открываемся на divider'е, чтобы юзер
+            // сразу видел, с какого сообщения они начались. RAF + onload
+            // картинок повторно фиксируют скролл, пока высоты не финализируются.
+            this.pinnedToBottom = false;
+            const anchorAtDivider = () => {
+                if (!this.element || !this.unreadDividerEl) return;
+                this.element.scrollTop = Math.max(0, this.unreadDividerEl.offsetTop);
+            };
+            anchorAtDivider();
+            requestAnimationFrame(anchorAtDivider);
+
+            // Пока картинки/стикеры догружаются, offsetTop меняется — повторно
+            // докручиваем к divider'у, а не к низу.
+            if (this.flexContainer) {
+                const imgs = this.flexContainer.querySelectorAll<HTMLImageElement>('img');
+                imgs.forEach((img) => {
+                    if (img.complete && img.naturalWidth > 0) return;
+                    const onSettle = () => {
+                        if (!this.unreadDividerEl) return;
+                        anchorAtDivider();
+                    };
+                    img.addEventListener('load', onSettle, { once: true });
+                    img.addEventListener('error', onSettle, { once: true });
+                });
+            }
         } else {
             this.pinnedToBottom = true;
             this.scrollToBottom();
+            this.anchorImagesToBottom();
         }
-        this.anchorImagesToBottom();
     }
 
     /**
