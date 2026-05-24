@@ -24,19 +24,21 @@
     &::before {
         content: "";
         position: absolute;
-        // Квадрат, описанный вокруг диагонали viewport, чтобы при вращении
-        // углы не оголяли края.
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
+        // Круглая подложка (border-radius: 50%) с центром = центру viewport
+        // и диаметром заметно больше его диагонали — иначе при вращении
+        // видны прямые края квадрата.
+        top: 50%;
+        left: 50%;
+        width: 250vmax;
+        height: 250vmax;
+        transform: translate(-50%, -50%);
+        transform-origin: center;
+        border-radius: 50%;
         background: conic-gradient(
             from 0deg at 50% 50%,
-            #455DBA,
-            #5A8A6E,
-            #6583FA,
-            #5A8A6E,
-            #455DBA
+            #455DBA 0%,
+            #5A8A6E 50%,
+            #455DBA 100%
         );
         animation: login-bg-spin 20s linear infinite;
         pointer-events: none;
@@ -190,8 +192,8 @@
 
 
 @keyframes login-bg-spin {
-    from { transform: rotate(0deg); }
-    to   { transform: rotate(360deg); }
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to   { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
 [data-theme="light"] .login-page::before {
