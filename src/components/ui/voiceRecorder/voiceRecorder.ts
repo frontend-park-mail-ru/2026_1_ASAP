@@ -111,9 +111,33 @@ export class VoiceRecorder extends BaseComponent<VoiceRecorderProps> {
 
         this.mediaRecorder.onstop = () => {
             if (!this.isCancelled && this.audioChunks.length > 0) {
-                const finalMimeType = 'audio/webm';
-                const blob = new Blob(this.audioChunks, { type: finalMimeType });
-                const file = new File([blob], 'voice.webm', { type: finalMimeType });
+                /**
+                 * Нормализуем реальный MIME-тип из MediaRecorder.
+                 * ВАЖНО: нельзя подменять тип (например, оборачивать MP4-байты в audio/webm),
+                 * т.к. FFmpeg на бэкенде проверяет содержимое, а не только заголовок.
+                 * Бэкенд принимает: audio/webm, audio/ogg, audio/mp4, audio/x-m4a.
+                 */
+                let actualMimeType = this.mediaRecorder?.mimeType || options?.mimeType || 'audio/webm';
+                // Убираем параметры кодеков: "audio/webm;codecs=opus" → "audio/webm"
+                actualMimeType = actualMimeType.split(';')[0].trim().toLowerCase();
+                // Safari для аудио-only потоков иногда ставит video/* вместо audio/*
+                if (actualMimeType === 'video/mp4') actualMimeType = 'audio/mp4';
+                if (actualMimeType === 'video/webm') actualMimeType = 'audio/webm';
+                // Если вдруг получили неизвестный или пустой тип — fallback на webm
+                const allowedTypes = ['audio/webm', 'audio/ogg', 'audio/mp4', 'audio/mpeg', 'audio/x-m4a'];
+                if (!allowedTypes.includes(actualMimeType)) actualMimeType = 'audio/webm';
+
+                const extMap: Record<string, string> = {
+                    'audio/webm': 'webm',
+                    'audio/ogg': 'ogg',
+                    'audio/mp4': 'mp4',
+                    'audio/mpeg': 'mp3',
+                    'audio/x-m4a': 'm4a',
+                };
+                const ext = extMap[actualMimeType] ?? 'webm';
+
+                const blob = new Blob(this.audioChunks, { type: actualMimeType });
+                const file = new File([blob], `voice.${ext}`, { type: actualMimeType });
                 this.props.onRecorded(file);
             }
         };
