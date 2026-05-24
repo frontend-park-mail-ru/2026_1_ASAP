@@ -111,22 +111,9 @@ export class VoiceRecorder extends BaseComponent<VoiceRecorderProps> {
 
         this.mediaRecorder.onstop = () => {
             if (!this.isCancelled && this.audioChunks.length > 0) {
-                let mimeType = this.mediaRecorder?.mimeType || options?.mimeType || 'audio/webm';
-                
-                // Очищаем кодеки и параметры
-                mimeType = mimeType.split(';')[0].trim();
-                
-                // Safari иногда отдает video/* для audio-only стримов
-                if (mimeType === 'video/mp4') mimeType = 'audio/mp4';
-                else if (mimeType === 'video/webm') mimeType = 'audio/webm';
-
-                const blob = new Blob(this.audioChunks, { type: mimeType });
-                
-                let ext = 'webm';
-                if (mimeType === 'audio/mp4') ext = 'mp4';
-                else if (mimeType === 'audio/ogg') ext = 'ogg';
-
-                const file = new File([blob], `voice.${ext}`, { type: mimeType });
+                const finalMimeType = 'audio/webm';
+                const blob = new Blob(this.audioChunks, { type: finalMimeType });
+                const file = new File([blob], 'voice.webm', { type: finalMimeType });
                 this.props.onRecorded(file);
             }
         };
