@@ -65,6 +65,7 @@ export interface OutgoingMessageAttachment {
     url?: string;
     file_name?: string;
     contact_user_id?: number;
+}
 export interface Sticker {
     id: number;
     packId: number;

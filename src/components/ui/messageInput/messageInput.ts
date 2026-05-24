@@ -657,6 +657,8 @@ export class MessageInput extends BaseForm<MessageInputProps> {
 
     private updateSendButtonState(): void {
         if (this.sendButton) this.sendButton.disabled = this.isUploading;
+    }
+
     private handleStickerButtonClick = (event: MouseEvent): void => {
         event.preventDefault();
         if (this.stickerOverlay) {
