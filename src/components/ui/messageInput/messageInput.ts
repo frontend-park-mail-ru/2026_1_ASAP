@@ -417,11 +417,21 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             removeButton.appendChild(removeIcon);
 
             if (isMedia) {
+                item.classList.add('message-input__draft-attachment-media--loading');
                 const img = document.createElement('img');
                 img.className = 'message-input__draft-attachment-media';
+                img.style.opacity = '0';
+                img.style.transition = 'opacity 0.3s ease';
                 img.src = draft.attachment.url || '';
 
+                img.addEventListener('load', () => {
+                    item.classList.remove('message-input__draft-attachment-media--loading');
+                    img.style.opacity = '1';
+                }, { once: true });
+
                 img.addEventListener('error', () => {
+                    item.classList.remove('message-input__draft-attachment-media--loading');
+                    img.style.opacity = '1';
                     img.src = '/assets/images/icons/videoFallback.svg';
                     img.classList.add('message-input__draft-attachment-media--fallback');
                 }, { once: true });
@@ -430,7 +440,16 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             } else {
                 const icon = document.createElement('img');
                 icon.className = 'message-input__draft-attachment-icon';
-                icon.src = type === 'contact' ? '/assets/images/icons/profile.svg' : '/assets/images/icons/upload.svg';
+                
+                if (type === 'contact' && draft.attachment.contactAvatarUrl) {
+                    icon.src = draft.attachment.contactAvatarUrl;
+                    icon.style.borderRadius = '50%';
+                    icon.style.objectFit = 'cover';
+                    // Убираем фильтр инверсии, так как это реальная картинка
+                    icon.style.filter = 'none';
+                } else {
+                    icon.src = type === 'contact' ? '/assets/images/icons/profile.svg' : '/assets/images/icons/upload.svg';
+                }
 
                 const name = document.createElement('span');
                 name.className = 'message-input__draft-attachment-name';

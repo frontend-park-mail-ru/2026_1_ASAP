@@ -233,10 +233,33 @@
                 border-radius: 50%;
                 opacity: 0;
                 transition: opacity 0.2s ease;
+                z-index: 10;
             }
 
             &:hover .message-input__draft-attachment-remove {
                 opacity: 1;
+            }
+
+            &.message-input__draft-attachment-media--loading {
+                background: linear-gradient(90deg, rgba(128, 128, 128, 0.1) 25%, rgba(128, 128, 128, 0.25) 50%, rgba(128, 128, 128, 0.1) 75%);
+                background-size: 200% 100%;
+                animation: skeleton-shimmer 1.5s infinite linear;
+
+                &::after {
+                    content: '';
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    width: 24px;
+                    height: 24px;
+                    margin-top: -12px;
+                    margin-left: -12px;
+                    border: 2px solid rgba(255, 255, 255, 0.2);
+                    border-top-color: #ffffff;
+                    border-radius: 50%;
+                    animation: message-spin 1s linear infinite;
+                    z-index: 5;
+                }
             }
 
             .message-input__draft-attachment-remove-icon {

@@ -102,10 +102,12 @@
     &__attachment {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 5px;
         max-width: 320px;
         min-height: 24px;
         color: inherit;
+        border: none;
+        background: none;
         cursor: pointer;
         text-align: left;
         font: $text-main-style;
@@ -119,8 +121,7 @@
 
     &__attachment-icon {
         flex-shrink: 0;
-        width: 18px;
-        height: 18px;
+        height: 25px;
         object-fit: contain;
         filter: brightness(0) invert(1);
     }
@@ -134,7 +135,26 @@
     }
 
     &__attachment--contact {
+        background: $gradient-msg;
+        padding: 4px 10px 4px 8px;
+        border-radius: 16px;
+        color: #ffffff;
         cursor: pointer;
+        text-decoration: none;
+
+        .message__attachment-name {
+            text-decoration: none;
+        }
+
+        .message__attachment-icon:not(.message__attachment-avatar) {
+            filter: brightness(0) invert(1);
+        }
+    }
+
+    &__attachment-avatar {
+        filter: none !important;
+        border-radius: 50%;
+        object-fit: cover;
     }
 
     &__attachment-media-link,
@@ -180,6 +200,22 @@
         background-size: 200% 100%;
         animation: skeleton-shimmer 1.5s infinite linear;
         pointer-events: none;
+
+        &::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 36px;
+            height: 36px;
+            margin-top: -18px;
+            margin-left: -18px;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: message-spin 1s linear infinite;
+            z-index: 5;
+        }
 
         .message__attachment-video-play {
             display: none;
@@ -295,6 +331,10 @@
     100% { background-position: 200% 0; }
 }
 
+@keyframes message-spin {
+    to { transform: rotate(360deg); }
+}
+
 .message {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -308,7 +348,7 @@
             border: 1px solid $color-border;
             color: $color-text;
             
-            .message__attachment-icon {
+            .message__attachment-icon:not(.message__attachment-avatar) {
                 filter: brightness(0);
             }
         }

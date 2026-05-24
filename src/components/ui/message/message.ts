@@ -386,8 +386,13 @@ export class Message extends BaseComponent<MessageProps> {
         card.className = 'message__attachment message__attachment--contact';
 
         const icon = document.createElement('img');
-        icon.className = 'message__attachment-icon';
-        icon.src = '/assets/images/icons/profile.svg';
+        if (attachment.contactAvatarUrl) {
+            icon.className = 'message__attachment-icon message__attachment-avatar';
+            icon.src = attachment.contactAvatarUrl;
+        } else {
+            icon.className = 'message__attachment-icon';
+            icon.src = '/assets/images/icons/profile.svg';
+        }
         icon.alt = '';
 
         const name = document.createElement('span');
