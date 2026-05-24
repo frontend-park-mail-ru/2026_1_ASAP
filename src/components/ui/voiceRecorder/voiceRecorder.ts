@@ -90,7 +90,17 @@ export class VoiceRecorder extends BaseComponent<VoiceRecorderProps> {
      */
     private startRecording(stream: MediaStream): void {
         this.recordStream = stream;
-        this.mediaRecorder = new MediaRecorder(stream);
+        
+        let options: MediaRecorderOptions | undefined;
+        if (MediaRecorder.isTypeSupported('audio/webm')) {
+            options = { mimeType: 'audio/webm' };
+        } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
+            options = { mimeType: 'audio/ogg' };
+        } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+            options = { mimeType: 'audio/mp4' };
+        }
+        
+        this.mediaRecorder = new MediaRecorder(stream, options);
         this.audioChunks = [];
         this.isRecording = true;
         this.isCancelled = false;
@@ -101,19 +111,20 @@ export class VoiceRecorder extends BaseComponent<VoiceRecorderProps> {
 
         this.mediaRecorder.onstop = () => {
             if (!this.isCancelled && this.audioChunks.length > 0) {
-                let mimeType = this.mediaRecorder?.mimeType || 'audio/webm';
-                if (mimeType.includes('mp4')) {
-                    mimeType = 'audio/mp4';
-                } else if (mimeType.includes('webm')) {
-                    mimeType = 'audio/webm';
-                } else if (mimeType.includes('ogg')) {
-                    mimeType = 'audio/ogg';
-                }
+                let mimeType = this.mediaRecorder?.mimeType || options?.mimeType || 'audio/webm';
+                
+                // Очищаем кодеки и параметры
+                mimeType = mimeType.split(';')[0].trim();
+                
+                // Safari иногда отдает video/* для audio-only стримов
+                if (mimeType === 'video/mp4') mimeType = 'audio/mp4';
+                else if (mimeType === 'video/webm') mimeType = 'audio/webm';
 
                 const blob = new Blob(this.audioChunks, { type: mimeType });
+                
                 let ext = 'webm';
-                if (mimeType.includes('mp4')) ext = 'mp4';
-                else if (mimeType.includes('ogg')) ext = 'ogg';
+                if (mimeType === 'audio/mp4') ext = 'mp4';
+                else if (mimeType === 'audio/ogg') ext = 'ogg';
 
                 const file = new File([blob], `voice.${ext}`, { type: mimeType });
                 this.props.onRecorded(file);

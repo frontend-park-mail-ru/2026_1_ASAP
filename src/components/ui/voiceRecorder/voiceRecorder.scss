@@ -4,7 +4,7 @@
     gap: 12px;
     flex: 1;
     padding: 0 16px;
-    background: var(--bg-secondary);
+    background: var(--color-background-secondary);
     border-radius: 16px;
     height: 48px;
     width: 100%;
@@ -22,13 +22,12 @@
     transition: background 0.2s;
 
     &:hover {
-        background: var(--bg-tertiary);
+        background: rgba(255, 255, 255, 0.1);
     }
 
     img {
-        width: 24px;
-        height: 24px;
-        filter: invert(30%) sepia(90%) saturate(3000%) hue-rotate(340deg) brightness(95%) contrast(100%);
+        width: 20px;
+        height: 20px;
     }
 }
 
@@ -43,7 +42,7 @@
 
 .voice-recorder__bar {
     flex: 1;
-    background: var(--brand-primary);
+    background: var(--color-primary);
     border-radius: 2px;
     transition: height 0.15s ease;
     min-width: 2px;
