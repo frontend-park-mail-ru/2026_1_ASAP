@@ -221,7 +221,9 @@ export class ChatItem extends BaseForm<ChatItemProps> {
         if (unreadCountEl) {
             if (newData.unreadCount && newData.unreadCount > 0) {
                 unreadCountEl.textContent = formatUnreadBadge(newData.unreadCount);
-                (unreadCountEl as HTMLElement).style.display = 'block';
+                // Стираем inline display, чтобы CSS-правила (flex-центрирование)
+                // снова стали активны — иначе display:block ломает выравнивание текста.
+                (unreadCountEl as HTMLElement).style.display = '';
             } else {
                 (unreadCountEl as HTMLElement).style.display = 'none';
             }
