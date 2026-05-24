@@ -1,7 +1,7 @@
 import { BaseForm, IBaseFormProps } from "../../../core/base/baseForm";
 import { Avatar } from "../../ui/avatar/avatar";
 import { ChatInfo } from "../../ui/chatInfo/chatInfo";
-import { MetaChatInfo } from "../../ui/metaChatInfo/metaChatInfo";
+import { MetaChatInfo, formatUnreadBadge } from "../../ui/metaChatInfo/metaChatInfo";
 import { Chat as ChatType, FrontendMessage } from '../../../types/chat';
 import template from "./chatItem.hbs";
 import { escapeHtml } from "../../../core/utils/escape";
@@ -220,8 +220,10 @@ export class ChatItem extends BaseForm<ChatItemProps> {
         const unreadCountEl = this.element.querySelector('.meta-chat-info__unread-count');
         if (unreadCountEl) {
             if (newData.unreadCount && newData.unreadCount > 0) {
-                unreadCountEl.textContent = String(newData.unreadCount);
-                (unreadCountEl as HTMLElement).style.display = 'block';
+                unreadCountEl.textContent = formatUnreadBadge(newData.unreadCount);
+                // Стираем inline display, чтобы CSS-правила (flex-центрирование)
+                // снова стали активны — иначе display:block ломает выравнивание текста.
+                (unreadCountEl as HTMLElement).style.display = '';
             } else {
                 (unreadCountEl as HTMLElement).style.display = 'none';
             }

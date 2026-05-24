@@ -14,19 +14,25 @@
     width: 50px;
     color: $color-text;
     font-size: 12px;
-}
 
-.msg-bubble {
-    background-color: $color-bubble;
-    color: $color-text-inverted;
-    width: 26px;
-    height: 26px;
-    @include flex-center;
-    border-radius: 11px;
-    margin-right: 2px;
-    user-select: none;
-}
+    &__time {
+        user-select: none;
+    }
 
-.time {
-    user-select: none;
+    // Бейдж с числом непрочитанных. Адаптивный по ширине: для 1 цифры — круг,
+    // для 2-3 цифр — pill-форма.
+    &__unread-count {
+        background-color: $color-bubble;
+        color: $color-text-inverted;
+        min-width: 22px;
+        height: 22px;
+        padding: 0 7px;
+        box-sizing: border-box;
+        @include flex-center;
+        border-radius: 11px;
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 1;
+        user-select: none;
+    }
 }

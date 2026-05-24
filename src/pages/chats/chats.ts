@@ -118,6 +118,9 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private realtimeController: ChatRealtimeController | null = null;
     private sessionController: ChatSessionController | null = null;
     private sidebarController: ChatSidebarController | null = null;
+    /** Снимок unreadCount каждого чата на момент его открытия — нужен MessageList
+     *  для якоря «Новые сообщения», т.к. resetUnread() обнуляет счётчик сразу. */
+    private pendingUnreadForOpen: Map<string, number> = new Map();
     private chatsView: ChatsView | null = null;
 
     /**
@@ -269,10 +272,17 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * Если читатель — не я → обновляю «прочитано» на своих сообщениях с id <= last_read.
      */
     private readonly handleMessageRead = (dto: MessageReadDto): void => {
-        if (!this.activeChatId || String(dto.chat_id) !== this.activeChatId) return;
         if (this.currentUserId === null) return;
-        if (dto.reader_user_id === this.currentUserId) return;
 
+        // Я прочитал (возможно — в другой вкладке): синхронизируем sidebar и
+        // обновляем lastReadMessageId, чтобы при следующем открытии чата
+        // правильно сработал якорь «Новые сообщения».
+        if (dto.reader_user_id === this.currentUserId) {
+            this.sidebarController?.applyOwnRead(String(dto.chat_id), dto.last_read_message_id);
+            return;
+        }
+
+        if (!this.activeChatId || String(dto.chat_id) !== this.activeChatId) return;
         this.activeMessageList?.markOwnMessagesRead(dto.last_read_message_id);
     };
 
@@ -467,6 +477,15 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     console.error("Failed to load profile for contact click", e);
                 }
             },
+            getPendingUnreadCount: (chatId) => this.pendingUnreadForOpen.get(chatId) ?? 0,
+            getLastReadMessageId: (chatId) => {
+                const chat = this.sidebarController?.getChats()
+                    .find((c) => String(c.id) === String(chatId));
+                return chat?.lastReadMessageId ?? 0;
+            },
+            onLocalMarkRead: (chatId, lastReadMessageId) => {
+                this.sidebarController?.applyOwnRead(chatId, lastReadMessageId);
+            },
         });
         this.presenceController = new ChatPresenceController();
         this.notificationPromptController = new ChatNotificationPromptController({
@@ -655,9 +674,24 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         if (chatId !== this.activeChatId || !this.chatWindow) {
             this.cleanupMainContent();
 
+            // Снимаем unread ДО сброса — он нужен MessageList'у для якоря «Новые сообщения».
+            const pendingUnread = this.sidebarController?.getChats()
+                .find((c) => String(c.id) === String(chatId))?.unreadCount ?? 0;
+            if (pendingUnread > 0) {
+                this.pendingUnreadForOpen.set(chatId, pendingUnread);
+            } else {
+                this.pendingUnreadForOpen.delete(chatId);
+            }
+
             this.activeChatId = chatId;
             this.chatWrapper?.setActiveChat(chatId);
+            // Открыли чат — у него больше нет «непрочитанных» в превью.
+            this.sidebarController?.resetUnread(chatId);
             await this.openChat(chatId);
+
+            // Снимок использован — больше не нужен (повторные открытия без новых
+            // входящих не должны якорить).
+            this.pendingUnreadForOpen.delete(chatId);
         }
     }
 

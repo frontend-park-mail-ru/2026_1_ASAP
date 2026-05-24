@@ -166,10 +166,40 @@ export class ChatSidebarController {
         if (!targetChat) return;
 
         const message = this.useCases.mapRealtimeSidebarMessage(payload, this.currentUserId);
-        this.updateChat(targetId, { lastMessage: message } as Partial<Chat>);
+
+        const patch: Partial<Chat> = { lastMessage: message } as Partial<Chat>;
+        // Инкрементируем непрочитанные, если сообщение чужое и чат сейчас не открыт.
+        const isActive = String(this.deps.getActiveChatId() ?? '') === targetId;
+        if (!isActive && !message.isOwn) {
+            (patch as { unreadCount: number }).unreadCount = (targetChat.unreadCount ?? 0) + 1;
+        }
+
+        this.updateChat(targetId, patch);
         this.moveChatToTop(targetId);
         this.enrichRealtimeMessage(targetId, message);
     };
+
+    /**
+     * Сбрасывает счётчик непрочитанных для чата (вызывается при открытии чата).
+     * lastReadMessageId не трогаем — он обновится по событию message.Read.
+     */
+    public resetUnread(chatId: string): void {
+        const target = this.chats.find(chat => String(chat.id) === String(chatId));
+        if (!target || !target.unreadCount) return;
+        this.updateChat(String(chatId), { unreadCount: 0 } as Partial<Chat>);
+    }
+
+    /**
+     * Применяет message.Read со своим reader_user_id: обнуляем unread и
+     * обновляем lastReadMessageId, чтобы следующий открытие чата корректно
+     * нашло «новые» сообщения.
+     */
+    public applyOwnRead(chatId: string, lastReadMessageId: number): void {
+        const target = this.chats.find(chat => String(chat.id) === String(chatId));
+        if (!target) return;
+        const patch: Partial<Chat> = { unreadCount: 0, lastReadMessageId } as Partial<Chat>;
+        this.updateChat(String(chatId), patch);
+    }
 
     private readonly handleChatAvatarUpdated = (payload: ChatUpdatedAvatarDto): void => {
         this.updateChat(String(payload.chat_id), { avatarUrl: payload.avatar_url } as Partial<Chat>);

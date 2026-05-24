@@ -60,6 +60,8 @@ interface ChatListApiItem {
     avatar?: string | null;
     subscribers_count?: number;
     last_message?: BackendMessageLike;
+    unread_count?: number;
+    last_read_message_id?: number;
 }
 
 interface ChatCreateBody {
@@ -225,7 +227,8 @@ export class ChatService {
             id: dto.id.toString(),
             title: dto.title,
             avatarUrl: getFullUrl(dto.avatar),
-            unreadCount: 0,
+            unreadCount: Number(dto.unread_count ?? 0),
+            lastReadMessageId: Number(dto.last_read_message_id ?? 0),
             type: dto.chat_type as 'dialog' | 'group' | 'channel',
             owner_id: dto.owner_id,
         };
@@ -617,7 +620,8 @@ export class ChatService {
                     title: chat.title,
                     type: chat.type,
                     avatarUrl: getFullUrl(chat.avatar),
-                    unreadCount: 0,
+                    unreadCount: Number(chat.unread_count ?? 0),
+                    lastReadMessageId: Number(chat.last_read_message_id ?? 0),
                 };
 
                 switch (chat.type) {

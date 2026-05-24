@@ -17,6 +17,12 @@ interface MessageListProps extends IBaseComponentProps {
     currentUser: User;
     chatType: Chat['type'];
     chatAvatarUrl?: string;
+    /** Сколько последних сообщений считать «непрочитанными» — fallback для случая,
+     *  когда бэк не отдаёт lastReadMessageId. */
+    unreadCount?: number;
+    /** ID последнего прочитанного мной сообщения. Если задан — все сообщения с id
+     *  больше этого и не свои считаются непрочитанными. */
+    lastReadMessageId?: number;
     onLoadMore?: () => Promise<void>;
     onRequestEdit?: (messageId: string, currentText: string) => void;
     onRequestDelete?: (messageId: string) => void;
@@ -45,6 +51,7 @@ export class MessageList extends BaseComponent<MessageListProps> {
     private selectedMessageEl: HTMLElement | null = null;
     private pinnedToBottom = true;
     private resizeObserver: ResizeObserver | null = null;
+    private unreadDividerEl: HTMLElement | null = null;
 
     private handleMediaClick = (attachments: MessageAttachment[], initialIndex: number) => {
         const overlay = new MediaViewerOverlay({
@@ -102,6 +109,36 @@ export class MessageList extends BaseComponent<MessageListProps> {
     private isNearBottom(): boolean {
         if (!this.element) return false;
         return this.element.scrollHeight - this.element.scrollTop - this.element.clientHeight < 40;
+    }
+
+    /**
+     * Находит первое непрочитанное чужое сообщение по приоритету источников:
+     * 1) lastReadMessageId из чата (наиболее точно — бэк-формула).
+     * 2) Флаг status у сообщения.
+     * 3) Последние N чужих сообщений (fallback по unreadCount).
+     */
+    private findFirstUnread(messages: FrontendMessage[]): FrontendMessage | null {
+        const lastReadId = this.props.lastReadMessageId ?? 0;
+        if (lastReadId > 0) {
+            return messages.find((m) => {
+                if (m.isOwn) return false;
+                const id = Number(m.id);
+                return Number.isFinite(id) && id > lastReadId;
+            }) ?? null;
+        }
+
+        const byStatus = messages.find((m) => !m.isOwn && m.status !== 'read');
+        if (byStatus) return byStatus;
+
+        const unreadCount = this.props.unreadCount ?? 0;
+        if (unreadCount <= 0) return null;
+
+        // Берём N последних чужих сообщений.
+        const incoming: FrontendMessage[] = [];
+        for (let i = messages.length - 1; i >= 0 && incoming.length < unreadCount; i -= 1) {
+            if (!messages[i].isOwn) incoming.push(messages[i]);
+        }
+        return incoming[incoming.length - 1] ?? null;
     }
 
     /**
@@ -258,9 +295,49 @@ export class MessageList extends BaseComponent<MessageListProps> {
             if (this.currentHighlightQuery) messageComponent.applyHighlight(this.currentHighlightQuery);
             this.childMessages.unshift(messageComponent);
         });
-        this.pinnedToBottom = true;
-        this.scrollToBottom();
-        this.anchorImagesToBottom();
+
+        this.unreadDividerEl?.remove();
+        this.unreadDividerEl = null;
+        const firstUnread = this.findFirstUnread(messages);
+        const unreadEl = firstUnread ? this.messages.get(firstUnread.id)?.element ?? null : null;
+
+        if (firstUnread && unreadEl && this.flexContainer) {
+            const divider = document.createElement('div');
+            divider.className = 'message-list__unread-divider';
+            divider.textContent = 'Новые сообщения';
+            this.flexContainer.insertBefore(divider, unreadEl.nextSibling);
+            this.unreadDividerEl = divider;
+
+            // Есть непрочитанные — всегда открываемся на divider'е, чтобы юзер
+            // сразу видел, с какого сообщения они начались. RAF + onload
+            // картинок повторно фиксируют скролл, пока высоты не финализируются.
+            this.pinnedToBottom = false;
+            const anchorAtDivider = () => {
+                if (!this.element || !this.unreadDividerEl) return;
+                this.element.scrollTop = Math.max(0, this.unreadDividerEl.offsetTop);
+            };
+            anchorAtDivider();
+            requestAnimationFrame(anchorAtDivider);
+
+            // Пока картинки/стикеры догружаются, offsetTop меняется — повторно
+            // докручиваем к divider'у, а не к низу.
+            if (this.flexContainer) {
+                const imgs = this.flexContainer.querySelectorAll<HTMLImageElement>('img');
+                imgs.forEach((img) => {
+                    if (img.complete && img.naturalWidth > 0) return;
+                    const onSettle = () => {
+                        if (!this.unreadDividerEl) return;
+                        anchorAtDivider();
+                    };
+                    img.addEventListener('load', onSettle, { once: true });
+                    img.addEventListener('error', onSettle, { once: true });
+                });
+            }
+        } else {
+            this.pinnedToBottom = true;
+            this.scrollToBottom();
+            this.anchorImagesToBottom();
+        }
     }
 
     /**
@@ -394,6 +471,20 @@ export class MessageList extends BaseComponent<MessageListProps> {
 
     public getLatestMessageData(): FrontendMessage | null {
         return this.childMessages[0]?.props.message ?? null;
+    }
+
+    /**
+     * Возвращает самое свежее ВХОДЯЩЕЕ сообщение (не своё) с числовым id.
+     * Нужно, чтобы корректно отметить прочитанным даже когда последнее
+     * сообщение в чате — моё (иначе бэк не обновит last_read_message_id
+     * и после перезагрузки сообщения снова станут «непрочитанными»).
+     */
+    public getLatestIncomingMessageData(): FrontendMessage | null {
+        for (const child of this.childMessages) {
+            const msg = child.props.message;
+            if (!msg.isOwn && /^\d+$/.test(msg.id)) return msg;
+        }
+        return null;
     }
 
     /**
