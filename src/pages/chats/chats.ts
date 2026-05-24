@@ -41,6 +41,7 @@ import { ChatSidebarController } from "./controllers/chatSidebarController";
 import { getChatErrorMessage, type ServiceErrorLike } from "./model/chatsErrors";
 import type { ChatSearchType, CreateChatMode, CurrentUserVM } from "./model/chatsViewModels";
 import { ChatsView } from "./chatsView";
+import { contactService } from "../../services/contactService";
 
 
 /**
@@ -456,6 +457,16 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             onEmitTyping: (chatId) => this.presenceController?.emitTyping(chatId),
             onStopTyping: (chatId) => this.presenceController?.stopTyping(chatId),
             onJoinChannel: (chatId) => this.handleJoinChannel(chatId),
+            onContactClick: async (userId) => {
+                try {
+                    const profileInfo = await contactService.getProfileInfo(userId);
+                    if (profileInfo?.additionalInfo?.login) {
+                        this.props.router.navigate('/contacts/' + profileInfo.additionalInfo.login);
+                    }
+                } catch (e) {
+                    console.error("Failed to load profile for contact click", e);
+                }
+            },
         });
         this.presenceController = new ChatPresenceController();
         this.notificationPromptController = new ChatNotificationPromptController({

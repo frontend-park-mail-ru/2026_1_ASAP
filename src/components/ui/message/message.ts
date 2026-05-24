@@ -22,6 +22,7 @@ interface MessageProps extends IBaseComponentProps {
     onDelete?: (id: string) => void;
     onDownloadAttachment?: (url: string, fileName: string) => void | Promise<void>;
     onMediaClick?: (attachments: MessageAttachment[], initialIndex: number) => void;
+    onContactClick?: (userId: number) => void;
 }
 
 /**
@@ -395,6 +396,14 @@ export class Message extends BaseComponent<MessageProps> {
             || (attachment.contactUserId ? `User #${attachment.contactUserId}` : 'Контакт');
 
         card.append(icon, name);
+        
+        if (attachment.contactUserId && this.props.onContactClick) {
+            card.addEventListener('click', () => {
+                this.props.onContactClick!(attachment.contactUserId!);
+            });
+            card.style.cursor = 'pointer';
+        }
+        
         return card;
     }
 

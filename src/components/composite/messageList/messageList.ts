@@ -22,6 +22,7 @@ interface MessageListProps extends IBaseComponentProps {
     onRequestDelete?: (messageId: string) => void;
     /** Колбэк для скачивания вложения; реализация на уровне controller */
     onDownloadAttachment?: (url: string, fileName: string) => void | Promise<void>;
+    onContactClick?: (userId: number) => void;
 }
 
 /**
@@ -195,6 +196,7 @@ export class MessageList extends BaseComponent<MessageListProps> {
                 onDelete: (id) => this.props.onRequestDelete?.(id),
                 onDownloadAttachment: this.props.onDownloadAttachment,
                 onMediaClick: this.handleMediaClick,
+                onContactClick: this.props.onContactClick,
             });
             messageComponent.mount(this.flexContainer!);
             this.messages.set(msgData.id, messageComponent);
@@ -229,6 +231,7 @@ export class MessageList extends BaseComponent<MessageListProps> {
                 onDelete: (id) => this.props.onRequestDelete?.(id),
                 onDownloadAttachment: this.props.onDownloadAttachment,
                 onMediaClick: this.handleMediaClick,
+                onContactClick: this.props.onContactClick,
             });
             const tempDiv = document.createElement('div');
             comp.mount(tempDiv);
@@ -272,6 +275,7 @@ export class MessageList extends BaseComponent<MessageListProps> {
             onDelete: (id) => this.props.onRequestDelete?.(id),
             onDownloadAttachment: this.props.onDownloadAttachment,
             onMediaClick: this.handleMediaClick,
+            onContactClick: this.props.onContactClick,
         });
         
         // Новое сообщение всегда в начало DOM (визуальный низ)

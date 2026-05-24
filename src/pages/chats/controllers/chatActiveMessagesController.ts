@@ -23,6 +23,7 @@ interface ChatActiveMessagesControllerDeps {
     onEmitTyping: (chatId: string) => void;
     onStopTyping: (chatId: string) => void;
     onJoinChannel: (chatId: string) => Promise<void>;
+    onContactClick: (userId: number) => void;
 }
 
 export interface ActiveChatMessagesResult {
@@ -78,6 +79,7 @@ export class ChatActiveMessagesController {
                     this.deps.onShowAlert("No connection, try later");
                 }
             },
+            onContactClick: this.deps.onContactClick,
         });
 
         let footerComponent: BaseComponent | undefined;
