@@ -11,7 +11,7 @@
 }
 
 .voice-message__play {
-    background: rgba(255, 255, 255, 0.2);
+    background: none;
     border: none;
     width: 40px;
     height: 40px;
@@ -35,7 +35,6 @@
     img {
         width: 40px;
         height: 40px;
-        filter: brightness(0) invert(1);
     }
 }
 
