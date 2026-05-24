@@ -76,6 +76,10 @@ export class MediaViewerOverlay extends BaseComponent<MediaViewerOverlayProps> {
         container.innerHTML = '';
 
         if (attachment.type === 'photo') {
+            const loader = document.createElement('div');
+            loader.className = 'media-viewer-overlay__spinner';
+            container.appendChild(loader);
+
             const img = document.createElement('img');
             img.className = 'media-viewer-overlay__media media-viewer-overlay__media--photo media-viewer-overlay__media--loading';
             img.src = attachment.url || '';
@@ -87,11 +91,13 @@ export class MediaViewerOverlay extends BaseComponent<MediaViewerOverlayProps> {
             img.addEventListener('load', () => {
                 img.classList.remove('media-viewer-overlay__media--loading');
                 img.style.opacity = '1';
+                loader.remove();
             }, { once: true });
             
             img.addEventListener('error', () => {
                 img.classList.remove('media-viewer-overlay__media--loading');
                 img.style.opacity = '1';
+                loader.remove();
                 const errorDiv = document.createElement('div');
                 errorDiv.className = 'media-viewer-overlay__error';
                 errorDiv.textContent = 'Не удалось загрузить изображение';
@@ -100,6 +106,10 @@ export class MediaViewerOverlay extends BaseComponent<MediaViewerOverlayProps> {
 
             container.appendChild(img);
         } else if (attachment.type === 'video') {
+            const loader = document.createElement('div');
+            loader.className = 'media-viewer-overlay__spinner';
+            container.appendChild(loader);
+
             const video = document.createElement('video');
             video.className = 'media-viewer-overlay__media media-viewer-overlay__media--video media-viewer-overlay__media--loading';
             video.src = attachment.url || '';
@@ -111,11 +121,13 @@ export class MediaViewerOverlay extends BaseComponent<MediaViewerOverlayProps> {
             video.addEventListener('loadeddata', () => {
                 video.classList.remove('media-viewer-overlay__media--loading');
                 video.style.opacity = '1';
+                loader.remove();
             }, { once: true });
 
             video.addEventListener('error', () => {
                 video.classList.remove('media-viewer-overlay__media--loading');
                 video.style.opacity = '1';
+                loader.remove();
                 const errorDiv = document.createElement('div');
                 errorDiv.className = 'media-viewer-overlay__error';
                 errorDiv.textContent = 'Не удалось загрузить видео';
