@@ -161,7 +161,14 @@ export class Message extends BaseComponent<MessageProps> {
         const textEl = this.element?.querySelector('.message__text');
         if (textEl) {
             textEl.textContent = newText;
-            (textEl as HTMLElement).hidden = newText.length === 0;
+            const hasVoice = this.props.message.attachments?.some(a => a.type === 'voice');
+            const isVoiceOnlyText = newText.match(/^\[Голосовое[^\d]*(\d+:\d+)?\]$/i);
+            
+            if (hasVoice && isVoiceOnlyText) {
+                (textEl as HTMLElement).hidden = true;
+            } else {
+                (textEl as HTMLElement).hidden = newText.length === 0;
+            }
         }
         const editedEl = this.element?.querySelector<HTMLElement>('.message__edited');
         if (editedEl) {
@@ -257,7 +264,17 @@ export class Message extends BaseComponent<MessageProps> {
                 case 'voice': {
                     const voiceWrapper = document.createElement('div');
                     container.appendChild(voiceWrapper);
-                    const voiceMsg = new VoiceMessage({ url: attachment.url });
+                    
+                    let durationText = undefined;
+                    const match = this.props.message.text?.match(/\[Голосовое[^\d]*(\d+:\d+)\]/i);
+                    if (match) {
+                        durationText = match[1];
+                    }
+
+                    const voiceMsg = new VoiceMessage({ 
+                        url: attachment.url,
+                        durationStr: durationText
+                    });
                     voiceMsg.mount(voiceWrapper);
                     this.childComponents.push(voiceMsg);
                     break;
@@ -268,7 +285,16 @@ export class Message extends BaseComponent<MessageProps> {
         });
 
         const textEl = this.element?.querySelector<HTMLElement>('.message__text');
-        if (textEl) textEl.hidden = !this.props.message.text;
+        if (textEl) {
+            const hasVoice = attachments.some(a => a.type === 'voice');
+            const isVoiceOnlyText = this.props.message.text?.match(/^\[Голосовое[^\d]*(\d+:\d+)?\]$/i);
+            
+            if (hasVoice && isVoiceOnlyText) {
+                textEl.hidden = true;
+            } else {
+                textEl.hidden = !this.props.message.text;
+            }
+        }
     }
 
     private createFileAttachment(url?: string, fileName?: string): HTMLElement {

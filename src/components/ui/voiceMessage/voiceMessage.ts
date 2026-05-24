@@ -9,6 +9,8 @@ import template from './voiceMessage.hbs';
 export interface VoiceMessageProps extends IBaseComponentProps {
     /** URL-адрес аудиофайла голосового сообщения на сервере */
     url?: string;
+    /** Заранее известная длительность сообщения в виде строки (например "0:59") */
+    durationStr?: string;
 }
 
 /**
@@ -70,6 +72,10 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
 
         this.initVisualizer();
 
+        if (this.props.durationStr && this.durationStr) {
+            this.durationStr.textContent = this.props.durationStr;
+        }
+
         if (!this.props.url) return;
 
         this.audio = new Audio(this.props.url);
@@ -118,6 +124,12 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
      */
     private handleLoadedMetadata = (): void => {
         if (!this.audio || !this.durationStr) return;
+        if (!isFinite(this.audio.duration)) {
+            if (!this.props.durationStr) {
+                this.durationStr.textContent = '00:00';
+            }
+            return;
+        }
         this.durationStr.textContent = this.formatTime(this.audio.duration);
     };
 
@@ -149,7 +161,13 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
     private handleEnded = (): void => {
         if (!this.audio || !this.durationStr || !this.playIcon || !this.visualizer) return;
         this.playIcon.src = '/assets/images/icons/playIcon.svg';
-        this.durationStr.textContent = this.formatTime(this.audio.duration);
+        
+        if (!isFinite(this.audio.duration) && this.props.durationStr) {
+            this.durationStr.textContent = this.props.durationStr;
+        } else {
+            this.durationStr.textContent = this.formatTime(this.audio.duration);
+        }
+        
         this.audio.currentTime = 0;
         
         const bars = this.visualizer.children;
