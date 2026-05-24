@@ -985,6 +985,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
                     this.textarea.value = '';
                     this.textarea.style.height = '';
                 }
+                this.updateButtonsVisibility();
             } catch {
                 // Ошибка отправки: показываем пользователю, не сбрасываем черновик
                 this.showInlineError('Не удалось отправить сообщение. Попробуйте ещё раз');

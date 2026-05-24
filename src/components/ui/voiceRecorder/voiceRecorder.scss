@@ -54,4 +54,16 @@
     font-weight: 500;
     min-width: 45px;
     text-align: center;
+    transition: color 0.3s ease;
+
+    &--limit {
+        color: #FF3347;
+        animation: pulse-red 1s infinite;
+    }
+}
+
+@keyframes pulse-red {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
 }

@@ -168,6 +168,16 @@ export class VoiceRecorder extends BaseComponent<VoiceRecorderProps> {
         const m = Math.floor(diff / 60).toString().padStart(2, '0');
         const s = (diff % 60).toString().padStart(2, '0');
         timeEl.textContent = `${m}:${s}`;
+
+        if (diff >= 50) {
+            timeEl.classList.add('voice-recorder__time--limit');
+        } else {
+            timeEl.classList.remove('voice-recorder__time--limit');
+        }
+
+        if (diff >= 60) {
+            this.finishRecording();
+        }
     };
 
     /**
