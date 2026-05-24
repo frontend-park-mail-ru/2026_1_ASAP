@@ -1,9 +1,23 @@
-import { wsClient, MessageDto } from "../core/utils/wsClient";
+import { wsClient, MessageDto, ChatInformationDto, ChatUpdatedTitleDto } from "../core/utils/wsClient";
 import { getFullUrl } from "../core/utils/url";
+import { chatService } from "./chatService";
+import { contactService } from "./contactService";
 
 interface ShowOptions {
     icon?: string;
     chatId?: string;
+}
+
+interface ChatMeta {
+    title: string;
+    type: 'dialog' | 'group' | 'channel';
+}
+
+interface SenderMeta {
+    firstName?: string;
+    lastName?: string;
+    login?: string;
+    avatarUrl?: string;
 }
 
 class NotificationService {
@@ -13,6 +27,9 @@ class NotificationService {
     private audio: HTMLAudioElement | null = null;
     private currentUserId: number | null = null;
     private attached: boolean = false;
+    private chatMeta: Map<string, ChatMeta> = new Map();
+    private senderCache: Map<number, SenderMeta> = new Map();
+    private senderInflight: Map<number, Promise<SenderMeta>> = new Map();
 
     public init(): void {
         this.supported = 'Notification' in window;
@@ -129,28 +146,123 @@ class NotificationService {
         this.currentUserId = currentUserId;
         this.attached = true;
         wsClient.subscribe<MessageDto>('message.New', this.handleNewMessage);
+        wsClient.subscribe<ChatInformationDto>('chat.New', this.handleChatNew);
+        wsClient.subscribe<ChatUpdatedTitleDto>('chat.Updated.Title', this.handleChatTitleUpdated);
+
+        // Предзагружаем список чатов, чтобы для group/channel сразу знать
+        // название чата и тип. handleNewMessage умеет fallback'нуться без них.
+        this.preloadChatMeta(currentUserId);
     }
 
     public detach(): void {
         if (!this.attached) return;
         wsClient.unsubscribe('message.New', this.handleNewMessage);
+        wsClient.unsubscribe('chat.New', this.handleChatNew);
+        wsClient.unsubscribe('chat.Updated.Title', this.handleChatTitleUpdated);
         this.attached = false;
         this.currentUserId = null;
+        this.chatMeta.clear();
+        this.senderCache.clear();
+        this.senderInflight.clear();
         this.closeAll();
     }
 
-    private handleNewMessage = (dto: MessageDto): void => {
+    private async preloadChatMeta(currentUserId: number): Promise<void> {
+        try {
+            const chats = await chatService.getChats(currentUserId);
+            chats.forEach((c) => {
+                this.chatMeta.set(String(c.id), { title: c.title, type: c.type });
+            });
+        } catch (e) {
+            console.warn('notificationService: preloadChatMeta failed', e);
+        }
+    }
+
+    private handleChatNew = (dto: ChatInformationDto): void => {
+        this.chatMeta.set(String(dto.id), { title: dto.title, type: dto.chat_type });
+    };
+
+    private handleChatTitleUpdated = (dto: ChatUpdatedTitleDto): void => {
+        const existing = this.chatMeta.get(String(dto.chat_id));
+        if (existing) {
+            this.chatMeta.set(String(dto.chat_id), { ...existing, title: dto.title });
+        }
+    };
+
+    private buildSenderName(meta: SenderMeta, senderId: number): string {
+        const full = meta.firstName ? `${meta.firstName} ${meta.lastName ?? ''}`.trim() : '';
+        if (full) return full;
+        if (meta.login && !meta.login.startsWith('user_')) return meta.login;
+        return `User #${senderId}`;
+    }
+
+    /**
+     * Собирает meta отправителя: из самого DTO (если бэк положил поля),
+     * иначе из кеша, иначе — REST-запрос с дедупом.
+     */
+    private async resolveSenderMeta(dto: MessageDto): Promise<SenderMeta> {
+        if (dto.first_name || dto.last_name || (dto.login && !dto.login.startsWith('user_'))) {
+            const meta: SenderMeta = {
+                firstName: dto.first_name,
+                lastName: dto.last_name,
+                login: dto.login,
+                avatarUrl: dto.avatar ?? undefined,
+            };
+            this.senderCache.set(dto.sender_id, meta);
+            return meta;
+        }
+        const cached = this.senderCache.get(dto.sender_id);
+        if (cached) return cached;
+
+        const inflight = this.senderInflight.get(dto.sender_id);
+        if (inflight) return inflight;
+
+        const promise = contactService.getProfileInfo(dto.sender_id)
+            .then((profile) => {
+                const meta: SenderMeta = {
+                    firstName: profile.mainInfo.firstName,
+                    lastName: profile.mainInfo.lastName,
+                    login: profile.additionalInfo.login,
+                    avatarUrl: profile.mainInfo.avatarUrl,
+                };
+                this.senderCache.set(dto.sender_id, meta);
+                return meta;
+            })
+            .catch(() => ({} as SenderMeta))
+            .finally(() => {
+                this.senderInflight.delete(dto.sender_id);
+            });
+        this.senderInflight.set(dto.sender_id, promise);
+        return promise;
+    }
+
+    private handleNewMessage = async (dto: MessageDto): Promise<void> => {
         if (this.currentUserId === null) return;
         if (String(dto.sender_id) === String(this.currentUserId)) return;
 
-        const senderName = dto.first_name
-            ? `${dto.first_name} ${dto.last_name ?? ''}`.trim()
-            : (dto.login || 'Новое сообщение');
+        const chatId = String(dto.chat_id);
+        const chat = this.chatMeta.get(chatId);
+        const senderMeta = await this.resolveSenderMeta(dto);
+        const senderName = this.buildSenderName(senderMeta, dto.sender_id);
+        const bodyText = dto.text || (dto.sticker ? (dto.sticker.emoji ? `${dto.sticker.emoji} Стикер` : 'Стикер') : '');
 
-        this.show(senderName, dto.text || '', {
-            chatId: dto.chat_id.toString(),
-            icon: dto.avatar ? getFullUrl(dto.avatar) : undefined,
-        });
+        let title: string;
+        let body: string;
+
+        if (chat && (chat.type === 'group' || chat.type === 'channel')) {
+            title = chat.title || senderName;
+            body = chat.type === 'group' ? `${senderName}: ${bodyText}` : bodyText;
+        } else {
+            // Диалог (или ещё не подгрузился meta) — title = имя отправителя.
+            title = senderName;
+            body = bodyText;
+        }
+
+        const icon = dto.avatar
+            ? getFullUrl(dto.avatar)
+            : (senderMeta.avatarUrl ? getFullUrl(senderMeta.avatarUrl) : undefined);
+
+        this.show(title, body, { chatId, icon });
     };
 }
 
