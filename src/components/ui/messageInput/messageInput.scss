@@ -28,11 +28,11 @@
         border-radius: 14px;
         padding: 0 12px;
         gap: 10px;
-        background: $color-text-hover2;
+        background: #454343;
         transition: background-color 0.2s;
 
         &:focus-within {
-            background: $color-text-hover;
+            background: #525050;
         }
     }
 
@@ -199,14 +199,6 @@
 
 [data-theme="light"] {
     .message-input {
-        &__input-container {
-            background: $color-text-hover2;
-
-            &:focus-within {
-                background: $color-text-hover;
-            }
-        }
-
         &__send-button {
             background: $gradient-button;
         }
