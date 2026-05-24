@@ -110,6 +110,12 @@ export class VoiceRecorder extends BaseComponent<VoiceRecorderProps> {
         };
 
         this.mediaRecorder.onstop = () => {
+            // Освобождаем треки микрофона ЗДЕСЬ — после получения всех чанков
+            if (this.recordStream) {
+                this.recordStream.getTracks().forEach(track => track.stop());
+                this.recordStream = null;
+            }
+
             if (!this.isCancelled && this.audioChunks.length > 0) {
                 /**
                  * Нормализуем реальный MIME-тип из MediaRecorder.
@@ -234,9 +240,10 @@ export class VoiceRecorder extends BaseComponent<VoiceRecorderProps> {
 
         if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
             this.mediaRecorder.stop();
-        }
-
-        if (this.recordStream) {
+            // Треки стрима останавливаем только ПОСЛЕ того, как MediaRecorder
+            // завершит сброс всех данных (onstop срабатывает после последнего ondataavailable)
+        } else if (this.recordStream) {
+            // Если recorder уже неактивен — освобождаем стрим немедленно
             this.recordStream.getTracks().forEach(track => track.stop());
             this.recordStream = null;
         }
