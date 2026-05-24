@@ -112,9 +112,11 @@ export class MessageInput extends BaseForm<MessageInputProps> {
     private openStickerOverlay(): void {
         if (this.stickerOverlay || !this.stikerButton?.element) return;
 
-        const anchorRect = this.stikerButton.element.getBoundingClientRect();
+        const anchorEl = this.stikerButton.element;
+        const anchorRect = anchorEl.getBoundingClientRect();
         this.stickerOverlay = new StickerEmojiOverlay({
             anchorRect,
+            anchorElement: anchorEl,
             initialTab: 'stickers',
             onSelectSticker: (sticker) => {
                 this.props.onSendSticker?.(sticker);

@@ -138,6 +138,18 @@
     }
 }
 
+// На прозрачном баббле стикера время рисуется поверх фона чата.
+// В светлой теме фон почти белый, обычный $color-text-hover плохо читается.
+[data-theme="light"] .message--sticker {
+    .message__meta,
+    .message__time,
+    .message__edited,
+    .message__status--sending,
+    .message__status--sent {
+        color: rgba(24, 32, 51, 0.85);
+    }
+}
+
 @keyframes message-flash-own {
     0%   { box-shadow: 0 0 0 0px var(--color-search-selected-own); }
     100% { box-shadow: 0 0 0 2.5px var(--color-search-selected-own); }

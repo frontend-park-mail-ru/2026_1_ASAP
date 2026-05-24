@@ -12,6 +12,7 @@ interface EmojiCategory {
 
 interface StickerEmojiOverlayProps extends IBaseComponentProps {
     anchorRect: DOMRect;
+    anchorElement?: HTMLElement | null;
     initialTab?: Tab;
     onSelectSticker: (sticker: Sticker) => void;
     onSelectEmoji: (emoji: string) => void;
@@ -254,17 +255,29 @@ export class StickerEmojiOverlay extends BaseComponent<StickerEmojiOverlayProps>
     private positionPanel(): void {
         if (!this.panel) return;
         const isMobile = window.matchMedia("(max-width: 767px)").matches;
-        const { anchorRect } = this.props;
         const margin = 8;
 
+        const anchorEl = this.props.anchorElement;
+        const liveAnchorRect = anchorEl && anchorEl.isConnected
+            ? anchorEl.getBoundingClientRect()
+            : this.props.anchorRect;
+
         if (isMobile) {
-            // Bottom-sheet поднимаем НАД полем ввода (anchor — кнопка стикеров),
-            // чтобы textarea оставалась видимой. Высоту тоже ограничиваем сверху.
-            const bottomOffset = Math.max(margin, window.innerHeight - anchorRect.top + margin);
+
+            const vvHeight = window.visualViewport?.height ?? window.innerHeight;
+            const vvOffsetTop = window.visualViewport?.offsetTop ?? 0;
+
+            const bottomOffset = Math.max(margin, window.innerHeight - liveAnchorRect.top + margin);
+            const availableAbove = (liveAnchorRect.top - vvOffsetTop) - margin;
+            const targetHeight = Math.max(160, Math.min(availableAbove, vvHeight * 0.6));
+
             this.panel.style.bottom = `${bottomOffset}px`;
-            this.panel.style.maxHeight = `${Math.max(160, anchorRect.top - margin * 2)}px`;
+            this.panel.style.height = `${targetHeight}px`;
+            this.panel.style.maxHeight = `${targetHeight}px`;
             return;
         }
+
+        const anchorRect = liveAnchorRect;
 
         const w = this.panel.offsetWidth || 340;
         const h = this.panel.offsetHeight || 460;

@@ -199,6 +199,14 @@
 
 [data-theme="light"] {
     .message-input {
+        &__input-container {
+            background: rgba(24, 32, 51, 0.06);
+
+            &:focus-within {
+                background: rgba(24, 32, 51, 0.1);
+            }
+        }
+
         &__send-button {
             background: $gradient-button;
         }
