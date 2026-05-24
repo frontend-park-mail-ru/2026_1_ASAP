@@ -180,13 +180,25 @@ export class ChatSidebarController {
     };
 
     /**
-     * Сбрасывает счётчик непрочитанных для чата (вызывается при открытии чата
-     * или при получении message.Read с моим reader_user_id).
+     * Сбрасывает счётчик непрочитанных для чата (вызывается при открытии чата).
+     * lastReadMessageId не трогаем — он обновится по событию message.Read.
      */
     public resetUnread(chatId: string): void {
         const target = this.chats.find(chat => String(chat.id) === String(chatId));
         if (!target || !target.unreadCount) return;
         this.updateChat(String(chatId), { unreadCount: 0 } as Partial<Chat>);
+    }
+
+    /**
+     * Применяет message.Read со своим reader_user_id: обнуляем unread и
+     * обновляем lastReadMessageId, чтобы следующий открытие чата корректно
+     * нашло «новые» сообщения.
+     */
+    public applyOwnRead(chatId: string, lastReadMessageId: number): void {
+        const target = this.chats.find(chat => String(chat.id) === String(chatId));
+        if (!target) return;
+        const patch: Partial<Chat> = { unreadCount: 0, lastReadMessageId } as Partial<Chat>;
+        this.updateChat(String(chatId), patch);
     }
 
     private readonly handleChatAvatarUpdated = (payload: ChatUpdatedAvatarDto): void => {

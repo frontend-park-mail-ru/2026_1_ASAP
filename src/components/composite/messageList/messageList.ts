@@ -17,6 +17,12 @@ interface MessageListProps extends IBaseComponentProps {
     currentUser: User;
     chatType: Chat['type'];
     chatAvatarUrl?: string;
+    /** Сколько последних сообщений считать «непрочитанными» — fallback для случая,
+     *  когда бэк не отдаёт lastReadMessageId. */
+    unreadCount?: number;
+    /** ID последнего прочитанного мной сообщения. Если задан — все сообщения с id
+     *  больше этого и не свои считаются непрочитанными. */
+    lastReadMessageId?: number;
     onLoadMore?: () => Promise<void>;
     onRequestEdit?: (messageId: string, currentText: string) => void;
     onRequestDelete?: (messageId: string) => void;
@@ -103,6 +109,36 @@ export class MessageList extends BaseComponent<MessageListProps> {
     private isNearBottom(): boolean {
         if (!this.element) return false;
         return this.element.scrollHeight - this.element.scrollTop - this.element.clientHeight < 40;
+    }
+
+    /**
+     * Находит первое непрочитанное чужое сообщение по приоритету источников:
+     * 1) lastReadMessageId из чата (наиболее точно — бэк-формула).
+     * 2) Флаг status у сообщения.
+     * 3) Последние N чужих сообщений (fallback по unreadCount).
+     */
+    private findFirstUnread(messages: FrontendMessage[]): FrontendMessage | null {
+        const lastReadId = this.props.lastReadMessageId ?? 0;
+        if (lastReadId > 0) {
+            return messages.find((m) => {
+                if (m.isOwn) return false;
+                const id = Number(m.id);
+                return Number.isFinite(id) && id > lastReadId;
+            }) ?? null;
+        }
+
+        const byStatus = messages.find((m) => !m.isOwn && m.status !== 'read');
+        if (byStatus) return byStatus;
+
+        const unreadCount = this.props.unreadCount ?? 0;
+        if (unreadCount <= 0) return null;
+
+        // Берём N последних чужих сообщений.
+        const incoming: FrontendMessage[] = [];
+        for (let i = messages.length - 1; i >= 0 && incoming.length < unreadCount; i -= 1) {
+            if (!messages[i].isOwn) incoming.push(messages[i]);
+        }
+        return incoming[incoming.length - 1] ?? null;
     }
 
     /**
@@ -262,7 +298,7 @@ export class MessageList extends BaseComponent<MessageListProps> {
 
         this.unreadDividerEl?.remove();
         this.unreadDividerEl = null;
-        const firstUnread = messages.find((m) => !m.isOwn && m.status !== 'read');
+        const firstUnread = this.findFirstUnread(messages);
         const unreadEl = firstUnread ? this.messages.get(firstUnread.id)?.element ?? null : null;
 
         if (firstUnread && unreadEl && this.flexContainer) {

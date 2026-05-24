@@ -25,6 +25,10 @@ interface ChatActiveMessagesControllerDeps {
     onStopTyping: (chatId: string) => void;
     onJoinChannel: (chatId: string) => Promise<void>;
     onContactClick: (userId: number) => void;
+    /** Сколько непрочитанных у чата на момент открытия (захватываем до resetUnread). */
+    getPendingUnreadCount: (chatId: string) => number;
+    /** ID последнего прочитанного сообщения — главный источник истины для якоря «новые». */
+    getLastReadMessageId: (chatId: string) => number;
 }
 
 export interface ActiveChatMessagesResult {
@@ -48,6 +52,8 @@ export class ChatActiveMessagesController {
             },
             chatType: chatDetail.type,
             chatAvatarUrl: chatDetail.type === "channel" ? (chatDetail.avatarUrl || undefined) : undefined,
+            unreadCount: this.deps.getPendingUnreadCount(chatId),
+            lastReadMessageId: this.deps.getLastReadMessageId(chatId),
             onDownloadAttachment: (url, fileName) => this.downloadAttachment(url, fileName),
             onLoadMore: async () => {
                 const { hasMoreHistory, nextBeforeId } = this.deps.getPaginationState();

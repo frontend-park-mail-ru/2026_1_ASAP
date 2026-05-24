@@ -127,6 +127,8 @@ export interface BaseChat {
     avatarUrl?: string;
     lastMessage?: FrontendMessage;
     unreadCount?: number;
+    /** ID последнего прочитанного мной сообщения в этом чате. 0 если ещё ничего не читал. */
+    lastReadMessageId?: number;
 }
 
 /**

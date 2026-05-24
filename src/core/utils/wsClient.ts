@@ -154,6 +154,8 @@ export interface ChatInformationDto {
     avatar?: string | null;
     owner_id?: number;
     last_message?: LastMessageDto;
+    unread_count?: number;
+    last_read_message_id?: number;
 }
 
 /**
