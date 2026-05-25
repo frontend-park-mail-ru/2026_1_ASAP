@@ -7,6 +7,7 @@ import { ChatListWrapper } from "../../components/composite/chatListWrapper/chat
 import { Button } from "../../components/ui/button/button";
 import type { BaseComponent } from "../../core/base/baseComponent";
 import { ChatWindow } from "../../components/composite/chatWindow/chatWindow";
+import { ChatSkeleton } from "../../components/composite/chatSkeleton/chatSkeleton";
 import type { MessageList } from "../../components/composite/messageList/messageList";
 import type { MessageInput } from "../../components/ui/messageInput/messageInput";
 import type { Chat, FrontendMessage, User } from '../../types/chat';
@@ -79,6 +80,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     
     private chatWindow: ChatWindow | null = null;
     private createChatWindow: BaseComponent | null = null;
+    private chatSkeleton: ChatSkeleton | null = null;
     private onboardingComponent: OnboardingEmpty | null = null;
     
     public activeChatId: string | null = null;
@@ -588,6 +590,10 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             this.createChatWindow.unmount();
             this.createChatWindow = null;
         }
+        if (this.chatSkeleton) {
+            this.chatSkeleton.unmount();
+            this.chatSkeleton = null;
+        }
         this.detailsFlowController?.closeAll();
         this.chatsView?.hidePlaceholder();
         if (this.onboardingComponent) {
@@ -623,6 +629,20 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private handleSearchInput = (query: string): void => {
         this.sidebarController?.handleSearchInput(query);
     };
+
+    private mountChatSkeleton(chatId: string): void {
+        if (!this.chatsView?.hasMainContentArea()) return;
+
+        const chat = this.sidebarController?.getChats()
+            .find((c) => String(c.id) === String(chatId));
+        if (!chat) return;
+
+        this.chatSkeleton = new ChatSkeleton({
+            title: chat.title,
+            avatarUrl: chat.avatarUrl,
+        });
+        this.chatsView.mountInMain(this.chatSkeleton);
+    }
 
     private mountOnboarding(obKey: string): void {
         if (!this.element || this.onboardingComponent) return;
@@ -702,6 +722,9 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             this.chatWrapper?.setActiveChat(chatId);
             // Открыли чат — у него больше нет «непрочитанных» в превью.
             this.sidebarController?.resetUnread(chatId);
+
+            this.mountChatSkeleton(chatId);
+
             await this.openChat(chatId);
 
             // Снимок использован — больше не нужен (повторные открытия без новых
