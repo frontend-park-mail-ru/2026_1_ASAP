@@ -22,8 +22,12 @@ export class ChatSessionController {
         return this.useCases.hasAnyChats(currentUserId);
     }
 
-    public loadActiveChat(chatId: string, currentUser: CurrentUserVM): Promise<ActiveChatVM | null> {
-        return this.useCases.loadActiveChat(chatId, currentUser);
+    public loadActiveChat(
+        chatId: string,
+        currentUser: CurrentUserVM,
+        cachedChat?: Chat | null,
+    ): Promise<ActiveChatVM | null> {
+        return this.useCases.loadActiveChat(chatId, currentUser, cachedChat);
     }
 
     public loadMoreMessages(chat: Chat, currentUserId: number, beforeId: number | null): Promise<{

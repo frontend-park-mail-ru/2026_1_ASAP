@@ -267,38 +267,41 @@ export class ChatsUseCases {
         return this.data.subscribeWs<T>(eventType, handler);
     }
 
-    public async loadActiveChat(chatId: string, currentUser: CurrentUserVM): Promise<ActiveChatVM | null> {
-        const chat = await this.data.getChatDetail(chatId);
-        if (!chat) return null;
+    public async loadActiveChat(
+        chatId: string,
+        currentUser: CurrentUserVM,
+        cachedChat?: Chat | null,
+    ): Promise<ActiveChatVM | null> {
+        const baseChat: Chat | null = cachedChat ?? await this.data.getChatDetail(chatId);
+        if (!baseChat) return null;
 
-        let resolvedChat = chat.type === "dialog"
-            ? await this.hydrateDialogChat(chat, currentUser.id)
-            : chat;
+        const [resolvedChatBase, channelDetail, history, pendingMessages, groupMemberIds] = await Promise.all([
+            baseChat.type === 'dialog'
+                ? this.hydrateDialogChat(baseChat, currentUser.id)
+                : Promise.resolve(baseChat),
+            baseChat.type === 'channel'
+                ? this.data.getChannel(chatId, currentUser.id)
+                : Promise.resolve(null),
+            this.data.getMessages(chatId, currentUser.id),
+            this.data.getPendingMessages(chatId).catch((err) => {
+                console.warn('chatsUseCases: getPendingMessages failed', err);
+                return [];
+            }),
+            baseChat.type === 'group' ? this.data.getChatMembers(chatId) : Promise.resolve(null),
+        ]);
 
-        const channelDetail = resolvedChat.type === "channel"
-            ? await this.data.getChannel(chatId, currentUser.id)
-            : null;
-
-        if (resolvedChat.type === "channel" && !channelDetail) {
+        if (baseChat.type === 'channel' && !channelDetail) {
             return null;
         }
 
-        if (resolvedChat.type === "channel" && channelDetail) {
+        let resolvedChat: Chat = resolvedChatBase;
+        if (resolvedChat.type === 'channel' && channelDetail) {
             resolvedChat = {
                 ...resolvedChat,
                 currentUserRole: channelDetail.currentUserRole,
                 subscribersCount: channelDetail.subscribersCount,
             };
         }
-
-        const [history, pendingMessages, groupMemberIds] = await Promise.all([
-            this.data.getMessages(chatId, currentUser.id),
-            this.data.getPendingMessages(chatId).catch((err) => {
-                console.warn('chatsUseCases: getPendingMessages failed', err);
-                return [];
-            }),
-            resolvedChat.type === "group" ? this.data.getChatMembers(chatId) : Promise.resolve(null),
-        ]);
 
         const channelCurrentRole = channelDetail?.currentUserRole;
         const header = this.toHeaderVM(

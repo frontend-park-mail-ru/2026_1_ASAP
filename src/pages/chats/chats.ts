@@ -888,7 +888,10 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             const currentUser = await this.getCurrentUserVM();
             if (isCancelled()) return;
 
-            const activeState = await this.sessionController!.loadActiveChat(chatId, currentUser);
+            const cachedChat = this.sidebarController?.getChats()
+                .find((c) => String(c.id) === String(chatId)) ?? null;
+
+            const activeState = await this.sessionController!.loadActiveChat(chatId, currentUser, cachedChat);
             if (isCancelled()) return;
 
             if (!activeState) {
