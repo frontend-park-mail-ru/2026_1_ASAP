@@ -18,7 +18,8 @@
 }
 
 @keyframes ob-tag-cycle {
-    0%, 28%  { opacity: 1; transform: translateY(0); }
+    0%       { opacity: 0; transform: translateY(8px); }
+    8%, 28%  { opacity: 1; transform: translateY(0); }
     33%, 95% { opacity: 0; transform: translateY(-8px); }
     100%     { opacity: 0; }
 }
@@ -368,7 +369,9 @@
     letter-spacing: 2px;
     text-transform: uppercase;
     color: $color-primary;
+    opacity: 0;
     animation: ob-tag-cycle 4.5s ease-in-out infinite;
+    animation-fill-mode: both;
 
     &--0 { animation-delay: 0s; }
     &--1 { animation-delay: 1.5s; }

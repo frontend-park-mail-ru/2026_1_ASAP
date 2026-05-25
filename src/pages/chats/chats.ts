@@ -652,22 +652,30 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         this.activeChatId = null;
         this.chatWrapper?.setActiveChat(null);
 
-        if (this.currentUserId !== null) {
-            const obKey = `pulse_ob_closed_${this.currentUserId}`;
-            if (!sessionStorage.getItem(obKey)) {
-                try {
-                    const hasChats = await this.sessionController!.hasAnyChats(this.currentUserId);
-                    if (!hasChats) {
-                        this.mountOnboarding(obKey);
-                        return;
-                    }
-                } catch {
-                    // не удалось проверить — показываем обычный плейсхолдер
-                }
-            }
+        if (this.shouldShowOnboarding()) {
+            const obKey = this.currentUserId !== null
+                ? `pulse_ob_closed_${this.currentUserId}`
+                : 'pulse_ob_closed_anonymous';
+            this.mountOnboarding(obKey);
+            try { sessionStorage.removeItem('pulse_first_login'); } catch {}
+            return;
         }
 
         this.chatsView?.showPlaceholder();
+    }
+
+    private shouldShowOnboarding(): boolean {
+        if (this.currentUserId !== null) {
+            const obKey = `pulse_ob_closed_${this.currentUserId}`;
+            if (sessionStorage.getItem(obKey)) return false;
+        }
+
+        try {
+            if (sessionStorage.getItem('pulse_first_login') === '1') return true;
+        } catch {}
+
+        const chatsInState = this.sidebarController?.getChats() ?? [];
+        return chatsInState.length === 0;
     }
 
     private async showChatRoute(chatId: string): Promise<void> {

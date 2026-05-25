@@ -1,8 +1,12 @@
 /// <reference lib="webworker" />
 
-import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
+import {
+    cleanupOutdatedCaches,
+    precacheAndRoute,
+    createHandlerBoundToURL,
+} from 'workbox-precaching';
 import { registerRoute, NavigationRoute } from 'workbox-routing';
-import { CacheFirst, NetworkFirst, NetworkOnly } from 'workbox-strategies';
+import { NetworkOnly, StaleWhileRevalidate } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { clientsClaim } from 'workbox-core';
 
@@ -10,10 +14,7 @@ declare const self: ServiceWorkerGlobalScope & {
     __WB_MANIFEST: Array<{ url: string; revision: string | null }>;
 };
 
-const appShellStrategy = new NetworkFirst({
-    cacheName: 'app-shell-cache',
-});
-const legacyRuntimeCaches = ['static-resources-cache'];
+const legacyRuntimeCaches = ['static-resources-cache', 'app-shell-cache'];
 
 self.skipWaiting();
 clientsClaim();
@@ -21,9 +22,10 @@ clientsClaim();
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST || []);
 
+
 registerRoute(
     new NavigationRoute(
-        ({ event }) => appShellStrategy.handle({ event, request: '/index.html' }),
+        createHandlerBoundToURL('/index.html'),
         {
             denylist: [/^\/support\.html(?:$|\?)/],
         },
@@ -32,12 +34,12 @@ registerRoute(
 
 registerRoute(
     ({ request }) => request.destination === 'image',
-    new CacheFirst({
+    new StaleWhileRevalidate({
         cacheName: 'images-cache',
         plugins: [
             new ExpirationPlugin({
-                maxEntries: 120,
-                maxAgeSeconds: 60 * 60 * 24 * 14,
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24 * 30,
             }),
         ],
     }),

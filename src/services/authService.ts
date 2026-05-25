@@ -135,6 +135,7 @@ class AuthService {
         const result = await this.sendRequest('register', { email, login, password });
         if (result.success) {
             this.isAuthStatus = true;
+            try { sessionStorage.setItem('pulse_first_login', '1'); } catch {}
             await this.startSessionServices();
         }
         contactService.clearCache();
