@@ -50,12 +50,6 @@ export class VkAuthService {
 
                 if (response.ok) {
                     authService.isAuthStatus = true;
-                    try {
-                        if (!localStorage.getItem('pulse_ever_logged_in')) {
-                            sessionStorage.setItem('pulse_first_login', '1');
-                            localStorage.setItem('pulse_ever_logged_in', '1');
-                        }
-                    } catch {}
                     onSuccess();
                 }
 

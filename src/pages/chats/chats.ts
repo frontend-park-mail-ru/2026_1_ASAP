@@ -628,7 +628,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         if (!this.element || this.onboardingComponent) return;
         this.onboardingComponent = new OnboardingEmpty({
             onComplete: () => {
-                sessionStorage.setItem(obKey, '1');
+                try { localStorage.setItem(obKey, '1'); } catch {}
                 this.onboardingComponent?.unmount();
                 this.onboardingComponent = null;
                 this.props.router.navigate('/chats/create-dialog');
@@ -667,15 +667,22 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private shouldShowOnboarding(): boolean {
         if (this.currentUserId !== null) {
             const obKey = `pulse_ob_closed_${this.currentUserId}`;
-            if (sessionStorage.getItem(obKey)) return false;
+            try {
+                if (localStorage.getItem(obKey)) return false;
+            } catch {}
+        }
+
+        const chatsInState = this.sidebarController?.getChats() ?? [];
+        if (chatsInState.length > 0) {
+            try { sessionStorage.removeItem('pulse_first_login'); } catch {}
+            return false;
         }
 
         try {
             if (sessionStorage.getItem('pulse_first_login') === '1') return true;
         } catch {}
 
-        const chatsInState = this.sidebarController?.getChats() ?? [];
-        return chatsInState.length === 0;
+        return true;
     }
 
     private async showChatRoute(chatId: string): Promise<void> {
