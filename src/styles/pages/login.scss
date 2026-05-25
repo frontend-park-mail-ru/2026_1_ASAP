@@ -14,10 +14,36 @@
     position: fixed;
     inset: 0;
     @include flex-center;
-    background: $color-background;
+    background: $login-background;
     box-sizing: border-box;
     padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px))
         max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+
+    // Вращающийся conic-gradient: даёт ощущение «переливания по кругу».
+    // По умолчанию скрыт; включается через [data-theme="light"] ниже.
+    &::before {
+        content: "";
+        position: absolute;
+        // Круглая подложка (border-radius: 50%) с центром = центру viewport
+        // и диаметром заметно больше его диагонали — иначе при вращении
+        // видны прямые края квадрата.
+        top: 50%;
+        left: 50%;
+        width: 250vmax;
+        height: 250vmax;
+        transform: translate(-50%, -50%);
+        transform-origin: center;
+        border-radius: 50%;
+        background: conic-gradient(
+            from 0deg at 50% 50%,
+            #455DBA 0%,
+            #5A8A6E 50%,
+            #455DBA 100%
+        );
+        animation: login-bg-spin 20s linear infinite;
+        pointer-events: none;
+        display: none;
+    }
 
     &__support-button-container {
         position: fixed;
@@ -88,6 +114,43 @@
     }
 }
 
+[data-theme="light"] {
+    .login-card,
+    .register-card {
+        background-color: $color-neutral;
+        border: 1px solid $color-border;
+
+        .ui-input {
+            background: $color-background-secondary;
+            border-color: $color-input-border;
+            color: $color-auth-text;
+            opacity: 1;
+
+            &::placeholder {
+                color: $color-input-placeholder;
+            }
+
+            &:-webkit-autofill,
+            &:-webkit-autofill:hover,
+            &:-webkit-autofill:focus,
+            &:-webkit-autofill:focus-visible,
+            &:-webkit-autofill:active {
+                -webkit-text-fill-color: $color-auth-text;
+                caret-color: $color-auth-text;
+                box-shadow: 0 0 0 1000px $color-background-secondary inset;
+            }
+        }
+
+        .ui-input-wrapper--error .ui-input {
+            border-color: $color-error-border;
+        }
+
+        .ui-checkbox__label {
+            color: $color-auth-text;
+        }
+    }
+}
+
 .auth__logo {
     position: absolute;
     top: 0;
@@ -126,3 +189,20 @@
         margin: 0 auto;
     }
 }
+
+
+@keyframes login-bg-spin {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to   { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+[data-theme="light"] .login-page::before {
+    display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .login-page::before {
+        animation: none;
+    }
+}
+

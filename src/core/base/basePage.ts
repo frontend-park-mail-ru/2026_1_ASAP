@@ -1,16 +1,18 @@
 import { IBaseComponentProps } from "./baseComponent";
+import type { Router } from "../router";
+import type { PageManager } from "../pageManager";
 
 /**
  * @interface IBasePageProps
  * @description Базовый интерфейс для свойств страницы.
  * Расширяет `IBaseComponentProps` и добавляет опциональные
  * ссылки на `router` и `pageManager`.
- * @property {any} [router] - Экземпляр роутера.
- * @property {any} [pageManager] - Экземпляр менеджера страниц.
+ * @property {Router} [router] - Экземпляр роутера.
+ * @property {PageManager} [pageManager] - Экземпляр менеджера страниц.
  */
 export interface IBasePageProps extends IBaseComponentProps {
-    router?: any;
-    pageManager?: any;
+    router?: Router;
+    pageManager?: PageManager;
 }
 
 /**
@@ -25,7 +27,7 @@ export interface IBasePageProps extends IBaseComponentProps {
  * @property {HTMLDivElement} root - Корневой DOM-контейнер для всей страницы.
  * @property {HTMLElement | null} element - Основной элемент, отрендеренный внутри `root`.
  */
-export class BasePage<P extends IBasePageProps = IBasePageProps> {
+export class BasePage<P extends object = IBasePageProps> {
     /**
      * Свойства страницы (router, pageManager и др.).
      * @type {P}

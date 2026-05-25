@@ -1,8 +1,8 @@
-import { BaseComponent } from '../../../core/base/baseComponent';
-import { FrontendMessage, User, Chat} from '../../../types/chat';
+import { BaseComponent, IBaseComponentProps } from '../../../core/base/baseComponent';
+import { FrontendMessage, User, Chat, MessageAttachment } from '../../../types/chat';
 import { Message } from '../../ui/message/message';
+import { MediaViewerOverlay } from '../mediaViewerOverlay/mediaViewerOverlay';
 import template from './messageList.hbs';
-import { wsClient } from '../../../core/utils/wsClient';
 import { getFullUrl } from '../../../core/utils/url';
 
 /**
@@ -12,20 +12,36 @@ import { getFullUrl } from '../../../core/utils/url';
  * @property {Chat['type']} chatType - Тип текущего чата. 
  * @property {() => Promise<void>} [onLoadMore] - Колбэк для подгрузки старых сообщений.
 */
-interface MessageListProps {
+interface MessageListProps extends IBaseComponentProps {
     messages: FrontendMessage[];
     currentUser: User;
     chatType: Chat['type'];
     chatAvatarUrl?: string;
+    /** Сколько последних сообщений считать «непрочитанными» — fallback для случая,
+     *  когда бэк не отдаёт lastReadMessageId. */
+    unreadCount?: number;
+    /** ID последнего прочитанного мной сообщения. Если задан — все сообщения с id
+     *  больше этого и не свои считаются непрочитанными. */
+    lastReadMessageId?: number;
     onLoadMore?: () => Promise<void>;
     onRequestEdit?: (messageId: string, currentText: string) => void;
     onRequestDelete?: (messageId: string) => void;
+    /** Колбэк для скачивания вложения; реализация на уровне controller */
+    onDownloadAttachment?: (url: string, fileName: string) => void | Promise<void>;
+    onContactClick?: (userId: number) => void;
 }
 
 /**
  * Компонент для отображения списка сообщений в диалоге.
  */
-export class MessageList extends BaseComponent {
+export interface UserUpdatePayload {
+    id?: number;
+    avatar_url?: string;
+    avatarUrl?: string;
+    avatar?: string;
+}
+
+export class MessageList extends BaseComponent<MessageListProps> {
     private childMessages: Message[] = [];
     private flexContainer: HTMLElement | null = null;
     private emptyStateElement: HTMLElement | null = null;
@@ -33,6 +49,20 @@ export class MessageList extends BaseComponent {
     private messages: Map<string, Message> = new Map();
     private currentHighlightQuery = '';
     private selectedMessageEl: HTMLElement | null = null;
+    private pinnedToBottom = true;
+    private resizeObserver: ResizeObserver | null = null;
+    private unreadDividerEl: HTMLElement | null = null;
+
+    private handleMediaClick = (attachments: MessageAttachment[], initialIndex: number) => {
+        const overlay = new MediaViewerOverlay({
+            attachments,
+            initialIndex,
+            onClose: () => {
+                overlay.unmount();
+            }
+        });
+        overlay.mount(document.body);
+    };
 
     /**
      * @param {MessageListProps} props - Свойства компонента.
@@ -47,19 +77,89 @@ export class MessageList extends BaseComponent {
 
     /**
      * Обработчик скролла для подгрузки истории.
+     * Внешний .message-list — обычный flow (без column-reverse), поэтому
+     * scrollTop≈0 = «наверху списка» = пора грузить старые.
      * @private
      */
     private handleScroll = async () => {
         if (!this.element || this.isLoadingMore) return;
-        
 
-        const { scrollTop, scrollHeight, clientHeight } = this.element;
-        if (scrollTop + clientHeight >= scrollHeight - 10 && this.props.onLoadMore) {
-            this.isLoadingMore = true;
+
+        this.pinnedToBottom = this.isNearBottom();
+
+        if (!this.props.onLoadMore) return;
+        if (this.element.scrollTop > 40) return;
+
+        this.isLoadingMore = true;
+        const heightBefore = this.element.scrollHeight;
+        const topBefore = this.element.scrollTop;
+        try {
             await this.props.onLoadMore();
+            // Сохраняем визуальную позицию: смещаем scrollTop на дельту высоты,
+            // иначе пользователя «вышвырнет» в самый верх и подгрузка зациклится.
+            if (this.element) {
+                const heightAfter = this.element.scrollHeight;
+                this.element.scrollTop = topBefore + (heightAfter - heightBefore);
+            }
+        } finally {
             this.isLoadingMore = false;
         }
     };
+
+    private isNearBottom(): boolean {
+        if (!this.element) return false;
+        return this.element.scrollHeight - this.element.scrollTop - this.element.clientHeight < 40;
+    }
+
+    /**
+     * Находит первое непрочитанное чужое сообщение по приоритету источников:
+     * 1) lastReadMessageId из чата (наиболее точно — бэк-формула).
+     * 2) Флаг status у сообщения.
+     * 3) Последние N чужих сообщений (fallback по unreadCount).
+     */
+    private findFirstUnread(messages: FrontendMessage[]): FrontendMessage | null {
+        const lastReadId = this.props.lastReadMessageId ?? 0;
+        if (lastReadId > 0) {
+            return messages.find((m) => {
+                if (m.isOwn) return false;
+                const id = Number(m.id);
+                return Number.isFinite(id) && id > lastReadId;
+            }) ?? null;
+        }
+
+        const byStatus = messages.find((m) => !m.isOwn && m.status !== 'read');
+        if (byStatus) return byStatus;
+
+        const unreadCount = this.props.unreadCount ?? 0;
+        if (unreadCount <= 0) return null;
+
+        // Берём N последних чужих сообщений.
+        const incoming: FrontendMessage[] = [];
+        for (let i = messages.length - 1; i >= 0 && incoming.length < unreadCount; i -= 1) {
+            if (!messages[i].isOwn) incoming.push(messages[i]);
+        }
+        return incoming[incoming.length - 1] ?? null;
+    }
+
+    /**
+     * Подвешивает onload/onerror на все ещё не загруженные картинки внутри
+     * flex-container. При завершении загрузки — если пользователь всё ещё
+     * "приклеен к низу", добивает скролл до конца. Решает проблему "первое
+     * открытие чата показывает не самые новые сообщения": к моменту первого
+     * scrollToBottom() аватары/стикеры ещё грузятся, scrollHeight растёт уже после.
+     */
+    private anchorImagesToBottom(): void {
+        if (!this.flexContainer) return;
+        const imgs = this.flexContainer.querySelectorAll<HTMLImageElement>('img');
+        imgs.forEach((img) => {
+            if (img.complete && img.naturalWidth > 0) return;
+            const onSettle = () => {
+                if (this.pinnedToBottom) this.scrollToBottom();
+            };
+            img.addEventListener('load', onSettle, { once: true });
+            img.addEventListener('error', onSettle, { once: true });
+        });
+    }
 
     public updateMessage(id: string, text: string): boolean {
         const msg = this.messages.get(id);
@@ -103,13 +203,7 @@ export class MessageList extends BaseComponent {
         this.scrollToBottom();
     }
 
-    /**
-     * Обработчик события обновления профиля пользователя через WebSocket.
-     * Находит все аватарки этого пользователя в DOM и обновляет их URL.
-     * @param {any} payload - Данные обновленного профиля.
-     * @private
-     */
-    private handleUserUpdate = (payload: any): void => {
+    public updateUserAvatar(payload: UserUpdatePayload): void {
         if (!this.element || !payload.id) return;
 
         const avatarUrl = payload.avatar_url || payload.avatarUrl || payload.avatar;
@@ -123,7 +217,7 @@ export class MessageList extends BaseComponent {
         avatars.forEach((img: Element) => {
             (img as HTMLImageElement).src = fullAvatarUrl;
         });
-    };
+    }
 
     /**
      * @override
@@ -144,10 +238,18 @@ export class MessageList extends BaseComponent {
 
         this.element.addEventListener('scroll', this.handleScroll);
 
+        // Список сжимается, когда поднимается мобильная клавиатура. Если юзер
+        // был у нижнего края — удерживаем его там же, иначе свежие сообщения
+        // уходят под клавиатуру и становятся не видны.
+        if (typeof ResizeObserver !== 'undefined') {
+            this.resizeObserver = new ResizeObserver(() => {
+                if (this.pinnedToBottom) this.scrollToBottom();
+            });
+            this.resizeObserver.observe(this.element);
+        }
+
         this.setMessages(this.props.messages);
         this.scrollToBottom();
-
-        wsClient.subscribe('profile.Updated', this.handleUserUpdate);
     }
 
     /**
@@ -181,6 +283,9 @@ export class MessageList extends BaseComponent {
                 chatAvatarUrl: this.props.chatAvatarUrl,
                 onEdit: (id) => this.props.onRequestEdit?.(id, msgData.text),
                 onDelete: (id) => this.props.onRequestDelete?.(id),
+                onDownloadAttachment: this.props.onDownloadAttachment,
+                onMediaClick: this.handleMediaClick,
+                onContactClick: this.props.onContactClick,
             });
             messageComponent.mount(this.flexContainer!);
             this.messages.set(msgData.id, messageComponent);
@@ -190,7 +295,49 @@ export class MessageList extends BaseComponent {
             if (this.currentHighlightQuery) messageComponent.applyHighlight(this.currentHighlightQuery);
             this.childMessages.unshift(messageComponent);
         });
-        this.scrollToBottom();
+
+        this.unreadDividerEl?.remove();
+        this.unreadDividerEl = null;
+        const firstUnread = this.findFirstUnread(messages);
+        const unreadEl = firstUnread ? this.messages.get(firstUnread.id)?.element ?? null : null;
+
+        if (firstUnread && unreadEl && this.flexContainer) {
+            const divider = document.createElement('div');
+            divider.className = 'message-list__unread-divider';
+            divider.textContent = 'Новые сообщения';
+            this.flexContainer.insertBefore(divider, unreadEl.nextSibling);
+            this.unreadDividerEl = divider;
+
+            // Есть непрочитанные — всегда открываемся на divider'е, чтобы юзер
+            // сразу видел, с какого сообщения они начались. RAF + onload
+            // картинок повторно фиксируют скролл, пока высоты не финализируются.
+            this.pinnedToBottom = false;
+            const anchorAtDivider = () => {
+                if (!this.element || !this.unreadDividerEl) return;
+                this.element.scrollTop = Math.max(0, this.unreadDividerEl.offsetTop);
+            };
+            anchorAtDivider();
+            requestAnimationFrame(anchorAtDivider);
+
+            // Пока картинки/стикеры догружаются, offsetTop меняется — повторно
+            // докручиваем к divider'у, а не к низу.
+            if (this.flexContainer) {
+                const imgs = this.flexContainer.querySelectorAll<HTMLImageElement>('img');
+                imgs.forEach((img) => {
+                    if (img.complete && img.naturalWidth > 0) return;
+                    const onSettle = () => {
+                        if (!this.unreadDividerEl) return;
+                        anchorAtDivider();
+                    };
+                    img.addEventListener('load', onSettle, { once: true });
+                    img.addEventListener('error', onSettle, { once: true });
+                });
+            }
+        } else {
+            this.pinnedToBottom = true;
+            this.scrollToBottom();
+            this.anchorImagesToBottom();
+        }
     }
 
     /**
@@ -213,6 +360,9 @@ export class MessageList extends BaseComponent {
                 chatAvatarUrl: this.props.chatAvatarUrl,
                 onEdit: (id) => this.props.onRequestEdit?.(id, msgData.text),
                 onDelete: (id) => this.props.onRequestDelete?.(id),
+                onDownloadAttachment: this.props.onDownloadAttachment,
+                onMediaClick: this.handleMediaClick,
+                onContactClick: this.props.onContactClick,
             });
             const tempDiv = document.createElement('div');
             comp.mount(tempDiv);
@@ -254,8 +404,13 @@ export class MessageList extends BaseComponent {
             chatAvatarUrl: this.props.chatAvatarUrl,
             onEdit: (id) => this.props.onRequestEdit?.(id, newMessage.text),
             onDelete: (id) => this.props.onRequestDelete?.(id),
+            onDownloadAttachment: this.props.onDownloadAttachment,
+            onMediaClick: this.handleMediaClick,
+            onContactClick: this.props.onContactClick,
         });
-        
+
+        const wasAtBottom = this.isNearBottom();
+
         // Новое сообщение всегда в начало DOM (визуальный низ)
         messageComponent.mount(this.flexContainer!);
         if (this.currentHighlightQuery) messageComponent.applyHighlight(this.currentHighlightQuery);
@@ -264,7 +419,12 @@ export class MessageList extends BaseComponent {
             this.flexContainer!.prepend(messageComponent.element);
         }
         this.childMessages.unshift(messageComponent);
-        this.scrollToBottom();
+
+        if (newMessage.isOwn || wasAtBottom) {
+            this.pinnedToBottom = true;
+            this.scrollToBottom();
+            this.anchorImagesToBottom();
+        }
     }
 
     /**
@@ -305,18 +465,47 @@ export class MessageList extends BaseComponent {
         target.setId(newId);
         this.messages.set(newId, target);
         if (newTimestamp) target.updateTimestamp(newTimestamp);
+        target.setStatus('sent');
         return true;
     }
 
+    public getLatestMessageData(): FrontendMessage | null {
+        return this.childMessages[0]?.props.message ?? null;
+    }
+
     /**
-     * Прокручивает список сообщений до конца.
-     * Используется setTimeout, чтобы дать браузеру время отрисовать новые элементы
-     * и обновить scrollHeight контейнера.
+     * Возвращает самое свежее ВХОДЯЩЕЕ сообщение (не своё) с числовым id.
+     * Нужно, чтобы корректно отметить прочитанным даже когда последнее
+     * сообщение в чате — моё (иначе бэк не обновит last_read_message_id
+     * и после перезагрузки сообщения снова станут «непрочитанными»).
      */
-    public scrollToBottom(): void {
-        if (this.element) {
-            this.element.scrollTop = 0;
+    public getLatestIncomingMessageData(): FrontendMessage | null {
+        for (const child of this.childMessages) {
+            const msg = child.props.message;
+            if (!msg.isOwn && /^\d+$/.test(msg.id)) return msg;
         }
+        return null;
+    }
+
+    /**
+     * Отмечает «прочитано» все собственные сообщения с id <= lastReadId.
+     * Вызывается из обработчика `message.Read` когда кто-то другой прочитал.
+     */
+    public markOwnMessagesRead(lastReadId: number): void {
+        this.childMessages.forEach(msg => {
+            const id = Number(msg.getId());
+            if (msg.props.isOwn && !Number.isNaN(id) && id <= lastReadId) {
+                msg.setStatus('read');
+            }
+        });
+    }
+
+    public scrollToBottom(): void {
+        if (!this.element) return;
+        const el = this.element;
+        requestAnimationFrame(() => {
+            el.scrollTop = el.scrollHeight;
+        });
     }
 
     /**
@@ -326,10 +515,10 @@ export class MessageList extends BaseComponent {
         if (this.element) {
             this.element.removeEventListener('scroll', this.handleScroll);
         }
+        this.resizeObserver?.disconnect();
+        this.resizeObserver = null;
         this.childMessages.forEach(msg => msg.unmount());
         this.childMessages = [];
         this.messages.clear();
-
-        wsClient.unsubscribe('profile.Updated', this.handleUserUpdate);
     }
 }

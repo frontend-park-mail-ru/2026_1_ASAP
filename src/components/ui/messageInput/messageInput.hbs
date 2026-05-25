@@ -1,10 +1,16 @@
 <form class="message-input">
+    <div class="message-input__draft-attachments" data-component="draft-attachments"></div>
+    <div class="message-input__error" data-component="message-input-error" hidden></div>
     <div class="message-input__row">
-        <div class="message-input__input-container">
+        <div class="message-input__recorder-slot" data-component="recorder-slot" hidden></div>
+        <div class="message-input__input-container" data-component="input-container">
             <div data-component="message-input__sticker-button-container"></div>
-            <textarea class="message-input__textarea" name="messageText" placeholder="Введите сообщение..." rows="1"></textarea>
+            <textarea class="message-input__textarea" name="messageText" placeholder="Сообщение" rows="1"></textarea>
             <div data-component="upload-button-container"></div>
         </div>
-        <div class="message-input__send-button-container" data-component="send-button-container"></div>
+        <div class="message-input__controls">
+            <div class="message-input__record-button-container" data-component="record-button-container"></div>
+            <div class="message-input__send-button-container" data-component="send-button-container" hidden></div>
+        </div>
     </div>
 </form>

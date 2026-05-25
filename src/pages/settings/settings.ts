@@ -5,6 +5,7 @@ import { SearchForm } from "../../components/composite/searchForm/searchForm";
 import { SettingsListWrapper } from "../../components/composite/settingsListWrapper/settingsListWrapper";
 import { contactService } from "../../services/contactService";
 import { SettingsProfileWindow } from "../../components/composite/settingsProfileWindow/settingsProfileWindow";
+import { SubscriptionWindow } from "../../components/composite/subscriptionWindow/subscriptionWindow";
 import { SupportFrame } from "../../components/composite/supportFrame/supportFrame";
 import { ProfileAdditionalInfo, ProfileMainInfo } from "../../types/profile";
 
@@ -38,6 +39,7 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
     private placeHolder: HTMLElement | null = null;
     private activeSetting: string | null = null;
     private settingsWindow: SettingsProfileWindow | null = null;
+    private subscriptionWindow: SubscriptionWindow | null = null;
     private supportFrame: SupportFrame | null = null;
     private cachedUserProfile: {mainInfo: ProfileMainInfo, additionalInfo: ProfileAdditionalInfo} | null = null;
     private openSettingSeq = 0;
@@ -68,6 +70,7 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
             router: this.props.router,
             onProfileClick: () => this.openSetting('profile'),
             onSupportClick: () => this.openSetting('support'),
+            onSubscriptionClick: () => this.props.router.navigate('/settings/subscription'),
         });
         this.settingsListWrapper.mount(this.element!.querySelector('.settings-page__sidebar'));
 
@@ -131,7 +134,7 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
             ? this.element
             : this.element?.querySelector(".settings-page");
         if (!pageRoot) return;
-        const mainVisible = this.settingsWindow !== null || this.supportFrame !== null;
+        const mainVisible = this.settingsWindow !== null || this.supportFrame !== null || this.subscriptionWindow !== null;
         pageRoot.classList.toggle("settings-page--main-visible", mainVisible);
     }
 
@@ -158,6 +161,11 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
                 this.settingsWindow = null;
             }
 
+            if (this.subscriptionWindow) {
+                this.subscriptionWindow.unmount();
+                this.subscriptionWindow = null;
+            }
+
             if (this.supportFrame) {
                 this.supportFrame.unmount();
                 this.supportFrame = null;
@@ -179,6 +187,15 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
                     }
                 });
                 this.supportFrame.mount(this.mainContentArea!);
+                return;
+            }
+
+            if (activeSetting === "subscription") {
+                if (seq !== this.openSettingSeq) return;
+                this.subscriptionWindow = new SubscriptionWindow({
+                    closeWindow: this.closeSetting,
+                });
+                this.subscriptionWindow.mount(this.mainContentArea!);
                 return;
             }
 
@@ -218,9 +235,13 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
      * @private
      */
     private closeSetting = (): void => {
-        if (!this.settingsWindow) return;
-        this.settingsWindow.unmount();
+        if (!this.settingsWindow && !this.subscriptionWindow && !this.supportFrame) return;
+        this.settingsWindow?.unmount();
         this.settingsWindow = null;
+        this.subscriptionWindow?.unmount();
+        this.subscriptionWindow = null;
+        this.supportFrame?.unmount();
+        this.supportFrame = null;
         if (this.placeHolder) this.placeHolder.style.display = "block";
         this.activeSetting = null;
         this.settingsListWrapper.setActiveByKey("");
@@ -233,6 +254,8 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
         this.menuBar?.unmount();
         this.settingsWindow?.unmount();
         this.settingsWindow = null;
+        this.subscriptionWindow?.unmount();
+        this.subscriptionWindow = null;
         this.supportFrame?.unmount();
         this.supportFrame = null;
     }

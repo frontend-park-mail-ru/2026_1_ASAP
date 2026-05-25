@@ -1,4 +1,4 @@
-import { BasePage } from "./base/basePage";
+import { BasePage, IBasePageProps } from "./base/basePage";
 import { PageManager } from "./pageManager";
 import { authService } from "../services/authService";
 import { contactService } from "../services/contactService";
@@ -8,22 +8,23 @@ import { contactService } from "../services/contactService";
  * и делегирует открытие страниц в PageManager.
  */
 
-const protectedRoutes = ['/chats', '/admin'];
+const protectedRoutes = ['/chats', '/settings', '/admin', '/payment'];
 const adminOnlyRoutes = ['/admin'];
+export type PageConstructor = new (props?: IBasePageProps) => BasePage<IBasePageProps>;
+/** Loader: ленивая загрузка модуля страницы (code-splitting). */
+export type PageLoader = () => Promise<PageConstructor>;
+const paymentReturnRoute = '/payment/return';
 
 export class Router {
 
-    private routes: { [key: string]: typeof BasePage };
+    private routes: { [key: string]: PageLoader };
     public pageManager: PageManager | null = null;
 
     /**
-     * @param {Object<string, typeof BasePage>} routes - Маршруты.
+     * @param {Object<string, PageLoader>} routes - Маршруты с lazy-загружаемыми страницами.
      */
-    constructor(routes: { [key: string]: any }) {
-        /** @type {Object<string, typeof BasePage>} */
+    constructor(routes: { [key: string]: PageLoader }) {
         this.routes = routes;
-
-        /** @type {import PageManager|null} */
         this.pageManager = null;
     }
 
@@ -56,6 +57,15 @@ export class Router {
             return;
         }
 
+        if (isAuth && path === paymentReturnRoute) {
+            const params = new URLSearchParams(window.location.search);
+            params.set('payment_return', '1');
+            const query = params.toString();
+            history.replaceState({}, '', `/settings/subscription${query ? `?${query}` : ''}`);
+            await this.handleRoute();
+            return;
+        }
+
         // Защита маршрутов только для админа
         if (isAuth && adminOnlyRoutes.some(r => path.startsWith(r))) {
             const isAdmin = await contactService.isAdmin();
@@ -72,21 +82,22 @@ export class Router {
             return;
         }
 
-        let PageClass: typeof BasePage | null = null;
+        let loader: PageLoader | null = null;
 
         if (path.startsWith('/chats/') || path === '/chats') {
-            PageClass = this.routes['/chats'];
+            loader = this.routes['/chats'];
         } else if (path.startsWith('/contacts/') || path === '/contacts') {
-            PageClass = this.routes['/contacts'];
+            loader = this.routes['/contacts'];
         } else if (path.startsWith('/settings/') || path === '/settings') {
-            PageClass = this.routes['/settings'];
+            loader = this.routes['/settings'];
         } else if (path.startsWith('/admin') || path === '/admin') {
-            PageClass = this.routes['/admin'];
+            loader = this.routes['/admin'];
         } else {
-            PageClass = this.routes[path] ?? null;
+            loader = this.routes[path] ?? null;
         }
 
-        if (PageClass) {
+        if (loader) {
+            const PageClass = await loader();
             await this.pageManager.open(PageClass, { currentPath: path });
         } else {
             this.navigate(isAuth ? '/chats' : '/login');

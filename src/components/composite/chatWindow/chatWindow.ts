@@ -1,17 +1,18 @@
 import { BaseComponent } from '../../../core/base/baseComponent';
-import { BaseComponent as AnyComponent } from '../../../core/base/baseComponent';
 import template from './chatWindow.hbs';
+
+type ChildComponent = BaseComponent<object>;
 
 /**
  * @interface ChatWindowProps - Свойства компонента окна чата.
- * @property {AnyComponent} headerComponent - Компонент для отображения шапки чата.
- * @property {AnyComponent} messageListComponent - Компонент для отображения списка сообщений.
- * @property {AnyComponent} [inputComponent] - Компонент для формы ввода сообщения (не монтируется для каналов-только-чтения).
+ * @property {ChildComponent} headerComponent - Компонент для отображения шапки чата.
+ * @property {ChildComponent} messageListComponent - Компонент для отображения списка сообщений.
+ * @property {ChildComponent} [inputComponent] - Компонент для формы ввода сообщения (не монтируется для каналов-только-чтения).
  */
 interface ChatWindowProps {
-    headerComponent: AnyComponent;
-    messageListComponent: AnyComponent;
-    inputComponent?: AnyComponent;
+    headerComponent: ChildComponent;
+    messageListComponent: ChildComponent;
+    inputComponent?: ChildComponent;
 }
 
 /**
@@ -22,7 +23,7 @@ interface ChatWindowProps {
  * Конкретные реализации этих частей передаются через свойства (props),
  * что позволяет использовать этот компонент для разных типов чатов (диалоги, группы, каналы).
  */
-export class ChatWindow extends BaseComponent {
+export class ChatWindow extends BaseComponent<ChatWindowProps> {
 
     constructor(props: ChatWindowProps) {
         super(props);

@@ -2,6 +2,9 @@ import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseCompo
 import { ProfileMainInfo } from "../../../types/profile";
 import { Avatar } from "../../ui/avatar/avatar";
 import { SettingsFullNameForm } from "../settingsFullNameForm/settingsFullNameForm";
+import { presenceService } from "../../../services/presenceService";
+import { chatService } from "../../../services/chatService";
+import { PresenceState } from "../../../core/utils/wsClient";
 import template from './profileMainInfoBlock.hbs'
 
 /**
@@ -14,6 +17,7 @@ import template from './profileMainInfoBlock.hbs'
 interface ProfileMainInfoBlockProps extends IBaseComponentProps {
     profileMainInfo: ProfileMainInfo;
     type: "contact" | "private_profile";
+    userId?: number;
     onInput?: (firstName: string, lastName: string) => void;
     onAvatarEditClick?: (avatarWrapElement: HTMLElement) => void;
 };
@@ -25,6 +29,7 @@ interface ProfileMainInfoBlockProps extends IBaseComponentProps {
 export class ProfileMainInfoBlock extends BaseComponent<ProfileMainInfoBlockProps> {
     private profileAvatar: Avatar | null = null;
     private settingsFullNameForm: SettingsFullNameForm | null = null;
+    private unsubscribePresence: (() => void) | null = null;
 
     constructor(props: ProfileMainInfoBlockProps) {
         super(props);
@@ -33,8 +38,8 @@ export class ProfileMainInfoBlock extends BaseComponent<ProfileMainInfoBlockProp
     /**
      * @override
      */
-    public getTemplate(): (context?: any) => string {
-        return (context: any) => template({
+    public getTemplate(): (context?: object) => string {
+        return (context = {}) => template({
             ...this.props.profileMainInfo,
             isPrivate: this.props.type === "private_profile",
             ...context
@@ -71,8 +76,50 @@ export class ProfileMainInfoBlock extends BaseComponent<ProfileMainInfoBlockProp
                 });
                 this.settingsFullNameForm.mount(nameFormSlot as HTMLElement);
             }
+        } else if (this.props.userId) {
+            // contact view — статус под именем
+            const userId = this.props.userId;
+            this.unsubscribePresence = presenceService.subscribe(userId, (state) => {
+                this.renderPresence(state);
+            });
+            const cached = presenceService.get(userId);
+            if (cached) {
+                this.renderPresence(cached);
+            } else {
+                chatService.getUserProfile(userId);
+            }
         }
     };
+
+    private renderPresence(state: PresenceState): void {
+        const el = this.element?.querySelector('.contact-user-status');
+        if (!el) return;
+
+        if (state.isOnline) {
+            el.textContent = 'в сети';
+            el.classList.add('contact-user-status--online');
+            return;
+        }
+        el.classList.remove('contact-user-status--online');
+
+        if (state.lastSeenAt) {
+            el.textContent = `был(а) в сети ${this.formatRelative(state.lastSeenAt)}`;
+        } else {
+            el.textContent = 'был(а) в сети недавно';
+        }
+    }
+
+    private formatRelative(date: Date): string {
+        const diffMs = Date.now() - date.getTime();
+        const min = Math.floor(diffMs / 60_000);
+        if (min < 1) return 'только что';
+        if (min < 60) return `${min} мин назад`;
+        const hours = Math.floor(min / 60);
+        if (hours < 24) return `${hours} ч назад`;
+        const days = Math.floor(hours / 24);
+        if (days < 7) return `${days} дн назад`;
+        return date.toLocaleDateString('ru-RU');
+    }
 
     /**
      * Обработчик клика по аватарке.
@@ -93,6 +140,9 @@ export class ProfileMainInfoBlock extends BaseComponent<ProfileMainInfoBlockProp
         if (avatarContainer) {
             avatarContainer.removeEventListener('click', this.handleAvatarClick);
         }
+
+        this.unsubscribePresence?.();
+        this.unsubscribePresence = null;
 
         this.settingsFullNameForm?.unmount();
         this.profileAvatar?.unmount();

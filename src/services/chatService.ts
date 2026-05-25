@@ -1,11 +1,133 @@
-import { ChatDetail, FrontendMessage, User, DialogChat, GroupChat, ChannelChat, BackendChat, BackendMessage } from '../types/chat';
+import {
+    ChatDetail,
+    FrontendMessage,
+    User,
+    DialogChat,
+    GroupChat,
+    ChannelChat,
+    MessageAttachment,
+    OutgoingMessageAttachment,
+    MessageAttachmentType,
+} from '../types/chat';
 import { SearchChatHit, SearchChatsResult, SearchMessageHit, SearchMessagesResult } from '../types/search';
 import { httpClient } from '../core/utils/httpClient';
-import { wsClient, MessageDto, ChatInformationDto } from '../core/utils/wsClient';
+import { wsClient, MessageDto, ChatInformationDto, MessageAttachmentDto, WsErrorDto } from '../core/utils/wsClient';
 import { getFullUrl } from '../core/utils/url';
+import { presenceService } from './presenceService';
 import { offlineQueue, PendingMessage } from './offlineMessageQueue';
 
 import { BASE_URL } from '../core/utils/apiBase';
+
+interface BackendMessageLike {
+    id?: string | number;
+    sender?: Partial<User> & {
+        avatar?: string | null;
+        first_name?: string;
+        last_name?: string;
+    };
+    sender_id?: string | number;
+    login?: string;
+    avatar?: string | null;
+    first_name?: string;
+    last_name?: string;
+    text?: string;
+    created_at?: string;
+    attachments?: MessageAttachmentDto[];
+}
+
+interface SearchChatApiHit {
+    chat_id: string | number;
+    type: SearchChatHit['type'];
+    title?: string;
+    avatar_url?: string | null;
+    last_message_preview?: string;
+    last_message_at?: string;
+    unread_count?: number;
+}
+
+interface SearchMessageApiHit {
+    message_id: string | number;
+    chat_id: string | number;
+    sender_id: string | number;
+    text_preview?: string;
+    created_at: string;
+}
+
+interface ChatListApiItem {
+    id: string | number;
+    title: string;
+    type: ChatDetail['type'];
+    avatar?: string | null;
+    subscribers_count?: number;
+    last_message?: BackendMessageLike;
+    unread_count?: number;
+    last_read_message_id?: number;
+}
+
+interface ChatCreateBody {
+    id?: string | number;
+    chat_id?: string | number;
+}
+
+type MessageGetPayload = MessageDto[] | {
+    messages?: MessageDto[];
+    has_more?: boolean;
+    next_before_id?: number | null;
+};
+
+interface AttachmentUploadBody {
+    attachment_url: string;
+    object_key: string;
+    mime_type: string;
+    file_size: number;
+    file_name: string;
+}
+
+type AttachmentUploadResult =
+    | { success: true; attachment: MessageAttachment; outgoing: OutgoingMessageAttachment; body: AttachmentUploadBody }
+    | { success: false; status: number; errorCode?: string; errorMessage: string };
+
+function mapAttachmentDto(attachment: MessageAttachmentDto): MessageAttachment {
+    return {
+        type: attachment.type,
+        url: attachment.url,
+        fileName: attachment.file_name,
+        mimeType: attachment.mime_type,
+        fileSize: attachment.file_size,
+        contactUserId: attachment.contact_user_id,
+        contactFirstName: attachment.contact_first_name,
+        contactLastName: attachment.contact_last_name,
+        contactAvatarUrl: attachment.contact_avatar_url,
+    };
+}
+
+function toOutgoingAttachment(attachment: MessageAttachment): OutgoingMessageAttachment {
+    if (attachment.type === 'contact') {
+        return {
+            type: 'contact',
+            contact_user_id: attachment.contactUserId,
+        };
+    }
+
+    return {
+        type: attachment.type,
+        url: attachment.url,
+        file_name: attachment.fileName,
+    };
+}
+
+function attachmentsMatch(a?: OutgoingMessageAttachment[], b?: MessageAttachmentDto[]): boolean {
+    const left = a || [];
+    const right = b || [];
+    if (left.length !== right.length) return false;
+
+    return left.every((item, index) => {
+        const other = right[index];
+        if (!other || item.type !== other.type) return false;
+        if (item.type === 'contact') return item.contact_user_id === other.contact_user_id;
+        return item.url === other.url;
+    });
+}
 
 /**
  * @class ChatService
@@ -18,12 +140,23 @@ export class ChatService {
     private inFlightMessages = new Set<string>(); //сообщения, которые уже отправлены и ждут ответа
     private isFlushing = false; //блокировка от параллельного запуска 
 
+    private stripAttachmentLabel(text: string | undefined, attachments: MessageAttachmentDto[] | undefined): string {
+        const t = (text || '').trim();
+        if (!t || !attachments || attachments.length === 0) return t;
+
+        const labels = ['[Фото]', '[Видео]', '[Файл]', '[Контакт]', '[Вложение]'];
+        if (labels.includes(t)) {
+            return '';
+        }
+        return t;
+    }
+
     /**
      * Преобразует BackendMessage (REST) в FrontendMessage.
      * @param backendMessage - «сырой» объект сообщения из REST-ответа.
      * @param currentUserId  - ID или логин текущего пользователя для определения авторства.
      */
-    private convertToFrontendMessage(backendMessage: any, currentUserId?: string | number): FrontendMessage {
+    private convertToFrontendMessage(backendMessage: BackendMessageLike, currentUserId?: string | number): FrontendMessage {
         const login = backendMessage.sender?.login || backendMessage.login || (backendMessage.sender_id ? `user_${backendMessage.sender_id}` : 'unknown');
         
         return {
@@ -35,11 +168,12 @@ export class ChatService {
                 firstName: backendMessage.sender?.first_name || backendMessage.first_name,
                 lastName: backendMessage.sender?.last_name || backendMessage.last_name,
             },
-            text: backendMessage.text,
+            text: this.stripAttachmentLabel(backendMessage.text, backendMessage.attachments),
             timestamp: new Date(backendMessage.created_at || Date.now()),
             isOwn: (backendMessage.sender?.login === currentUserId) || 
                    (backendMessage.login === currentUserId) ||
                    (String(backendMessage.sender_id) === String(currentUserId)),
+            attachments: backendMessage.attachments?.map(mapAttachmentDto),
         };
     }
 
@@ -52,6 +186,7 @@ export class ChatService {
      * @returns {FrontendMessage} Сообщение в формате фронтенда.
      */
     public convertWsMessageDto(dto: MessageDto, currentUserId: number | string): FrontendMessage {
+        const stickerDto = dto.sticker;
         return {
             id: dto.id?.toString(),
             sender: {
@@ -61,10 +196,21 @@ export class ChatService {
                 firstName: dto.first_name,
                 lastName: dto.last_name,
             },
-            text: dto.text || '',
+            text: this.stripAttachmentLabel(dto.text, dto.attachments),
             timestamp: new Date(dto.created_at || Date.now()),
             isOwn: String(dto.sender_id) === String(currentUserId) || dto.login === currentUserId,
             isEdited: Boolean(dto.edited),
+            status: dto.read ? 'read' : 'sent',
+            attachments: dto.attachments?.map(mapAttachmentDto),
+            sticker: stickerDto ? {
+                id: stickerDto.id,
+                packId: stickerDto.pack_id,
+                fileUrl: stickerDto.file_url,
+                slug: stickerDto.slug,
+                emoji: stickerDto.emoji,
+                width: stickerDto.width,
+                height: stickerDto.height,
+            } : undefined,
         };
     }
 
@@ -77,13 +223,14 @@ export class ChatService {
      * @returns {ChatDetail} Объект чата для фронтенда.
      */
     public mapChatDtoToChat(dto: ChatInformationDto, currentUserId: number): ChatDetail {
-        const commonProps: any = {
+        const commonProps = {
             id: dto.id.toString(),
             title: dto.title,
             avatarUrl: getFullUrl(dto.avatar),
-            unreadCount: 0,
+            unreadCount: Number(dto.unread_count ?? 0),
+            lastReadMessageId: Number(dto.last_read_message_id ?? 0),
             type: dto.chat_type as 'dialog' | 'group' | 'channel',
-            owner_id: (dto as any).owner_id,
+            owner_id: dto.owner_id,
         };
 
         let chat: ChatDetail;
@@ -92,14 +239,14 @@ export class ChatService {
             case 'dialog':
                 chat = {
                     ...commonProps,
-                    interlocutor: { login: dto.title, avatarUrl: commonProps.avatarUrl },
+                    interlocutor: { id: 0, login: dto.title, avatarUrl: commonProps.avatarUrl },
                 } as DialogChat;
                 break;
             case 'group':
                 chat = {
                     ...commonProps,
                     members: [],
-                    owner: { id: (dto as any).owner_id || 0, login: 'owner', avatarUrl: getFullUrl() },
+                    owner: { id: dto.owner_id || 0, login: 'owner', avatarUrl: getFullUrl() },
                 } as GroupChat;
                 break;
             case 'channel':
@@ -109,16 +256,35 @@ export class ChatService {
                 } as ChannelChat;
                 break;
             default:
-                chat = { ...commonProps } as any;
+                chat = { ...commonProps, subscribersCount: 0 } as ChannelChat;
         }
 
         if (dto.last_message) {
+            const lastSticker = dto.last_message.sticker;
+            const stickerPreview = lastSticker
+                ? (lastSticker.emoji ? `${lastSticker.emoji} Стикер` : 'Стикер')
+                : '';
             chat.lastMessage = {
                 id: '',
-                text: dto.last_message.text,
+                text: this.stripAttachmentLabel(
+                  dto.last_message.text || stickerPreview,
+                  dto.last_message.attachments,
+                ),
                 timestamp: new Date(dto.last_message.created_at),
                 sender: { id: dto.last_message.sender_id } as User,
                 isOwn: Number(dto.last_message.sender_id) === Number(currentUserId),
+                attachments: dto.last_message.attachments?.map(mapAttachmentDto),
+                sticker: lastSticker
+                  ? {
+                      id: lastSticker.id,
+                      packId: lastSticker.pack_id,
+                      fileUrl: lastSticker.file_url,
+                      slug: lastSticker.slug,
+                      emoji: lastSticker.emoji,
+                      width: lastSticker.width,
+                      height: lastSticker.height,
+                    }
+                  : undefined,
             };
         }
 
@@ -135,34 +301,118 @@ export class ChatService {
      * @param senderId - ID текущего пользователя (нужен для оптимистичной модели и дедупа).
      * @returns PendingMessage с tempId для привязки оптимистичного DOM-узла.
      */
-    public async sendMessage(chatId: string, text: string, senderId: number): Promise<PendingMessage> {
+    public async sendMessage(
+        chatId: string,
+        text: string,
+        senderId: number,
+        attachments: OutgoingMessageAttachment[] = [],
+    ): Promise<PendingMessage> {
         const pending: PendingMessage = {
             tempId: `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
             chatId,
             text,
             senderId,
             createdAt: Date.now(),
+            attachments,
         };
 
         await offlineQueue.enqueue(pending);
         if (wsClient.isConnected()) {
             this.inFlightMessages.add(pending.tempId);
-            wsClient.sendIfOpen('message.Send', {
-                chat_id: Number(chatId),
-                text,
-            });
+            this.sendPendingMessage(pending);
         }
 
         if (!navigator.onLine && 'serviceWorker' in navigator && 'SyncManager' in window) {            
             try {
                 const reg = await navigator.serviceWorker.ready;
-                await (reg as any).sync.register('flush-messages');
+                await (reg as ServiceWorkerRegistration & {
+                    sync: { register: (tag: string) => Promise<void> };
+                }).sync.register('flush-messages');
             } catch (e){
                 console.warn('SyncManager failed', e);
             }
         }
 
         return pending;
+    }
+
+    private sendPendingMessage(message: PendingMessage): boolean {
+        const attachments = message.attachments || [];
+        if (attachments.length > 0) {
+            return wsClient.sendIfOpen('message.SendAttachments', {
+                chat_id: Number(message.chatId),
+                text: message.text,
+                attachments,
+            });
+        }
+
+        return wsClient.sendIfOpen('message.Send', {
+            chat_id: Number(message.chatId),
+            text: message.text,
+        });
+    }
+
+    public async uploadMessageAttachment(file: File, type: Extract<MessageAttachmentType, 'photo' | 'video' | 'file' | 'voice'>): Promise<AttachmentUploadResult> {
+        const form = new FormData();
+        form.append('file', file);
+
+        try {
+            const response = await httpClient.request(`${BASE_URL}/api/v1/messages/attachments/upload?type=${type}`, {
+                method: 'POST',
+                body: form,
+            });
+
+            const data = await response.json().catch(() => null);
+
+            if (!response.ok || data?.status !== 'success' || !data?.body?.attachment_url) {
+                const errorCode = data?.errors?.[0]?.code;
+                const errorMessage = data?.errors?.[0]?.message || this.getUploadErrorMessage(errorCode, response.status);
+                return {
+                    success: false,
+                    status: response.status,
+                    errorCode,
+                    errorMessage,
+                };
+            }
+
+            const body = data.body as AttachmentUploadBody;
+            const attachment: MessageAttachment = {
+                type,
+                url: body.attachment_url,
+                fileName: body.file_name,
+                mimeType: body.mime_type,
+                fileSize: body.file_size,
+            };
+
+            return {
+                success: true,
+                body,
+                attachment,
+                outgoing: toOutgoingAttachment(attachment),
+            };
+        } catch (error) {
+            return {
+                success: false,
+                status: 0,
+                errorMessage: error instanceof Error ? error.message : 'Не удалось загрузить вложение',
+            };
+        }
+    }
+
+    private getUploadErrorMessage(errorCode: string | undefined, status: number): string {
+        switch (errorCode) {
+            case 'FILE_TOO_LARGE':
+                return 'Файл превышает допустимый размер';
+            case 'INVALID_FILE_FORMAT':
+                return 'Этот формат файла не поддерживается';
+            case 'EMPTY_FILE':
+                return 'Нельзя прикрепить пустой файл';
+            case 'UNAUTHORIZED':
+                return 'Нужно войти в аккаунт заново';
+            default:
+                if (errorCode?.startsWith('CSRF_')) return 'Сессия устарела. Повторите загрузку';
+                return status ? `Не удалось загрузить файл (код ${status})` : 'Не удалось загрузить файл';
+        }
     }
 
     public async searchChats(
@@ -187,7 +437,7 @@ export class ChatService {
             const data = await response.json();
             if (data.status !== 'success' || !data.body) return null;
 
-            const items: SearchChatHit[] = (data.body.items || []).map((c: any) => ({
+            const items: SearchChatHit[] = (data.body.items || []).map((c: SearchChatApiHit) => ({
                 chatId: String(c.chat_id),
                 type: c.type,
                 title: c.title || '',
@@ -230,6 +480,17 @@ export class ChatService {
     };
 
     /**
+     * Отмечает сообщение как прочитанное. Курсор сервера двигается только вперёд.
+     */
+    public markMessageRead(chatId: string, messageId: string): boolean {
+        if (!wsClient.isConnected()) return false;
+        return wsClient.sendIfOpen('message.MarkRead', {
+            chat_id: Number(chatId),
+            message_id: Number(messageId),
+        });
+    }
+
+    /**
      * Пере-проталкивает все pending-сообщения в WebSocket.
      * Вызывается при `online`, `system.Connected` и сообщении от SW.
      * Элементы удаляются не здесь, а при приходе серверного broadcast `message.New` (см. resolveServerMessage).
@@ -249,10 +510,7 @@ export class ChatService {
                 
                 this.inFlightMessages.add(m.tempId);
                 
-                const sent = wsClient.sendIfOpen('message.Send', {
-                    chat_id: Number(m.chatId),
-                    text: m.text,
-                });
+                const sent = this.sendPendingMessage(m);
                 
                 // Если внезапно сокет закрылся во время цикла
                 if (!sent) {
@@ -284,13 +542,42 @@ export class ChatService {
 
         const pending = await offlineQueue.getByChat(dto.chat_id.toString());
         const unescapedText = this.unescapeHtml(dto.text ?? '');
-        const match = pending.find((m) => m.text === unescapedText);
+        const dtoAttachments = dto.attachments || [];
+        const match = pending.find((m) => {
+            const hasAttachments = (m.attachments || []).length > 0;
+            if (m.text !== unescapedText && !(hasAttachments && m.text === '')) return false;
+            return attachmentsMatch(m.attachments, dtoAttachments);
+        });
 
         if (!match) return null;
 
         await offlineQueue.remove(match.tempId);
         this.inFlightMessages.delete(match.tempId);
 
+        return match.tempId;
+    }
+
+    public async rejectPendingMessageFromError(error: WsErrorDto, activeChatId?: string | null): Promise<string | null> {
+        const exactTempId = error.temp_id || error.tempId || error.client_temp_id;
+        if (exactTempId) {
+            await offlineQueue.remove(exactTempId);
+            this.inFlightMessages.delete(exactTempId);
+            return exactTempId;
+        }
+
+        const chatId = error.chat_id !== undefined ? String(error.chat_id) : activeChatId;
+        if (!chatId) return null;
+
+        const pending = await offlineQueue.getByChat(chatId);
+        const match = pending
+            .slice()
+            .reverse()
+            .find(message => this.inFlightMessages.has(message.tempId));
+
+        if (!match) return null;
+
+        await offlineQueue.remove(match.tempId);
+        this.inFlightMessages.delete(match.tempId);
         return match.tempId;
     }
 
@@ -325,7 +612,7 @@ export class ChatService {
                 return [];
             }
 
-            const frontendChats: ChatDetail[] = data.body.map((chat: any) => {
+            const frontendChats: ChatDetail[] = data.body.map((chat: ChatListApiItem) => {
                 let frontendChat: ChatDetail;
 
                 const commonProps = {
@@ -333,7 +620,8 @@ export class ChatService {
                     title: chat.title,
                     type: chat.type,
                     avatarUrl: getFullUrl(chat.avatar),
-                    unreadCount: 0,
+                    unreadCount: Number(chat.unread_count ?? 0),
+                    lastReadMessageId: Number(chat.last_read_message_id ?? 0),
                 };
 
                 switch (chat.type) {
@@ -351,7 +639,7 @@ export class ChatService {
                         frontendChat = {
                             ...commonProps,
                             members: [], // Пока бек не отдает список участников
-                            owner: { login: 'owner', avatarUrl: getFullUrl() },
+                            owner: { id: 0, login: 'owner', avatarUrl: getFullUrl() },
                         } as GroupChat;
                         break;
                     case 'channel':
@@ -361,7 +649,7 @@ export class ChatService {
                         } as ChannelChat;
                         break;
                     default:
-                        frontendChat = { ...commonProps } as any;
+                        frontendChat = { ...commonProps, subscribersCount: 0 } as ChannelChat;
                 }
 
                 // Бэкенд может прислать пустую заглушку (zero-value) для нового чата, где id = 0 или объект пуст
@@ -458,12 +746,12 @@ export class ChatService {
         return new Promise((resolve) => {
             const timeoutMs = 5000;
             
-            const handleGetMessages = (payload: any) => {
+            const handleGetMessages = (payload: MessageGetPayload) => {
                 clearTimeout(timeout);
                 wsClient.unsubscribe('message.Get', handleGetMessages);
                 
                 // Бэкенд возвращает объект { messages: MessageDto[], has_more: boolean, next_before_id: number }
-                const messagesArray = payload && payload.messages ? payload.messages : payload;
+                const messagesArray = Array.isArray(payload) ? payload : payload.messages;
 
                 if (Array.isArray(messagesArray)) {
                     const messages = messagesArray.map((msg: MessageDto) => 
@@ -472,8 +760,8 @@ export class ChatService {
                     
                     resolve({ 
                         messages, 
-                        hasMore: payload.has_more || false, 
-                        nextBeforeId: payload.next_before_id || null 
+                        hasMore: Array.isArray(payload) ? false : payload.has_more || false,
+                        nextBeforeId: Array.isArray(payload) ? null : payload.next_before_id || null
                     });
                 } else {
                     resolve({ messages: [], hasMore: false, nextBeforeId: null });
@@ -504,7 +792,7 @@ export class ChatService {
      * @param title - Заголовок чата (необязательно).
      * @returns Объект с результатом операции: флаг успеха, HTTP статус и тело ответа.
      */
-    public async createChat(members_id: number[], type: "dialog" | "group" | "channel", title?: string): Promise<{ success: boolean; status: number; body?: any }> {
+    public async createChat(members_id: number[], type: "dialog" | "group" | "channel", title?: string): Promise<{ success: boolean; status: number; body?: ChatCreateBody }> {
         try {
             const response = await httpClient.request(`${BASE_URL}/api/v1/chats`, {
                 method: 'POST',
@@ -518,7 +806,7 @@ export class ChatService {
                 })
             });
 
-            let body: any = null;
+            let body: ChatCreateBody | undefined;
             if (response.ok || response.status === 409) {
                 try {
                     const data = await response.json();
@@ -759,7 +1047,7 @@ export class ChatService {
         const dialogs = chats.filter(c => c.type === 'dialog');
 
         if (targetLogin) {
-            const byLogin = dialogs.find(c => (c as any).interlocutor?.login === targetLogin);
+            const byLogin = dialogs.find(c => c.type === 'dialog' && c.interlocutor?.login === targetLogin);
             if (byLogin) return byLogin.id;
         }
 
@@ -857,6 +1145,12 @@ export class ChatService {
                         firstName: profile.first_name,
                         lastName: profile.last_name
                     };
+
+                    // заполняем presence-кэш из профиля
+                    presenceService.seed(userId, {
+                        isOnline: Boolean(profile.is_online),
+                        lastSeenAt: profile.last_seen ? new Date(profile.last_seen) : undefined,
+                    });
                     this.profilesCache.set(userId, user);
                     return user;
                 }
@@ -893,7 +1187,7 @@ export class ChatService {
             const data = await response.json();
             if (data.status !== 'success' || !data.body) return null;
 
-            const items: SearchMessageHit[] = (data.body.items || []).map((m: any) => ({
+            const items: SearchMessageHit[] = (data.body.items || []).map((m: SearchMessageApiHit) => ({
                 messageId: String(m.message_id),
                 chatId: String(m.chat_id),
                 senderId: Number(m.sender_id),

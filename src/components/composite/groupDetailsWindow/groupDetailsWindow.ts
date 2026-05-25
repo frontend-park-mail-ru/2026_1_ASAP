@@ -1,4 +1,4 @@
-import { BaseComponent } from '../../../core/base/baseComponent';
+import { BaseComponent, IBaseComponentProps } from '../../../core/base/baseComponent';
 import { ContactItem } from '../contactItem/contactItem';
 import { Button } from '../../ui/button/button';
 import { Avatar } from '../../ui/avatar/avatar';
@@ -7,7 +7,6 @@ import { ActionHeader } from '../../ui/actionHeader/actionHeader';
 import template from './groupDetailsWindow.hbs';
 import './groupDetailsWindow.scss';
 import { ConfirmModal } from '../confirmModal/confirmModal';
-import { chatService } from '../../../services/chatService';
 
 
 const MAX_TITLE_LENGTH = 100;
@@ -28,8 +27,8 @@ export interface GroupDetailsWindowProps {
     onBack: () => void;
     onLeaveGroup: () => void;
 
-    /** @deprecated Заменён на onGroupUpdated. Оставлен для обратной совместимости. */
-    onUpdateGroup?: (newName: string, newAvatar?: File) => void;
+    /** Вызывает внешний сценарий сохранения названия/аватара группы */
+    onUpdateGroup?: (newName?: string, newAvatar?: File) => Promise<{ success: boolean; errorCode?: string }>;
 
     /** Вызывается после успешного обновления группы на сервере */
     onGroupUpdated?: () => void;
@@ -41,9 +40,9 @@ export interface GroupDetailsWindowProps {
 
 /**
  * @class GroupDetailsWindow
- * @description Умный компонент для отображения и редактирования информации о группе.
+ * @description Компонент для отображения и редактирования информации о группе.
  * Поддерживает изменение названия и аватарки с клиентской валидацией,
- * использует реальные API-запросы через chatService.
+ * а сохранение делегирует наружу через callback.
  */
 export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & { isEditing?: boolean; isSaving?: boolean }> {
     private headerComponent: ActionHeader | null = null;
@@ -266,7 +265,7 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
         this.membersComponents = [];
 
         this.props.members.forEach(member => {
-            let rightControl: BaseComponent<any> | undefined = undefined;
+            let rightControl: BaseComponent<IBaseComponentProps> | undefined = undefined;
 
             if (this.props.isEditing && this.props.currentUserRole === 'owner') {
                 rightControl = new Button({
@@ -331,7 +330,7 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
     /**
      * Обработчик нажатия кнопки «Готово» в режиме редактирования.
      * Определяет, что изменилось (название/аватарка/оба), выполняет валидацию
-     * и отправляет соответствующие API-запросы через chatService.
+     * и передаёт сохранение наружу через callback.
      */
     private async handleSubmit(): Promise<void> {
         const newName = this.nameInput?.value.trim() || '';
@@ -352,21 +351,16 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
             return;
         }
 
-        const promises: Promise<boolean>[] = [];
-
-        if (titleChanged) {
-            promises.push(chatService.updateChatTitle(this.props.groupId, newName));
-        }
-        if (avatarChanged && this.selectedAvatarFile) {
-            promises.push(chatService.updateChatAvatar(this.props.groupId, this.selectedAvatarFile));
-        }
-
         this.setLoadingState(true);
         try {
-            const results = await Promise.all(promises);
-            const allSuccess = results.every(r => r === true);
+            const result = this.props.onUpdateGroup
+                ? await this.props.onUpdateGroup(
+                    titleChanged ? newName : undefined,
+                    avatarChanged ? this.selectedAvatarFile! : undefined,
+                )
+                : { success: false };
 
-            if (allSuccess) {
+            if (result.success) {
                 if (titleChanged) {
                     this.props.groupName = newName;
                 }
@@ -378,9 +372,12 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
                     this.props.onGroupUpdated();
                 }
             } else {
-                this.showAlert('Не удалось сохранить изменения. Попробуйте ещё раз', () => {
-                    this.setEditing(true);
-                });
+                const message = result.errorCode === 'YOU_CANT_CHANGE_TITLE'
+                    ? 'Название группы может менять только владелец'
+                    : result.errorCode === 'YOU_CANT_CHANGE_AVATAR'
+                        ? 'Аватар группы может менять только владелец'
+                        : 'Не удалось сохранить изменения. Попробуйте ещё раз';
+                this.showAlert(message, () => this.setEditing(true));
             }
         } catch (error) {
             console.error("Ошибка при сохранении группы:", error);

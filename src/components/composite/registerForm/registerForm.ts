@@ -29,7 +29,7 @@ export class RegisterForm extends BaseForm<RegisterFormProps> {
         super(props);
     }
 
-    public getTemplate(): (context?: any) => string {
+    public getTemplate(): (context?: object) => string {
         return template;
     }
 

@@ -2,8 +2,8 @@
  * @file themeService.ts
  * @description Сервис управления темой оформления (light / dark).
  *              Хранит выбор пользователя в localStorage, применяет атрибут
- *              data-theme на <html> и слушает системные изменения
- *              (prefers-color-scheme), пока пользователь не сделал явный выбор.
+ *              data-theme на <html>. Без сохранённого выбора пользователя
+ *              всегда применяет тёмную тему.
  */
 
 export type Theme = 'dark' | 'light';
@@ -14,8 +14,6 @@ const STORAGE_KEY = 'theme';
 class ThemeService {
     private current: Theme = 'dark';
     private listeners = new Set<ThemeListener>();
-    private mediaQuery: MediaQueryList | null = null;
-    private hasUserOverride = false;
     private initialized = false;
 
     public init(): void {
@@ -23,14 +21,11 @@ class ThemeService {
         this.initialized = true;
 
         const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-        this.hasUserOverride = stored === 'light' || stored === 'dark';
 
-        if (this.hasUserOverride) {
+        if (stored === 'light' || stored === 'dark') {
             this.current = stored as Theme;
-        } else if (window.matchMedia) {
-            this.mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-            this.current = this.mediaQuery.matches ? 'dark' : 'light';
-            this.mediaQuery.addEventListener('change', this.handleSystemChange);
+        } else {
+            this.current = 'dark';
         }
 
         this.apply(this.current);
@@ -41,7 +36,6 @@ class ThemeService {
     }
 
     public set(theme: Theme): void {
-        this.hasUserOverride = true;
         localStorage.setItem(STORAGE_KEY, theme);
         this.apply(theme);
     }
@@ -62,11 +56,6 @@ class ThemeService {
         document.documentElement.dataset.theme = theme;
         this.listeners.forEach(l => l(theme));
     }
-
-    private handleSystemChange = (e: MediaQueryListEvent): void => {
-        if (this.hasUserOverride) return;
-        this.apply(e.matches ? 'dark' : 'light');
-    };
 }
 
 export const themeService = new ThemeService();

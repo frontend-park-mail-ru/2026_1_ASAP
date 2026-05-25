@@ -17,8 +17,24 @@ import { authService } from "./services/authService";
 import { themeService } from "./services/themeService";
 import "./styles/main.scss";
 import "./core/handlebars";
+import { presenceService } from "./services/presenceService";
+import { notificationService } from "./services/notificationService";
 
 themeService.init();
+presenceService.init();
+notificationService.init();
+
+const updateAppViewport = (): void => {
+    const vv = window.visualViewport;
+    const h = vv?.height ?? window.innerHeight;
+    const top = vv?.offsetTop ?? 0;
+    document.documentElement.style.setProperty('--app-height', `${h}px`);
+    document.documentElement.style.setProperty('--app-offset-top', `${top}px`);
+};
+updateAppViewport();
+window.visualViewport?.addEventListener('resize', updateAppViewport);
+window.visualViewport?.addEventListener('scroll', updateAppViewport);
+window.addEventListener('orientationchange', updateAppViewport);
 
 /**
  * @function
@@ -35,9 +51,34 @@ document.addEventListener("DOMContentLoaded", async () => {
         app.router.navigate('/login');
     });
 
+    // клик по системному уведомлению → переход в соответствующий чат
+    window.addEventListener('notification:click', (e: Event) => {
+        const ce = e as CustomEvent<{ chatId: string }>;
+        if (ce.detail?.chatId) {
+            app.router.navigate(`/chats/${ce.detail.chatId}`);
+        }
+    });
+
     await app.start();
 
     if ("serviceWorker" in navigator && window.isSecureContext) {
+        let hasController = Boolean(navigator.serviceWorker.controller);
+        let refreshing = false;
+
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!hasController) {
+                hasController = true;
+                return;
+            }
+
+            if (refreshing) {
+                return;
+            }
+
+            refreshing = true;
+            window.location.reload();
+        });
+
         window.addEventListener("load", () => {
             navigator.serviceWorker
                 .register("/service-worker.js")

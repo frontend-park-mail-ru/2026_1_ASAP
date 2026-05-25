@@ -1,5 +1,7 @@
 import { httpClient } from "../core/utils/httpClient";
 import { contactService } from "./contactService";
+import { wsClient } from "../core/utils/wsClient";
+import { notificationService } from "./notificationService";
 
 import { BASE_URL } from '../core/utils/apiBase';
 
@@ -82,7 +84,10 @@ class AuthService {
                     const errorData = await response.json();
 
                     if (errorData.errors && Array.isArray(errorData.errors)) {
-                        errorMessage = errorData.errors.map((e: any) => e.message).join('; ');
+                        errorMessage = errorData.errors
+                            .map((e: { message?: string }) => e.message)
+                            .filter(Boolean)
+                            .join('; ');
 
                     } else if (errorData.message){
                         errorMessage = errorData.message;
@@ -97,8 +102,9 @@ class AuthService {
             const result = await response.json();
             return { success: true, data: result };
 
-        } catch (error: any) {
-            return { success: false, error: error.message || 'Неизвестная ошибка сети' };
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Неизвестная ошибка сети';
+            return { success: false, error: message };
         }
     }
 
@@ -112,6 +118,7 @@ class AuthService {
         const result = await this.sendRequest('login', { login, password });
         if (result.success) {
             this.isAuthStatus = true;
+            await this.startSessionServices();
         }
         contactService.clearCache();
         return result;
@@ -128,6 +135,7 @@ class AuthService {
         const result = await this.sendRequest('register', { email, login, password });
         if (result.success) {
             this.isAuthStatus = true;
+            await this.startSessionServices();
         }
         contactService.clearCache();
         return result;
@@ -142,7 +150,23 @@ class AuthService {
         httpClient.clearToken();
         this.isAuthStatus = false;
         contactService.clearCache();
+        wsClient.disconnect();
+        notificationService.detach();
         return result;
+    }
+
+    /**
+     * Запускает сервисы, привязанные к авторизованной сессии:
+     * WS-коннект и глобальный listener уведомлений.
+     */
+    private async startSessionServices(): Promise<void> {
+        wsClient.connect();
+        try {
+            const profile = await contactService.getMyProfile();
+            notificationService.attach(profile.additionalInfo.id);
+        } catch (e) {
+            console.warn('authService: не удалось получить профиль для уведомлений', e);
+        }
     }
 }
 

@@ -2,7 +2,7 @@ import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseCompo
 import { supportService, ComplaintAnalytics } from "../../../services/supportService";
 import template from "./supportStatTab.hbs";
 
-interface SupportStatTabProps extends IBaseComponentProps {}
+type SupportStatTabProps = IBaseComponentProps;
 
 export class SupportStatTab extends BaseComponent<SupportStatTabProps> {
     private isMounted = false;

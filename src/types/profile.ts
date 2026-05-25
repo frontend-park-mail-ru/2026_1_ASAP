@@ -30,6 +30,7 @@ export interface BackendProfile {
     avatar?: string;
     bio?: string;
     last_seen?: string;
+    is_online: boolean;
 }
 
 /**

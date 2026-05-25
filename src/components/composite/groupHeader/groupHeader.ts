@@ -5,18 +5,12 @@ import { Button } from '../../ui/button/button';
 import template from './groupHeader.hbs'
 import { DeleteChatMenu } from '../deleteChatMenu/deleteChatMenu';
 import { ConfirmModal } from '../confirmModal/confirmModal';
-import { chatService } from '../../../services/chatService';
-import {
-    wsClient,
-    ChatUpdatedAvatarDto,
-    ChatUpdatedTitleDto,
-    ChatUpdatedMembersDto,
-} from '../../../core/utils/wsClient';
 import { getFullUrl } from '../../../core/utils/url';
 
 interface GroupHeaderProps extends IBaseComponentProps {
     chat: GroupChat;
     currentUserRole: 'owner' | 'member';
+    membersCount: number;
     onDeleteChat?: () => void;
     onLeaveGroup?: () => void;
     onOpenGroupInfo?: () => void;
@@ -31,10 +25,12 @@ export class GroupHeader extends BaseComponent<GroupHeaderProps> {
     private confirmModal: ConfirmModal | null = null;
     private isDeleteMenuOpen: boolean = false;
     private isDeleteConfirmationOpen: boolean = false;
+    private membersCount = 0;
 
     constructor(props: GroupHeaderProps) {
         super(props);
         this.tempName = 'components/composite/groupHeader/groupHeader';
+        this.membersCount = props.membersCount;
     }
 
     getTemplate() {
@@ -116,54 +112,37 @@ export class GroupHeader extends BaseComponent<GroupHeaderProps> {
             this.settingsButton.mount(settingsSlot as HTMLElement);
         }
 
-        // Загружаем количество участников, если это группа
-        this.loadMemberCount();
-
-        wsClient.subscribe<ChatUpdatedAvatarDto>('chat.Updated.Avatar', this.handleAvatarUpdated);
-        wsClient.subscribe<ChatUpdatedTitleDto>('chat.Updated.Title', this.handleTitleUpdated);
-        wsClient.subscribe<ChatUpdatedMembersDto>('chat.Updated.Members', this.handleMembersUpdated);
+        this.setMemberCount(this.membersCount);
     }
 
-    private isTargetChat(chatId: number): boolean {
-        return !!this.props.chat && String(this.props.chat.id) === String(chatId);
-    }
-
-    private handleAvatarUpdated = (payload: ChatUpdatedAvatarDto): void => {
-        if (!this.isTargetChat(payload.chat_id)) return;
-        const avatarImg = this.element?.querySelector('.group-header__avatar') as HTMLImageElement;
+    public setAvatar(avatarUrl?: string | null): void {
+        const avatarImg = this.element?.querySelector('.group-header__avatar') as HTMLImageElement | null;
         if (avatarImg) {
-            avatarImg.src = payload.avatar_url
-                ? getFullUrl(payload.avatar_url)
+            avatarImg.src = avatarUrl
+                ? getFullUrl(avatarUrl)
                 : '/assets/images/avatars/defaultGroup.svg';
         }
-        this.props.chat.avatarUrl = payload.avatar_url;
-    };
+        this.props.chat.avatarUrl = avatarUrl || undefined;
+    }
 
-    private handleTitleUpdated = (payload: ChatUpdatedTitleDto): void => {
-        if (!this.isTargetChat(payload.chat_id)) return;
+    public setTitle(title: string): void {
         const nameEl = this.element?.querySelector('.group-header__name');
-        if (nameEl) nameEl.textContent = payload.title;
-        this.props.chat.title = payload.title;
-    };
+        if (nameEl) nameEl.textContent = title;
+        this.props.chat.title = title;
+    }
 
-    private handleMembersUpdated = (payload: ChatUpdatedMembersDto): void => {
-        if (!this.isTargetChat(payload.chat_id)) return;
-        // подгрузим актуальное количество — список участников мог измениться
-        this.loadMemberCount();
-    };
+    public applyMembersDelta(type: 'added' | 'deleted', delta: number): void {
+        this.setMemberCount(type === 'added'
+            ? this.membersCount + delta
+            : Math.max(0, this.membersCount - delta));
+    }
 
-    /**
-     * Загружает количество участников группы и обновляет UI.
-     */
-    private async loadMemberCount(): Promise<void> {
-        if (!this.element) return;
+    public setMemberCount(count: number): void {
+        this.membersCount = count;
         
-        const countElement = this.element.querySelector('.group-header__members');
+        const countElement = this.element?.querySelector('.group-header__members');
         if (!countElement) return;
 
-        const members = await chatService.getChatMembers(this.props.chat.id);
-        const count = members.length;
-        
         countElement.textContent = `${count} ${this.getMemberWord(count)}`;
     }
 
@@ -236,9 +215,5 @@ export class GroupHeader extends BaseComponent<GroupHeaderProps> {
         this.settingsButton?.unmount();
         this.deleteChatMenu?.unmount();
         this.confirmModal?.unmount();
-
-        wsClient.unsubscribe('chat.Updated.Avatar', this.handleAvatarUpdated);
-        wsClient.unsubscribe('chat.Updated.Title', this.handleTitleUpdated);
-        wsClient.unsubscribe('chat.Updated.Members', this.handleMembersUpdated);
     }
 }

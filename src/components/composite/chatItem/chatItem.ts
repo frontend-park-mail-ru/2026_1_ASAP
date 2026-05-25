@@ -1,9 +1,8 @@
 import { BaseForm, IBaseFormProps } from "../../../core/base/baseForm";
 import { Avatar } from "../../ui/avatar/avatar";
 import { ChatInfo } from "../../ui/chatInfo/chatInfo";
-import { MetaChatInfo } from "../../ui/metaChatInfo/metaChatInfo";
-import { Chat as ChatType } from '../../../types/chat';
-import { chatService } from "../../../services/chatService";    
+import { MetaChatInfo, formatUnreadBadge } from "../../ui/metaChatInfo/metaChatInfo";
+import { Chat as ChatType, FrontendMessage } from '../../../types/chat';
 import template from "./chatItem.hbs";
 import { escapeHtml } from "../../../core/utils/escape";
 
@@ -36,7 +35,6 @@ export class ChatItem extends BaseForm<ChatItemProps> {
     private avatar: Avatar | null = null;
     private chatInfo: ChatInfo | null = null;
     private metaChatInfo: MetaChatInfo | null = null;
-    private loadingSenderIds: Set<number> = new Set();
 
     constructor(props: ChatItemProps) {
         super(props);
@@ -68,11 +66,11 @@ export class ChatItem extends BaseForm<ChatItemProps> {
     /**
      * Возвращает отображаемое имя отправителя сообщения.
      * Приоритет: "Вы" (если isOwn), firstName + lastName, иначе login.
-     * @param {any} message - Объект сообщения.
+     * @param {FrontendMessage} message - Объект сообщения.
      * @returns {string} Имя для отображения.
      * @private
      */
-    private getSenderDisplayName(message?: any): string | null {
+    private getSenderDisplayName(message?: FrontendMessage): string | null {
         if (!message) return null;
         if (message.isOwn) return "Вы";
 
@@ -86,44 +84,24 @@ export class ChatItem extends BaseForm<ChatItemProps> {
         return fullName || login;
     }
 
-    /**
-     * Асинхронно загружает профиль отправителя и обновляет DOM.
-     * @param {number} senderId - ID отправителя.
-     * @private
-     */
-    private async fetchAndSetSenderName(senderId: number) {
-        if (this.loadingSenderIds.has(senderId)) {
-            return;
-        }
-        this.loadingSenderIds.add(senderId);
+    private getMessagePreview(message?: FrontendMessage): string {
+        if (!message) return '';
+        if (message.text) return message.text;
 
-        try {
-            const profile = await chatService.getUserProfile(senderId);
-            if (profile && this.props.chat.lastMessage) {
-                this.props.chat.lastMessage.sender = {
-                    ...this.props.chat.lastMessage.sender,
-                    ...profile
-                };
+        const attachment = message.attachments?.[0];
+        if (!attachment) return '';
 
-                if (this.avatar && profile.avatarUrl) {
-                    this.avatar.props.src = profile.avatarUrl;
-                    const img = this.avatar.element?.querySelector('img');
-                    if (img) {
-                        img.src = profile.avatarUrl;
-                    }
-                }
-
-                const msgTextEl = this.element?.querySelector('.msg-text');
-                if (msgTextEl) {
-                    const senderName = this.getSenderDisplayName(this.props.chat.lastMessage);
-                    if (senderName) {
-                        msgTextEl.innerHTML = `<span class="sender-group">${escapeHtml(senderName)}: </span>${escapeHtml(this.props.chat.lastMessage.text)}`;
-                    }
-                }
-            }
-        } catch (error) {
-        } finally {
-            this.loadingSenderIds.delete(senderId);
+        switch (attachment.type) {
+            case 'photo':
+                return 'Фото';
+            case 'video':
+                return 'Видео';
+            case 'file':
+                return attachment.fileName || 'Файл';
+            case 'contact':
+                return [attachment.contactFirstName, attachment.contactLastName].filter(Boolean).join(' ') || 'Контакт';
+            default:
+                return '';
         }
     }
 
@@ -150,19 +128,10 @@ export class ChatItem extends BaseForm<ChatItemProps> {
             this.chatInfo = new ChatInfo({
                 class: this.typeToClass(this.props.chat.type),
                 name: this.props.chat.title,
-                lastMessage: this.props.chat.lastMessage?.text,
+                lastMessage: this.getMessagePreview(this.props.chat.lastMessage),
                 sender: this.getSenderDisplayName(this.props.chat.lastMessage),
             });
             this.chatInfo.mount(infoSlot as HTMLElement);
-        }
-
-        if (this.props.chat.type === 'group' && this.props.chat.lastMessage) {
-            const senderName = this.getSenderDisplayName(this.props.chat.lastMessage);
-            const senderId = this.props.chat.lastMessage.sender.id;
-            
-            if (!senderName && senderId && !this.props.chat.lastMessage.isOwn) {
-                this.fetchAndSetSenderName(senderId);
-            }
         }
 
         const metaSlot = this.element.querySelector('[data-component="chat-item-meta-slot"]');
@@ -234,18 +203,12 @@ export class ChatItem extends BaseForm<ChatItemProps> {
             if (newData.type === 'group' && newData.lastMessage) {
                 const senderName = this.getSenderDisplayName(newData.lastMessage);
                 if (senderName) {
-                    msgTextEl.innerHTML = `<span class="sender-group">${escapeHtml(senderName)}: </span>${escapeHtml(newData.lastMessage.text)}`;
+                    msgTextEl.innerHTML = `<span class="sender-group">${escapeHtml(senderName)}: </span>${escapeHtml(this.getMessagePreview(newData.lastMessage))}`;
                 } else {
-                    msgTextEl.textContent = newData.lastMessage.text || '';
-                    
-                    // Если имени нет, но есть ID — запускаем загрузку
-                    const senderId = newData.lastMessage.sender.id;
-                    if (senderId && !newData.lastMessage.isOwn) {
-                        this.fetchAndSetSenderName(senderId);
-                    }
+                    msgTextEl.textContent = this.getMessagePreview(newData.lastMessage);
                 }
             } else {
-                msgTextEl.textContent = newData.lastMessage?.text || '';
+                msgTextEl.textContent = this.getMessagePreview(newData.lastMessage);
             }
         }
 
@@ -257,8 +220,10 @@ export class ChatItem extends BaseForm<ChatItemProps> {
         const unreadCountEl = this.element.querySelector('.meta-chat-info__unread-count');
         if (unreadCountEl) {
             if (newData.unreadCount && newData.unreadCount > 0) {
-                unreadCountEl.textContent = String(newData.unreadCount);
-                (unreadCountEl as HTMLElement).style.display = 'block';
+                unreadCountEl.textContent = formatUnreadBadge(newData.unreadCount);
+                // Стираем inline display, чтобы CSS-правила (flex-центрирование)
+                // снова стали активны — иначе display:block ломает выравнивание текста.
+                (unreadCountEl as HTMLElement).style.display = '';
             } else {
                 (unreadCountEl as HTMLElement).style.display = 'none';
             }

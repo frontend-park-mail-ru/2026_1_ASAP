@@ -85,11 +85,11 @@ export function mockFetchRoutes(routes: MockRoute[]): ReturnType<typeof vi.fn> {
 /**
  * Возвращает аргументы вызова fetch № index в виде { url, method, body }
  */
-export function getFetchCall(fn: ReturnType<typeof vi.fn>, index = 0): { url: string; method: string; body: any; headers: Headers } {
+export function getFetchCall(fn: ReturnType<typeof vi.fn>, index = 0): { url: string; method: string; body: unknown; headers: Headers } {
     const call = fn.mock.calls[index];
     if (!call) throw new Error(`fetch call #${index} not found`);
     const [url, init] = call as [string, RequestInit | undefined];
-    let body: any = init?.body;
+    let body: unknown = init?.body;
     if (typeof body === 'string') {
         try { body = JSON.parse(body); } catch { /* keep raw */ }
     }

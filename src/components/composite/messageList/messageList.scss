@@ -8,13 +8,15 @@
 
 .message-list {
     display: flex;
-    flex-direction: column-reverse;
-    flex: 1 1 auto;
+    flex-direction: column;
+    flex: 1 1 0;
     min-height: 0;
     width: 100%;
     overflow-y: auto;
     overflow-x: hidden;
-    position: relative; /* Чтобы дочерние абсолютные элементы не ломали поток */
+    overscroll-behavior: contain;
+    overflow-anchor: none; /* иначе браузер сам «якорит» скролл и ломает наш сценарий подгрузки */
+    position: relative;
 
     &::-webkit-scrollbar {
         width: 10px;
@@ -32,7 +34,9 @@
     &__flex-container {
         display: flex;
         flex-direction: column-reverse;
-        min-height: 100%; 
+        /* min-height + column-reverse прижимают сообщения к низу, когда их мало. */
+        min-height: 100%;
+        flex-shrink: 0;
         padding: $spacing-md;
         gap: 10px;
     }
@@ -64,4 +68,27 @@
     user-select: none;
     max-width: 80%;
     word-wrap: break-word;
+}
+
+.message-list__unread-divider {
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 4px 4px;
+    color: $color-bubble;
+    font: $text-tertiary;
+    letter-spacing: $text-tertiary-ls;
+    font-size: 12px;
+    font-weight: 600;
+    user-select: none;
+
+    &::before,
+    &::after {
+        content: "";
+        flex: 1 1 0;
+        height: 1px;
+        background-color: $color-bubble;
+        opacity: 0.4;
+    }
 }

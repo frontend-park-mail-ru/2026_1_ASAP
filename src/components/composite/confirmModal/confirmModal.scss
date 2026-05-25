@@ -69,6 +69,7 @@
             min-width: 150px;
             min-height: 42px;
             background-color: $color-error-border;
+            color: $color-text-inverted;
 
             &:hover {
                 font-weight: 600;
@@ -77,10 +78,17 @@
             }
         }
 
+        &--submit.ui-button {
+            background-color: $color-error-border;
+            border-color: $color-error-border;
+            color: $color-text-inverted;
+        }
+
         &--cancel {
             min-width: 150px;
             min-height: 42px;
             background-color: $color-bubble;
+            color: $color-text-inverted;
             transition: 0.2s;
 
             &:hover {

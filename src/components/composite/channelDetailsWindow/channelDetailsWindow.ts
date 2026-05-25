@@ -1,4 +1,4 @@
-import { BaseComponent } from '../../../core/base/baseComponent';
+import { BaseComponent, IBaseComponentProps } from '../../../core/base/baseComponent';
 import { ActionHeader } from '../../ui/actionHeader/actionHeader';
 import { Avatar } from '../../ui/avatar/avatar';
 import { Button } from '../../ui/button/button';
@@ -7,7 +7,7 @@ import { ContactItem } from '../contactItem/contactItem';
 import { ConfirmModal } from '../confirmModal/confirmModal';
 import { EditProfileOverlay } from '../editProfileOverlay/editProfileOverlay';
 import { ProfileAdditionalInfoBlock } from '../profileAdditionalInfoBlock/profileAdditionalInfoBlock';
-import { ChannelDetail } from '../../../services/channelService';
+import type { ChannelDetail } from '../../../services/channelService';
 import template from './channelDetailsWindow.hbs';
 import './channelDetailsWindow.scss';
 
@@ -323,7 +323,7 @@ export class ChannelDetailsWindow extends BaseComponent<ChannelDetailsWindowProp
         const isOwner = this.props.channel.currentUserRole === 'owner';
 
         this.props.channel.members.forEach(member => {
-            let rightControl: BaseComponent<any> | undefined;
+            let rightControl: BaseComponent<IBaseComponentProps> | undefined;
 
             if (this.props.isEditing && isOwner && !member.isOwner) {
                 rightControl = new Button({

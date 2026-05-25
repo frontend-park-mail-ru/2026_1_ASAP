@@ -8,12 +8,31 @@ const HOST = process.env.HOST || '0.0.0.0';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const distPath = path.join(__dirname, '../dist');
 
-app.use(express.static(path.join(__dirname, '../dist')));
+const immutableAssetPattern = /^bundle\..+\.[a-f0-9]+\.((js)|(css))$/;
 
+function setCacheHeaders(res, filePath) {
+  const fileName = path.basename(filePath);
+
+  if (fileName === 'service-worker.js' || fileName === 'index.html' || fileName === 'support.html' || fileName === 'manifest.json') {
+    res.setHeader('Cache-Control', 'no-cache');
+    return;
+  }
+
+  if (immutableAssetPattern.test(fileName)) {
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    return;
+  }
+
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+}
+
+app.use(express.static(distPath, { setHeaders: setCacheHeaders }));
 
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../dist/index.html'));
+  res.setHeader('Cache-Control', 'no-cache');
+  res.sendFile(path.join(distPath, 'index.html'));
 });
 
 app.listen(PORT, HOST, () => {

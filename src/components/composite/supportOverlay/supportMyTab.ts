@@ -2,7 +2,7 @@ import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseCompo
 import { supportService, MyComplaintItem } from "../../../services/supportService";
 import template from "./supportMyTab.hbs";
 
-interface SupportMyTabProps extends IBaseComponentProps {}
+type SupportMyTabProps = IBaseComponentProps;
 
 type StatusFilter = "all" | "new" | "in_progress" | "closed";
 

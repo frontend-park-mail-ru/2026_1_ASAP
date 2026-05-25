@@ -1,12 +1,11 @@
 import { BaseComponent } from '../../../core/base/baseComponent';
-import { User, DialogChat } from '../../../types/chat';
+import { DialogChat } from '../../../types/chat';
 import { Avatar } from '../../ui/avatar/avatar';
 import template from './dialogHeader.hbs';
-import { getFullUrl } from '../../../core/utils/url';
 import { Button } from '../../ui/button/button';
 import { DeleteChatMenu } from '../deleteChatMenu/deleteChatMenu';
 import { ConfirmModal } from '../confirmModal/confirmModal';
-import { wsClient, ChatInformationDto } from '../../../core/utils/wsClient';
+import type { PresenceState } from '../../../core/utils/wsClient';
 
 /**
  * @interface DialogHeaderProps - Свойства компонента шапки диалога.
@@ -17,13 +16,14 @@ interface DialogHeaderProps {
     onDeleteChat?: () => void;
     onOpenProfile: () => void;
     onOpenSearch?: () => void;
+    initialPresence?: PresenceState | null;
 }
 
 /**
  * Компонент шапки для личного диалога.
  * Отображает аватар, имя собеседника и его статус.
  */
-export class DialogHeader extends BaseComponent {
+export class DialogHeader extends BaseComponent<DialogHeaderProps> {
     private avatarComponent: Avatar | null = null;
     private searchButton: Button | null = null;
     private settingsButton: Button | null = null;
@@ -31,6 +31,7 @@ export class DialogHeader extends BaseComponent {
     private confirmModal: ConfirmModal | null = null;
     isDeleteMenuOpen: boolean = false;
     isDeleteConfirmationOpen: boolean = false;
+    private latestPresence: PresenceState | null = null;
 
     /**
      * @param {DialogHeaderProps} props - Свойства компонента.
@@ -108,28 +109,52 @@ export class DialogHeader extends BaseComponent {
             this.settingsButton.mount(settingsSlot as HTMLElement);
         }
 
-        wsClient.subscribe<ChatInformationDto>('chat.Updated', this.handleChatUpdated);
+        const presence = this.latestPresence ?? this.props.initialPresence;
+        if (presence) this.renderPresence(presence);
     }
 
-    /**
-     * Обработчик события обновления чата через WebSocket.
-     * Обновляет название и аватарку в шапке, если ID совпадает.
-     * @param {ChatInformationDto} payload - Данные обновленного чата.
-     * @private
-     */
-    private handleChatUpdated = (payload: ChatInformationDto): void => {
-        if (this.props.chat && String(this.props.chat.id) === String(payload.id)) {
-            const nameEl = this.element?.querySelector('.dialog-header__name');
-            if (nameEl) {
-                nameEl.textContent = payload.title;
-            }
+    public setPresence(state: PresenceState): void {
+        this.latestPresence = state;
+        this.renderPresence(state);
+    }
 
-            const avatarImg = this.element?.querySelector('.dialog-header__avatar') as HTMLImageElement;
-            if (avatarImg && payload.avatar) {
-                avatarImg.src = getFullUrl(payload.avatar);
-            }
+    private renderPresence(state: PresenceState): void {
+        const el = this.element?.querySelector('.dialog-header__status');
+        if (!el) return;
+
+        const chatId = String((this.props.chat as DialogChat).id);
+        if (state.typingInChat !== undefined && String(state.typingInChat) === chatId) {
+            el.innerHTML = `печатает<span class="dialog-header__typing-dots"><span></span><span></span><span></span></span>`;
+            el.classList.add('dialog-header__status--typing');
+            return;
         }
-    };
+        el.classList.remove('dialog-header__status--typing');
+
+        if (state.isOnline) {
+            el.textContent = 'в сети';
+            el.classList.add('dialog-header__status--online');
+            return;
+        }
+        el.classList.remove('dialog-header__status--online');
+
+        if (state.lastSeenAt) {
+            el.textContent = `был(а) в сети ${this.formatRelative(state.lastSeenAt)}`;
+        } else {
+            el.textContent = 'был(а) в сети недавно';
+        }
+    }
+
+    private formatRelative(date: Date): string {
+        const diffMs = Date.now() - date.getTime();
+        const min = Math.floor(diffMs / 60_000);
+        if (min < 1) return 'только что';
+        if (min < 60) return `${min} мин назад`;
+        const hours = Math.floor(min / 60);
+        if (hours < 24) return `${hours} ч назад`;
+        const days = Math.floor(hours / 24);
+        if (days < 7) return `${days} дн назад`;
+        return date.toLocaleDateString('ru-RU');
+    }
 
     /**
      * Обработчик открытия профиля.
@@ -185,7 +210,5 @@ export class DialogHeader extends BaseComponent {
         this.settingsButton?.unmount();
         this.deleteChatMenu?.unmount();
         this.confirmModal?.unmount();
-
-        wsClient.unsubscribe('chat.Updated', this.handleChatUpdated);
     }
 }

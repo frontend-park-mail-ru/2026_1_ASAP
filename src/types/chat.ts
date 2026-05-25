@@ -44,13 +44,57 @@ export interface BackendMessage {
  * @property {Date} timestamp - Временная метка, преобразованная в объект `Date`.
  * @property {boolean} isOwn - Флаг, указывающий, является ли сообщение отправленным текущим пользователем.
  */
+export type MessageStatus = 'sending' | 'sent' | 'read';
+
+export type MessageAttachmentType = 'photo' | 'video' | 'file' | 'contact' | 'voice';
+
+export interface MessageAttachment {
+    type: MessageAttachmentType;
+    url?: string;
+    fileName?: string;
+    mimeType?: string;
+    fileSize?: number;
+    contactUserId?: number;
+    contactFirstName?: string;
+    contactLastName?: string;
+    contactAvatarUrl?: string;
+}
+
+export interface OutgoingMessageAttachment {
+    type: MessageAttachmentType;
+    url?: string;
+    file_name?: string;
+    contact_user_id?: number;
+}
+export interface Sticker {
+    id: number;
+    packId: number;
+    fileUrl: string;
+    slug?: string;
+    emoji?: string;
+    width?: number;
+    height?: number;
+}
+
+export interface StickerPack {
+    id: number;
+    name: string;
+    title: string;
+    slug?: string;
+    thumbnailUrl?: string;
+    stickers: Sticker[];
+}
+
 export interface FrontendMessage {
     id: string;
     sender: User;
     text: string;
-    timestamp: Date; // Конвертируем created_at в Date
+    timestamp: Date;
     isOwn: boolean;
     isEdited?: boolean;
+    status?: MessageStatus;
+    attachments?: MessageAttachment[];
+    sticker?: Sticker;
 }
 
 /**
@@ -83,6 +127,8 @@ export interface BaseChat {
     avatarUrl?: string;
     lastMessage?: FrontendMessage;
     unreadCount?: number;
+    /** ID последнего прочитанного мной сообщения в этом чате. 0 если ещё ничего не читал. */
+    lastReadMessageId?: number;
 }
 
 /**

@@ -2,7 +2,6 @@ import { BaseComponent, IBaseComponentProps } from '../../../core/base/baseCompo
 import { Input } from '../../ui/input/input';
 import { Button } from '../../ui/button/button';
 import { SearchResultItem } from '../searchResultItem/searchResultItem';
-import { chatService } from '../../../services/chatService';
 import { SearchMessageHit, SearchMessagesResult } from '../../../types/search';
 import { FrontendMessage } from '../../../types/chat';
 import template from './messageSearchBar.hbs';
@@ -13,6 +12,7 @@ interface MessageSearchBarProps extends IBaseComponentProps {
     chatType: 'dialog' | 'group' | 'channel';
     currentUserId: number;
     onClose: () => void;
+    onSearch: (query: string, beforeId?: number | null) => Promise<SearchMessagesResult | null>;
     onResults: (query: string, hits: SearchMessageHit[]) => void;
     onJumpTo: (messageId: string) => void;
     // TODO: workaround — PG FTS не поддерживает emoji; при emoji-запросе ищем локально
@@ -102,10 +102,20 @@ export class MessageSearchBar extends BaseComponent<MessageSearchBarProps> {
                 messageId: m.id,
                 chatId: this.props.chatId,
                 senderId: m.sender.id,
+                authorName: this.getMessageAuthorName(m),
+                authorAvatarUrl: m.sender.avatarUrl,
                 textPreview: m.text.slice(0, 100),
                 createdAt: m.timestamp,
             }));
         return { items, nextBeforeId: null };
+    }
+
+    private getMessageAuthorName(message: FrontendMessage): string {
+        if (message.isOwn || message.sender.id === this.props.currentUserId) return "Вы";
+
+        return [message.sender.firstName, message.sender.lastName].filter(Boolean).join(" ")
+            || message.sender.login
+            || `User #${message.sender.id}`;
     }
 
     private async runSearch(q: string, reset: boolean): Promise<void> {
@@ -117,7 +127,7 @@ export class MessageSearchBar extends BaseComponent<MessageSearchBarProps> {
         const hasEmoji = /\p{Extended_Pictographic}/u.test(q);
         const result = hasEmoji
             ? this.searchLocally(q)
-            : await chatService.searchMessages(this.props.chatId, q, reset ? null : undefined);
+            : await this.props.onSearch(q, reset ? null : undefined);
 
         if (myId !== this.requestId) return;
 

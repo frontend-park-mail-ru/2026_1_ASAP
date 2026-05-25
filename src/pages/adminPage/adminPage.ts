@@ -5,7 +5,7 @@ import { ComplaintItem } from "../../components/composite/complaintItem/complain
 import { ComplaintStatusModal } from "../../components/composite/complaintStatusModal/complaintStatusModal";
 import template from "./adminPage.hbs";
 
-interface AdminPageProps extends IBasePageProps {}
+type AdminPageProps = IBasePageProps;
 
 export class AdminPage extends BasePage<AdminPageProps> {
     private complaintItems: ComplaintItem[] = [];

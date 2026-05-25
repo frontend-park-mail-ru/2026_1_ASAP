@@ -7,13 +7,14 @@ import { Button } from "../../ui/button/button";
 import { ConfirmModal } from "../confirmModal/confirmModal";
 import { contactService } from "../../../services/contactService";
 import { chatService } from "../../../services/chatService";
+import { Router } from "../../../core/router";
 import template from "./profileWindow.hbs"
 
 interface ProfileWindowProps extends IBaseComponentProps {
     profileMainInfo: ProfileMainInfo;
     profileAdditionalInfo: ProfileAdditionalInfo;
     closeWindow: (event: MouseEvent) => void;
-    router?: any;
+    router?: Router;
     onContactsChanged?: () => void;
 };
 
@@ -44,7 +45,8 @@ export class ProfileWindow extends BaseComponent<ProfileWindowProps> {
 
         this.profileMainInfoBlock = new ProfileMainInfoBlock({
             profileMainInfo: this.props.profileMainInfo,
-            type: "contact"
+            type: "contact",
+            userId: this.props.profileAdditionalInfo.id,
         });
         this.profileMainInfoBlock.mount(this.element!);
 
