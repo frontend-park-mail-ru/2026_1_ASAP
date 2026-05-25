@@ -1,0 +1,130 @@
+@use "variables" as *;
+@use "mixins" as *;
+
+/**
+ * Скелетон-плейсхолдер для окна чата, пока идут REST/WS-запросы.
+ * Геометрически совпадает с ChatWindow, чтобы при подмене не было прыжка.
+ */
+.chat-skeleton {
+    @include flex-column;
+    height: 100%;
+    width: 100%;
+    flex-grow: 1;
+    gap: 10px;
+    box-sizing: border-box;
+    min-height: 0;
+    overflow: hidden;
+
+    &__header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        min-height: 62px;
+        padding: 5px $spacing-md;
+        border: 1px solid $color-stroke;
+        border-radius: 10px;
+        background-color: transparent;
+    }
+
+    &__avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    &__avatar--placeholder {
+        background-color: $color-text-hover2;
+    }
+
+    &__avatar--real {
+        object-fit: cover;
+    }
+
+    &__header-text {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    &__title {
+        font: $text-secondary;
+        letter-spacing: $text-secondary-ls;
+        font-size: 18px;
+        color: $color-text;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    &__status {
+        width: 80px;
+        height: 12px;
+        border-radius: 6px;
+    }
+
+    &__body {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: $spacing-md;
+        justify-content: flex-end;
+    }
+
+    &__bubble {
+        height: 38px;
+        border-radius: 14px;
+        max-width: 70%;
+        min-width: 120px;
+
+        &--in {
+            align-self: flex-start;
+        }
+
+        &--out {
+            align-self: flex-end;
+        }
+    }
+
+    &__input {
+        flex-shrink: 0;
+        height: 44px;
+        border-radius: 14px;
+        margin: 10px 10px 0;
+    }
+
+    // Shimmer-анимация — пробегающая «волна» поверх серого фона.
+    &__shimmer {
+        position: relative;
+        background-color: $color-text-hover2;
+        overflow: hidden;
+
+        &::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                90deg,
+                transparent 0%,
+                rgba(255, 255, 255, 0.06) 50%,
+                transparent 100%
+            );
+            animation: chat-skeleton-shimmer 1.4s ease-in-out infinite;
+        }
+    }
+}
+
+@keyframes chat-skeleton-shimmer {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .chat-skeleton__shimmer::after {
+        animation: none;
+    }
+}

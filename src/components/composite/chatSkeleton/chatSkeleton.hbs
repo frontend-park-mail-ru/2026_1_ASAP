@@ -1,0 +1,23 @@
+<div class="chat-skeleton">
+    <div class="chat-skeleton__header">
+        {{#if avatarUrl}}
+            <img class="chat-skeleton__avatar chat-skeleton__avatar--real" src="{{avatarUrl}}" alt="">
+        {{else}}
+            <div class="chat-skeleton__avatar chat-skeleton__avatar--placeholder"></div>
+        {{/if}}
+        <div class="chat-skeleton__header-text">
+            <div class="chat-skeleton__title">{{title}}</div>
+            <div class="chat-skeleton__status chat-skeleton__shimmer"></div>
+        </div>
+    </div>
+
+    <div class="chat-skeleton__body">
+        <div class="chat-skeleton__bubble chat-skeleton__bubble--in chat-skeleton__shimmer" style="width: 60%"></div>
+        <div class="chat-skeleton__bubble chat-skeleton__bubble--out chat-skeleton__shimmer" style="width: 45%"></div>
+        <div class="chat-skeleton__bubble chat-skeleton__bubble--in chat-skeleton__shimmer" style="width: 70%"></div>
+        <div class="chat-skeleton__bubble chat-skeleton__bubble--out chat-skeleton__shimmer" style="width: 35%"></div>
+        <div class="chat-skeleton__bubble chat-skeleton__bubble--in chat-skeleton__shimmer" style="width: 55%"></div>
+    </div>
+
+    <div class="chat-skeleton__input chat-skeleton__shimmer"></div>
+</div>

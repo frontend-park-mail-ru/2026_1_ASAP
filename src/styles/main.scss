@@ -49,6 +49,7 @@
 @use "../components/composite/editMsgOverlay/editMsgOverlay" as *;
 @use "../components/composite/mediaViewerOverlay/mediaViewerOverlay" as *;
 @use "../components/composite/stickerEmojiOverlay/stickerEmojiOverlay" as *;
+@use "../components/composite/chatSkeleton/chatSkeleton" as *;
 
 @use "../components/ui/button/button" as *;
 @use "../components/ui/input/input" as *;
