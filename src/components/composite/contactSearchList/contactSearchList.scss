@@ -26,6 +26,14 @@
         min-height: 0;
         width: 100%;
     }
+
+    &__chat-results {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+        width: 100%;
+    }
 }
 
 .contacts-search-tabs {
