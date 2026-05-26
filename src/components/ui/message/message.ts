@@ -556,6 +556,18 @@ export class Message extends BaseComponent<MessageProps> {
     }
 
     /**
+     * Обновляет список вложений сообщения новыми данными и перерисовывает их.
+     * Используется для синхронизации оптимистичного сообщения с реальными данными с сервера.
+     *
+     * @param {MessageAttachment[]} attachments - Список новых вложений.
+     * @public
+     */
+    public updateAttachments(attachments: MessageAttachment[]): void {
+        this.props.message.attachments = attachments;
+        this.renderAttachments();
+    }
+
+    /**
      * Передает ошибку в голосовое вложение, которое в данный момент находится в процессе расшифровки.
      *
      * @param {string} errorText - Текст ошибки.
