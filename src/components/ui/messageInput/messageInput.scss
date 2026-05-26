@@ -18,12 +18,24 @@
         gap: 10px;
     }
 
+    &__recorder-slot {
+        display: flex;
+        flex-grow: 1;
+        width: 100%;
+        min-width: 0;
+
+        &[hidden] {
+            display: none !important;
+        }
+    }
+
     // Поле ввода: одна большая rounded-полоса с заливкой, без бордера.
     &__input-container {
         display: flex;
         align-items: flex-end;
         flex-direction: row;
         width: 100%;
+        box-sizing: border-box;
         flex-grow: 1;
         border: none;
         border-radius: 14px;
@@ -49,6 +61,10 @@
         background: none;
         border: none;
         height: 40px;
+        width: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     // Боксы-обёртки слотов: центрируем иконки по вертикали независимо от высоты textarea.
