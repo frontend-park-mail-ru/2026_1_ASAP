@@ -63,8 +63,8 @@ export class ChatSessionController {
         return this.useCases.markMessageRead(chatId, messageId);
     }
 
-    public flushPendingMessages(): Promise<void> {
-        return this.useCases.flushPendingMessages();
+    public flushPendingMessages(): void {
+        this.useCases.flushPendingMessages();
     }
 
     public clearInFlightMessages(): void {

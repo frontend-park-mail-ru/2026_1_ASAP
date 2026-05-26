@@ -98,6 +98,7 @@ function mapAttachmentDto(attachment: MessageAttachmentDto): MessageAttachment {
         contactFirstName: attachment.contact_first_name,
         contactLastName: attachment.contact_last_name,
         contactAvatarUrl: attachment.contact_avatar_url,
+        isBlur: attachment.is_blur,
     };
 }
 
@@ -134,11 +135,51 @@ function attachmentsMatch(a?: OutgoingMessageAttachment[], b?: MessageAttachment
  * @description Сервис для управления чатами. Предоставляет методы для получения списка чатов,
  * детальной информации о чате, сообщений, а также для создания и удаления чатов.
  */
+/** После стольких неудачных попыток отправки сообщение помечается «не отправлено». */
+export const MAX_SEND_ATTEMPTS = 5;
+
 export class ChatService {
     private profilesCache: Map<number, User> = new Map();
     private pendingProfiles: Map<number, Promise<User | null>> = new Map();
     private inFlightMessages = new Set<string>(); //сообщения, которые уже отправлены и ждут ответа
-    private isFlushing = false; //блокировка от параллельного запуска 
+    private isFlushing = false; //блокировка от параллельного запуска
+    private flushTimer: ReturnType<typeof setTimeout> | null = null; //дебаунс пачки триггеров flush
+    /** temp_id уже сматченных эхом сообщений — чтобы отбросить повторное эхо как дубль. */
+    private reconciledTempIds = new Set<string>();
+    /** Колбэк: сообщение исчерпало попытки отправки. UI помечает пузырь как «не отправлено». */
+    private onSendGaveUp: ((tempId: string) => void) | null = null;
+
+    public setOnSendGaveUp(cb: ((tempId: string) => void) | null): void {
+        this.onSendGaveUp = cb;
+    }
+
+    /**
+     * Дебаунс-обёртка над flushQueue. На реконнекте flush дёргается сразу из трёх
+     * мест (online / system.Connected / SW-сообщение) — схлопываем их в один запуск.
+     * Задержка также даёт эхам уже отправленных сообщений прийти и снять их из очереди
+     * ДО повторной отправки — иначе после флапа соединения сообщение шлётся дважды.
+     */
+    public scheduleFlush(delayMs = 400): void {
+        if (this.flushTimer !== null) clearTimeout(this.flushTimer);
+        this.flushTimer = setTimeout(() => {
+            this.flushTimer = null;
+            void this.flushQueue();
+        }, delayMs);
+    }
+
+    /** Не сматчено ли это temp_id эхом ранее (для отбрасывания дубль-эха на приёме). */
+    public wasRecentlyReconciled(tempId: string): boolean {
+        return this.reconciledTempIds.has(tempId);
+    }
+
+    /** Запоминает сматченный temp_id с ограничением размера (защита от роста за сессию). */
+    private rememberReconciled(tempId: string): void {
+        this.reconciledTempIds.add(tempId);
+        if (this.reconciledTempIds.size > 500) {
+            const oldest = this.reconciledTempIds.values().next().value;
+            if (oldest !== undefined) this.reconciledTempIds.delete(oldest);
+        }
+    }
 
     private stripAttachmentLabel(text: string | undefined, attachments: MessageAttachmentDto[] | undefined): string {
         const t = (text || '').trim();
@@ -314,10 +355,13 @@ export class ChatService {
             senderId,
             createdAt: Date.now(),
             attachments,
+            attempts: 0,
         };
 
         await offlineQueue.enqueue(pending);
         if (wsClient.isConnected()) {
+            pending.attempts = 1;
+            await offlineQueue.enqueue(pending);
             this.inFlightMessages.add(pending.tempId);
             this.sendPendingMessage(pending);
         }
@@ -342,6 +386,7 @@ export class ChatService {
             return wsClient.sendIfOpen('message.SendAttachments', {
                 chat_id: Number(message.chatId),
                 text: message.text,
+                temp_id: message.tempId,
                 attachments,
             });
         }
@@ -349,6 +394,7 @@ export class ChatService {
         return wsClient.sendIfOpen('message.Send', {
             chat_id: Number(message.chatId),
             text: message.text,
+            temp_id: message.tempId,
         });
     }
 
@@ -507,20 +553,54 @@ export class ChatService {
             for (const m of pending) {
 
                 if (this.inFlightMessages.has(m.tempId)) continue;
-                
+
+                // Лимит попыток: сообщение, которое не подтвердилось эхом за N отправок,
+                // больше не дослыаем — помечаем как «не отправлено», ждём ручного retry.
+                if ((m.attempts ?? 0) >= MAX_SEND_ATTEMPTS) {
+                    this.onSendGaveUp?.(m.tempId);
+                    continue;
+                }
+
+                // Claim синхронно — чтобы параллельный flush пропустил это сообщение.
                 this.inFlightMessages.add(m.tempId);
-                
-                const sent = this.sendPendingMessage(m);
-                
+
+                // За время await'ов предыдущих итераций сообщение могло быть снято эхом
+                // (reconcile удаляет его из очереди). Не воскрешаем его повторным enqueue.
+                const fresh = await offlineQueue.get(m.tempId);
+                if (!fresh) {
+                    this.inFlightMessages.delete(m.tempId);
+                    continue;
+                }
+
+                fresh.attempts = (fresh.attempts ?? 0) + 1;
+                await offlineQueue.enqueue(fresh);
+
+                const sent = this.sendPendingMessage(fresh);
+
                 // Если внезапно сокет закрылся во время цикла
                 if (!sent) {
-                    this.inFlightMessages.delete(m.tempId);
+                    this.inFlightMessages.delete(fresh.tempId);
                     break;
                 }
             }
         } finally {
             this.isFlushing = false;
         }
+    }
+
+    /**
+     * Ручная переотправка сообщения, помеченного «не отправлено»:
+     * сбрасывает счётчик попыток и заново прогоняет очередь.
+     */
+    public async retryMessage(tempId: string): Promise<void> {
+        const all = await offlineQueue.getAll();
+        const m = all.find((x) => x.tempId === tempId);
+        if (!m) return;
+
+        m.attempts = 0;
+        await offlineQueue.enqueue(m);
+        this.inFlightMessages.delete(tempId);
+        await this.flushQueue();
     }
 
     /**
@@ -541,6 +621,19 @@ export class ChatService {
         if (dto.sender_id !== currentUserId) return null;
 
         const pending = await offlineQueue.getByChat(dto.chat_id.toString());
+
+        // Основной путь: бэк эхом возвращает наш temp_id — сверяем по id.
+        // Надёжно даже когда сервер переписал контент (цензура мата, is_blur).
+        if (dto.temp_id) {
+            const byId = pending.find((m) => m.tempId === dto.temp_id);
+            if (!byId) return null;
+            await offlineQueue.remove(byId.tempId);
+            this.inFlightMessages.delete(byId.tempId);
+            this.rememberReconciled(byId.tempId);
+            return byId.tempId;
+        }
+
+        // Фолбэк для записей без temp_id (например, отправленных до обновления): по содержимому.
         const unescapedText = this.unescapeHtml(dto.text ?? '');
         const dtoAttachments = dto.attachments || [];
         const match = pending.find((m) => {

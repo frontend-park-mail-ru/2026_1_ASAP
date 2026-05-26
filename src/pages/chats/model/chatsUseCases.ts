@@ -445,8 +445,8 @@ export class ChatsUseCases {
         return this.data.getUserProfile(userId);
     }
 
-    public flushPendingMessages(): Promise<void> {
-        return this.data.flushPendingMessages();
+    public flushPendingMessages(): void {
+        this.data.flushPendingMessages();
     }
 
     public clearInFlightMessages(): void {

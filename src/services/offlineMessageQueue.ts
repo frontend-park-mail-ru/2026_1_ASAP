@@ -12,6 +12,8 @@ export interface PendingMessage {
     senderId: number;
     createdAt: number;
     attachments?: OutgoingMessageAttachment[];
+    /** Сколько раз пробовали отправить. После MAX_SEND_ATTEMPTS помечаем как «не отправлено». */
+    attempts?: number;
 }
 
 const DB_NAME = 'asap-offline-queue';
@@ -93,6 +95,10 @@ class OfflineMessageQueue {
 
     public async remove(tempId: string): Promise<void> {
         await this.tx('readwrite', (store) => store.delete(tempId));
+    }
+
+    public async get(tempId: string): Promise<PendingMessage | undefined> {
+        return this.tx<PendingMessage | undefined>('readonly', (store) => store.get(tempId));
     }
 
     public async getAll(): Promise<PendingMessage[]> {

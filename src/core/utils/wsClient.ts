@@ -27,6 +27,7 @@ export interface MessageAttachmentDto {
     contact_first_name?: string;
     contact_last_name?: string;
     contact_avatar_url?: string;
+    is_blur?: boolean;
 }
 
 export interface WsErrorDto {
@@ -85,6 +86,8 @@ export interface MessageDto {
     avatar?: string | null;
     attachments?: MessageAttachmentDto[];
     sticker?: StickerDto | null;
+    /** Эхо клиентского temp_id (приходит отправителю), для сверки с оптимистичной заглушкой. */
+    temp_id?: string;
 }
 
 /**

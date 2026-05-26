@@ -1,7 +1,8 @@
 import type { BaseComponent } from "../../../core/base/baseComponent";
 import type { ChannelRole } from "../../../services/channelService";
 import type { FrontendProfile } from "../../../types/profile";
-import type { FrontendMessage, MessageAttachment } from "../../../types/chat";
+import type { FrontendMessage, MessageAttachment, MessageStatus } from "../../../types/chat";
+import { MAX_SEND_ATTEMPTS } from "../../../services/chatService";
 import { httpClient } from "../../../core/utils/httpClient";
 import { ChannelJoinFooter } from "../../../components/composite/channelJoinFooter/channelJoinFooter";
 import { MessageList } from "../../../components/composite/messageList/messageList";
@@ -25,6 +26,10 @@ interface ChatActiveMessagesControllerDeps {
     onStopTyping: (chatId: string) => void;
     onJoinChannel: (chatId: string) => Promise<void>;
     onContactClick: (userId: number) => void;
+    /** Клик по CTA «Доступно с Pulse Premium» на заблюренном вложении (без подписки). */
+    onPremiumRequired: () => void;
+    /** Переотправка сообщения, помеченного «не отправлено». */
+    onRetryMessage: (tempId: string) => void;
     /** Сколько непрочитанных у чата на момент открытия (захватываем до resetUnread). */
     getPendingUnreadCount: (chatId: string) => number;
     /** ID последнего прочитанного сообщения — главный источник истины для якоря «новые». */
@@ -89,6 +94,8 @@ export class ChatActiveMessagesController {
                 }
             },
             onContactClick: this.deps.onContactClick,
+            onPremiumRequired: this.deps.onPremiumRequired,
+            onRetry: this.deps.onRetryMessage,
         });
 
         let footerComponent: BaseComponent | undefined;
@@ -117,6 +124,8 @@ export class ChatActiveMessagesController {
 
         const profile = this.deps.getCurrentUserProfile();
         pendingMessages.forEach((pending) => {
+            // Исчерпавшие попытки восстанавливаем сразу как «не отправлено», а не «отправляется».
+            const status: MessageStatus = (pending.attempts ?? 0) >= MAX_SEND_ATTEMPTS ? "failed" : "sending";
             messageList.addMessage({
                 id: pending.tempId,
                 sender: {
@@ -129,7 +138,7 @@ export class ChatActiveMessagesController {
                 text: pending.text,
                 timestamp: new Date(pending.createdAt),
                 isOwn: true,
-                status: "sending",
+                status,
                 attachments: pending.attachments?.map((attachment): MessageAttachment => ({
                     type: attachment.type,
                     url: attachment.url,

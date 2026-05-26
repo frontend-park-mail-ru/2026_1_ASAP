@@ -1,9 +1,10 @@
 import { BaseComponent, IBaseComponentProps } from '../../../core/base/baseComponent';
-import { FrontendMessage, User, Chat, MessageAttachment } from '../../../types/chat';
+import { FrontendMessage, User, Chat, MessageAttachment, MessageStatus } from '../../../types/chat';
 import { Message } from '../../ui/message/message';
 import { MediaViewerOverlay } from '../mediaViewerOverlay/mediaViewerOverlay';
 import template from './messageList.hbs';
 import { getFullUrl } from '../../../core/utils/url';
+import { subscriptionService } from '../../../services/subscriptionService';
 
 /**
  * @interface MessageListProps - Свойства компонента списка сообщений.
@@ -29,6 +30,10 @@ interface MessageListProps extends IBaseComponentProps {
     /** Колбэк для скачивания вложения; реализация на уровне controller */
     onDownloadAttachment?: (url: string, fileName: string) => void | Promise<void>;
     onContactClick?: (userId: number) => void;
+    /** Клик по CTA «Доступно с Pulse Premium» на заблюренном вложении (без подписки). */
+    onPremiumRequired?: () => void;
+    /** Переотправка сообщения, помеченного «не отправлено». */
+    onRetry?: (id: string) => void;
 }
 
 /**
@@ -52,11 +57,32 @@ export class MessageList extends BaseComponent<MessageListProps> {
     private pinnedToBottom = true;
     private resizeObserver: ResizeObserver | null = null;
     private unreadDividerEl: HTMLElement | null = null;
+    /** Разблюренные NSFW-вложения, ключ `${messageId}:${mediaIndex}`. In-memory: живёт до перезагрузки/смены чата. */
+    private revealedAttachments: Set<string> = new Set();
 
-    private handleMediaClick = (attachments: MessageAttachment[], initialIndex: number) => {
+    /** Общие пропсы (блюр + retry), прокидываемые в каждый Message. */
+    private blurProps() {
+        return {
+            isPremium: subscriptionService.isPremiumCached(),
+            revealedAttachments: this.revealedAttachments,
+            onPremiumRequired: this.props.onPremiumRequired,
+            onRetry: this.props.onRetry,
+        };
+    }
+
+    /** Меняет статус ранее отрисованного пузыря (например, в «не отправлено»). */
+    public setMessageStatus(messageId: string, status: MessageStatus): void {
+        this.messages.get(messageId)?.setStatus(status);
+    }
+
+    private handleMediaClick = (attachments: MessageAttachment[], initialIndex: number, messageId: string) => {
         const overlay = new MediaViewerOverlay({
             attachments,
             initialIndex,
+            isPremium: subscriptionService.isPremiumCached(),
+            revealedAttachments: this.revealedAttachments,
+            revealKeyPrefix: messageId,
+            onPremiumRequired: this.props.onPremiumRequired,
             onClose: () => {
                 overlay.unmount();
             }
@@ -286,6 +312,7 @@ export class MessageList extends BaseComponent<MessageListProps> {
                 onDownloadAttachment: this.props.onDownloadAttachment,
                 onMediaClick: this.handleMediaClick,
                 onContactClick: this.props.onContactClick,
+                ...this.blurProps(),
             });
             messageComponent.mount(this.flexContainer!);
             this.messages.set(msgData.id, messageComponent);
@@ -363,6 +390,7 @@ export class MessageList extends BaseComponent<MessageListProps> {
                 onDownloadAttachment: this.props.onDownloadAttachment,
                 onMediaClick: this.handleMediaClick,
                 onContactClick: this.props.onContactClick,
+                ...this.blurProps(),
             });
             const tempDiv = document.createElement('div');
             comp.mount(tempDiv);
@@ -407,6 +435,7 @@ export class MessageList extends BaseComponent<MessageListProps> {
             onDownloadAttachment: this.props.onDownloadAttachment,
             onMediaClick: this.handleMediaClick,
             onContactClick: this.props.onContactClick,
+            ...this.blurProps(),
         });
 
         const wasAtBottom = this.isNearBottom();
@@ -458,14 +487,48 @@ export class MessageList extends BaseComponent<MessageListProps> {
         return true;
     }
 
-    public replaceMessageId(oldId: string, newId: string, newTimestamp?: Date): boolean {
+    /**
+     * Заменяет оптимистичный («заглушку») пузырь авторитетной серверной версией.
+     * В отличие от простого переклеивания id, перенимает весь контент из broadcast:
+     * текст (сервер мог отцензурить), вложения и флаг `isBlur`, реальный id, время и статус.
+     * Перерисовывает узел на том же месте, чтобы не было прыжка и дубля.
+     * @returns true, если пузырь с `oldId` найден и заменён.
+     */
+    public replaceMessage(oldId: string, newMessage: FrontendMessage): boolean {
         const target = this.childMessages.find((m) => m.getId() === oldId);
-        if (!target) return false;
+        if (!target?.element) return false;
+
+        const showAuthor = this.props.chatType === 'group';
+        if (newMessage.isOwn && this.props.currentUser?.avatarUrl) {
+            newMessage.sender.avatarUrl = this.props.currentUser.avatarUrl;
+        }
+        const replacement = new Message({
+            message: newMessage,
+            isOwn: newMessage.isOwn || false,
+            showAuthor,
+            chatAvatarUrl: this.props.chatAvatarUrl,
+            onEdit: (id) => this.props.onRequestEdit?.(id, newMessage.text),
+            onDelete: (id) => this.props.onRequestDelete?.(id),
+            onDownloadAttachment: this.props.onDownloadAttachment,
+            onMediaClick: this.handleMediaClick,
+            onContactClick: this.props.onContactClick,
+            ...this.blurProps(),
+        });
+
+        const tmp = document.createElement('div');
+        replacement.mount(tmp);
+        if (!replacement.element) return false;
+
+        const oldEl = target.element;
+        oldEl.parentNode?.insertBefore(replacement.element, oldEl);
+        target.unmount();
+
+        const idx = this.childMessages.indexOf(target);
+        if (idx !== -1) this.childMessages[idx] = replacement;
         this.messages.delete(oldId);
-        target.setId(newId);
-        this.messages.set(newId, target);
-        if (newTimestamp) target.updateTimestamp(newTimestamp);
-        target.setStatus('sent');
+        this.messages.set(newMessage.id, replacement);
+
+        if (this.currentHighlightQuery) replacement.applyHighlight(this.currentHighlightQuery);
         return true;
     }
 
