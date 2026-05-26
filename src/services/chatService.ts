@@ -11,7 +11,7 @@ import {
 } from '../types/chat';
 import { SearchChatHit, SearchChatsResult, SearchMessageHit, SearchMessagesResult } from '../types/search';
 import { httpClient } from '../core/utils/httpClient';
-import { wsClient, MessageDto, ChatInformationDto, MessageAttachmentDto, WsErrorDto } from '../core/utils/wsClient';
+import { wsClient, MessageDto, ChatInformationDto, MessageAttachmentDto, WsErrorDto, parseVoiceTranscript } from '../core/utils/wsClient';
 import { getFullUrl } from '../core/utils/url';
 import { presenceService } from './presenceService';
 import { offlineQueue, PendingMessage } from './offlineMessageQueue';
@@ -100,7 +100,7 @@ function mapAttachmentDto(attachment: MessageAttachmentDto): MessageAttachment {
         contactLastName: attachment.contact_last_name,
         contactAvatarUrl: attachment.contact_avatar_url,
         canTranscribe: attachment.can_transcribe,
-        transcript: attachment.transcript,
+        transcript: attachment.transcript ? parseVoiceTranscript(attachment.transcript) : undefined,
     };
 }
 

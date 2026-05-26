@@ -491,16 +491,33 @@ export class Message extends BaseComponent<MessageProps> {
      * @public
      */
     public updateVoiceTranscript(attachmentId: number, transcript: string): void {
-        const attachment = this.props.message.attachments?.find(a => a.type === 'voice' && a.id === attachmentId);
+        let attachment = this.props.message.attachments?.find(a => a.type === 'voice' && a.id === attachmentId);
+        
+        // Фолбек: если по ID не нашли, но голосовое вложение ровно одно, используем его
+        if (!attachment) {
+            const voiceAttachments = this.props.message.attachments?.filter(a => a.type === 'voice') || [];
+            if (voiceAttachments.length === 1) {
+                attachment = voiceAttachments[0];
+            }
+        }
+
         if (attachment) {
             attachment.transcript = transcript;
         }
 
-        this.childComponents.forEach(comp => {
-            if (comp instanceof VoiceMessage && comp.getAttachmentId() === attachmentId) {
-                comp.setTranscript(transcript);
-            }
-        });
+        const voiceComponents = this.childComponents.filter(comp => comp instanceof VoiceMessage) as VoiceMessage[];
+        
+        // Ищем компонент с точным совпадением по ID
+        let targetComp = voiceComponents.find(comp => comp.getAttachmentId() === attachmentId);
+        
+        // Фолбек: если точного совпадения нет, но компонент голосового сообщения ровно один, обновляем его
+        if (!targetComp && voiceComponents.length === 1) {
+            targetComp = voiceComponents[0];
+        }
+
+        if (targetComp) {
+            targetComp.setTranscript(transcript);
+        }
     }
 
     /**
@@ -511,11 +528,17 @@ export class Message extends BaseComponent<MessageProps> {
      * @public
      */
     public setVoiceTranscriptError(attachmentId: number, error: string): void {
-        this.childComponents.forEach(comp => {
-            if (comp instanceof VoiceMessage && comp.getAttachmentId() === attachmentId) {
-                comp.setTranscriptError(error);
-            }
-        });
+        const voiceComponents = this.childComponents.filter(comp => comp instanceof VoiceMessage) as VoiceMessage[];
+        
+        let targetComp = voiceComponents.find(comp => comp.getAttachmentId() === attachmentId);
+        
+        if (!targetComp && voiceComponents.length === 1) {
+            targetComp = voiceComponents[0];
+        }
+
+        if (targetComp) {
+            targetComp.setTranscriptError(error);
+        }
     }
 
     /**

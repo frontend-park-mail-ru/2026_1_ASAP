@@ -39,6 +39,40 @@ export interface VoiceTranscriptDto {
     transcript: string;
 }
 
+/**
+ * Парсит строку расшифровки голосового сообщения.
+ * Если бэкенд прислал расшифровку как JSON-строку вида {"result": "текст"},
+ * функция извлечет и вернет чистое значение поля result.
+ * В противном случае возвращает строку как есть.
+ *
+ * @param {string} rawTranscript - Исходный текст расшифровки от бэкенда.
+ * @returns {string} Очищенный текст расшифровки.
+ */
+export function parseVoiceTranscript(rawTranscript: string): string {
+    if (!rawTranscript) return '';
+    const trimmed = rawTranscript.trim();
+    if (trimmed.startsWith('{')) {
+        try {
+            const parsed = JSON.parse(trimmed);
+            if (parsed && typeof parsed === 'object') {
+                if (typeof parsed.result === 'string') {
+                    return parsed.result;
+                }
+                if (typeof parsed.transcript === 'string') {
+                    return parsed.transcript;
+                }
+                if (typeof parsed.text === 'string') {
+                    return parsed.text;
+                }
+            }
+        } catch (e) {
+            console.error('Failed to parse voice transcript JSON:', e);
+        }
+    }
+    return rawTranscript;
+}
+
+
 export interface WsErrorDto {
     chat_id?: number | string;
     message_id?: number | string;

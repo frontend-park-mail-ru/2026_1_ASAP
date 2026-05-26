@@ -28,6 +28,7 @@ import type {
     WsErrorDto,
     VoiceTranscriptDto,
 } from "../../core/utils/wsClient";
+import { parseVoiceTranscript } from "../../core/utils/wsClient";
 import { ChatActiveHeaderController } from "./controllers/chatActiveHeaderController";
 import { ChatActiveMessagesController } from "./controllers/chatActiveMessagesController";
 import { ChatCreateWindowController } from "./controllers/chatCreateWindowController";
@@ -296,7 +297,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
         const messageComponent = this.activeMessageList.getMessageComponent(String(dto.message_id));
         if (messageComponent) {
-            messageComponent.updateVoiceTranscript(dto.attachment_id, dto.transcript);
+            const parsedTranscript = parseVoiceTranscript(dto.transcript);
+            messageComponent.updateVoiceTranscript(dto.attachment_id, parsedTranscript);
         }
     };
 
