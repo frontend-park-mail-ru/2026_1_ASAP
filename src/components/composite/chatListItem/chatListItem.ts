@@ -2,11 +2,11 @@ import { BaseForm } from "../../../core/base/baseForm";
 import { ChatItem } from "../chatItem/chatItem";
 import { ChatListEmpty } from "../chatListEmpty/chatListEmpty";
 import template from "./chatListItem.hbs";
-import { Chat, FrontendMessage, User } from "../../../types/chat";
-import { SearchChatHit } from "../../../types/search";
+import { Chat, DialogChat, FrontendMessage, User } from "../../../types/chat";
+import { SearchChatHit, SearchContactHit } from "../../../types/search";
 
 
-
+const CONTACT_HIT_ID_PREFIX = 'contact:';
 
 /**
  * @interface ChatListItemProps
@@ -14,11 +14,13 @@ import { SearchChatHit } from "../../../types/search";
  * @property {Chat[]} chats - Данные чатов для отображения.
  * @property {string | null} activeChatId - ID активного (выбранного) чата.
  * @property {Function} onOpenChat - Колбэк открытия чата.
+ * @property {Function} [onOpenContact] - Колбэк открытия профиля контакта (по логину).
  */
 interface ChatListItemProps {
     chats: Chat[];
     activeChatId: string | null;
     onOpenChat: (chatId: string) => void;
+    onOpenContact?: (login: string) => void;
 }
 
 /**
@@ -55,6 +57,11 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
      */
     private handleChatClick = (clickedItem: ChatItem) => {
         const chatId = clickedItem.props.chat.id as string;
+        if (chatId.startsWith(CONTACT_HIT_ID_PREFIX)) {
+            const login = chatId.slice(CONTACT_HIT_ID_PREFIX.length);
+            this.props.onOpenContact?.(login);
+            return;
+        }
         this.props.onOpenChat(chatId);
     }
 
@@ -169,6 +176,82 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
             unreadCount: hit.unreadCount,
             lastMessage
         } as unknown as Chat;
+    }
+
+    /**
+     * Конвертирует SearchContactHit в фейковый DialogChat, чтобы переиспользовать
+     * ChatItem для рендера в sidebar. id вида `contact:<login>` ловится в
+     * handleChatClick и диспатчится в onOpenContact.
+     */
+    private contactHitToChat(hit: SearchContactHit): DialogChat {
+        const login = hit.login ?? `user_${hit.userId}`;
+        const title = hit.displayName || login;
+        return {
+            id: `${CONTACT_HIT_ID_PREFIX}${login}`,
+            title,
+            type: 'dialog',
+            avatarUrl: hit.avatarUrl,
+            unreadCount: 0,
+            interlocutor: {
+                id: hit.userId,
+                login,
+                avatarUrl: hit.avatarUrl,
+            },
+        } as DialogChat;
+    }
+
+    /**
+     * Показывает в sidebar результаты поиска контактов: сначала локальные
+     * (мои), затем баннер «Глобальный поиск», затем все остальные. Клик
+     * по элементу диспатчится в onOpenContact (открыть профиль).
+     */
+    public showContactResults(local: SearchContactHit[], global: SearchContactHit[]): void {
+        if (!this.element) return;
+
+        this.isSearchAlive = true;
+        this.chatItems.forEach((item) => item.unmount());
+        this.chatItems = [];
+        this.emptyComponent?.unmount();
+        this.emptyComponent = null;
+        // Чистим прошлые системные строки (banner) от предыдущего рендера.
+        this.element.querySelectorAll('.chat-list__system-row').forEach((el) => el.remove());
+
+        if (local.length === 0 && global.length === 0) {
+            this.element.classList.add('chat-list--empty');
+            this.emptyComponent = new ChatListEmpty({
+                text: 'Ничего не найдено',
+                iconAfter: '/assets/images/icons/noResultsSearch.svg',
+            });
+            this.emptyComponent.mount(this.element);
+            return;
+        }
+
+        this.element.classList.remove('chat-list--empty');
+
+        // Локальные контакты.
+        local.forEach((hit) => this.mountContactItem(hit));
+
+        // Banner «Глобальный поиск» — между local и global.
+        if (global.length > 0) {
+            const banner = document.createElement('div');
+            banner.className = 'chat-list__system-row';
+            banner.textContent = 'Глобальный поиск';
+            this.element.appendChild(banner);
+
+            global.forEach((hit) => this.mountContactItem(hit));
+        }
+    }
+
+    private mountContactItem(hit: SearchContactHit): void {
+        if (!this.element) return;
+        const fakeChat = this.contactHitToChat(hit);
+        const item = new ChatItem({
+            class: 'chat-item--default',
+            chat: fakeChat,
+            onClick: (clickedItem: ChatItem) => this.handleChatClick(clickedItem),
+        });
+        item.mount(this.element);
+        this.chatItems.push(item);
     }
 
     public updateChatLastMessageText(chatId: string, newText: string): void {

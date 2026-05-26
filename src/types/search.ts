@@ -41,3 +41,17 @@ export interface SearchContactsResult {
     items: SearchContactHit[];
     nextBeforeId: number | null;
 }
+
+/**
+ * Результат единого поискового запроса. Для табов dialog/group/channel —
+ * заполнены `chats`. Для таба contact — `contacts.local` (мои контакты) и
+ * `contacts.global` (все остальные, без дубликатов с local).
+ */
+export interface UnifiedSearchResult {
+    tab: 'dialog' | 'group' | 'channel' | 'contact';
+    chats: SearchChatHit[];
+    contacts?: {
+        local: SearchContactHit[];
+        global: SearchContactHit[];
+    };
+}

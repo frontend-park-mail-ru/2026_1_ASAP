@@ -8,6 +8,7 @@ import { Button } from "../../components/ui/button/button";
 import type { BaseComponent } from "../../core/base/baseComponent";
 import { ChatWindow } from "../../components/composite/chatWindow/chatWindow";
 import { ChatSkeleton } from "../../components/composite/chatSkeleton/chatSkeleton";
+import { SearchTabs, type SearchTab } from "../../components/composite/searchTabs/searchTabs";
 import type { MessageList } from "../../components/composite/messageList/messageList";
 import type { MessageInput } from "../../components/ui/messageInput/messageInput";
 import type { Chat, FrontendMessage, User } from '../../types/chat';
@@ -40,7 +41,7 @@ import { ChatRealtimeController } from "./controllers/chatRealtimeController";
 import { ChatSessionController } from "./controllers/chatSessionController";
 import { ChatSidebarController } from "./controllers/chatSidebarController";
 import { getChatErrorMessage, type ServiceErrorLike } from "./model/chatsErrors";
-import type { ChatSearchType, CreateChatMode, CurrentUserVM } from "./model/chatsViewModels";
+import type { CreateChatMode, CurrentUserVM } from "./model/chatsViewModels";
 import { ChatsView } from "./chatsView";
 import { contactService } from "../../services/contactService";
 
@@ -89,7 +90,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
     private hasMoreHistory: boolean = false;
     private nextBeforeId: number | null = null;
     private currentUserProfile: FrontendProfile | null = null;
-    private searchTabsEl: HTMLElement | null = null;
+    private searchTabs: SearchTabs | null = null;
 
     /** ID текущего запроса истории (используется для защиты от гонок). */
     private historyRequestId = 0;
@@ -372,10 +373,19 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             onChatRemoved: (chatId) => this.chatWrapper?.removeChat(chatId),
             onChatMovedToTop: (chatId) => this.chatWrapper?.moveChatToTop(chatId),
             onActiveChatRemoved: () => this.props.router.navigate('/chats'),
-            onSearchResults: (items) => this.chatWrapper?.showSearchResults(items),
+            onSearchResults: (result) => {
+                if (result.tab === 'contact') {
+                    this.chatWrapper?.showContactResults(
+                        result.contacts?.local ?? [],
+                        result.contacts?.global ?? [],
+                    );
+                } else {
+                    this.chatWrapper?.showSearchResults(result.chats);
+                }
+            },
             onRestoreChatList: () => this.chatWrapper?.restoreChatList(),
             onSearchActiveChange: (isActive) => {
-                if (this.searchTabsEl) this.searchTabsEl.style.display = isActive ? 'flex' : 'none';
+                this.searchTabs?.toggleVisible(isActive);
             },
         });
         this.creationController = new ChatCreationController({
@@ -603,27 +613,13 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         this.chatsView?.closeModal();
     }
 
-    private buildSearchTabs(): HTMLElement {
-        const wrap = document.createElement('div');
-        wrap.className = 'chats-search-tabs';
-        wrap.innerHTML = `
-            <button type="button" class="chats-search-tabs__btn chats-search-tabs__btn--active" data-type="">Чаты</button>
-            <button type="button" class="chats-search-tabs__btn" data-type="group">Группы</button>
-            <button type="button" class="chats-search-tabs__btn" data-type="channel">Каналы</button>
-        `;
-        wrap.style.display = 'none';
-        wrap.addEventListener('click', (e) => {
-            const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.chats-search-tabs__btn');
-            if (!btn) return;
-            const type = (btn.dataset.type ?? '') as ChatSearchType;
-            if (type === this.sidebarController?.getSearchType()) return;
-            this.sidebarController?.setSearchType(type);
-
-            wrap.querySelectorAll('.chats-search-tabs__btn').forEach(b =>
-                b.classList.toggle('chats-search-tabs__btn--active', b === btn)
-            );
+    private buildSearchTabs(): SearchTabs {
+        return new SearchTabs({
+            activeTab: 'dialog',
+            onChange: (tab: SearchTab) => {
+                this.sidebarController?.setSearchTab(tab);
+            },
         });
-        return wrap;
     }
 
     private handleSearchInput = (query: string): void => {
@@ -792,13 +788,15 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
          });
         this.searchForm.mount(sidebar as HTMLElement);
 
-        this.searchTabsEl = this.buildSearchTabs();
-        sidebar.appendChild(this.searchTabsEl);
+        this.searchTabs = this.buildSearchTabs();
+        this.searchTabs.mount(sidebar as HTMLElement);
+        this.searchTabs.toggleVisible(false);
 
-        this.chatWrapper = new ChatListWrapper({ 
+        this.chatWrapper = new ChatListWrapper({
             chats: this.sidebarController?.getChats() ?? [],
             activeChatId: this.activeChatId,
             onOpenChat: (chatId) => this.props.router.navigate(`/chats/${chatId}`),
+            onOpenContact: (login) => this.props.router.navigate(`/contacts/${login}`),
         });
         this.chatWrapper.mount(sidebar as HTMLElement);
 
