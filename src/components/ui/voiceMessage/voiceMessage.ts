@@ -289,13 +289,13 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
         // Инициируем запрос к STT
         this.props.onTranscribe(this.props.messageId, this.props.attachmentId);
 
-        // Запускаем тайм-аут ожидания ответа (15 секунд)
+        // Запускаем тайм-аут ожидания ответа (90 секунд)
         this.clearSttTimeout();
         this.sttTimeoutId = setTimeout(() => {
             if (this.isTranscribing) {
                 this.setTranscriptError("Не удалось дождаться ответа от сервера");
             }
-        }, 15000);
+        }, 90000);
     };
 
     /**
