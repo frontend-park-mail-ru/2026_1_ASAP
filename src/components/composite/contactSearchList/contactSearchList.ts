@@ -53,6 +53,9 @@ export class ContactSearchList extends BaseComponent<ContactSearchListProps> {
 
     constructor(props: ContactSearchListProps) {
         super(props);
+        if (this.props.listMode === 'createDialog') {
+            this.legacyScope = 'local';
+        }
     }
 
     getTemplate() {
@@ -151,9 +154,11 @@ export class ContactSearchList extends BaseComponent<ContactSearchListProps> {
     private buildLegacyTabs(): HTMLElement {
         const wrap = document.createElement('div');
         wrap.className = 'contacts-search-tabs';
+        const isContactsActive = this.legacyScope === 'contacts' ? 'contacts-search-tabs__btn--active' : '';
+        const isLocalActive = this.legacyScope === 'local' ? 'contacts-search-tabs__btn--active' : '';
         wrap.innerHTML = `
-            <button type="button" class="contacts-search-tabs__btn contacts-search-tabs__btn--active" data-scope="contacts">Контакты</button>
-            <button type="button" class="contacts-search-tabs__btn" data-scope="local">Глобальный поиск</button>
+            <button type="button" class="contacts-search-tabs__btn ${isContactsActive}" data-scope="contacts">Контакты</button>
+            <button type="button" class="contacts-search-tabs__btn ${isLocalActive}" data-scope="local">Глобальный поиск</button>
         `;
         if (this.props.listMode !== 'createDialog') {
             wrap.style.display = 'none';

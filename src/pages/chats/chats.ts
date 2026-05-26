@@ -365,6 +365,13 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
         this.activeMenuButton = "messages";
         this.chatsView = new ChatsView(this.element);
+
+        try {
+            if (sessionStorage.getItem('pulse_first_login') === '1') {
+                this.mountOnboarding('pulse_ob_closed_anonymous');
+            }
+        } catch {}
+
         this.sidebarController = new ChatSidebarController({
             getActiveChatId: () => this.activeChatId,
             onChatsLoaded: (chats) => this.chatWrapper?.setChats(chats),
@@ -644,7 +651,10 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         if (!this.element || this.onboardingComponent) return;
         this.onboardingComponent = new OnboardingEmpty({
             onComplete: () => {
-                try { localStorage.setItem(obKey, '1'); } catch {}
+                const finalKey = this.currentUserId !== null
+                    ? `pulse_ob_closed_${this.currentUserId}`
+                    : obKey;
+                try { localStorage.setItem(finalKey, '1'); } catch {}
                 this.onboardingComponent?.unmount();
                 this.onboardingComponent = null;
                 this.props.router.navigate('/chats/create-dialog');
