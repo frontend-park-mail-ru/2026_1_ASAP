@@ -2,8 +2,10 @@ import "./styles/main.scss";
 import "./core/handlebars";
 import { PULSE_SUPPORT_CLOSE } from "./core/constants/supportIframe";
 import { SupportOverlay } from "./components/composite/supportOverlay/supportOverlay";
+import { themeService } from "./services/themeService";
 
 document.addEventListener("DOMContentLoaded", async () => {
+    themeService.init();
     const root = document.getElementById("rootSupport");
     if (root) {
         const overlay = new SupportOverlay({
