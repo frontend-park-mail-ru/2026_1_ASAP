@@ -24,6 +24,16 @@
         letter-spacing: $text-tertiary-ls;
         @include hover-transition;
 
+        // Убираем рамку фокуса после клика мышью (focus, но не focus-visible).
+        // Для tab-клавиши focus-visible сработает и оставит видимый outline — a11y сохранена.
+        &:focus { outline: none; }
+        &:focus:not(:focus-visible) { outline: none; }
+        &:focus-visible {
+            outline: 2px solid $color-bubble;
+            outline-offset: 2px;
+            border-radius: 2px;
+        }
+
         &:hover:not(&--active) {
             color: $color-text;
         }

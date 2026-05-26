@@ -200,9 +200,20 @@ export class ChatsUseCases {
                 this.data.searchContacts(query, 'contacts'),
                 this.data.searchContacts(query, 'local'),
             ]);
-            const local = localRes?.items ?? [];
+            // Защитный фронт-фильтр на случай если бэк для scope=contacts отдаёт
+            // всех моих контактов без учёта q (наблюдалось такое поведение).
+            const q = query.trim().toLowerCase();
+            const matches = (c: { displayName?: string; login?: string }): boolean => {
+                if (!q) return true;
+                const name = (c.displayName ?? '').toLowerCase();
+                const login = (c.login ?? '').toLowerCase();
+                return name.includes(q) || login.includes(q);
+            };
+            const local = (localRes?.items ?? []).filter(matches);
             const localIds = new Set(local.map((c) => c.userId));
-            const global = (globalRes?.items ?? []).filter((c) => !localIds.has(c.userId));
+            const global = (globalRes?.items ?? [])
+                .filter(matches)
+                .filter((c) => !localIds.has(c.userId));
             return { tab, chats: [], contacts: { local, global } };
         }
 
