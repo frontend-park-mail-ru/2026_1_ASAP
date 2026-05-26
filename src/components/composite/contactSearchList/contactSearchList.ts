@@ -53,9 +53,6 @@ export class ContactSearchList extends BaseComponent<ContactSearchListProps> {
 
     constructor(props: ContactSearchListProps) {
         super(props);
-        if (this.props.listMode === 'createDialog') {
-            this.legacyScope = 'local';
-        }
     }
 
     getTemplate() {

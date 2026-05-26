@@ -71,6 +71,7 @@ export class CreateDialogWindow extends BaseComponent<CreateDialogWindowProps> {
         });
 
         if (this.props.contacts.length === 0) {
+            this.contactSearchList.activateGlobalSearch();
             this.contactSearchList.setSearchQuery("а");
         }
 
