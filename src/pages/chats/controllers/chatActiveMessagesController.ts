@@ -58,14 +58,9 @@ export class ChatActiveMessagesController {
             unreadCount: this.deps.getPendingUnreadCount(chatId),
             lastReadMessageId: this.deps.getLastReadMessageId(chatId),
             onDownloadAttachment: (url, fileName) => this.downloadAttachment(url, fileName),
-            onTranscribe: async (messageId, url) => {
-                const res = await speechToTextService.transcribeVoice(messageId, url);
-                if (res.success && res.text) {
-                    return res.text;
-                }
-                throw new Error(res.error || "Не удалось расшифровать аудиозапись");
+            onTranscribe: (messageId, attachmentId) => {
+                speechToTextService.requestTranscription(chatId, messageId);
             },
-            getCachedTranscription: (messageId) => speechToTextService.getCached(messageId),
             onLoadMore: async () => {
                 const { hasMoreHistory, nextBeforeId } = this.deps.getPaginationState();
                 const currentUserId = this.deps.getCurrentUserId();

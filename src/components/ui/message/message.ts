@@ -24,8 +24,7 @@ interface MessageProps extends IBaseComponentProps {
     onDownloadAttachment?: (url: string, fileName: string) => void | Promise<void>;
     onMediaClick?: (attachments: MessageAttachment[], initialIndex: number) => void;
     onContactClick?: (userId: number) => void;
-    onTranscribe?: (messageId: string, url: string) => Promise<string>;
-    getCachedTranscription?: (messageId: string) => string | undefined;
+    onTranscribe?: (messageId: string, attachmentId?: number) => void;
 }
 
 /**
@@ -277,8 +276,10 @@ export class Message extends BaseComponent<MessageProps> {
                         url: attachment.url,
                         durationStr: durationText,
                         messageId: this.props.message.id,
-                        onTranscribe: this.props.onTranscribe,
-                        getCachedTranscription: this.props.getCachedTranscription
+                        attachmentId: attachment.id,
+                        canTranscribe: attachment.canTranscribe,
+                        transcript: attachment.transcript,
+                        onTranscribe: this.props.onTranscribe
                     });
                     voiceMsg.mount(voiceWrapper);
                     this.childComponents.push(voiceMsg);
@@ -479,6 +480,74 @@ export class Message extends BaseComponent<MessageProps> {
 
         textEl.replaceWith(stickerEl);
         this.element.classList.add('message--sticker');
+    }
+
+    /**
+     * Обновляет текст расшифровки для голосового сообщения с указанным attachmentId.
+     * Также сохраняет результат в локальных props сообщения.
+     *
+     * @param {number} attachmentId - Идентификатор вложения.
+     * @param {string} transcript - Текст расшифровки.
+     * @public
+     */
+    public updateVoiceTranscript(attachmentId: number, transcript: string): void {
+        const attachment = this.props.message.attachments?.find(a => a.type === 'voice' && a.id === attachmentId);
+        if (attachment) {
+            attachment.transcript = transcript;
+        }
+
+        this.childComponents.forEach(comp => {
+            if (comp instanceof VoiceMessage && comp.getAttachmentId() === attachmentId) {
+                comp.setTranscript(transcript);
+            }
+        });
+    }
+
+    /**
+     * Устанавливает текст ошибки для голосового сообщения с указанным attachmentId.
+     *
+     * @param {number} attachmentId - Идентификатор вложения.
+     * @param {string} error - Текст ошибки.
+     * @public
+     */
+    public setVoiceTranscriptError(attachmentId: number, error: string): void {
+        this.childComponents.forEach(comp => {
+            if (comp instanceof VoiceMessage && comp.getAttachmentId() === attachmentId) {
+                comp.setTranscriptError(error);
+            }
+        });
+    }
+
+    /**
+     * Скрывает кнопку транскрипции для голосового сообщения с указанным attachmentId.
+     *
+     * @param {number} attachmentId - Идентификатор вложения.
+     * @public
+     */
+    public hideVoiceTranscriptButton(attachmentId: number): void {
+        this.childComponents.forEach(comp => {
+            if (comp instanceof VoiceMessage && comp.getAttachmentId() === attachmentId) {
+                comp.hideTranscribeButton();
+            }
+        });
+    }
+
+    /**
+     * Передает ошибку в голосовое вложение, которое в данный момент находится в процессе расшифровки.
+     *
+     * @param {string} errorText - Текст ошибки.
+     * @param {boolean} hideButton - Флаг, нужно ли скрыть кнопку транскрипции.
+     * @public
+     */
+    public setVoiceTranscriptErrorForActiveLoading(errorText: string, hideButton: boolean): void {
+        this.childComponents.forEach(comp => {
+            if (comp instanceof VoiceMessage && comp.isCurrentlyTranscribing()) {
+                if (hideButton) {
+                    comp.hideTranscribeButton();
+                }
+                comp.setTranscriptError(errorText);
+            }
+        });
     }
 
     /**

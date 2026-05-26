@@ -13,10 +13,14 @@ export interface VoiceMessageProps extends IBaseComponentProps {
     durationStr?: string;
     /** Уникальный идентификатор сообщения для связи с расшифровкой */
     messageId: string;
-    /** Колбэк для запуска процесса расшифровки речи на бэкенде */
-    onTranscribe?: (messageId: string, url: string) => Promise<string>;
-    /** Колбэк для проверки и получения текста из локального кэша */
-    getCachedTranscription?: (messageId: string) => string | undefined;
+    /** Идентификатор конкретного вложения голосового сообщения */
+    attachmentId?: number;
+    /** Флаг возможности транскрипции (наличие активной подписки) */
+    canTranscribe?: boolean;
+    /** Текст расшифровки, если он уже был получен ранее */
+    transcript?: string;
+    /** Колбэк для инициации процесса расшифровки речи на бэкенде */
+    onTranscribe?: (messageId: string, attachmentId?: number) => void;
 }
 
 /**
@@ -56,6 +60,8 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
     private isTranscribing = false;
     /** Состояние отображения текстовой панели расшифровки */
     private showTranscriptState = false;
+    /** Идентификатор таймера ожидания ответа WebSocket */
+    private sttTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
     /**
      * Создает экземпляр VoiceMessage.
@@ -100,12 +106,9 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
             this.durationStr.textContent = this.props.durationStr;
         }
 
-        // Проверяем наличие расшифровки в кэше при рендеринге (например, при скролле)
-        const cached = this.props.getCachedTranscription?.(this.props.messageId);
-        if (cached) {
-            this.showTranscript(cached);
+        // Если расшифровка уже пришла в свойствах, фиксируем состояние показа
+        if (this.props.transcript) {
             this.showTranscriptState = true;
-            this.sttBtn?.classList.add('voice-message__stt--active');
         }
 
         if (this.sttBtn) {
@@ -250,7 +253,7 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
      * Сворачивает/разворачивает панель расшифровки, запрашивает перевод аудио в текст при необходимости.
      * @private
      */
-    private toggleSTT = async (): Promise<void> => {
+    private toggleSTT = (): void => {
         if (this.isTranscribing) return;
 
         if (this.showTranscriptState) {
@@ -260,15 +263,14 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
             return;
         }
 
-        const cached = this.props.getCachedTranscription?.(this.props.messageId);
-        if (cached) {
-            this.showTranscript(cached);
+        if (this.props.transcript) {
+            this.showTranscript(this.props.transcript);
             this.showTranscriptState = true;
             this.sttBtn?.classList.add('voice-message__stt--active');
             return;
         }
 
-        if (!this.props.url || !this.props.onTranscribe) return;
+        if (!this.props.onTranscribe) return;
 
         this.isTranscribing = true;
         this.sttBtn?.classList.add('voice-message__stt--loading');
@@ -284,31 +286,104 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
             this.transcriptTextEl.style.color = '';
         }
 
-        try {
-            const text = await this.props.onTranscribe(this.props.messageId, this.props.url);
-            
-            if (this.transcriptLoader) {
-                this.transcriptLoader.hidden = true;
+        // Инициируем запрос к STT
+        this.props.onTranscribe(this.props.messageId, this.props.attachmentId);
+
+        // Запускаем тайм-аут ожидания ответа (15 секунд)
+        this.clearSttTimeout();
+        this.sttTimeoutId = setTimeout(() => {
+            if (this.isTranscribing) {
+                this.setTranscriptError("Не удалось дождаться ответа от сервера");
             }
-            if (this.transcriptTextEl) {
-                this.transcriptTextEl.textContent = text;
-            }
-            this.showTranscriptState = true;
-            this.sttBtn?.classList.add('voice-message__stt--active');
-        } catch (error) {
-            if (this.transcriptLoader) {
-                this.transcriptLoader.hidden = true;
-            }
-            if (this.transcriptTextEl) {
-                this.transcriptTextEl.textContent = error instanceof Error ? error.message : 'Ошибка расшифровки';
-                this.transcriptTextEl.style.color = '#ff4d4f'; // Предупреждающий красный цвет ошибки
-            }
-            this.showTranscriptState = true;
-        } finally {
-            this.isTranscribing = false;
-            this.sttBtn?.classList.remove('voice-message__stt--loading');
-        }
+        }, 15000);
     };
+
+    /**
+     * Возвращает идентификатор вложения голосового сообщения.
+     * @returns {number | undefined} Идентификатор вложения.
+     * @public
+     */
+    public getAttachmentId(): number | undefined {
+        return this.props.attachmentId;
+    }
+
+    /**
+     * Устанавливает успешный текст расшифровки и раскрывает панель.
+     * Вызывается асинхронно при приходе WS-события.
+     *
+     * @param {string} text - Текст расшифровки.
+     * @public
+     */
+    public setTranscript(text: string): void {
+        this.isTranscribing = false;
+        this.clearSttTimeout();
+
+        if (this.sttBtn) {
+            this.sttBtn.classList.remove('voice-message__stt--loading');
+            this.sttBtn.classList.add('voice-message__stt--active');
+        }
+
+        this.showTranscript(text);
+        this.showTranscriptState = true;
+    }
+
+    /**
+     * Выводит ошибку расшифровки в панель.
+     * Вызывается асинхронно при получении WS-ошибки.
+     *
+     * @param {string} errorText - Текст ошибки.
+     * @public
+     */
+    public setTranscriptError(errorText: string): void {
+        this.isTranscribing = false;
+        this.clearSttTimeout();
+
+        if (this.sttBtn) {
+            this.sttBtn.classList.remove('voice-message__stt--loading');
+        }
+
+        if (this.transcriptContainer) {
+            this.transcriptContainer.classList.add('voice-message__transcript--visible');
+        }
+        if (this.transcriptLoader) {
+            this.transcriptLoader.hidden = true;
+        }
+        if (this.transcriptTextEl) {
+            this.transcriptTextEl.textContent = errorText;
+            this.transcriptTextEl.style.color = '#ff4d4f'; // Красный цвет ошибки
+        }
+        this.showTranscriptState = true;
+    }
+
+    /**
+     * Скрывает кнопку расшифровки STT (например, при отсутствии подписки).
+     * @public
+     */
+    public hideTranscribeButton(): void {
+        if (this.sttBtn) {
+            this.sttBtn.style.display = 'none';
+        }
+    }
+
+    /**
+     * Проверяет, выполняется ли расшифровка голосового сообщения в данный момент.
+     * @returns {boolean} True, если расшифровка активна.
+     * @public
+     */
+    public isCurrentlyTranscribing(): boolean {
+        return this.isTranscribing;
+    }
+
+    /**
+     * Очищает таймер ожидания ответа WebSocket.
+     * @private
+     */
+    private clearSttTimeout(): void {
+        if (this.sttTimeoutId !== null) {
+            clearTimeout(this.sttTimeoutId);
+            this.sttTimeoutId = null;
+        }
+    }
 
     /**
      * Показывает панель расшифровки с переданным текстом.
@@ -344,6 +419,8 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
      * @override
      */
     protected beforeUnmount(): void {
+        this.clearSttTimeout();
+
         if (this.audio) {
             this.audio.pause();
             this.audio.removeEventListener('loadedmetadata', this.handleLoadedMetadata);

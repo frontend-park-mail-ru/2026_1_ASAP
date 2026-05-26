@@ -29,8 +29,7 @@ interface MessageListProps extends IBaseComponentProps {
     /** Колбэк для скачивания вложения; реализация на уровне controller */
     onDownloadAttachment?: (url: string, fileName: string) => void | Promise<void>;
     onContactClick?: (userId: number) => void;
-    onTranscribe?: (messageId: string, url: string) => Promise<string>;
-    getCachedTranscription?: (messageId: string) => string | undefined;
+    onTranscribe?: (messageId: string, attachmentId?: number) => void;
 }
 
 /**
@@ -289,7 +288,6 @@ export class MessageList extends BaseComponent<MessageListProps> {
                 onMediaClick: this.handleMediaClick,
                 onContactClick: this.props.onContactClick,
                 onTranscribe: this.props.onTranscribe,
-                getCachedTranscription: this.props.getCachedTranscription,
             });
             messageComponent.mount(this.flexContainer!);
             this.messages.set(msgData.id, messageComponent);
@@ -368,7 +366,6 @@ export class MessageList extends BaseComponent<MessageListProps> {
                 onMediaClick: this.handleMediaClick,
                 onContactClick: this.props.onContactClick,
                 onTranscribe: this.props.onTranscribe,
-                getCachedTranscription: this.props.getCachedTranscription,
             });
             const tempDiv = document.createElement('div');
             comp.mount(tempDiv);
@@ -414,7 +411,6 @@ export class MessageList extends BaseComponent<MessageListProps> {
             onMediaClick: this.handleMediaClick,
             onContactClick: this.props.onContactClick,
             onTranscribe: this.props.onTranscribe,
-            getCachedTranscription: this.props.getCachedTranscription,
         });
 
         const wasAtBottom = this.isNearBottom();
@@ -440,6 +436,30 @@ export class MessageList extends BaseComponent<MessageListProps> {
      * Используется, чтобы при приходе серверного broadcast `message.New` не создавать дубликат DOM.
      * @returns true, если сообщение с `oldId` было найдено и обновлено.
      */
+    /**
+     * Возвращает компонент сообщения по его идентификатору.
+     * @param {string} id - Идентификатор сообщения.
+     * @returns {Message | undefined} Компонент сообщения.
+     * @public
+     */
+    public getMessageComponent(id: string): Message | undefined {
+        return this.messages.get(id);
+    }
+
+    /**
+     * Устанавливает текст ошибки / скрывает кнопку для вложения, которое сейчас расшифровывается.
+     * Используется как fallback, если сервер прислал ошибку без message_id.
+     *
+     * @param {string} errorText - Текст ошибки.
+     * @param {boolean} hideButton - Флаг, нужно ли скрыть кнопку расшифровки.
+     * @public
+     */
+    public setVoiceTranscriptErrorForActiveLoading(errorText: string, hideButton: boolean): void {
+        this.childMessages.forEach(msg => {
+            msg.setVoiceTranscriptErrorForActiveLoading(errorText, hideButton);
+        });
+    }
+
     public getLoadedMessages(): FrontendMessage[] {
         return Array.from(this.messages.values()).map(m => m.props.message);
     }

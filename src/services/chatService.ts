@@ -89,6 +89,7 @@ type AttachmentUploadResult =
 
 function mapAttachmentDto(attachment: MessageAttachmentDto): MessageAttachment {
     return {
+        id: attachment.id,
         type: attachment.type,
         url: attachment.url,
         fileName: attachment.file_name,
@@ -98,6 +99,8 @@ function mapAttachmentDto(attachment: MessageAttachmentDto): MessageAttachment {
         contactFirstName: attachment.contact_first_name,
         contactLastName: attachment.contact_last_name,
         contactAvatarUrl: attachment.contact_avatar_url,
+        canTranscribe: attachment.can_transcribe,
+        transcript: attachment.transcript,
     };
 }
 

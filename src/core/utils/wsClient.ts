@@ -18,7 +18,8 @@ export interface WsPacket {
 }
 
 export interface MessageAttachmentDto {
-    type: 'photo' | 'video' | 'file' | 'contact';
+    id?: number;
+    type: 'photo' | 'video' | 'file' | 'contact' | 'voice';
     url?: string;
     file_name?: string;
     mime_type?: string;
@@ -27,11 +28,21 @@ export interface MessageAttachmentDto {
     contact_first_name?: string;
     contact_last_name?: string;
     contact_avatar_url?: string;
+    can_transcribe?: boolean;
+    transcript?: string;
+}
+
+export interface VoiceTranscriptDto {
+    chat_id: number;
+    message_id: number;
+    attachment_id: number;
+    transcript: string;
 }
 
 export interface WsErrorDto {
     chat_id?: number | string;
     message_id?: number | string;
+    attachment_id?: number | string;
     temp_id?: string;
     tempId?: string;
     client_temp_id?: string;
