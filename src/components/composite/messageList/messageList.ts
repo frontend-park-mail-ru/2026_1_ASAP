@@ -29,6 +29,8 @@ interface MessageListProps extends IBaseComponentProps {
     /** Колбэк для скачивания вложения; реализация на уровне controller */
     onDownloadAttachment?: (url: string, fileName: string) => void | Promise<void>;
     onContactClick?: (userId: number) => void;
+    onTranscribe?: (messageId: string, url: string) => Promise<string>;
+    getCachedTranscription?: (messageId: string) => string | undefined;
 }
 
 /**
@@ -286,6 +288,8 @@ export class MessageList extends BaseComponent<MessageListProps> {
                 onDownloadAttachment: this.props.onDownloadAttachment,
                 onMediaClick: this.handleMediaClick,
                 onContactClick: this.props.onContactClick,
+                onTranscribe: this.props.onTranscribe,
+                getCachedTranscription: this.props.getCachedTranscription,
             });
             messageComponent.mount(this.flexContainer!);
             this.messages.set(msgData.id, messageComponent);
@@ -363,6 +367,8 @@ export class MessageList extends BaseComponent<MessageListProps> {
                 onDownloadAttachment: this.props.onDownloadAttachment,
                 onMediaClick: this.handleMediaClick,
                 onContactClick: this.props.onContactClick,
+                onTranscribe: this.props.onTranscribe,
+                getCachedTranscription: this.props.getCachedTranscription,
             });
             const tempDiv = document.createElement('div');
             comp.mount(tempDiv);
@@ -407,6 +413,8 @@ export class MessageList extends BaseComponent<MessageListProps> {
             onDownloadAttachment: this.props.onDownloadAttachment,
             onMediaClick: this.handleMediaClick,
             onContactClick: this.props.onContactClick,
+            onTranscribe: this.props.onTranscribe,
+            getCachedTranscription: this.props.getCachedTranscription,
         });
 
         const wasAtBottom = this.isNearBottom();

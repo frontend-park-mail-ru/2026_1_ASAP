@@ -7,6 +7,7 @@ import { ChannelJoinFooter } from "../../../components/composite/channelJoinFoot
 import { MessageList } from "../../../components/composite/messageList/messageList";
 import { MessageInput } from "../../../components/ui/messageInput/messageInput";
 import { stickerService } from "../../../services/stickerService";
+import { speechToTextService } from "../../../services/speechToTextService";
 import type { ActiveChatVM } from "../model/chatsViewModels";
 import type { ChatSessionController } from "./chatSessionController";
 
@@ -57,6 +58,14 @@ export class ChatActiveMessagesController {
             unreadCount: this.deps.getPendingUnreadCount(chatId),
             lastReadMessageId: this.deps.getLastReadMessageId(chatId),
             onDownloadAttachment: (url, fileName) => this.downloadAttachment(url, fileName),
+            onTranscribe: async (messageId, url) => {
+                const res = await speechToTextService.transcribeVoice(messageId, url);
+                if (res.success && res.text) {
+                    return res.text;
+                }
+                throw new Error(res.error || "Не удалось расшифровать аудиозапись");
+            },
+            getCachedTranscription: (messageId) => speechToTextService.getCached(messageId),
             onLoadMore: async () => {
                 const { hasMoreHistory, nextBeforeId } = this.deps.getPaginationState();
                 const currentUserId = this.deps.getCurrentUserId();

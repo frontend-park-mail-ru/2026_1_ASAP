@@ -11,12 +11,17 @@ export interface VoiceMessageProps extends IBaseComponentProps {
     url?: string;
     /** Заранее известная длительность сообщения в виде строки (например "0:59") */
     durationStr?: string;
+    /** Уникальный идентификатор сообщения для связи с расшифровкой */
+    messageId: string;
+    /** Колбэк для запуска процесса расшифровки речи на бэкенде */
+    onTranscribe?: (messageId: string, url: string) => Promise<string>;
+    /** Колбэк для проверки и получения текста из локального кэша */
+    getCachedTranscription?: (messageId: string) => string | undefined;
 }
 
 /**
- * Компонент для воспроизведения голосовых сообщений.
- * Реализует проигрывание аудио, обновление таймера и прогресс-бара визуализатора.
- * Гарантирует воспроизведение только одного голосового сообщения в один момент времени.
+ * Компонент для воспроизведения голосовых сообщений и показа расшифровки текста.
+ * Реализует проигрывание аудио, обновление таймера, прогресс-бара и распознавание речи (Speech-to-Text).
  *
  * @class VoiceMessage
  * @extends {BaseComponent<VoiceMessageProps>}
@@ -37,6 +42,20 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
     private visualizer: HTMLElement | null = null;
     /** Элемент для отображения длительности или текущего времени */
     private durationStr: HTMLElement | null = null;
+
+    /** Кнопка запроса расшифровки «T» */
+    private sttBtn: HTMLButtonElement | null = null;
+    /** Контейнер панели расшифровки */
+    private transcriptContainer: HTMLElement | null = null;
+    /** Контейнер текста расшифровки */
+    private transcriptTextEl: HTMLElement | null = null;
+    /** Анимированный лоадер расшифровки */
+    private transcriptLoader: HTMLElement | null = null;
+
+    /** Флаг активного выполнения сетевого запроса к Speech-to-Text */
+    private isTranscribing = false;
+    /** Состояние отображения текстовой панели расшифровки */
+    private showTranscriptState = false;
 
     /**
      * Создает экземпляр VoiceMessage.
@@ -70,10 +89,27 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
         this.visualizer = this.element.querySelector('[data-component="voice-visualizer"]');
         this.durationStr = this.element.querySelector('[data-component="voice-duration"]');
 
+        this.sttBtn = this.element.querySelector('[data-component="voice-stt"]');
+        this.transcriptContainer = this.element.querySelector('[data-component="voice-transcript"]');
+        this.transcriptTextEl = this.element.querySelector('[data-component="voice-transcript-text"]');
+        this.transcriptLoader = this.element.querySelector('[data-component="voice-transcript-loader"]');
+
         this.initVisualizer();
 
         if (this.props.durationStr && this.durationStr) {
             this.durationStr.textContent = this.props.durationStr;
+        }
+
+        // Проверяем наличие расшифровки в кэше при рендеринге (например, при скролле)
+        const cached = this.props.getCachedTranscription?.(this.props.messageId);
+        if (cached) {
+            this.showTranscript(cached);
+            this.showTranscriptState = true;
+            this.sttBtn?.classList.add('voice-message__stt--active');
+        }
+
+        if (this.sttBtn) {
+            this.sttBtn.addEventListener('click', this.toggleSTT);
         }
 
         if (!this.props.url) return;
@@ -174,7 +210,7 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
         for (let i = 0; i < bars.length; i++) {
             bars[i].classList.remove('voice-message__bar--active');
         }
-
+        
         if (VoiceMessage.currentPlayingAudio === this.audio) {
             VoiceMessage.currentPlayingAudio = null;
             VoiceMessage.currentPlayingIcon = null;
@@ -210,8 +246,100 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
     };
 
     /**
+     * Обрабатывает нажатие на кнопку расшифровки (Speech-to-Text).
+     * Сворачивает/разворачивает панель расшифровки, запрашивает перевод аудио в текст при необходимости.
+     * @private
+     */
+    private toggleSTT = async (): Promise<void> => {
+        if (this.isTranscribing) return;
+
+        if (this.showTranscriptState) {
+            this.hideTranscript();
+            this.showTranscriptState = false;
+            this.sttBtn?.classList.remove('voice-message__stt--active');
+            return;
+        }
+
+        const cached = this.props.getCachedTranscription?.(this.props.messageId);
+        if (cached) {
+            this.showTranscript(cached);
+            this.showTranscriptState = true;
+            this.sttBtn?.classList.add('voice-message__stt--active');
+            return;
+        }
+
+        if (!this.props.url || !this.props.onTranscribe) return;
+
+        this.isTranscribing = true;
+        this.sttBtn?.classList.add('voice-message__stt--loading');
+        
+        if (this.transcriptContainer) {
+            this.transcriptContainer.classList.add('voice-message__transcript--visible');
+        }
+        if (this.transcriptLoader) {
+            this.transcriptLoader.hidden = false;
+        }
+        if (this.transcriptTextEl) {
+            this.transcriptTextEl.textContent = '';
+            this.transcriptTextEl.style.color = '';
+        }
+
+        try {
+            const text = await this.props.onTranscribe(this.props.messageId, this.props.url);
+            
+            if (this.transcriptLoader) {
+                this.transcriptLoader.hidden = true;
+            }
+            if (this.transcriptTextEl) {
+                this.transcriptTextEl.textContent = text;
+            }
+            this.showTranscriptState = true;
+            this.sttBtn?.classList.add('voice-message__stt--active');
+        } catch (error) {
+            if (this.transcriptLoader) {
+                this.transcriptLoader.hidden = true;
+            }
+            if (this.transcriptTextEl) {
+                this.transcriptTextEl.textContent = error instanceof Error ? error.message : 'Ошибка расшифровки';
+                this.transcriptTextEl.style.color = '#ff4d4f'; // Предупреждающий красный цвет ошибки
+            }
+            this.showTranscriptState = true;
+        } finally {
+            this.isTranscribing = false;
+            this.sttBtn?.classList.remove('voice-message__stt--loading');
+        }
+    };
+
+    /**
+     * Показывает панель расшифровки с переданным текстом.
+     * @private
+     */
+    private showTranscript(text: string): void {
+        if (this.transcriptContainer) {
+            this.transcriptContainer.classList.add('voice-message__transcript--visible');
+        }
+        if (this.transcriptLoader) {
+            this.transcriptLoader.hidden = true;
+        }
+        if (this.transcriptTextEl) {
+            this.transcriptTextEl.textContent = text;
+            this.transcriptTextEl.style.color = '';
+        }
+    }
+
+    /**
+     * Сворачивает панель расшифровки.
+     * @private
+     */
+    private hideTranscript(): void {
+        if (this.transcriptContainer) {
+            this.transcriptContainer.classList.remove('voice-message__transcript--visible');
+        }
+    }
+
+    /**
      * Вызывается перед размонтированием компонента.
-     * Останавливает аудио, снимает обработчики событий и очищает глобальные синглтон-ссылки, если они указывали на этот объект.
+     * Останавливает аудио, снимает обработчики событий и очищает глобальные синглтон-ссылки.
      * @protected
      * @override
      */
@@ -230,6 +358,10 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
 
         if (this.playBtn) {
             this.playBtn.removeEventListener('click', this.togglePlay);
+        }
+
+        if (this.sttBtn) {
+            this.sttBtn.removeEventListener('click', this.toggleSTT);
         }
     }
 }

@@ -24,6 +24,8 @@ interface MessageProps extends IBaseComponentProps {
     onDownloadAttachment?: (url: string, fileName: string) => void | Promise<void>;
     onMediaClick?: (attachments: MessageAttachment[], initialIndex: number) => void;
     onContactClick?: (userId: number) => void;
+    onTranscribe?: (messageId: string, url: string) => Promise<string>;
+    getCachedTranscription?: (messageId: string) => string | undefined;
 }
 
 /**
@@ -273,7 +275,10 @@ export class Message extends BaseComponent<MessageProps> {
 
                     const voiceMsg = new VoiceMessage({ 
                         url: attachment.url,
-                        durationStr: durationText
+                        durationStr: durationText,
+                        messageId: this.props.message.id,
+                        onTranscribe: this.props.onTranscribe,
+                        getCachedTranscription: this.props.getCachedTranscription
                     });
                     voiceMsg.mount(voiceWrapper);
                     this.childComponents.push(voiceMsg);
