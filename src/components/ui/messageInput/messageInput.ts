@@ -225,6 +225,12 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             event.preventDefault();
             event.stopPropagation();
         }
+
+        if (this.textarea) {
+            this.textarea.blur();
+            window.scrollTo(0, 0);
+        }
+
         if (this.voiceRecorder) return;
 
         this.voiceRecorder = new VoiceRecorder({

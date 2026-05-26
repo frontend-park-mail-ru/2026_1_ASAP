@@ -70,6 +70,11 @@ export class CreateDialogWindow extends BaseComponent<CreateDialogWindowProps> {
             },
         });
 
+        if (this.props.contacts.length === 0) {
+            this.contactSearchList.activateGlobalSearch();
+            this.contactSearchList.setSearchQuery("а");
+        }
+
         this.actionLayout = new ActionLayout({
             header: this.actionHeader,
             content: [this.contactSearchList],

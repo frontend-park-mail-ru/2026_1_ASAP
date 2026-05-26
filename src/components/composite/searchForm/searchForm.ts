@@ -139,6 +139,27 @@ export class SearchForm extends BaseForm<SearchFormProps> {
         inputEl?.focus();
     }
 
+    public setQuery(query: string): void {
+        const el = this.input?.element;
+        if (!el) return;
+        const inputEl = (el.tagName === 'INPUT' ? el : el.querySelector('input')) as HTMLInputElement | null;
+        if (inputEl) {
+            inputEl.value = query;
+            if (this.input) this.input.value = query;
+            
+            if (query !== "") {
+                if (!this.deleteButton?.element?.isConnected) {
+                    const searchPanel = this.element?.querySelector('.search-panel');
+                    if (searchPanel) {
+                        this.deleteButton?.mount(searchPanel as HTMLElement);
+                    }
+                }
+            } else {
+                this.deleteButton?.unmount();
+            }
+        }
+    }
+
     private animateFab(direction: 'open' | 'close'): void {
         const img = this.addButtonImg;
         if (!img) return;

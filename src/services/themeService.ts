@@ -29,6 +29,12 @@ class ThemeService {
         }
 
         this.apply(this.current);
+
+        window.addEventListener('storage', (e) => {
+            if (e.key === STORAGE_KEY && (e.newValue === 'light' || e.newValue === 'dark')) {
+                this.apply(e.newValue as Theme);
+            }
+        });
     }
 
     public get(): Theme {

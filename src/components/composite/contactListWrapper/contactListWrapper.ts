@@ -18,6 +18,7 @@ interface ContactListWrapperProps extends IBaseFormProps {
     contacts?: FrontendContact[];
     listMode?: 'default' | 'createDialog' | 'createGroup';
     onAction?: (contactId: number, isSelected?: boolean, contactName?: string) => void;
+    onContactsLoaded?: (contacts: FrontendContact[]) => void;
 };
 
 /**
@@ -52,6 +53,7 @@ export class ContactListWrapper extends BaseForm<ContactListWrapperProps> {
             contacts: this.props.contacts,
             listMode: this.props.listMode,
             onAction: this.props.onAction,
+            onContactsLoaded: this.props.onContactsLoaded,
         });
         this.contactListItem.mount(this.element!);
     };

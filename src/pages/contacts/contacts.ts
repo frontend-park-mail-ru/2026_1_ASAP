@@ -158,6 +158,11 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
             onAddClick: () => this.contactSearchList?.activateGlobalSearch(),
             // Унифицированный поиск (4 таба) — тот же, что используется на /chats.
             onSearchUnified: (query, tab) => chatsUseCases.searchUnified(query, tab),
+            onContactsLoaded: (contacts) => {
+                if (contacts.length === 0) {
+                    this.contactSearchList?.setSearchQuery("а");
+                }
+            }
         });
         this.contactSearchList.mount(sidebar as HTMLElement);
 
