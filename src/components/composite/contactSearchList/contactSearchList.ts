@@ -139,8 +139,10 @@ export class ContactSearchList extends BaseComponent<ContactSearchListProps> {
         if (!this.element) return;
         const listSlot = this.element.querySelector<HTMLElement>('.contact-search-list__list');
         const chatResultsSlot = this.element.querySelector<HTMLElement>('.contact-search-list__chat-results');
-        if (listSlot) listSlot.hidden = active;
-        if (chatResultsSlot) chatResultsSlot.hidden = !active;
+        // .contact-search-list__list имеет display: flex в SCSS — атрибут [hidden]
+        // не переопределяет это из-за специфичности UA-стиля. Используем inline-стиль.
+        if (listSlot) listSlot.style.display = active ? 'none' : '';
+        if (chatResultsSlot) chatResultsSlot.style.display = active ? '' : 'none';
         this.searchTabs?.toggleVisible(active);
     }
 
