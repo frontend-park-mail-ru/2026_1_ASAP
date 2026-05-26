@@ -8,6 +8,7 @@ import { Button } from "../../components/ui/button/button";
 import type { BaseComponent } from "../../core/base/baseComponent";
 import { ChatWindow } from "../../components/composite/chatWindow/chatWindow";
 import { ChatSkeleton } from "../../components/composite/chatSkeleton/chatSkeleton";
+import { subscriptionService } from "../../services/subscriptionService";
 import { SearchTabs, type SearchTab } from "../../components/composite/searchTabs/searchTabs";
 import type { MessageList } from "../../components/composite/messageList/messageList";
 import type { MessageInput } from "../../components/ui/messageInput/messageInput";
@@ -228,6 +229,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 contactFirstName: attachment.contact_first_name,
                 contactLastName: attachment.contact_last_name,
                 contactAvatarUrl: attachment.contact_avatar_url,
+                isBlur: attachment.is_blur,
             })),
         };
     }
@@ -366,6 +368,10 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         this.activeMenuButton = "messages";
         this.chatsView = new ChatsView(this.element);
 
+        // Прогреваем статус подписки заранее: рендер сообщений с blur-флагом
+        // спрашивает синхронно `isPremiumCached()`, чтобы не дёргать сеть на каждую картинку.
+        void subscriptionService.primePremium();
+
         try {
             if (sessionStorage.getItem('pulse_first_login') === '1') {
                 this.mountOnboarding('pulse_ob_closed_anonymous');
@@ -496,6 +502,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                     console.error("Failed to load profile for contact click", e);
                 }
             },
+            onPremiumRequired: () => this.props.router.navigate('/settings/subscription'),
             getPendingUnreadCount: (chatId) => this.pendingUnreadForOpen.get(chatId) ?? 0,
             getLastReadMessageId: (chatId) => {
                 const chat = this.sidebarController?.getChats()

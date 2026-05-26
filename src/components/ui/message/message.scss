@@ -193,6 +193,53 @@
         min-width: 240px;
     }
 
+    // NSFW-блюр: размываем само медиа, поверх — кликабельный оверлей.
+    &__attachment-media--blurred {
+        filter: blur(24px);
+        transform: scale(1.06); // прячем прозрачные края от blur'а
+        pointer-events: none;
+    }
+
+    &__attachment-blur {
+        position: absolute;
+        inset: 0;
+        z-index: 3;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 12px;
+        text-align: center;
+        cursor: pointer;
+        background: rgba(0, 0, 0, 0.35);
+        @include hover-transition;
+
+        &:hover {
+            background: rgba(0, 0, 0, 0.45);
+        }
+
+        &:focus-visible {
+            outline: 2px solid rgba(255, 255, 255, 0.7);
+            outline-offset: -2px;
+        }
+    }
+
+    &__attachment-blur-icon {
+        width: 28px;
+        height: 28px;
+        // Иконка одноцветная — приводим к белому поверх затемнённого оверлея.
+        filter: brightness(0) invert(1);
+        opacity: 0.92;
+    }
+
+    &__attachment-blur-label {
+        font: $text-tertiary;
+        letter-spacing: $text-tertiary-ls;
+        color: #fff;
+        max-width: 220px;
+    }
+
     &__attachment-media-link--loading,
     &__attachment-video--loading {
         min-height: 180px;

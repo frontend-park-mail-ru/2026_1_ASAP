@@ -58,6 +58,7 @@ export interface MessageAttachment {
     contactFirstName?: string;
     contactLastName?: string;
     contactAvatarUrl?: string;
+    isBlur?: boolean;
 }
 
 export interface OutgoingMessageAttachment {

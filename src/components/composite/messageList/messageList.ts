@@ -4,6 +4,7 @@ import { Message } from '../../ui/message/message';
 import { MediaViewerOverlay } from '../mediaViewerOverlay/mediaViewerOverlay';
 import template from './messageList.hbs';
 import { getFullUrl } from '../../../core/utils/url';
+import { subscriptionService } from '../../../services/subscriptionService';
 
 /**
  * @interface MessageListProps - Свойства компонента списка сообщений.
@@ -29,6 +30,8 @@ interface MessageListProps extends IBaseComponentProps {
     /** Колбэк для скачивания вложения; реализация на уровне controller */
     onDownloadAttachment?: (url: string, fileName: string) => void | Promise<void>;
     onContactClick?: (userId: number) => void;
+    /** Клик по CTA «Доступно с Pulse Premium» на заблюренном вложении (без подписки). */
+    onPremiumRequired?: () => void;
 }
 
 /**
@@ -52,11 +55,26 @@ export class MessageList extends BaseComponent<MessageListProps> {
     private pinnedToBottom = true;
     private resizeObserver: ResizeObserver | null = null;
     private unreadDividerEl: HTMLElement | null = null;
+    /** Разблюренные NSFW-вложения, ключ `${messageId}:${mediaIndex}`. In-memory: живёт до перезагрузки/смены чата. */
+    private revealedAttachments: Set<string> = new Set();
 
-    private handleMediaClick = (attachments: MessageAttachment[], initialIndex: number) => {
+    /** Общие пропсы блюра, прокидываемые в каждый Message. */
+    private blurProps() {
+        return {
+            isPremium: subscriptionService.isPremiumCached(),
+            revealedAttachments: this.revealedAttachments,
+            onPremiumRequired: this.props.onPremiumRequired,
+        };
+    }
+
+    private handleMediaClick = (attachments: MessageAttachment[], initialIndex: number, messageId: string) => {
         const overlay = new MediaViewerOverlay({
             attachments,
             initialIndex,
+            isPremium: subscriptionService.isPremiumCached(),
+            revealedAttachments: this.revealedAttachments,
+            revealKeyPrefix: messageId,
+            onPremiumRequired: this.props.onPremiumRequired,
             onClose: () => {
                 overlay.unmount();
             }
@@ -286,6 +304,7 @@ export class MessageList extends BaseComponent<MessageListProps> {
                 onDownloadAttachment: this.props.onDownloadAttachment,
                 onMediaClick: this.handleMediaClick,
                 onContactClick: this.props.onContactClick,
+                ...this.blurProps(),
             });
             messageComponent.mount(this.flexContainer!);
             this.messages.set(msgData.id, messageComponent);
@@ -363,6 +382,7 @@ export class MessageList extends BaseComponent<MessageListProps> {
                 onDownloadAttachment: this.props.onDownloadAttachment,
                 onMediaClick: this.handleMediaClick,
                 onContactClick: this.props.onContactClick,
+                ...this.blurProps(),
             });
             const tempDiv = document.createElement('div');
             comp.mount(tempDiv);
@@ -407,6 +427,7 @@ export class MessageList extends BaseComponent<MessageListProps> {
             onDownloadAttachment: this.props.onDownloadAttachment,
             onMediaClick: this.handleMediaClick,
             onContactClick: this.props.onContactClick,
+            ...this.blurProps(),
         });
 
         const wasAtBottom = this.isNearBottom();

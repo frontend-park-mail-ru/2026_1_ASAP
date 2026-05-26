@@ -98,6 +98,7 @@ function mapAttachmentDto(attachment: MessageAttachmentDto): MessageAttachment {
         contactFirstName: attachment.contact_first_name,
         contactLastName: attachment.contact_last_name,
         contactAvatarUrl: attachment.contact_avatar_url,
+        isBlur: attachment.is_blur,
     };
 }
 

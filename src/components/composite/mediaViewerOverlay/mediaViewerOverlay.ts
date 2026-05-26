@@ -7,6 +7,14 @@ interface MediaViewerOverlayProps extends IBaseComponentProps {
     attachments: MessageAttachment[];
     initialIndex: number;
     onClose: () => void;
+    /** Подписчик ли пользователь — нужно для NSFW-блюра. */
+    isPremium?: boolean;
+    /** Общий Set разблюренных вложений (тот же, что в messageList). */
+    revealedAttachments?: Set<string>;
+    /** Префикс ключа разблюра (messageId), чтобы совпадал с messageList. */
+    revealKeyPrefix?: string;
+    /** Клик по CTA подписки на заблюренном вложении (без подписки). */
+    onPremiumRequired?: () => void;
 }
 
 /**
@@ -68,6 +76,56 @@ export class MediaViewerOverlay extends BaseComponent<MediaViewerOverlayProps> {
         if (nextEl) nextEl.hidden = this.currentIndex === this.props.attachments.length - 1;
     }
 
+    private blurKey(index: number): string {
+        return `${this.props.revealKeyPrefix ?? ''}:${index}`;
+    }
+
+    private isAttachmentBlurred(index: number): boolean {
+        const attachment = this.props.attachments[index];
+        if (!attachment.isBlur) return false;
+        return !this.props.revealedAttachments?.has(this.blurKey(index));
+    }
+
+    /** Навешивает NSFW-блюр на текущее медиа во вьюере (если не разблюрено). */
+    private applyBlurGate(container: Element, media: HTMLElement, index: number): void {
+        if (!this.isAttachmentBlurred(index)) return;
+
+        const isPremium = this.props.isPremium ?? false;
+        media.classList.add('media-viewer-overlay__media--blurred');
+
+        const overlay = document.createElement('div');
+        overlay.className = 'media-viewer-overlay__blur';
+        overlay.setAttribute('role', 'button');
+        overlay.setAttribute('tabindex', '0');
+
+        const label = document.createElement('span');
+        label.className = 'media-viewer-overlay__blur-label';
+        label.textContent = isPremium
+            ? 'Чрезвычайно милый контент. Нажмите, чтобы показать'
+            : 'Доступно с подпиской ImPulse';
+        overlay.appendChild(label);
+        overlay.setAttribute('aria-label', label.textContent);
+
+        const activate = (e: Event): void => {
+            e.stopPropagation();
+            e.preventDefault();
+            if (isPremium) {
+                this.props.revealedAttachments?.add(this.blurKey(index));
+                media.classList.remove('media-viewer-overlay__media--blurred');
+                if (container.contains(overlay)) overlay.remove();
+            } else {
+                this.props.onPremiumRequired?.();
+            }
+        };
+
+        overlay.addEventListener('click', activate);
+        overlay.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') activate(e);
+        });
+
+        container.appendChild(overlay);
+    }
+
     private renderCurrentMedia() {
         const container = this.element?.querySelector('.media-viewer-overlay__content-wrapper');
         if (!container) return;
@@ -105,6 +163,7 @@ export class MediaViewerOverlay extends BaseComponent<MediaViewerOverlayProps> {
             }, { once: true });
 
             container.appendChild(img);
+            this.applyBlurGate(container, img, this.currentIndex);
         } else if (attachment.type === 'video') {
             const loader = document.createElement('div');
             loader.className = 'media-viewer-overlay__spinner';
@@ -135,8 +194,9 @@ export class MediaViewerOverlay extends BaseComponent<MediaViewerOverlayProps> {
             }, { once: true });
 
             container.appendChild(video);
+            this.applyBlurGate(container, video, this.currentIndex);
         }
-        
+
         const counter = this.element?.querySelector('.media-viewer-overlay__counter');
         if (counter) {
             if (this.props.attachments.length > 1) {

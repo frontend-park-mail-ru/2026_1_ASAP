@@ -25,6 +25,8 @@ interface ChatActiveMessagesControllerDeps {
     onStopTyping: (chatId: string) => void;
     onJoinChannel: (chatId: string) => Promise<void>;
     onContactClick: (userId: number) => void;
+    /** Клик по CTA «Доступно с Pulse Premium» на заблюренном вложении (без подписки). */
+    onPremiumRequired: () => void;
     /** Сколько непрочитанных у чата на момент открытия (захватываем до resetUnread). */
     getPendingUnreadCount: (chatId: string) => number;
     /** ID последнего прочитанного сообщения — главный источник истины для якоря «новые». */
@@ -89,6 +91,7 @@ export class ChatActiveMessagesController {
                 }
             },
             onContactClick: this.deps.onContactClick,
+            onPremiumRequired: this.deps.onPremiumRequired,
         });
 
         let footerComponent: BaseComponent | undefined;
