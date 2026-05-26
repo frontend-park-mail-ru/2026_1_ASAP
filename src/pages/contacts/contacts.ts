@@ -2,6 +2,7 @@ import template from "./contacts.hbs"
 import { BasePage, IBasePageProps } from "../../core/base/basePage"
 import { MenuBar } from "../../components/composite/menuBar/menuBar";
 import { ContactSearchList } from "../../components/composite/contactSearchList/contactSearchList";
+import { ContactSkeleton } from "../../components/composite/contactSkeleton/contactSkeleton";
 import { ProfileWindow } from "../../components/composite/profileWindow/profileWindow";
 import { contactService } from "../../services/contactService";
 import { chatsUseCases } from "../chats/model/chatsUseCases";
@@ -29,6 +30,7 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
     private menuBar: MenuBar | null = null;
     private mainContentArea: HTMLElement | null = null;
     private profileWindow: ProfileWindow | null = null;
+    private contactSkeleton: ContactSkeleton | null = null;
     private placeHolder: HTMLElement | null = null;
     private activeContactId: number | null = null;
     private currentUserId: number | null = null;
@@ -102,6 +104,10 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
         if (this.profileWindow) {
             this.profileWindow.unmount();
             this.profileWindow = null;
+        }
+        if (this.contactSkeleton) {
+            this.contactSkeleton.unmount();
+            this.contactSkeleton = null;
         }
         this.syncMobileLayoutState();
     }
@@ -195,6 +201,20 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
     };
 
     /**
+     * Показывает скелетон-плейсхолдер на месте ProfileWindow, пока идёт REST.
+     * Геометрически совпадает с реальным окном, чтобы при подмене не было прыжка.
+     */
+    private mountContactSkeleton(): void {
+        if (!this.mainContentArea) return;
+        if (this.contactSkeleton) {
+            this.contactSkeleton.unmount();
+            this.contactSkeleton = null;
+        }
+        this.contactSkeleton = new ContactSkeleton({});
+        this.contactSkeleton.mount(this.mainContentArea);
+    }
+
+    /**
      * Открывает окно с профилем пользователя.
      * @param {number | null} activeId - ID пользователя для отображения.
      * @private
@@ -213,6 +233,8 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
             this.profileWindow.unmount();
             this.profileWindow = null;
         }
+
+        this.mountContactSkeleton();
 
         const profileInfo = await contactService.getProfileInfo(this.activeContactId);
 
@@ -264,5 +286,7 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
         this.activeContactId = null;
         this.profileWindow?.unmount();
         this.profileWindow = null;
+        this.contactSkeleton?.unmount();
+        this.contactSkeleton = null;
     };
 };

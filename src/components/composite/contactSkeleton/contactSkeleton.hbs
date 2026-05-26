@@ -1,0 +1,42 @@
+<div class="contact-skeleton">
+    <div class="contact-skeleton__header">
+        <div class="contact-skeleton__header-title">Профиль пользователя</div>
+    </div>
+
+    <div class="contact-skeleton__main">
+        {{#if avatarUrl}}
+            <img class="contact-skeleton__avatar contact-skeleton__avatar--real" src="{{avatarUrl}}" alt="">
+        {{else}}
+            <div class="contact-skeleton__avatar contact-skeleton__avatar--placeholder"></div>
+        {{/if}}
+        {{#if name}}
+            <div class="contact-skeleton__name">{{name}}</div>
+        {{else}}
+            <div class="contact-skeleton__name-bar contact-skeleton__shimmer"></div>
+        {{/if}}
+    </div>
+
+    <div class="contact-skeleton__actions">
+        <div class="contact-skeleton__btn contact-skeleton__shimmer"></div>
+        <div class="contact-skeleton__btn contact-skeleton__shimmer"></div>
+    </div>
+
+    <div class="contact-skeleton__info">
+        <div class="contact-skeleton__row">
+            <div class="contact-skeleton__row-label">Логин:</div>
+            <div class="contact-skeleton__row-value contact-skeleton__shimmer"></div>
+        </div>
+        <div class="contact-skeleton__row">
+            <div class="contact-skeleton__row-label">Почта:</div>
+            <div class="contact-skeleton__row-value contact-skeleton__shimmer"></div>
+        </div>
+        <div class="contact-skeleton__row">
+            <div class="contact-skeleton__row-label">День рождения:</div>
+            <div class="contact-skeleton__row-value contact-skeleton__shimmer"></div>
+        </div>
+        <div class="contact-skeleton__row contact-skeleton__row--bio">
+            <div class="contact-skeleton__row-label">О себе:</div>
+            <div class="contact-skeleton__row-value contact-skeleton__row-value--bio contact-skeleton__shimmer"></div>
+        </div>
+    </div>
+</div>
