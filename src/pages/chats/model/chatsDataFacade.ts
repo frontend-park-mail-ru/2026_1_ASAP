@@ -194,8 +194,10 @@ export class ChatsDataFacade {
         return this.deps.chatService.searchMessages(chatId, query, beforeId, limit);
     }
 
-    public flushPendingMessages(): Promise<void> {
-        return this.deps.chatService.flushQueue();
+    public flushPendingMessages(): void {
+        // Дебаунс: на реконнекте триггеров несколько (online / system.Connected / SW),
+        // схлопываем их в один отложенный flush.
+        this.deps.chatService.scheduleFlush();
     }
 
     public clearInFlightMessages(): void {

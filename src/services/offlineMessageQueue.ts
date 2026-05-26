@@ -97,6 +97,10 @@ class OfflineMessageQueue {
         await this.tx('readwrite', (store) => store.delete(tempId));
     }
 
+    public async get(tempId: string): Promise<PendingMessage | undefined> {
+        return this.tx<PendingMessage | undefined>('readonly', (store) => store.get(tempId));
+    }
+
     public async getAll(): Promise<PendingMessage[]> {
         const all = await this.tx<PendingMessage[]>('readonly', (store) => store.getAll());
         return all.slice().sort((a, b) => a.createdAt - b.createdAt);

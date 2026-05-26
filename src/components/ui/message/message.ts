@@ -410,8 +410,8 @@ export class Message extends BaseComponent<MessageProps> {
         const label = document.createElement('span');
         label.className = 'message__attachment-blur-label';
         label.textContent = isPremium
-            ? 'Чувствительный контент. Нажмите, чтобы показать'
-            : 'Доступно с Pulse';
+            ? 'Слишком милый контент. Нажмите, чтобы показать'
+            : 'Доступно с подпиской ImPulse';
 
         overlay.append(icon, label);
         overlay.setAttribute('aria-label', label.textContent);
@@ -443,7 +443,7 @@ export class Message extends BaseComponent<MessageProps> {
         mediaIndex: number,
     ): void {
         const modal = new ConfirmModal({
-            text: 'Изображение может содержать чувствительный контент. Показать его?',
+            text: 'Изображение может содержать слишком милый контент. Показать его?',
             confirmButtonText: 'Показать',
             cancelButtonText: 'Отмена',
             onConfirm: () => {

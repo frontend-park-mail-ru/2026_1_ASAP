@@ -181,6 +181,12 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             return;
         }
 
+        // Дубль-эхо: это сообщение уже было сматчено ранее (повторная отправка после
+        // флапа соединения; бэк без дедупа создал вторую строку). Не рисуем второй пузырь.
+        if (dto.temp_id && chatService.wasRecentlyReconciled(dto.temp_id)) {
+            return;
+        }
+
         this.activeMessageList.addMessage(frontendMsg);
 
         // если входящее сообщение и я смотрю на чат — сразу отмечаю как прочитанное

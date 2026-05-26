@@ -143,11 +143,42 @@ export class ChatService {
     private pendingProfiles: Map<number, Promise<User | null>> = new Map();
     private inFlightMessages = new Set<string>(); //сообщения, которые уже отправлены и ждут ответа
     private isFlushing = false; //блокировка от параллельного запуска
+    private flushTimer: ReturnType<typeof setTimeout> | null = null; //дебаунс пачки триггеров flush
+    /** temp_id уже сматченных эхом сообщений — чтобы отбросить повторное эхо как дубль. */
+    private reconciledTempIds = new Set<string>();
     /** Колбэк: сообщение исчерпало попытки отправки. UI помечает пузырь как «не отправлено». */
     private onSendGaveUp: ((tempId: string) => void) | null = null;
 
     public setOnSendGaveUp(cb: ((tempId: string) => void) | null): void {
         this.onSendGaveUp = cb;
+    }
+
+    /**
+     * Дебаунс-обёртка над flushQueue. На реконнекте flush дёргается сразу из трёх
+     * мест (online / system.Connected / SW-сообщение) — схлопываем их в один запуск.
+     * Задержка также даёт эхам уже отправленных сообщений прийти и снять их из очереди
+     * ДО повторной отправки — иначе после флапа соединения сообщение шлётся дважды.
+     */
+    public scheduleFlush(delayMs = 400): void {
+        if (this.flushTimer !== null) clearTimeout(this.flushTimer);
+        this.flushTimer = setTimeout(() => {
+            this.flushTimer = null;
+            void this.flushQueue();
+        }, delayMs);
+    }
+
+    /** Не сматчено ли это temp_id эхом ранее (для отбрасывания дубль-эха на приёме). */
+    public wasRecentlyReconciled(tempId: string): boolean {
+        return this.reconciledTempIds.has(tempId);
+    }
+
+    /** Запоминает сматченный temp_id с ограничением размера (защита от роста за сессию). */
+    private rememberReconciled(tempId: string): void {
+        this.reconciledTempIds.add(tempId);
+        if (this.reconciledTempIds.size > 500) {
+            const oldest = this.reconciledTempIds.values().next().value;
+            if (oldest !== undefined) this.reconciledTempIds.delete(oldest);
+        }
     }
 
     private stripAttachmentLabel(text: string | undefined, attachments: MessageAttachmentDto[] | undefined): string {
@@ -530,16 +561,25 @@ export class ChatService {
                     continue;
                 }
 
-                m.attempts = (m.attempts ?? 0) + 1;
-                await offlineQueue.enqueue(m);
-
+                // Claim синхронно — чтобы параллельный flush пропустил это сообщение.
                 this.inFlightMessages.add(m.tempId);
 
-                const sent = this.sendPendingMessage(m);
+                // За время await'ов предыдущих итераций сообщение могло быть снято эхом
+                // (reconcile удаляет его из очереди). Не воскрешаем его повторным enqueue.
+                const fresh = await offlineQueue.get(m.tempId);
+                if (!fresh) {
+                    this.inFlightMessages.delete(m.tempId);
+                    continue;
+                }
+
+                fresh.attempts = (fresh.attempts ?? 0) + 1;
+                await offlineQueue.enqueue(fresh);
+
+                const sent = this.sendPendingMessage(fresh);
 
                 // Если внезапно сокет закрылся во время цикла
                 if (!sent) {
-                    this.inFlightMessages.delete(m.tempId);
+                    this.inFlightMessages.delete(fresh.tempId);
                     break;
                 }
             }
@@ -589,6 +629,7 @@ export class ChatService {
             if (!byId) return null;
             await offlineQueue.remove(byId.tempId);
             this.inFlightMessages.delete(byId.tempId);
+            this.rememberReconciled(byId.tempId);
             return byId.tempId;
         }
 
