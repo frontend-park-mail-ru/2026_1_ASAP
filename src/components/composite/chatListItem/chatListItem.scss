@@ -24,3 +24,16 @@
     color: $color-text-tertiary;
 }
 
+// Системная строка-разделитель в sidebar при поиске контактов
+// (например, «Глобальный поиск» между моими и не-моими).
+.chat-list__system-row {
+    padding: 8px 16px;
+    font: $text-tertiary;
+    letter-spacing: $text-tertiary-ls;
+    color: $color-text-hover;
+    text-transform: uppercase;
+    font-size: 11px;
+    background-color: $color-text-hover2;
+    user-select: none;
+}
+

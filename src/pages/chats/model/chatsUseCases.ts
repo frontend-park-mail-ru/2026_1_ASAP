@@ -2,7 +2,8 @@ import type { ChannelRole, CreateChannelInput, UpdateChannelInput } from "../../
 import type { ChatInformationDto, MessageDto, PresenceState, WsErrorDto } from "../../../core/utils/wsClient";
 import type { ChannelChat, Chat, DialogChat, FrontendMessage, GroupChat, OutgoingMessageAttachment, User } from "../../../types/chat";
 import type { FrontendProfile } from "../../../types/profile";
-import type { SearchMessageHit, SearchMessagesResult } from "../../../types/search";
+import type { SearchMessageHit, SearchMessagesResult, UnifiedSearchResult } from "../../../types/search";
+import type { SearchTab } from "../../../components/composite/searchTabs/searchTabs";
 import { ChatsDataFacade, chatsDataFacade } from "./chatsDataFacade";
 import type {
     ActiveChatVM,
@@ -191,6 +192,27 @@ export class ChatsUseCases {
 
     public async searchContacts(query: string, scope: ContactSearchScope) {
         return this.data.searchContacts(query, scope);
+    }
+
+    public async searchUnified(query: string, tab: SearchTab): Promise<UnifiedSearchResult> {
+        if (tab === 'contact') {
+            const [localRes, globalRes] = await Promise.all([
+                this.data.searchContacts(query, 'contacts'),
+                this.data.searchContacts(query, 'local'),
+            ]);
+            const local = localRes?.items ?? [];
+            const localIds = new Set(local.map((c) => c.userId));
+            const global = (globalRes?.items ?? []).filter((c) => !localIds.has(c.userId));
+            return { tab, chats: [], contacts: { local, global } };
+        }
+
+        const apiType: ChatSearchType = tab === 'dialog' ? '' : tab;
+        const res = await this.data.searchChats(query, apiType);
+        const allItems = res?.items ?? [];
+        const chats = tab === 'dialog'
+            ? allItems.filter((hit) => hit.type === 'dialog')
+            : allItems;
+        return { tab, chats };
     }
 
     public async loadContacts() {

@@ -1,4 +1,4 @@
-import type { SearchChatHit } from "../../../types/search";
+import type { UnifiedSearchResult } from "../../../types/search";
 import type { Chat, FrontendMessage } from "../../../types/chat";
 import type {
     ChatDeletedDto,
@@ -10,7 +10,7 @@ import type {
     MessageDto,
 } from "../../../core/utils/wsClient";
 import { ChatsUseCases, chatsUseCases } from "../model/chatsUseCases";
-import type { ChatSearchType } from "../model/chatsViewModels";
+import type { SearchTab } from "../../../components/composite/searchTabs/searchTabs";
 
 interface ChatSidebarControllerDeps {
     useCases?: ChatsUseCases;
@@ -21,7 +21,7 @@ interface ChatSidebarControllerDeps {
     onChatRemoved: (chatId: string) => void;
     onChatMovedToTop: (chatId: string) => void;
     onActiveChatRemoved: (chatId: string) => void;
-    onSearchResults: (items: SearchChatHit[]) => void;
+    onSearchResults: (result: UnifiedSearchResult) => void;
     onRestoreChatList: () => void;
     onSearchActiveChange?: (isActive: boolean) => void;
     debounceMs?: number;
@@ -33,7 +33,7 @@ export class ChatSidebarController {
     private searchDebounce: ReturnType<typeof setTimeout> | null = null;
     private searchRequestId = 0;
     private loadRequestId = 0;
-    private searchType: ChatSearchType = "";
+    private searchTab: SearchTab = 'dialog';
     private currentQuery = "";
     private chats: Chat[] = [];
     private currentUserId: number | null = null;
@@ -91,22 +91,22 @@ export class ChatSidebarController {
 
         this.deps.onSearchActiveChange?.(true);
         this.searchDebounce = setTimeout(() => {
-            this.runChatSearch(query);
+            this.runUnifiedSearch(query);
         }, this.debounceMs);
     }
 
-    public setSearchType(type: ChatSearchType): void {
-        if (type === this.searchType) return;
-        this.searchType = type;
+    public setSearchTab(tab: SearchTab): void {
+        if (tab === this.searchTab) return;
+        this.searchTab = tab;
 
         if (this.currentQuery.trim()) {
             this.clearSearchDebounce();
-            this.runChatSearch(this.currentQuery);
+            this.runUnifiedSearch(this.currentQuery);
         }
     }
 
-    public getSearchType(): ChatSearchType {
-        return this.searchType;
+    public getSearchTab(): SearchTab {
+        return this.searchTab;
     }
 
     public cancelPendingSearch(): void {
@@ -119,15 +119,14 @@ export class ChatSidebarController {
         this.stopRealtime();
     }
 
-    private async runChatSearch(query: string): Promise<void> {
+    private async runUnifiedSearch(query: string): Promise<void> {
         this.searchRequestId += 1;
         const requestId = this.searchRequestId;
-        const result = await this.useCases.searchSidebarChats(query, this.searchType);
+        const result = await this.useCases.searchUnified(query, this.searchTab);
 
         if (requestId !== this.searchRequestId) return;
-        if (!result) return;
 
-        this.deps.onSearchResults(result.items);
+        this.deps.onSearchResults(result);
     }
 
     private clearSearchDebounce(): void {

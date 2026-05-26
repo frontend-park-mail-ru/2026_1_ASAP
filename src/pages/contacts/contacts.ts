@@ -4,6 +4,7 @@ import { MenuBar } from "../../components/composite/menuBar/menuBar";
 import { ContactSearchList } from "../../components/composite/contactSearchList/contactSearchList";
 import { ProfileWindow } from "../../components/composite/profileWindow/profileWindow";
 import { contactService } from "../../services/contactService";
+import { chatsUseCases } from "../chats/model/chatsUseCases";
 import { FrontendProfile } from "../../types/profile";
 
 
@@ -149,7 +150,8 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
             listMode: 'default',
             hideAddButton: false,
             onAddClick: () => this.contactSearchList?.activateGlobalSearch(),
-            onSearchContacts: (query, scope) => contactService.searchContacts(query, scope),
+            // Унифицированный поиск (4 таба) — тот же, что используется на /chats.
+            onSearchUnified: (query, tab) => chatsUseCases.searchUnified(query, tab),
         });
         this.contactSearchList.mount(sidebar as HTMLElement);
 

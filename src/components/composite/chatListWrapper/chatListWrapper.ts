@@ -1,20 +1,18 @@
 import { BaseForm } from "../../../core/base/baseForm";
 import { ChatListItem } from "../chatListItem/chatListItem";
 import template from "./chatListWrapper.hbs";
-import { SearchChatHit } from "../../../types/search";
+import { SearchChatHit, SearchContactHit } from "../../../types/search";
 import { Chat, FrontendMessage } from "../../../types/chat";
 
 /**
  * @interface ChatListWrapperProps
  * @description Свойства для компонента-обертки списка чатов.
- * @property {Chat[]} chats - Данные чатов для передачи дочернему списку.
- * @property {string | null} activeChatId - ID активного чата для начальной установки.
- * @property {Function} onOpenChat - Колбэк открытия чата.
  */
 interface ChatListWrapperProps {
     chats: Chat[];
     activeChatId: string | null;
     onOpenChat: (chatId: string) => void;
+    onOpenContact?: (login: string) => void;
 }
 
 /**
@@ -56,10 +54,11 @@ export class ChatListWrapper extends BaseForm<ChatListWrapperProps> {
             return;
         }
 
-        this.chatList = new ChatListItem({ 
+        this.chatList = new ChatListItem({
             chats: this.props.chats,
             activeChatId: this.props.activeChatId,
             onOpenChat: this.props.onOpenChat,
+            onOpenContact: this.props.onOpenContact,
         });
         this.chatList.mount(this.element!);
     }
@@ -77,6 +76,10 @@ export class ChatListWrapper extends BaseForm<ChatListWrapperProps> {
     public showSearchResults(hits: SearchChatHit[]): void {
         this.chatList?.showSearchResults(hits);
     };
+
+    public showContactResults(local: SearchContactHit[], global: SearchContactHit[]): void {
+        this.chatList?.showContactResults(local, global);
+    }
 
     public restoreChatList(): void {
         this.chatList?.restoreChatList();
