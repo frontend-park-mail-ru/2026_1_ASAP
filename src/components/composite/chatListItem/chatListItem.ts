@@ -91,6 +91,9 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
         this.chatItems = [];
         this.emptyComponent?.unmount();
         this.emptyComponent = null;
+        // Чистим баннер «Глобальный поиск» (мог остаться от предыдущего рендера
+        // контакт-результатов на другом табе).
+        this.element.querySelectorAll('.chat-list__system-row').forEach((el) => el.remove());
 
         if (chats.length === 0) {
             this.element.classList.add('chat-list--empty');
