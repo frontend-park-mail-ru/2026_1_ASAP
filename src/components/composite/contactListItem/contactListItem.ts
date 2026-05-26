@@ -23,6 +23,7 @@ interface ContactListItemProps extends IBaseFormProps {
     contacts?: FrontendContact[];
     listMode?: 'default' | 'createDialog' | 'createGroup';
     onAction?: (contactId: number, isSelected: boolean, contactName?: string) => void;
+    onContactsLoaded?: (contacts: FrontendContact[]) => void;
 };
 
 /**
@@ -109,6 +110,7 @@ export class ContactListItem extends BaseForm<ContactListItemProps> {
         if (this.props.contacts) {
             this.originalContacts = this.props.contacts;
             this.renderContacts(this.originalContacts);
+            this.props.onContactsLoaded?.(this.originalContacts);
             return;
         }
 
@@ -208,6 +210,7 @@ export class ContactListItem extends BaseForm<ContactListItemProps> {
         contactService.getContacts().then(contacts => {
             this.originalContacts = contacts;
             this.renderContacts(contacts);
+            this.props.onContactsLoaded?.(contacts);
         });
     }
 
