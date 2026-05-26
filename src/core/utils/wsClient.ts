@@ -86,6 +86,8 @@ export interface MessageDto {
     avatar?: string | null;
     attachments?: MessageAttachmentDto[];
     sticker?: StickerDto | null;
+    /** Эхо клиентского temp_id (приходит отправителю), для сверки с оптимистичной заглушкой. */
+    temp_id?: string;
 }
 
 /**

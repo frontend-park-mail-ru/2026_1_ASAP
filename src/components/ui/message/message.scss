@@ -351,6 +351,14 @@
         &--sending { color: $color-text-hover; opacity: 0.6; }
         &--sent    { color: $color-text-hover; }
         &--read    { color: $color-text; font-weight: 600; }
+        &--failed  { color: $color-error; font-weight: 600; }
+
+        &--clickable {
+            cursor: pointer;
+            @include hover-transition;
+
+            &:hover { opacity: 0.7; }
+        }
     }
 
     &--flash {

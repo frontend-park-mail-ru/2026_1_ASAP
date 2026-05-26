@@ -12,6 +12,8 @@ export interface PendingMessage {
     senderId: number;
     createdAt: number;
     attachments?: OutgoingMessageAttachment[];
+    /** Сколько раз пробовали отправить. После MAX_SEND_ATTEMPTS помечаем как «не отправлено». */
+    attempts?: number;
 }
 
 const DB_NAME = 'asap-offline-queue';

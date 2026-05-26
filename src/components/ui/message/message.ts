@@ -24,6 +24,8 @@ interface MessageProps extends IBaseComponentProps {
     onDownloadAttachment?: (url: string, fileName: string) => void | Promise<void>;
     onMediaClick?: (attachments: MessageAttachment[], initialIndex: number, messageId: string) => void;
     onContactClick?: (userId: number) => void;
+    /** Клик по индикатору «не отправлено» → переотправка. */
+    onRetry?: (id: string) => void;
     /** Подписчик ли пользователь — нужно для NSFW-блюра вложений. */
     isPremium?: boolean;
     /** Общий Set разблюренных attachment'ов, ключ `${messageId}:${idx}`. Управляется messageList. */
@@ -93,17 +95,6 @@ export class Message extends BaseComponent<MessageProps> {
 
     public getId(): string {
         return this.props.message.id;
-    }
-
-    public setId(newId: string): void {
-        this.props.message.id = newId;
-    }
-
-    public updateTimestamp(ts: Date): void {
-        this.props.message.timestamp = ts;
-        this.props.formattedTime = ts.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', hour12: false });
-        const el = this.element?.querySelector('.message__time');
-        if (el) el.textContent = this.props.formattedTime as string;
     }
 
     /**
@@ -185,19 +176,27 @@ export class Message extends BaseComponent<MessageProps> {
     public setStatus(status: MessageStatus): void {
         this.props.message.status = status;
         if (!this.element) return;
-        const el = this.element.querySelector('.message__status');
+        const el = this.element.querySelector<HTMLElement>('.message__status');
         if (!el) return;
 
         el.classList.remove(
             'message__status--sending',
             'message__status--sent',
             'message__status--read',
+            'message__status--failed',
         );
         el.classList.add(`message__status--${status}`);
 
         el.textContent = status === 'sending' ? '⏱'
                        : status === 'sent'    ? '✓'
+                       : status === 'failed'  ? '⚠'
                        : '✓✓';
+
+        // В состоянии «не отправлено» индикатор кликабельный — повторяет отправку.
+        const isFailed = status === 'failed';
+        el.classList.toggle('message__status--clickable', isFailed);
+        el.title = isFailed ? 'Не отправлено. Нажмите, чтобы повторить' : '';
+        el.onclick = isFailed ? () => this.props.onRetry?.(this.props.message.id) : null;
     }
 
     private handleDelete = () => {
