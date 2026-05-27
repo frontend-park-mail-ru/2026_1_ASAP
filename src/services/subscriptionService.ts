@@ -66,6 +66,8 @@ class SubscriptionService {
             this.isSubscribed = false;
         }
     }
+    private premiumCache: boolean | null = null;
+    private premiumPrimePromise: Promise<boolean> | null = null;
 
     public async getSubscription(): Promise<SubscriptionServiceResult> {
         try {
@@ -74,7 +76,11 @@ class SubscriptionService {
                 headers: { "Content-Type": "application/json" },
             });
 
-            return await this.toSubscriptionResult(response);
+            const result = await this.toSubscriptionResult(response);
+            if (result.success) {
+                this.premiumCache = result.subscription?.active ?? false;
+            }
+            return result;
         } catch (error) {
             return {
                 success: false,
@@ -82,6 +88,36 @@ class SubscriptionService {
                 error: error instanceof Error ? error.message : "Не удалось получить статус подписки",
             };
         }
+    }
+
+    public isPremiumCached(): boolean {
+        return this.premiumCache === true;
+    }
+
+    /**
+     * Прогревает кэш статуса подписки. Идемпотентно: повторные вызовы
+     * во время уже идущего запроса не плодят новых, а ждут общий промис.
+     */
+    public async primePremium(): Promise<boolean> {
+        if (this.premiumCache !== null) return this.premiumCache;
+        if (this.premiumPrimePromise) return this.premiumPrimePromise;
+
+        this.premiumPrimePromise = (async () => {
+            const res = await this.getSubscription();
+            const active = res.success ? (res.subscription?.active ?? false) : false;
+            this.premiumCache = active;
+            return active;
+        })();
+        try {
+            return await this.premiumPrimePromise;
+        } finally {
+            this.premiumPrimePromise = null;
+        }
+    }
+
+    /** Сбросить кэш после оплаты/отмены подписки. */
+    public invalidatePremiumCache(): void {
+        this.premiumCache = null;
     }
 
     private async toSubscriptionResult(response: Response): Promise<SubscriptionServiceResult> {

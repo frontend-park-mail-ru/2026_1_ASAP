@@ -8,6 +8,8 @@ import { Button } from "../../components/ui/button/button";
 import type { BaseComponent } from "../../core/base/baseComponent";
 import { ChatWindow } from "../../components/composite/chatWindow/chatWindow";
 import { ChatSkeleton } from "../../components/composite/chatSkeleton/chatSkeleton";
+import { subscriptionService } from "../../services/subscriptionService";
+import { chatService } from "../../services/chatService";
 import { SearchTabs, type SearchTab } from "../../components/composite/searchTabs/searchTabs";
 import type { MessageList } from "../../components/composite/messageList/messageList";
 import type { MessageInput } from "../../components/ui/messageInput/messageInput";
@@ -155,12 +157,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         // Уведомления (OS + звук) теперь обрабатывает глобальный notificationService.attach()
         // — он подписан на message.New на app-уровне и работает на любой странице.
 
-        if (!isStillActiveChat()) return;
-        if (!this.activeMessageList || this.currentUserId === null) return;
-
         const currentUserId = this.currentUserId;
-        const tempId = await this.sessionController!.resolveRealtimeMessage(dto, currentUserId);
-        if (!isStillActiveChat() || !this.activeMessageList) return;
 
         const serverTime = dto.created_at ? new Date(dto.created_at) : undefined;
         if (tempId && this.activeMessageList.replaceMessageId(tempId, dto.id.toString(), serverTime)) {
@@ -171,7 +168,17 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             }
             return;
         }
+        // A: снимаем pending из очереди для ЛЮБОГО чата, не только активного.
+        // Иначе, если эхо пришло, когда чат закрыт, заглушка зависнет и будет
+        // переотправляться на каждом reconnect/refresh.
+        const tempId = currentUserId !== null
+            ? await this.sessionController!.resolveRealtimeMessage(dto, currentUserId)
+            : null;
 
+        if (!isStillActiveChat() || !this.activeMessageList || currentUserId === null) return;
+
+        // C: строим серверную версию сообщения и либо ЗАМЕНЯЕМ ею заглушку
+        // (перенимая отцензуренный текст + isBlur), либо добавляем как новое.
         const frontendMsg = this.activeChat
             ? await this.sessionController!.enrichMessageForChat(
                 this.activeChat,
@@ -180,6 +187,16 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             )
             : this.sessionController!.mapRealtimeMessage(dto, currentUserId);
         if (!isStillActiveChat() || !this.activeMessageList) return;
+
+        if (tempId && this.activeMessageList.replaceMessage(tempId, frontendMsg)) {
+            return;
+        }
+
+        // Дубль-эхо: это сообщение уже было сматчено ранее (повторная отправка после
+        // флапа соединения; бэк без дедупа создал вторую строку). Не рисуем второй пузырь.
+        if (dto.temp_id && chatService.wasRecentlyReconciled(dto.temp_id)) {
+            return;
+        }
 
         this.activeMessageList.addMessage(frontendMsg);
 
@@ -235,6 +252,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 contactFirstName: attachment.contact_first_name,
                 contactLastName: attachment.contact_last_name,
                 contactAvatarUrl: attachment.contact_avatar_url,
+                isBlur: attachment.is_blur,
             })),
         };
     }
@@ -416,6 +434,15 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         this.activeMenuButton = "messages";
         this.chatsView = new ChatsView(this.element);
 
+        // Прогреваем статус подписки заранее: рендер сообщений с blur-флагом
+        // спрашивает синхронно `isPremiumCached()`, чтобы не дёргать сеть на каждую картинку.
+        void subscriptionService.primePremium();
+
+        // Сообщение исчерпало попытки отправки → помечаем пузырь «не отправлено».
+        chatService.setOnSendGaveUp((tempId) => {
+            this.activeMessageList?.setMessageStatus(tempId, 'failed');
+        });
+
         try {
             if (sessionStorage.getItem('pulse_first_login') === '1') {
                 this.mountOnboarding('pulse_ob_closed_anonymous');
@@ -545,6 +572,11 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 } catch (e) {
                     console.error("Failed to load profile for contact click", e);
                 }
+            },
+            onPremiumRequired: () => this.props.router.navigate('/settings/subscription'),
+            onRetryMessage: (tempId) => {
+                this.activeMessageList?.setMessageStatus(tempId, 'sending');
+                void chatService.retryMessage(tempId);
             },
             getPendingUnreadCount: (chatId) => this.pendingUnreadForOpen.get(chatId) ?? 0,
             getLastReadMessageId: (chatId) => {
@@ -1048,6 +1080,8 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
      * @protected
      */
     beforeUnmount() {
+        chatService.setOnSendGaveUp(null);
+
         this.chatsCoordinator?.destroy();
         this.chatsCoordinator = null;
 

@@ -30,6 +30,7 @@ export interface MessageAttachmentDto {
     contact_avatar_url?: string;
     can_transcribe?: boolean;
     transcript?: string;
+    is_blur?: boolean;
 }
 
 export interface VoiceTranscriptDto {
@@ -130,6 +131,8 @@ export interface MessageDto {
     avatar?: string | null;
     attachments?: MessageAttachmentDto[];
     sticker?: StickerDto | null;
+    /** Эхо клиентского temp_id (приходит отправителю), для сверки с оптимистичной заглушкой. */
+    temp_id?: string;
 }
 
 /**

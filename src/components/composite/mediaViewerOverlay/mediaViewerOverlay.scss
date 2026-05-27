@@ -41,6 +41,37 @@
         border-radius: 8px;
     }
 
+    &__media--blurred {
+        filter: blur(48px);
+        transform: scale(1.04);
+        pointer-events: none;
+    }
+
+    &__blur {
+        position: absolute;
+        inset: 40px;
+        z-index: 5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        cursor: pointer;
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.4);
+
+        &:focus-visible {
+            outline: 2px solid rgba(255, 255, 255, 0.7);
+            outline-offset: -2px;
+        }
+    }
+
+    &__blur-label {
+        color: #fff;
+        font-size: 16px;
+        max-width: 320px;
+        padding: 0 16px;
+    }
+
     &__spinner {
         position: absolute;
         top: 50%;

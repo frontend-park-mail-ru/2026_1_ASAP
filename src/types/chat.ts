@@ -44,7 +44,7 @@ export interface BackendMessage {
  * @property {Date} timestamp - Временная метка, преобразованная в объект `Date`.
  * @property {boolean} isOwn - Флаг, указывающий, является ли сообщение отправленным текущим пользователем.
  */
-export type MessageStatus = 'sending' | 'sent' | 'read';
+export type MessageStatus = 'sending' | 'sent' | 'read' | 'failed';
 
 export type MessageAttachmentType = 'photo' | 'video' | 'file' | 'contact' | 'voice';
 
@@ -61,6 +61,7 @@ export interface MessageAttachment {
     contactAvatarUrl?: string;
     canTranscribe?: boolean;
     transcript?: string;
+    isBlur?: boolean;
 }
 
 export interface OutgoingMessageAttachment {

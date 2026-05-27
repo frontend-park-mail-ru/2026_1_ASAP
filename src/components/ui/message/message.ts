@@ -22,9 +22,17 @@ interface MessageProps extends IBaseComponentProps {
     onEdit?: (id: string) => void;
     onDelete?: (id: string) => void;
     onDownloadAttachment?: (url: string, fileName: string) => void | Promise<void>;
-    onMediaClick?: (attachments: MessageAttachment[], initialIndex: number) => void;
+    onMediaClick?: (attachments: MessageAttachment[], initialIndex: number, messageId: string) => void;
     onContactClick?: (userId: number) => void;
     onTranscribe?: (messageId: string, attachmentId?: number) => void;
+    /** Клик по индикатору «не отправлено» → переотправка. */
+    onRetry?: (id: string) => void;
+    /** Подписчик ли пользователь — нужно для NSFW-блюра вложений. */
+    isPremium?: boolean;
+    /** Общий Set разблюренных attachment'ов, ключ `${messageId}:${idx}`. Управляется messageList. */
+    revealedAttachments?: Set<string>;
+    /** Колбэк при клике по CTA «Доступно с Pulse Premium» (без подписки). */
+    onPremiumRequired?: () => void;
 }
 
 /**
@@ -88,17 +96,6 @@ export class Message extends BaseComponent<MessageProps> {
 
     public getId(): string {
         return this.props.message.id;
-    }
-
-    public setId(newId: string): void {
-        this.props.message.id = newId;
-    }
-
-    public updateTimestamp(ts: Date): void {
-        this.props.message.timestamp = ts;
-        this.props.formattedTime = ts.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', hour12: false });
-        const el = this.element?.querySelector('.message__time');
-        if (el) el.textContent = this.props.formattedTime as string;
     }
 
     /**
@@ -180,19 +177,27 @@ export class Message extends BaseComponent<MessageProps> {
     public setStatus(status: MessageStatus): void {
         this.props.message.status = status;
         if (!this.element) return;
-        const el = this.element.querySelector('.message__status');
+        const el = this.element.querySelector<HTMLElement>('.message__status');
         if (!el) return;
 
         el.classList.remove(
             'message__status--sending',
             'message__status--sent',
             'message__status--read',
+            'message__status--failed',
         );
         el.classList.add(`message__status--${status}`);
 
         el.textContent = status === 'sending' ? '⏱'
                        : status === 'sent'    ? '✓'
+                       : status === 'failed'  ? '⚠'
                        : '✓✓';
+
+        // В состоянии «не отправлено» индикатор кликабельный — повторяет отправку.
+        const isFailed = status === 'failed';
+        el.classList.toggle('message__status--clickable', isFailed);
+        el.title = isFailed ? 'Не отправлено. Нажмите, чтобы повторить' : '';
+        el.onclick = isFailed ? () => this.props.onRetry?.(this.props.message.id) : null;
     }
 
     private handleDelete = () => {
@@ -360,18 +365,103 @@ export class Message extends BaseComponent<MessageProps> {
         }, { once: true });
 
         wrapper.addEventListener('click', () => {
-            this.props.onMediaClick?.(allMedia, mediaIndex);
+            this.props.onMediaClick?.(allMedia, mediaIndex, this.props.message.id);
         });
 
         wrapper.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                this.props.onMediaClick?.(allMedia, mediaIndex);
+                this.props.onMediaClick?.(allMedia, mediaIndex, this.props.message.id);
             }
         });
 
         wrapper.appendChild(image);
+        this.applyBlurGate(wrapper, image, attachment, mediaIndex);
         return wrapper;
+    }
+
+    /** Ключ разблюренного вложения в общем Set'е messageList. */
+    private blurKey(mediaIndex: number): string {
+        return `${this.props.message.id}:${mediaIndex}`;
+    }
+
+    /**
+     * Навешивает NSFW-блюр на медиа-вложение, помеченное бэком `isBlur`.
+     * Снимает блюр только подписчик — после подтверждения в ConfirmModal.
+     * Не-подписчику клик по оверлею открывает CTA подписки.
+     */
+    private applyBlurGate(
+        wrapper: HTMLElement,
+        media: HTMLElement,
+        attachment: MessageAttachment,
+        mediaIndex: number,
+    ): void {
+        if (!attachment.isBlur) return;
+        if (this.props.revealedAttachments?.has(this.blurKey(mediaIndex))) return;
+
+        const isPremium = this.props.isPremium ?? false;
+        media.classList.add('message__attachment-media--blurred');
+
+        const overlay = document.createElement('div');
+        overlay.className = 'message__attachment-blur';
+        overlay.setAttribute('role', 'button');
+        overlay.setAttribute('tabindex', '0');
+
+        const icon = document.createElement('img');
+        icon.className = 'message__attachment-blur-icon';
+        icon.src = '/assets/images/icons/closeEye.svg';
+        icon.alt = '';
+        icon.setAttribute('aria-hidden', 'true');
+
+        const label = document.createElement('span');
+        label.className = 'message__attachment-blur-label';
+        label.textContent = isPremium
+            ? 'Слишком милый контент. Нажмите, чтобы показать'
+            : 'Доступно с подпиской ImPulse';
+
+        overlay.append(icon, label);
+        overlay.setAttribute('aria-label', label.textContent);
+
+        const activate = (e: Event): void => {
+            // Перехватываем клик до wrapper'а, чтобы не открыть медиа-вьюер.
+            e.stopPropagation();
+            e.preventDefault();
+            if (isPremium) {
+                this.confirmRevealAttachment(wrapper, media, overlay, mediaIndex);
+            } else {
+                this.props.onPremiumRequired?.();
+            }
+        };
+
+        overlay.addEventListener('click', activate);
+        overlay.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') activate(e);
+        });
+
+        wrapper.appendChild(overlay);
+    }
+
+    /** Подтверждение показа NSFW-вложения подписчику. */
+    private confirmRevealAttachment(
+        wrapper: HTMLElement,
+        media: HTMLElement,
+        overlay: HTMLElement,
+        mediaIndex: number,
+    ): void {
+        const modal = new ConfirmModal({
+            text: 'Изображение может содержать слишком милый контент. Показать его?',
+            confirmButtonText: 'Показать',
+            cancelButtonText: 'Отмена',
+            onConfirm: () => {
+                modal.unmount();
+                this.props.revealedAttachments?.add(this.blurKey(mediaIndex));
+                media.classList.remove('message__attachment-media--blurred');
+                if (wrapper.contains(overlay)) overlay.remove();
+            },
+            onCancel: () => modal.unmount(),
+        });
+        modal.mount(document.body);
+        this.childComponents.push(modal);
     }
 
     private createVideoAttachment(attachment: MessageAttachment, mediaIndex: number, allMedia: MessageAttachment[]): HTMLElement {
@@ -403,13 +493,13 @@ export class Message extends BaseComponent<MessageProps> {
         playOverlay.appendChild(playTriangle);
 
         wrapper.addEventListener('click', () => {
-            this.props.onMediaClick?.(allMedia, mediaIndex);
+            this.props.onMediaClick?.(allMedia, mediaIndex, this.props.message.id);
         });
 
         wrapper.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                this.props.onMediaClick?.(allMedia, mediaIndex);
+                this.props.onMediaClick?.(allMedia, mediaIndex, this.props.message.id);
             }
         });
 
@@ -426,6 +516,7 @@ export class Message extends BaseComponent<MessageProps> {
 
         wrapper.appendChild(video);
         wrapper.appendChild(playOverlay);
+        this.applyBlurGate(wrapper, video, attachment, mediaIndex);
         return wrapper;
     }
 
