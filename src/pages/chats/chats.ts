@@ -28,7 +28,9 @@ import type {
     LastMessageDto,
     MessageReadDto,
     WsErrorDto,
+    VoiceTranscriptDto,
 } from "../../core/utils/wsClient";
+import { parseVoiceTranscript } from "../../core/utils/wsClient";
 import { ChatActiveHeaderController } from "./controllers/chatActiveHeaderController";
 import { ChatActiveMessagesController } from "./controllers/chatActiveMessagesController";
 import { ChatCreateWindowController } from "./controllers/chatCreateWindowController";
@@ -157,6 +159,15 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
         const currentUserId = this.currentUserId;
 
+        const serverTime = dto.created_at ? new Date(dto.created_at) : undefined;
+        if (tempId && this.activeMessageList.replaceMessageId(tempId, dto.id.toString(), serverTime)) {
+            const frontendMsg = this.sessionController!.mapRealtimeMessage(dto, currentUserId);
+            const messageComponent = this.activeMessageList.getMessageComponent(dto.id.toString());
+            if (messageComponent && frontendMsg.attachments) {
+                messageComponent.updateAttachments(frontendMsg.attachments);
+            }
+            return;
+        }
         // A: снимаем pending из очереди для ЛЮБОГО чата, не только активного.
         // Иначе, если эхо пришло, когда чат закрыт, заглушка зависнет и будет
         // переотправляться на каждом reconnect/refresh.
@@ -190,7 +201,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         this.activeMessageList.addMessage(frontendMsg);
 
         // если входящее сообщение и я смотрю на чат — сразу отмечаю как прочитанное
-        if (!frontendMsg.isOwn) {
+        if (!frontendMsg.isOwn && this.activeChannelRole !== "guest") {
             this.sessionController!.markMessageRead(dtoChatId, dto.id.toString());
         }
     };
@@ -303,6 +314,17 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         this.activeMessageList?.markOwnMessagesRead(dto.last_read_message_id);
     };
 
+    private readonly handleVoiceTranscript = (dto: VoiceTranscriptDto): void => {
+        if (!this.activeChatId || String(dto.chat_id) !== this.activeChatId) return;
+        if (!this.activeMessageList) return;
+
+        const messageComponent = this.activeMessageList.getMessageComponent(String(dto.message_id));
+        if (messageComponent) {
+            const parsedTranscript = parseVoiceTranscript(dto.transcript);
+            messageComponent.updateVoiceTranscript(dto.attachment_id, parsedTranscript);
+        }
+    };
+
     private readonly handleMessageError = async (payload: WsErrorDto): Promise<void> => {
         const errorChatId = payload.chat_id !== undefined ? String(payload.chat_id) : null;
 
@@ -312,9 +334,41 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         // Игнорируем UI-обновления, если чат неактивен
         if (errorChatId && this.activeChatId && errorChatId !== this.activeChatId) return;
 
+        const normErr = this.normalizeWsError(payload);
+        const errorCode = normErr.errorCode;
+
+        // Если это ошибка транскрипции голосового сообщения
+        if (errorCode === 'SUBSCRIPTION_REQUIRED' || errorCode === 'TRANSCRIBER_FAILED' || errorCode === 'TRANSCRIBED_FAILED' || errorCode === 'TRANSCRIPTION_FAILED') {
+            let errorText = 'Ошибка расшифровки';
+            if (errorCode === 'SUBSCRIPTION_REQUIRED') {
+                errorText = 'Нужна подписка';
+            } else if (errorCode === 'TRANSCRIBER_FAILED' || errorCode === 'TRANSCRIBED_FAILED' || errorCode === 'TRANSCRIPTION_FAILED') {
+                errorText = 'Не удалось расшифровать';
+            }
+
+            if (this.activeMessageList) {
+                const messageId = payload.message_id !== undefined ? String(payload.message_id) : undefined;
+                if (messageId) {
+                    const messageComponent = this.activeMessageList.getMessageComponent(messageId);
+                    if (messageComponent) {
+                        const attachmentId = payload.attachment_id ? Number(payload.attachment_id) : 0;
+                        if (errorCode === 'SUBSCRIPTION_REQUIRED') {
+                            messageComponent.hideVoiceTranscriptButton(attachmentId);
+                        }
+                        messageComponent.setVoiceTranscriptError(attachmentId, errorText);
+                        return;
+                    }
+                }
+                
+                // Резервный поиск активного лоадера
+                this.activeMessageList.setVoiceTranscriptErrorForActiveLoading(errorText, errorCode === 'SUBSCRIPTION_REQUIRED');
+            }
+            return;
+        }
+
         const message = getChatErrorMessage(
             "sendMessage",
-            this.normalizeWsError(payload),
+            normErr,
             "Не удалось отправить сообщение",
         );
 
@@ -550,6 +604,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 if (this.activeChat?.type === 'channel') return;
                 this.activeMessageList?.updateUserAvatar(payload);
             },
+            onVoiceTranscript: this.handleVoiceTranscript,
             onMessageError: this.handleMessageError,
             onConnected: this.handleWsConnected,
             onDisconnected: () => this.sessionController!.clearInFlightMessages(),

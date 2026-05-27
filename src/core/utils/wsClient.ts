@@ -18,7 +18,8 @@ export interface WsPacket {
 }
 
 export interface MessageAttachmentDto {
-    type: 'photo' | 'video' | 'file' | 'contact';
+    id?: number;
+    type: 'photo' | 'video' | 'file' | 'contact' | 'voice';
     url?: string;
     file_name?: string;
     mime_type?: string;
@@ -27,12 +28,56 @@ export interface MessageAttachmentDto {
     contact_first_name?: string;
     contact_last_name?: string;
     contact_avatar_url?: string;
+    can_transcribe?: boolean;
+    transcript?: string;
     is_blur?: boolean;
 }
+
+export interface VoiceTranscriptDto {
+    chat_id: number;
+    message_id: number;
+    attachment_id: number;
+    transcript: string;
+}
+
+/**
+ * Парсит строку расшифровки голосового сообщения.
+ * Если бэкенд прислал расшифровку как JSON-строку вида {"result": "текст"},
+ * функция извлечет и вернет чистое значение поля result.
+ * В противном случае возвращает строку как есть.
+ *
+ * @param {string} rawTranscript - Исходный текст расшифровки от бэкенда.
+ * @returns {string} Очищенный текст расшифровки.
+ */
+export function parseVoiceTranscript(rawTranscript: string): string {
+    if (!rawTranscript) return '';
+    const trimmed = rawTranscript.trim();
+    if (trimmed.startsWith('{')) {
+        try {
+            const parsed = JSON.parse(trimmed);
+            if (parsed && typeof parsed === 'object') {
+                if (typeof parsed.result === 'string') {
+                    return parsed.result;
+                }
+                if (typeof parsed.transcript === 'string') {
+                    return parsed.transcript;
+                }
+                if (typeof parsed.text === 'string') {
+                    return parsed.text;
+                }
+            }
+        } catch (e) {
+            console.error('Failed to parse voice transcript JSON:', e);
+        }
+    }
+    return rawTranscript;
+}
+
 
 export interface WsErrorDto {
     chat_id?: number | string;
     message_id?: number | string;
+    attachment_id?: number | string;
     temp_id?: string;
     tempId?: string;
     client_temp_id?: string;

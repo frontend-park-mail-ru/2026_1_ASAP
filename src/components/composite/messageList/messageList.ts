@@ -30,6 +30,7 @@ interface MessageListProps extends IBaseComponentProps {
     /** Колбэк для скачивания вложения; реализация на уровне controller */
     onDownloadAttachment?: (url: string, fileName: string) => void | Promise<void>;
     onContactClick?: (userId: number) => void;
+    onTranscribe?: (messageId: string, attachmentId?: number) => void;
     /** Клик по CTA «Доступно с Pulse Premium» на заблюренном вложении (без подписки). */
     onPremiumRequired?: () => void;
     /** Переотправка сообщения, помеченного «не отправлено». */
@@ -257,6 +258,13 @@ export class MessageList extends BaseComponent<MessageListProps> {
         this.flexContainer = this.element.querySelector('.message-list__flex-container'); 
         this.emptyStateElement = this.element.querySelector('.message-list__empty-state');
 
+        if (this.emptyStateElement && this.props.chatType === 'channel') {
+            const emptyTextElement = this.emptyStateElement.querySelector('.message-list__empty-text');
+            if (emptyTextElement) {
+                emptyTextElement.textContent = 'Здесь пока нет публикаций';
+            }
+        }
+
         if (!this.flexContainer) {
             console.error("MessageList: flex-container не найден.");
             return;
@@ -312,6 +320,7 @@ export class MessageList extends BaseComponent<MessageListProps> {
                 onDownloadAttachment: this.props.onDownloadAttachment,
                 onMediaClick: this.handleMediaClick,
                 onContactClick: this.props.onContactClick,
+                onTranscribe: this.props.onTranscribe,
                 ...this.blurProps(),
             });
             messageComponent.mount(this.flexContainer!);
@@ -390,6 +399,7 @@ export class MessageList extends BaseComponent<MessageListProps> {
                 onDownloadAttachment: this.props.onDownloadAttachment,
                 onMediaClick: this.handleMediaClick,
                 onContactClick: this.props.onContactClick,
+                onTranscribe: this.props.onTranscribe,
                 ...this.blurProps(),
             });
             const tempDiv = document.createElement('div');
@@ -435,6 +445,7 @@ export class MessageList extends BaseComponent<MessageListProps> {
             onDownloadAttachment: this.props.onDownloadAttachment,
             onMediaClick: this.handleMediaClick,
             onContactClick: this.props.onContactClick,
+            onTranscribe: this.props.onTranscribe,
             ...this.blurProps(),
         });
 
@@ -461,6 +472,30 @@ export class MessageList extends BaseComponent<MessageListProps> {
      * Используется, чтобы при приходе серверного broadcast `message.New` не создавать дубликат DOM.
      * @returns true, если сообщение с `oldId` было найдено и обновлено.
      */
+    /**
+     * Возвращает компонент сообщения по его идентификатору.
+     * @param {string} id - Идентификатор сообщения.
+     * @returns {Message | undefined} Компонент сообщения.
+     * @public
+     */
+    public getMessageComponent(id: string): Message | undefined {
+        return this.messages.get(id);
+    }
+
+    /**
+     * Устанавливает текст ошибки / скрывает кнопку для вложения, которое сейчас расшифровывается.
+     * Используется как fallback, если сервер прислал ошибку без message_id.
+     *
+     * @param {string} errorText - Текст ошибки.
+     * @param {boolean} hideButton - Флаг, нужно ли скрыть кнопку расшифровки.
+     * @public
+     */
+    public setVoiceTranscriptErrorForActiveLoading(errorText: string, hideButton: boolean): void {
+        this.childMessages.forEach(msg => {
+            msg.setVoiceTranscriptErrorForActiveLoading(errorText, hideButton);
+        });
+    }
+
     public getLoadedMessages(): FrontendMessage[] {
         return Array.from(this.messages.values()).map(m => m.props.message);
     }

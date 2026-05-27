@@ -49,6 +49,7 @@ export type MessageStatus = 'sending' | 'sent' | 'read' | 'failed';
 export type MessageAttachmentType = 'photo' | 'video' | 'file' | 'contact' | 'voice';
 
 export interface MessageAttachment {
+    id?: number;
     type: MessageAttachmentType;
     url?: string;
     fileName?: string;
@@ -58,6 +59,8 @@ export interface MessageAttachment {
     contactFirstName?: string;
     contactLastName?: string;
     contactAvatarUrl?: string;
+    canTranscribe?: boolean;
+    transcript?: string;
     isBlur?: boolean;
 }
 

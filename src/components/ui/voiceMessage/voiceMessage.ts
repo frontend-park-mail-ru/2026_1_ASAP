@@ -11,12 +11,21 @@ export interface VoiceMessageProps extends IBaseComponentProps {
     url?: string;
     /** Заранее известная длительность сообщения в виде строки (например "0:59") */
     durationStr?: string;
+    /** Уникальный идентификатор сообщения для связи с расшифровкой */
+    messageId: string;
+    /** Идентификатор конкретного вложения голосового сообщения */
+    attachmentId?: number;
+    /** Флаг возможности транскрипции (наличие активной подписки) */
+    canTranscribe?: boolean;
+    /** Текст расшифровки, если он уже был получен ранее */
+    transcript?: string;
+    /** Колбэк для инициации процесса расшифровки речи на бэкенде */
+    onTranscribe?: (messageId: string, attachmentId?: number) => void;
 }
 
 /**
- * Компонент для воспроизведения голосовых сообщений.
- * Реализует проигрывание аудио, обновление таймера и прогресс-бара визуализатора.
- * Гарантирует воспроизведение только одного голосового сообщения в один момент времени.
+ * Компонент для воспроизведения голосовых сообщений и показа расшифровки текста.
+ * Реализует проигрывание аудио, обновление таймера, прогресс-бара и распознавание речи (Speech-to-Text).
  *
  * @class VoiceMessage
  * @extends {BaseComponent<VoiceMessageProps>}
@@ -37,6 +46,24 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
     private visualizer: HTMLElement | null = null;
     /** Элемент для отображения длительности или текущего времени */
     private durationStr: HTMLElement | null = null;
+
+    /** Кнопка запроса расшифровки «T» */
+    private sttBtn: HTMLButtonElement | null = null;
+    /** Контейнер панели расшифровки */
+    private transcriptContainer: HTMLElement | null = null;
+    /** Контейнер текста расшифровки */
+    private transcriptTextEl: HTMLElement | null = null;
+    /** Анимированный лоадер расшифровки */
+    private transcriptLoader: HTMLElement | null = null;
+
+    /** Флаг активного выполнения сетевого запроса к Speech-to-Text */
+    private isTranscribing = false;
+    /** Состояние отображения текстовой панели расшифровки */
+    private showTranscriptState = false;
+    /** Идентификатор таймера ожидания ответа WebSocket */
+    private sttTimeoutId: ReturnType<typeof setTimeout> | null = null;
+    /** Идентификатор requestAnimationFrame для плавной анимации */
+    private animationFrameId: number | null = null;
 
     /**
      * Создает экземпляр VoiceMessage.
@@ -70,10 +97,24 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
         this.visualizer = this.element.querySelector('[data-component="voice-visualizer"]');
         this.durationStr = this.element.querySelector('[data-component="voice-duration"]');
 
+        this.sttBtn = this.element.querySelector('[data-component="voice-stt"]');
+        this.transcriptContainer = this.element.querySelector('[data-component="voice-transcript"]');
+        this.transcriptTextEl = this.element.querySelector('[data-component="voice-transcript-text"]');
+        this.transcriptLoader = this.element.querySelector('[data-component="voice-transcript-loader"]');
+
         this.initVisualizer();
 
         if (this.props.durationStr && this.durationStr) {
             this.durationStr.textContent = this.props.durationStr;
+        }
+
+        // Если расшифровка уже пришла в свойствах, фиксируем состояние показа
+        if (this.props.transcript) {
+            this.showTranscriptState = true;
+        }
+
+        if (this.sttBtn) {
+            this.sttBtn.addEventListener('click', this.toggleSTT);
         }
 
         if (!this.props.url) return;
@@ -82,7 +123,6 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
         this.audio.preload = 'metadata';
 
         this.audio.addEventListener('loadedmetadata', this.handleLoadedMetadata);
-        this.audio.addEventListener('timeupdate', this.handleTimeUpdate);
         this.audio.addEventListener('ended', this.handleEnded);
 
         if (this.playBtn) {
@@ -104,13 +144,32 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
     }
 
     /**
+     * Получает актуальную длительность аудио в секундах.
+     * Если браузер отдает Infinity (часто бывает для длинных WebM без CUES),
+     * пытается вычислить из переданной строки durationStr.
+     * @private
+     */
+    private getDuration(): number {
+        if (this.audio && isFinite(this.audio.duration) && this.audio.duration > 0) {
+            return this.audio.duration;
+        }
+        if (this.props.durationStr) {
+            const parts = this.props.durationStr.split(':').map(Number);
+            if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                return parts[0] * 60 + parts[1];
+            }
+        }
+        return 1; // Fallback, чтобы избежать деления на ноль
+    }
+
+    /**
      * Инициализирует визуализатор (звуковую волну) случайными значениями высоты баров.
      * @private
      */
     private initVisualizer(): void {
         if (!this.visualizer) return;
         this.visualizer.innerHTML = '';
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 40; i++) {
             const bar = document.createElement('div');
             bar.className = 'voice-message__bar';
             bar.style.height = `${20 + Math.random() * 80}%`;
@@ -134,22 +193,29 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
     };
 
     /**
-     * Обработчик события изменения текущего времени проигрывания.
-     * Обновляет счетчик времени и подсвечивает бары визуализатора пропорционально прогрессу.
+     * Цикл анимации визуализатора и обновления времени.
+     * Вызывается через requestAnimationFrame для максимальной плавности.
      * @private
      */
-    private handleTimeUpdate = (): void => {
+    private updateVisualizer = (): void => {
         if (!this.audio || !this.durationStr || !this.visualizer) return;
+        
         this.durationStr.textContent = this.formatTime(this.audio.currentTime);
-        const progress = this.audio.currentTime / this.audio.duration;
+        const duration = this.getDuration();
+        const progress = Math.min(1, this.audio.currentTime / duration);
         const bars = this.visualizer.children;
         const activeCount = Math.floor(progress * bars.length);
+        
         for (let i = 0; i < bars.length; i++) {
             if (i < activeCount) {
                 bars[i].classList.add('voice-message__bar--active');
             } else {
                 bars[i].classList.remove('voice-message__bar--active');
             }
+        }
+
+        if (!this.audio.paused) {
+            this.animationFrameId = requestAnimationFrame(this.updateVisualizer);
         }
     };
 
@@ -170,11 +236,16 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
         
         this.audio.currentTime = 0;
         
+        if (this.animationFrameId !== null) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
+        }
+
         const bars = this.visualizer.children;
         for (let i = 0; i < bars.length; i++) {
             bars[i].classList.remove('voice-message__bar--active');
         }
-
+        
         if (VoiceMessage.currentPlayingAudio === this.audio) {
             VoiceMessage.currentPlayingAudio = null;
             VoiceMessage.currentPlayingIcon = null;
@@ -201,21 +272,197 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
             
             this.audio.play().catch(e => console.error('Audio play error:', e));
             this.playIcon.src = '/assets/images/icons/pauseIcon.svg';
+            
+            if (this.animationFrameId === null) {
+                this.animationFrameId = requestAnimationFrame(this.updateVisualizer);
+            }
         } else {
             this.audio.pause();
             this.playIcon.src = '/assets/images/icons/playIcon.svg';
+            
+            if (this.animationFrameId !== null) {
+                cancelAnimationFrame(this.animationFrameId);
+                this.animationFrameId = null;
+            }
+            
             VoiceMessage.currentPlayingAudio = null;
             VoiceMessage.currentPlayingIcon = null;
         }
     };
 
     /**
+     * Обрабатывает нажатие на кнопку расшифровки (Speech-to-Text).
+     * Сворачивает/разворачивает панель расшифровки, запрашивает перевод аудио в текст при необходимости.
+     * @private
+     */
+    private toggleSTT = (): void => {
+        if (this.isTranscribing) return;
+
+        if (this.showTranscriptState) {
+            this.hideTranscript();
+            this.showTranscriptState = false;
+            this.sttBtn?.classList.remove('voice-message__stt--active');
+            return;
+        }
+
+        if (this.props.transcript) {
+            this.showTranscript(this.props.transcript);
+            this.showTranscriptState = true;
+            this.sttBtn?.classList.add('voice-message__stt--active');
+            return;
+        }
+
+        if (!this.props.onTranscribe) return;
+
+        this.isTranscribing = true;
+        this.sttBtn?.classList.add('voice-message__stt--loading');
+        
+        if (this.transcriptContainer) {
+            this.transcriptContainer.classList.add('voice-message__transcript--visible');
+        }
+        if (this.transcriptLoader) {
+            this.transcriptLoader.hidden = false;
+        }
+        if (this.transcriptTextEl) {
+            this.transcriptTextEl.textContent = '';
+            this.transcriptTextEl.style.color = '';
+        }
+
+        // Инициируем запрос к STT
+        this.props.onTranscribe(this.props.messageId, this.props.attachmentId);
+
+        // Запускаем тайм-аут ожидания ответа (90 секунд)
+        this.clearSttTimeout();
+        this.sttTimeoutId = setTimeout(() => {
+            if (this.isTranscribing) {
+                this.setTranscriptError("Не удалось дождаться ответа от сервера");
+            }
+        }, 90000);
+    };
+
+    /**
+     * Возвращает идентификатор вложения голосового сообщения.
+     * @returns {number | undefined} Идентификатор вложения.
+     * @public
+     */
+    public getAttachmentId(): number | undefined {
+        return this.props.attachmentId;
+    }
+
+    /**
+     * Устанавливает успешный текст расшифровки и раскрывает панель.
+     * Вызывается асинхронно при приходе WS-события.
+     *
+     * @param {string} text - Текст расшифровки.
+     * @public
+     */
+    public setTranscript(text: string): void {
+        this.isTranscribing = false;
+        this.clearSttTimeout();
+
+        if (this.sttBtn) {
+            this.sttBtn.classList.remove('voice-message__stt--loading');
+            this.sttBtn.classList.add('voice-message__stt--active');
+        }
+
+        this.showTranscript(text);
+        this.showTranscriptState = true;
+    }
+
+    /**
+     * Выводит ошибку расшифровки в панель.
+     * Вызывается асинхронно при получении WS-ошибки.
+     *
+     * @param {string} errorText - Текст ошибки.
+     * @public
+     */
+    public setTranscriptError(errorText: string): void {
+        this.isTranscribing = false;
+        this.clearSttTimeout();
+
+        if (this.sttBtn) {
+            this.sttBtn.classList.remove('voice-message__stt--loading');
+        }
+
+        if (this.transcriptContainer) {
+            this.transcriptContainer.classList.add('voice-message__transcript--visible');
+        }
+        if (this.transcriptLoader) {
+            this.transcriptLoader.hidden = true;
+        }
+        if (this.transcriptTextEl) {
+            this.transcriptTextEl.textContent = errorText;
+            this.transcriptTextEl.style.color = '#ff4d4f'; // Красный цвет ошибки
+        }
+        this.showTranscriptState = true;
+    }
+
+    /**
+     * Скрывает кнопку расшифровки STT (например, при отсутствии подписки).
+     * @public
+     */
+    public hideTranscribeButton(): void {
+        if (this.sttBtn) {
+            this.sttBtn.style.display = 'none';
+        }
+    }
+
+    /**
+     * Проверяет, выполняется ли расшифровка голосового сообщения в данный момент.
+     * @returns {boolean} True, если расшифровка активна.
+     * @public
+     */
+    public isCurrentlyTranscribing(): boolean {
+        return this.isTranscribing;
+    }
+
+    /**
+     * Очищает таймер ожидания ответа WebSocket.
+     * @private
+     */
+    private clearSttTimeout(): void {
+        if (this.sttTimeoutId !== null) {
+            clearTimeout(this.sttTimeoutId);
+            this.sttTimeoutId = null;
+        }
+    }
+
+    /**
+     * Показывает панель расшифровки с переданным текстом.
+     * @private
+     */
+    private showTranscript(text: string): void {
+        if (this.transcriptContainer) {
+            this.transcriptContainer.classList.add('voice-message__transcript--visible');
+        }
+        if (this.transcriptLoader) {
+            this.transcriptLoader.hidden = true;
+        }
+        if (this.transcriptTextEl) {
+            this.transcriptTextEl.textContent = text;
+            this.transcriptTextEl.style.color = '';
+        }
+    }
+
+    /**
+     * Сворачивает панель расшифровки.
+     * @private
+     */
+    private hideTranscript(): void {
+        if (this.transcriptContainer) {
+            this.transcriptContainer.classList.remove('voice-message__transcript--visible');
+        }
+    }
+
+    /**
      * Вызывается перед размонтированием компонента.
-     * Останавливает аудио, снимает обработчики событий и очищает глобальные синглтон-ссылки, если они указывали на этот объект.
+     * Останавливает аудио, снимает обработчики событий и очищает глобальные синглтон-ссылки.
      * @protected
      * @override
      */
     protected beforeUnmount(): void {
+        this.clearSttTimeout();
+
         if (this.audio) {
             this.audio.pause();
             this.audio.removeEventListener('loadedmetadata', this.handleLoadedMetadata);
@@ -230,6 +477,10 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
 
         if (this.playBtn) {
             this.playBtn.removeEventListener('click', this.togglePlay);
+        }
+
+        if (this.sttBtn) {
+            this.sttBtn.removeEventListener('click', this.toggleSTT);
         }
     }
 }

@@ -11,10 +11,11 @@ import {
 } from '../types/chat';
 import { SearchChatHit, SearchChatsResult, SearchMessageHit, SearchMessagesResult } from '../types/search';
 import { httpClient } from '../core/utils/httpClient';
-import { wsClient, MessageDto, ChatInformationDto, MessageAttachmentDto, WsErrorDto } from '../core/utils/wsClient';
+import { wsClient, MessageDto, ChatInformationDto, MessageAttachmentDto, WsErrorDto, parseVoiceTranscript } from '../core/utils/wsClient';
 import { getFullUrl } from '../core/utils/url';
 import { presenceService } from './presenceService';
 import { offlineQueue, PendingMessage } from './offlineMessageQueue';
+import { subscriptionService } from './subscriptionService';
 
 import { BASE_URL } from '../core/utils/apiBase';
 
@@ -89,6 +90,7 @@ type AttachmentUploadResult =
 
 function mapAttachmentDto(attachment: MessageAttachmentDto): MessageAttachment {
     return {
+        id: attachment.id,
         type: attachment.type,
         url: attachment.url,
         fileName: attachment.file_name,
@@ -98,6 +100,8 @@ function mapAttachmentDto(attachment: MessageAttachmentDto): MessageAttachment {
         contactFirstName: attachment.contact_first_name,
         contactLastName: attachment.contact_last_name,
         contactAvatarUrl: attachment.contact_avatar_url,
+        canTranscribe: attachment.can_transcribe || subscriptionService.isPremium,
+        transcript: attachment.transcript ? parseVoiceTranscript(attachment.transcript) : undefined,
         isBlur: attachment.is_blur,
     };
 }

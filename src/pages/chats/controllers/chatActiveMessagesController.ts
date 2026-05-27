@@ -8,6 +8,7 @@ import { ChannelJoinFooter } from "../../../components/composite/channelJoinFoot
 import { MessageList } from "../../../components/composite/messageList/messageList";
 import { MessageInput } from "../../../components/ui/messageInput/messageInput";
 import { stickerService } from "../../../services/stickerService";
+import { speechToTextService } from "../../../services/speechToTextService";
 import type { ActiveChatVM } from "../model/chatsViewModels";
 import type { ChatSessionController } from "./chatSessionController";
 
@@ -62,6 +63,9 @@ export class ChatActiveMessagesController {
             unreadCount: this.deps.getPendingUnreadCount(chatId),
             lastReadMessageId: this.deps.getLastReadMessageId(chatId),
             onDownloadAttachment: (url, fileName) => this.downloadAttachment(url, fileName),
+            onTranscribe: (messageId, attachmentId) => {
+                speechToTextService.requestTranscription(chatId, messageId);
+            },
             onLoadMore: async () => {
                 const { hasMoreHistory, nextBeforeId } = this.deps.getPaginationState();
                 const currentUserId = this.deps.getCurrentUserId();
@@ -161,6 +165,9 @@ export class ChatActiveMessagesController {
 
         // Уже отмечено — не повторяемся (бэк проигнорирует, мы не дёргаем зря).
         if (this.deps.getLastReadMessageId(chatId) >= lastReadId) return;
+
+        // Гости канала не могут отмечать сообщения прочитанными
+        if (this.deps.getActiveChannelRole() === "guest") return;
 
         this.deps.sessionController.markMessageRead(chatId, latestIncoming.id);
         // Оптимистичный апдейт — на случай если WS-broadcast не дойдёт сразу.
