@@ -94,6 +94,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         if (this.textarea) {
             this.textarea.addEventListener('keydown', this.handleKeyDown);
             this.textarea.addEventListener('input', this.handleInput);
+            this.textarea.addEventListener('paste', this.handlePaste);
         }
 
         this.inputContainer = this.element.querySelector('[data-component="input-container"]');
@@ -344,6 +345,42 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         }
 
         void this.attachUpload(file, type);
+    };
+
+    /**
+     * Унифицированный приём файла (drag-n-drop / вставка из буфера):
+     * сам определяет тип — фото/видео по содержимому, иначе обычный файл.
+     */
+    private attachAnyFile(file: File): void {
+        const type = this.detectMediaAttachmentType(file) ?? 'file';
+        void this.attachUpload(file, type);
+    }
+
+    /** Прикрепляет пачку файлов, не превышая лимит вложений. */
+    private attachFileList(files: FileList | null | undefined): void {
+        const list = files ? Array.from(files) : [];
+        if (list.length === 0) return;
+
+        const freeSlots = this.maxAttachments - this.draftAttachments.length;
+        if (freeSlots <= 0) {
+            this.showInlineError('В одном сообщении можно отправить не больше 10 вложений');
+            return;
+        }
+        list.slice(0, freeSlots).forEach((file) => this.attachAnyFile(file));
+    }
+
+    /** Внешний приём файлов (drag-n-drop по всему окну чата — см. ChatWindow). */
+    public attachExternalFiles(files: FileList | null | undefined): void {
+        this.attachFileList(files);
+    }
+
+    private readonly handlePaste = (event: ClipboardEvent): void => {
+        const files = event.clipboardData?.files;
+        if (!files || files.length === 0) return;
+        // В буфере есть файл (скриншот / копированное изображение) — прикрепляем
+        // и гасим дефолтную вставку, чтобы в текст не попал путь/мусор.
+        event.preventDefault();
+        this.attachFileList(files);
     };
 
     private async attachUpload(file: File, type: UploadableAttachmentType): Promise<void> {
@@ -1007,6 +1044,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         if (this.textarea) {
             this.textarea.removeEventListener('keydown', this.handleKeyDown);
             this.textarea.removeEventListener('input', this.handleInput);
+            this.textarea.removeEventListener('paste', this.handlePaste);
         }
         document.removeEventListener('pointerdown', this.handleDocumentPointerDown, true);
         document.removeEventListener('keydown', this.handleDocumentKeyDown);

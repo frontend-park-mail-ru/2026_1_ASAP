@@ -2,10 +2,7 @@ import { Layout } from "./layout/layout";
 import { PageManager } from "./pageManager";
 import { Router, PageLoader } from "./router";
 import { authService } from "../services/authService";
-import { wsClient } from "./utils/wsClient";
-import { notificationService } from "../services/notificationService";
-import { contactService } from "../services/contactService";
-import { subscriptionService } from "../services/subscriptionService";
+
 
 const routes: Record<string, PageLoader> = {
     '/':         () => import(/* webpackChunkName: "login" */ "../pages/login/login").then(m => m.LoginPage),
@@ -51,14 +48,7 @@ export class App {
         // Если юзер уже залогинен — стартуем WS-соединение и глобальный
         // listener уведомлений (живут пока сессия активна, независимо от страницы).
         if (await authService.checkAuth()) {
-            wsClient.connect();
-            subscriptionService.startPolling();
-            try {
-                const profile = await contactService.getMyProfile();
-                notificationService.attach(profile.additionalInfo.id);
-            } catch (e) {
-                console.warn('App: не удалось получить профиль для глобальных уведомлений', e);
-            }
+            await authService.startSessionServices();
         }
 
         this.router.init();

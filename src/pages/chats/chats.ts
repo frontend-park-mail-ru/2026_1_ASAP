@@ -1015,7 +1015,11 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
             this.chatWindow = new ChatWindow({
                 headerComponent: headerResult.headerComponent,
                 messageListComponent: messagesResult.messageListComponent,
-                inputComponent: messagesResult.footerComponent
+                inputComponent: messagesResult.footerComponent,
+                // DnD вложений по всему окну чата — только если в чат можно писать.
+                onFilesDropped: canWriteActiveChat
+                    ? (files) => this.activeMessageInput?.attachExternalFiles(files)
+                    : undefined,
             });
 
             this.chatsView.mountInMain(this.chatWindow);
