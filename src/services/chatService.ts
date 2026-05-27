@@ -15,6 +15,7 @@ import { wsClient, MessageDto, ChatInformationDto, MessageAttachmentDto, WsError
 import { getFullUrl } from '../core/utils/url';
 import { presenceService } from './presenceService';
 import { offlineQueue, PendingMessage } from './offlineMessageQueue';
+import { subscriptionService } from './subscriptionService';
 
 import { BASE_URL } from '../core/utils/apiBase';
 
@@ -99,7 +100,7 @@ function mapAttachmentDto(attachment: MessageAttachmentDto): MessageAttachment {
         contactFirstName: attachment.contact_first_name,
         contactLastName: attachment.contact_last_name,
         contactAvatarUrl: attachment.contact_avatar_url,
-        canTranscribe: attachment.can_transcribe,
+        canTranscribe: attachment.can_transcribe || subscriptionService.isPremium,
         transcript: attachment.transcript ? parseVoiceTranscript(attachment.transcript) : undefined,
     };
 }

@@ -2,6 +2,7 @@ import { httpClient } from "../core/utils/httpClient";
 import { contactService } from "./contactService";
 import { wsClient } from "../core/utils/wsClient";
 import { notificationService } from "./notificationService";
+import { subscriptionService } from "./subscriptionService";
 
 import { BASE_URL } from '../core/utils/apiBase';
 
@@ -153,6 +154,7 @@ class AuthService {
         contactService.clearCache();
         wsClient.disconnect();
         notificationService.detach();
+        subscriptionService.stopPolling();
         return result;
     }
 
@@ -162,6 +164,7 @@ class AuthService {
      */
     private async startSessionServices(): Promise<void> {
         wsClient.connect();
+        subscriptionService.startPolling();
         try {
             const profile = await contactService.getMyProfile();
             notificationService.attach(profile.additionalInfo.id);
