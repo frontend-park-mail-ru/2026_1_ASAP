@@ -62,6 +62,8 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
     private showTranscriptState = false;
     /** Идентификатор таймера ожидания ответа WebSocket */
     private sttTimeoutId: ReturnType<typeof setTimeout> | null = null;
+    /** Идентификатор requestAnimationFrame для плавной анимации */
+    private animationFrameId: number | null = null;
 
     /**
      * Создает экземпляр VoiceMessage.
@@ -121,7 +123,6 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
         this.audio.preload = 'metadata';
 
         this.audio.addEventListener('loadedmetadata', this.handleLoadedMetadata);
-        this.audio.addEventListener('timeupdate', this.handleTimeUpdate);
         this.audio.addEventListener('ended', this.handleEnded);
 
         if (this.playBtn) {
@@ -173,22 +174,28 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
     };
 
     /**
-     * Обработчик события изменения текущего времени проигрывания.
-     * Обновляет счетчик времени и подсвечивает бары визуализатора пропорционально прогрессу.
+     * Цикл анимации визуализатора и обновления времени.
+     * Вызывается через requestAnimationFrame для максимальной плавности.
      * @private
      */
-    private handleTimeUpdate = (): void => {
+    private updateVisualizer = (): void => {
         if (!this.audio || !this.durationStr || !this.visualizer) return;
+        
         this.durationStr.textContent = this.formatTime(this.audio.currentTime);
         const progress = this.audio.currentTime / this.audio.duration;
         const bars = this.visualizer.children;
         const activeCount = Math.floor(progress * bars.length);
+        
         for (let i = 0; i < bars.length; i++) {
             if (i < activeCount) {
                 bars[i].classList.add('voice-message__bar--active');
             } else {
                 bars[i].classList.remove('voice-message__bar--active');
             }
+        }
+
+        if (!this.audio.paused) {
+            this.animationFrameId = requestAnimationFrame(this.updateVisualizer);
         }
     };
 
@@ -209,6 +216,11 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
         
         this.audio.currentTime = 0;
         
+        if (this.animationFrameId !== null) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
+        }
+
         const bars = this.visualizer.children;
         for (let i = 0; i < bars.length; i++) {
             bars[i].classList.remove('voice-message__bar--active');
@@ -240,9 +252,19 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
             
             this.audio.play().catch(e => console.error('Audio play error:', e));
             this.playIcon.src = '/assets/images/icons/pauseIcon.svg';
+            
+            if (this.animationFrameId === null) {
+                this.animationFrameId = requestAnimationFrame(this.updateVisualizer);
+            }
         } else {
             this.audio.pause();
             this.playIcon.src = '/assets/images/icons/playIcon.svg';
+            
+            if (this.animationFrameId !== null) {
+                cancelAnimationFrame(this.animationFrameId);
+                this.animationFrameId = null;
+            }
+            
             VoiceMessage.currentPlayingAudio = null;
             VoiceMessage.currentPlayingIcon = null;
         }
