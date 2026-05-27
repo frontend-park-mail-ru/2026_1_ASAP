@@ -144,6 +144,25 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
     }
 
     /**
+     * Получает актуальную длительность аудио в секундах.
+     * Если браузер отдает Infinity (часто бывает для длинных WebM без CUES),
+     * пытается вычислить из переданной строки durationStr.
+     * @private
+     */
+    private getDuration(): number {
+        if (this.audio && isFinite(this.audio.duration) && this.audio.duration > 0) {
+            return this.audio.duration;
+        }
+        if (this.props.durationStr) {
+            const parts = this.props.durationStr.split(':').map(Number);
+            if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                return parts[0] * 60 + parts[1];
+            }
+        }
+        return 1; // Fallback, чтобы избежать деления на ноль
+    }
+
+    /**
      * Инициализирует визуализатор (звуковую волну) случайными значениями высоты баров.
      * @private
      */
@@ -182,7 +201,8 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
         if (!this.audio || !this.durationStr || !this.visualizer) return;
         
         this.durationStr.textContent = this.formatTime(this.audio.currentTime);
-        const progress = this.audio.currentTime / this.audio.duration;
+        const duration = this.getDuration();
+        const progress = Math.min(1, this.audio.currentTime / duration);
         const bars = this.visualizer.children;
         const activeCount = Math.floor(progress * bars.length);
         
