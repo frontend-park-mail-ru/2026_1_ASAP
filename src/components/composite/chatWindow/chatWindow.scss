@@ -15,6 +15,25 @@
     box-sizing: border-box;
     min-height: 0;
     overflow: hidden;
+    position: relative;
+
+    // Подсветка всей области чата при перетаскивании файла.
+    &--drag-over::after {
+        content: 'Отпустите, чтобы прикрепить';
+        position: absolute;
+        inset: 8px;
+        z-index: 40;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px dashed $color-bubble;
+        border-radius: 14px;
+        background: rgba(69, 93, 186, 0.12);
+        color: $color-text;
+        font: $text-secondary;
+        letter-spacing: $text-secondary-ls;
+        pointer-events: none;
+    }
 
     &__header {
         padding: 5px $spacing-md;

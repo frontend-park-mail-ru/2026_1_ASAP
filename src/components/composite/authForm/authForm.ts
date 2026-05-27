@@ -207,6 +207,7 @@ export class AuthForm extends BaseForm<AuthFormProps> {
             } else {
                 localStorage.removeItem('saved_login');
             }
+
             const isAdmin = await contactService.isAdmin();
             this.props.router.navigate(isAdmin ? '/admin' : '/chats');
         } else {

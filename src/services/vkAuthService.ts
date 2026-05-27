@@ -50,6 +50,8 @@ export class VkAuthService {
 
                 if (response.ok) {
                     authService.isAuthStatus = true;
+                    // VK не идёт через authService.login — поднимаем WS-сессию здесь.
+                    await authService.startSessionServices();
                     onSuccess();
                 }
 

@@ -159,8 +159,11 @@ class AuthService {
     /**
      * Запускает сервисы, привязанные к авторизованной сессии:
      * WS-коннект и глобальный listener уведомлений.
+     * Зовётся из login/register, а также извне — на старте приложения
+     * (если уже залогинен) и после VK-авторизации (она не идёт через login).
+     * Идемпотентно: connect/attach не плодят сокет и listener.
      */
-    private async startSessionServices(): Promise<void> {
+    public async startSessionServices(): Promise<void> {
         wsClient.connect();
         try {
             const profile = await contactService.getMyProfile();

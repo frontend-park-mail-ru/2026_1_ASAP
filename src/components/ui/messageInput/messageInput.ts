@@ -97,10 +97,6 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             this.textarea.addEventListener('paste', this.handlePaste);
         }
 
-        this.element.addEventListener('dragover', this.handleDragOver);
-        this.element.addEventListener('dragleave', this.handleDragLeave);
-        this.element.addEventListener('drop', this.handleDrop);
-
         this.inputContainer = this.element.querySelector('[data-component="input-container"]');
         this.recorderSlot = this.element.querySelector('[data-component="recorder-slot"]');
 
@@ -373,25 +369,10 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         list.slice(0, freeSlots).forEach((file) => this.attachAnyFile(file));
     }
 
-    private readonly handleDragOver = (event: DragEvent): void => {
-        if (!event.dataTransfer || !Array.from(event.dataTransfer.types).includes('Files')) return;
-        event.preventDefault();
-        event.dataTransfer.dropEffect = 'copy';
-        this.element?.classList.add('message-input--drag-over');
-    };
-
-    private readonly handleDragLeave = (event: DragEvent): void => {
-        // Снимаем подсветку только когда курсор реально покинул контейнер.
-        if (event.relatedTarget && this.element?.contains(event.relatedTarget as Node)) return;
-        this.element?.classList.remove('message-input--drag-over');
-    };
-
-    private readonly handleDrop = (event: DragEvent): void => {
-        if (!event.dataTransfer || !Array.from(event.dataTransfer.types).includes('Files')) return;
-        event.preventDefault();
-        this.element?.classList.remove('message-input--drag-over');
-        this.attachFileList(event.dataTransfer.files);
-    };
+    /** Внешний приём файлов (drag-n-drop по всему окну чата — см. ChatWindow). */
+    public attachExternalFiles(files: FileList | null | undefined): void {
+        this.attachFileList(files);
+    }
 
     private readonly handlePaste = (event: ClipboardEvent): void => {
         const files = event.clipboardData?.files;
@@ -1065,9 +1046,6 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             this.textarea.removeEventListener('input', this.handleInput);
             this.textarea.removeEventListener('paste', this.handlePaste);
         }
-        this.element?.removeEventListener('dragover', this.handleDragOver);
-        this.element?.removeEventListener('dragleave', this.handleDragLeave);
-        this.element?.removeEventListener('drop', this.handleDrop);
         document.removeEventListener('pointerdown', this.handleDocumentPointerDown, true);
         document.removeEventListener('keydown', this.handleDocumentKeyDown);
         this.props.onStopTyping?.();

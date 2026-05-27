@@ -13,6 +13,7 @@ interface ChatWindowProps {
     headerComponent: ChildComponent;
     messageListComponent: ChildComponent;
     inputComponent?: ChildComponent;
+    onFilesDropped?: (files: FileList) => void;
 }
 
 /**
@@ -67,7 +68,37 @@ export class ChatWindow extends BaseComponent<ChatWindowProps> {
                 console.error("ChatWindow: слот для формы ввода сообщения не найден.");
             }
         }
+
+        if (this.props.onFilesDropped) {
+            this.element.addEventListener('dragover', this.handleDragOver);
+            this.element.addEventListener('dragleave', this.handleDragLeave);
+            this.element.addEventListener('drop', this.handleDrop);
+        }
     }
+
+    private isFileDrag(event: DragEvent): boolean {
+        return !!event.dataTransfer && Array.from(event.dataTransfer.types).includes('Files');
+    }
+
+    private readonly handleDragOver = (event: DragEvent): void => {
+        if (!this.isFileDrag(event)) return;
+        event.preventDefault();
+        event.dataTransfer!.dropEffect = 'copy';
+        this.element?.classList.add('chat-window--drag-over');
+    };
+
+    private readonly handleDragLeave = (event: DragEvent): void => {
+        // Снимаем подсветку только когда курсор реально покинул окно чата.
+        if (event.relatedTarget && this.element?.contains(event.relatedTarget as Node)) return;
+        this.element?.classList.remove('chat-window--drag-over');
+    };
+
+    private readonly handleDrop = (event: DragEvent): void => {
+        if (!this.isFileDrag(event)) return;
+        event.preventDefault();
+        this.element?.classList.remove('chat-window--drag-over');
+        this.props.onFilesDropped?.(event.dataTransfer!.files);
+    };
 
     /**
      * Выполняется перед размонтированием компонента.
@@ -76,6 +107,9 @@ export class ChatWindow extends BaseComponent<ChatWindowProps> {
      * @protected
      */
     beforeUnmount() {
+        this.element?.removeEventListener('dragover', this.handleDragOver);
+        this.element?.removeEventListener('dragleave', this.handleDragLeave);
+        this.element?.removeEventListener('drop', this.handleDrop);
         this.props.headerComponent.unmount();
         this.props.messageListComponent.unmount();
         this.props.inputComponent?.unmount();
