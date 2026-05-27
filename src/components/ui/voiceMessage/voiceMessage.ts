@@ -149,7 +149,7 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
     private initVisualizer(): void {
         if (!this.visualizer) return;
         this.visualizer.innerHTML = '';
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 40; i++) {
             const bar = document.createElement('div');
             bar.className = 'voice-message__bar';
             bar.style.height = `${20 + Math.random() * 80}%`;
