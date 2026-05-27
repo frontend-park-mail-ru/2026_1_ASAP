@@ -547,6 +547,7 @@ export class MessageList extends BaseComponent<MessageListProps> {
             onDownloadAttachment: this.props.onDownloadAttachment,
             onMediaClick: this.handleMediaClick,
             onContactClick: this.props.onContactClick,
+            onTranscribe: this.props.onTranscribe,
             ...this.blurProps(),
         });
 
