@@ -159,15 +159,6 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
 
         const currentUserId = this.currentUserId;
 
-        const serverTime = dto.created_at ? new Date(dto.created_at) : undefined;
-        if (tempId && this.activeMessageList.replaceMessageId(tempId, dto.id.toString(), serverTime)) {
-            const frontendMsg = this.sessionController!.mapRealtimeMessage(dto, currentUserId);
-            const messageComponent = this.activeMessageList.getMessageComponent(dto.id.toString());
-            if (messageComponent && frontendMsg.attachments) {
-                messageComponent.updateAttachments(frontendMsg.attachments);
-            }
-            return;
-        }
         // A: снимаем pending из очереди для ЛЮБОГО чата, не только активного.
         // Иначе, если эхо пришло, когда чат закрыт, заглушка зависнет и будет
         // переотправляться на каждом reconnect/refresh.

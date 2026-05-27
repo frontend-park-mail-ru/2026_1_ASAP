@@ -466,7 +466,6 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
         if (this.audio) {
             this.audio.pause();
             this.audio.removeEventListener('loadedmetadata', this.handleLoadedMetadata);
-            this.audio.removeEventListener('timeupdate', this.handleTimeUpdate);
             this.audio.removeEventListener('ended', this.handleEnded);
             
             if (VoiceMessage.currentPlayingAudio === this.audio) {
