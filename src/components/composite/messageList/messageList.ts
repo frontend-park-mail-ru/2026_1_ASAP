@@ -232,6 +232,13 @@ export class MessageList extends BaseComponent<MessageListProps> {
         this.flexContainer = this.element.querySelector('.message-list__flex-container'); 
         this.emptyStateElement = this.element.querySelector('.message-list__empty-state');
 
+        if (this.emptyStateElement && this.props.chatType === 'channel') {
+            const emptyTextElement = this.emptyStateElement.querySelector('.message-list__empty-text');
+            if (emptyTextElement) {
+                emptyTextElement.textContent = 'Здесь пока нет публикаций';
+            }
+        }
+
         if (!this.flexContainer) {
             console.error("MessageList: flex-container не найден.");
             return;
