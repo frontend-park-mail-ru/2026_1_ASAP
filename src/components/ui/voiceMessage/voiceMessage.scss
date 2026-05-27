@@ -116,14 +116,13 @@
     }
 
     &--active {
-        background: #fff;
+        background: var(--color-primary);
         color: var(--brand-primary);
-        border-color: #fff;
+        border: none;
 
         &:hover {
-            background: rgba(255, 255, 255, 0.9);
             color: var(--brand-primary);
-            border-color: #fff;
+            border-color: var(--color-text-primary);
         }
     }
 
