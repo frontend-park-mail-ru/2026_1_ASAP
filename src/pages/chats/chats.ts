@@ -184,7 +184,7 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
         this.activeMessageList.addMessage(frontendMsg);
 
         // если входящее сообщение и я смотрю на чат — сразу отмечаю как прочитанное
-        if (!frontendMsg.isOwn) {
+        if (!frontendMsg.isOwn && this.activeChannelRole !== "guest") {
             this.sessionController!.markMessageRead(dtoChatId, dto.id.toString());
         }
     };

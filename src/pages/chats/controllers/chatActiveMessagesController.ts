@@ -157,6 +157,9 @@ export class ChatActiveMessagesController {
         // Уже отмечено — не повторяемся (бэк проигнорирует, мы не дёргаем зря).
         if (this.deps.getLastReadMessageId(chatId) >= lastReadId) return;
 
+        // Гости канала не могут отмечать сообщения прочитанными
+        if (this.deps.getActiveChannelRole() === "guest") return;
+
         this.deps.sessionController.markMessageRead(chatId, latestIncoming.id);
         // Оптимистичный апдейт — на случай если WS-broadcast не дойдёт сразу.
         // Иначе при повторном входе в чат до прихода эхо-события divider
