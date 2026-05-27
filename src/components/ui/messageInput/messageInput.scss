@@ -12,6 +12,23 @@
     flex-shrink: 0;
     position: relative;
 
+    &--drag-over::after {
+        content: 'Отпустите, чтобы прикрепить';
+        position: absolute;
+        inset: 0;
+        z-index: 5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px dashed $color-bubble;
+        border-radius: 12px;
+        background: rgba(69, 93, 186, 0.12);
+        color: $color-text;
+        font: $text-tertiary;
+        letter-spacing: $text-tertiary-ls;
+        pointer-events: none;
+    }
+
     &__row {
         display: flex;
         align-items: center;
