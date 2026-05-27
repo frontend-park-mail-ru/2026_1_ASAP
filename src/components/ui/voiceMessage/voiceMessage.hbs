@@ -1,7 +1,22 @@
-<div class="voice-message">
-    <button type="button" class="voice-message__play" data-component="voice-play">
-        <img src="/assets/images/icons/playIcon.svg" alt="Play" data-component="voice-play-icon">
-    </button>
-    <div class="voice-message__visualizer" data-component="voice-visualizer"></div>
-    <div class="voice-message__duration" data-component="voice-duration">00:00</div>
+<div class="voice-message-wrapper">
+    <div class="voice-message">
+        <button type="button" class="voice-message__play" data-component="voice-play">
+            <img src="/assets/images/icons/playIcon.svg" alt="Play" data-component="voice-play-icon">
+        </button>
+        <div class="voice-message__visualizer" data-component="voice-visualizer"></div>
+        <div class="voice-message__info">
+            <div class="voice-message__duration" data-component="voice-duration">00:00</div>
+            {{#if canTranscribe}}
+            <button type="button" class="voice-message__stt {{#if transcript}}voice-message__stt--active{{/if}}" data-component="voice-stt" title="Расшифровать в текст">T</button>
+            {{/if}}
+        </div>
+    </div>
+    <div class="voice-message__transcript {{#if transcript}}voice-message__transcript--visible{{/if}}" data-component="voice-transcript">
+        <div class="voice-message__transcript-loader" data-component="voice-transcript-loader" hidden>
+            <span class="voice-message__dot"></span>
+            <span class="voice-message__dot"></span>
+            <span class="voice-message__dot"></span>
+        </div>
+        <div class="voice-message__transcript-text" data-component="voice-transcript-text">{{#if transcript}}{{transcript}}{{/if}}</div>
+    </div>
 </div>

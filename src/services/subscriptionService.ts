@@ -20,6 +20,52 @@ export type SubscriptionServiceResult =
     | { success: false; status: number; error: string };
 
 class SubscriptionService {
+    private isSubscribed: boolean = false;
+    private pollInterval: ReturnType<typeof setInterval> | null = null;
+
+    /**
+     * Возвращает кэшированный статус подписки.
+     */
+    public get isPremium(): boolean {
+        return this.isSubscribed;
+    }
+
+    /**
+     * Запускает периодический опрос API для обновления статуса подписки.
+     * Запрос выполняется сразу, а затем каждые 30 секунд.
+     */
+    public async startPolling(): Promise<void> {
+        if (this.pollInterval !== null) {
+            return;
+        }
+
+        // Выполняем первый запрос сразу
+        await this.updateStatus();
+
+        this.pollInterval = setInterval(() => {
+            this.updateStatus();
+        }, 30000);
+    }
+
+    /**
+     * Останавливает опрос API.
+     */
+    public stopPolling(): void {
+        if (this.pollInterval !== null) {
+            clearInterval(this.pollInterval);
+            this.pollInterval = null;
+        }
+        this.isSubscribed = false;
+    }
+
+    private async updateStatus(): Promise<void> {
+        const result = await this.getSubscription();
+        if (result.success && result.subscription) {
+            this.isSubscribed = result.subscription.active;
+        } else {
+            this.isSubscribed = false;
+        }
+    }
     private premiumCache: boolean | null = null;
     private premiumPrimePromise: Promise<boolean> | null = null;
 

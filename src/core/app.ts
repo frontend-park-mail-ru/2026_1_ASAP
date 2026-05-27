@@ -5,7 +5,7 @@ import { authService } from "../services/authService";
 import { wsClient } from "./utils/wsClient";
 import { notificationService } from "../services/notificationService";
 import { contactService } from "../services/contactService";
-
+import { subscriptionService } from "../services/subscriptionService";
 
 const routes: Record<string, PageLoader> = {
     '/':         () => import(/* webpackChunkName: "login" */ "../pages/login/login").then(m => m.LoginPage),
@@ -52,6 +52,7 @@ export class App {
         // listener уведомлений (живут пока сессия активна, независимо от страницы).
         if (await authService.checkAuth()) {
             wsClient.connect();
+            subscriptionService.startPolling();
             try {
                 const profile = await contactService.getMyProfile();
                 notificationService.attach(profile.additionalInfo.id);
