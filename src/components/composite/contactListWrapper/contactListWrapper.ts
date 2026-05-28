@@ -17,6 +17,7 @@ interface ContactListWrapperProps extends IBaseFormProps {
     router: Router,
     contacts?: FrontendContact[];
     listMode?: 'default' | 'createDialog' | 'createGroup';
+    selectedContactIds?: { has(contactId: number): boolean };
     onAction?: (contactId: number, isSelected?: boolean, contactName?: string) => void;
     onContactsLoaded?: (contacts: FrontendContact[]) => void;
 };
@@ -52,6 +53,7 @@ export class ContactListWrapper extends BaseForm<ContactListWrapperProps> {
             router: this.props.router,
             contacts: this.props.contacts,
             listMode: this.props.listMode,
+            selectedContactIds: this.props.selectedContactIds,
             onAction: this.props.onAction,
             onContactsLoaded: this.props.onContactsLoaded,
         });

@@ -22,6 +22,7 @@ interface ContactListItemProps extends IBaseFormProps {
     router: Router,
     contacts?: FrontendContact[];
     listMode?: 'default' | 'createDialog' | 'createGroup';
+    selectedContactIds?: { has(contactId: number): boolean };
     onAction?: (contactId: number, isSelected: boolean, contactName?: string) => void;
     onContactsLoaded?: (contacts: FrontendContact[]) => void;
 };
@@ -157,20 +158,24 @@ export class ContactListItem extends BaseForm<ContactListItemProps> {
             const mode = this.props.listMode || 'default';
 
             switch (mode) {
-                case 'createDialog':
+                case 'createDialog': {
+                    const submitDialogContact = () => {
+                        if (this.props.onAction) {
+                            this.props.onAction(contact.contact_user_id, true, contact.contact_name);
+                        }
+                    };
+                    onRowClick = submitDialogContact;
                     rightControl = new Button({
                         class: "create-dialog-btn",
                         icon: "/assets/images/icons/createChatMenuIcons/createNewChat.svg",
-                        onClick: () => {
-                            if (this.props.onAction) {
-                                this.props.onAction(contact.contact_user_id, true, contact.contact_name);
-                            }
-                        }
+                        onClick: submitDialogContact,
                     });
                     break;
+                }
                 case 'createGroup':
                     rightControl = new Checkbox({
                         name: `user_${contact.contact_user_id}`,
+                        checked: this.props.selectedContactIds?.has(contact.contact_user_id) ?? false,
                         onChange: (isChecked: boolean) => {
                             if (this.props.onAction) {
                                 this.props.onAction(contact.contact_user_id, isChecked, contact.contact_name);

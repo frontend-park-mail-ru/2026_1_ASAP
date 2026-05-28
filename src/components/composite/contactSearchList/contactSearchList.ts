@@ -27,6 +27,7 @@ interface ContactSearchListProps extends IBaseComponentProps {
     onSearchContacts?: (query: string, scope: SearchScope) => Promise<SearchContactsResult | null>;
     /** Используется при listMode='default' (страница /contacts) — унифицированный поиск. */
     onSearchUnified?: (query: string, tab: SearchTab) => Promise<UnifiedSearchResult | null>;
+    selectedContactIds?: { has(contactId: number): boolean };
     onAction?: (contactId: number, isSelected?: boolean, contactName?: string) => void;
     onContactsLoaded?: (contacts: FrontendContact[]) => void;
 }
@@ -109,6 +110,7 @@ export class ContactSearchList extends BaseComponent<ContactSearchListProps> {
             router: this.props.router,
             contacts: this.props.contacts,
             listMode: this.props.listMode,
+            selectedContactIds: this.props.selectedContactIds,
             onAction: this.props.onAction,
             onContactsLoaded: this.props.onContactsLoaded,
         });
