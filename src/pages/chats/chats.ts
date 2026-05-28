@@ -245,6 +245,15 @@ export class ChatsPage extends BasePage<ChatsPageProps> {
                 contactAvatarUrl: attachment.contact_avatar_url,
                 isBlur: attachment.is_blur,
             })),
+            sticker: lastMessage.sticker ? {
+                id: lastMessage.sticker.id,
+                packId: lastMessage.sticker.pack_id,
+                fileUrl: lastMessage.sticker.file_url,
+                slug: lastMessage.sticker.slug,
+                emoji: lastMessage.sticker.emoji,
+                width: lastMessage.sticker.width,
+                height: lastMessage.sticker.height,
+            } : undefined,
         };
     }
 

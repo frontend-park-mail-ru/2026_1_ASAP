@@ -155,7 +155,7 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
             router: this.props.router,
             listMode: 'default',
             hideAddButton: false,
-            onAddClick: () => this.contactSearchList?.activateGlobalSearch(),
+            onAddClick: () => this.contactSearchList?.setSearchQuery("а"),
             // Унифицированный поиск (4 таба) — тот же, что используется на /chats.
             onSearchUnified: (query, tab) => chatsUseCases.searchUnified(query, tab),
             onContactsLoaded: (contacts) => {
@@ -168,7 +168,7 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
 
         if (sessionStorage.getItem('contacts_activate_global_search')) {
             sessionStorage.removeItem('contacts_activate_global_search');
-            this.contactSearchList.activateGlobalSearch();
+            this.contactSearchList.setSearchQuery("а");
         }
 
         this.menuBar = new MenuBar({

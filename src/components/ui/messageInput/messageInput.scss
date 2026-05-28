@@ -146,20 +146,23 @@
         z-index: 30;
         display: flex;
         flex-direction: column;
-        min-width: 190px;
-        padding: 6px;
-        border-radius: 10px;
+        min-width: 230px;
+        padding: 8px;
+        border-radius: 12px;
         background: $color-neutral;
         box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        border: 1px solid $color-border;
     }
 
     &__attachment-menu-item {
         @include btn-reset;
         width: 100%;
-        min-height: 38px;
-        padding: 9px 12px;
-        border-radius: 8px;
+        min-height: 49px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 10px;
+        border-radius: 10px;
         color: $color-text;
         font: $text-tertiary;
         letter-spacing: $text-tertiary-ls;
@@ -171,11 +174,31 @@
             background-color: $color-text-hover2;
             color: $color-primary;
         }
+
+        &:focus-visible {
+            outline: 2px solid $color-primary;
+            outline-offset: 2px;
+        }
+    }
+
+    &__attachment-menu-icon {
+        width: 33px;
+        height: 33px;
+        flex-shrink: 0;
+        object-fit: contain;
+    }
+
+    &__attachment-menu-label {
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
     }
 
     &__draft-attachments {
         display: flex;
         flex-wrap: wrap;
+        align-items: center;
         gap: 8px;
         margin-bottom: 8px;
 
@@ -197,24 +220,26 @@
         &--contact {
             background: $gradient-msg;
             border: none;
-            border-radius: 16px;
+            border-radius: 10px;
             color: #ffffff;
-            padding: 4px 10px 4px 8px;
+            min-height: 39px;
+            max-height: 45px;
+            padding: 3px 8px 3px 4px;
             
-            .message-input__draft-attachment-icon,
             .message-input__draft-attachment-remove-icon {
                 filter: brightness(0) invert(1);
             }
         }
 
         &--file {
-            background: #5A8A6E;
+            background: linear-gradient(115deg, #5A8A6E 0%, #3A6648 100%);
             border: none;
-            border-radius: 16px;
+            border-radius: 10px;
             color: #ffffff;
-            padding: 4px 10px 4px 8px;
+            max-height: 45px;
+            min-height: 40px;
+            padding: 3px 8px 3px 4px;
             
-            .message-input__draft-attachment-icon,
             .message-input__draft-attachment-remove-icon {
                 filter: brightness(0) invert(1);
             }
@@ -223,17 +248,20 @@
         &--media {
             position: relative;
             padding: 0;
-            width: 56px;
-            height: 56px;
-            border-radius: 12px;
+            width: clamp(88px, 18vw, 150px);
+            aspect-ratio: 3 / 4;
+            border-radius: 14px;
             border: none;
             background: transparent;
+            overflow: hidden;
 
             .message-input__draft-attachment-media {
+                display: block;
                 width: 100%;
                 height: 100%;
                 object-fit: cover;
-                border-radius: 8px;
+                border-radius: inherit;
+                background: rgba(0, 0, 0, 0.18);
 
                 &--fallback {
                     object-fit: contain;
@@ -245,20 +273,51 @@
 
             .message-input__draft-attachment-remove {
                 position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                width: 24px;
-                height: 24px;
-                background: rgba(0, 0, 0, 0.5);
+                top: 6px;
+                right: 6px;
+                width: 28px;
+                height: 28px;
+                background: rgba(0, 0, 0, 0.58);
                 border-radius: 50%;
-                opacity: 0;
-                transition: opacity 0.2s ease;
+                opacity: 1;
+                transition: background-color 0.2s ease, transform 0.2s ease;
                 z-index: 10;
             }
 
             &:hover .message-input__draft-attachment-remove {
+                background: rgba(0, 0, 0, 0.72);
+                transform: scale(1.04);
+            }
+
+            .message-input__draft-attachment-remove:focus-visible {
+                background: rgba(0, 0, 0, 0.72);
                 opacity: 1;
+            }
+
+            .message-input__draft-attachment-play {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 42px;
+                height: 42px;
+                border-radius: 50%;
+                background: rgba(0, 0, 0, 0.55);
+                transform: translate(-50%, -50%);
+                pointer-events: none;
+                z-index: 4;
+
+                &::before {
+                    content: '';
+                    position: absolute;
+                    top: 50%;
+                    left: 52%;
+                    width: 0;
+                    height: 0;
+                    border-top: 9px solid transparent;
+                    border-bottom: 9px solid transparent;
+                    border-left: 14px solid #ffffff;
+                    transform: translate(-50%, -50%);
+                }
             }
 
             &.message-input__draft-attachment-media--loading {
@@ -290,8 +349,10 @@
     }
 
     &__draft-attachment-icon {
-        width: 18px;
-        height: 18px;
+        width: 33px;
+        height: 33px;
+        flex-shrink: 0;
+        object-fit: contain;
     }
 
     &__draft-attachment-media {

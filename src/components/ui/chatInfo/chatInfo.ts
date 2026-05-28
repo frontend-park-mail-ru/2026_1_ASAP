@@ -6,6 +6,7 @@ import { BaseComponent, IBaseComponentProps } from "../../../core/base/baseCompo
  * @property {string} class - Тип чата ('message-personal' | 'message-group' | 'message-chanel').
  * @property {string} [name] - Имя чата/собеседника.
  * @property {string} [lastMessage] - Последнее сообщение.
+ * @property {string} [lastMessageIcon] - Иконка превью последнего сообщения.
  * @property {string} [sender] - Отправитель (для групповых чатов).
  * @property {Function} [onClick] - Обработчик клика.
  */
@@ -13,6 +14,7 @@ export interface ChatInfoProps extends IBaseComponentProps {
     class: string;
     name?: string;
     lastMessage?: string;
+    lastMessageIcon?: string;
     sender?: string;
     onClick?: (event: MouseEvent) => void;
 }
@@ -30,6 +32,7 @@ export class ChatInfo extends BaseComponent<ChatInfoProps> {
         this.props.class = props.class;
         this.props.name = props.name;
         this.props.lastMessage = props.lastMessage;
+        this.props.lastMessageIcon = props.lastMessageIcon;
         this.props.sender = props.sender;
     }
   

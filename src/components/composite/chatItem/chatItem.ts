@@ -4,7 +4,7 @@ import { ChatInfo } from "../../ui/chatInfo/chatInfo";
 import { MetaChatInfo, formatUnreadBadge } from "../../ui/metaChatInfo/metaChatInfo";
 import { Chat as ChatType, FrontendMessage } from '../../../types/chat';
 import template from "./chatItem.hbs";
-import { escapeHtml } from "../../../core/utils/escape";
+import { getLastMessagePreview } from "../../../utils/lastMessagePreview";
 
  /**
  * @interface ChatItemProps
@@ -84,27 +84,6 @@ export class ChatItem extends BaseForm<ChatItemProps> {
         return fullName || login;
     }
 
-    private getMessagePreview(message?: FrontendMessage): string {
-        if (!message) return '';
-        if (message.text) return message.text;
-
-        const attachment = message.attachments?.[0];
-        if (!attachment) return '';
-
-        switch (attachment.type) {
-            case 'photo':
-                return 'Фото';
-            case 'video':
-                return 'Видео';
-            case 'file':
-                return attachment.fileName || 'Файл';
-            case 'contact':
-                return [attachment.contactFirstName, attachment.contactLastName].filter(Boolean).join(' ') || 'Контакт';
-            default:
-                return '';
-        }
-    }
-
     /**
      * Выполняется после монтирования компонента.
      * Инициализирует и монтирует дочерние компоненты (аватар, информация о чате, мета-данные)
@@ -125,10 +104,12 @@ export class ChatItem extends BaseForm<ChatItemProps> {
 
         const infoSlot = this.element.querySelector('[data-component="chat-item-info-slot"]');
         if (infoSlot) {
+            const lastMessagePreview = getLastMessagePreview(this.props.chat.lastMessage);
             this.chatInfo = new ChatInfo({
                 class: this.typeToClass(this.props.chat.type),
                 name: this.props.chat.title,
-                lastMessage: this.getMessagePreview(this.props.chat.lastMessage),
+                lastMessage: lastMessagePreview.text,
+                lastMessageIcon: lastMessagePreview.iconSrc,
                 sender: this.getSenderDisplayName(this.props.chat.lastMessage),
             });
             this.chatInfo.mount(infoSlot as HTMLElement);
@@ -198,18 +179,10 @@ export class ChatItem extends BaseForm<ChatItemProps> {
             nameEl.textContent = newData.title;
         }
 
-        const msgTextEl = this.element.querySelector('.msg-text');
+        const msgTextEl = this.element.querySelector<HTMLElement>('.msg-text');
         if (msgTextEl) {
-            if (newData.type === 'group' && newData.lastMessage) {
-                const senderName = this.getSenderDisplayName(newData.lastMessage);
-                if (senderName) {
-                    msgTextEl.innerHTML = `<span class="sender-group">${escapeHtml(senderName)}: </span>${escapeHtml(this.getMessagePreview(newData.lastMessage))}`;
-                } else {
-                    msgTextEl.textContent = this.getMessagePreview(newData.lastMessage);
-                }
-            } else {
-                msgTextEl.textContent = this.getMessagePreview(newData.lastMessage);
-            }
+            const senderName = newData.type === 'group' ? this.getSenderDisplayName(newData.lastMessage) : null;
+            this.renderLastMessagePreview(msgTextEl, newData.lastMessage, senderName);
         }
 
         const timeEl = this.element.querySelector('.meta-chat-info__time');
@@ -228,6 +201,31 @@ export class ChatItem extends BaseForm<ChatItemProps> {
                 (unreadCountEl as HTMLElement).style.display = 'none';
             }
         }
+    }
+
+    private renderLastMessagePreview(container: HTMLElement, message?: FrontendMessage, senderName?: string | null): void {
+        container.textContent = '';
+
+        if (senderName) {
+            const sender = document.createElement('span');
+            sender.className = 'sender-group';
+            sender.textContent = `${senderName}:`;
+            container.appendChild(sender);
+        }
+
+        const preview = getLastMessagePreview(message);
+        if (preview.iconSrc) {
+            const icon = document.createElement('img');
+            icon.className = 'msg-text__icon';
+            icon.src = preview.iconSrc;
+            icon.alt = '';
+            container.appendChild(icon);
+        }
+
+        const label = document.createElement('span');
+        label.className = 'msg-text__label';
+        label.textContent = preview.text;
+        container.appendChild(label);
     }
 
     /**

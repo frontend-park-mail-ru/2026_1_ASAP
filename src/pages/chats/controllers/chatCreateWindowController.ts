@@ -21,7 +21,7 @@ export class ChatCreateWindowController {
             return new CreateDialogWindow({
                 router: this.deps.router,
                 contacts: await this.deps.creationController.loadContacts(),
-                onSearchContacts: (query, scope) => this.deps.creationController.searchContacts(query, scope),
+                onSearchUnified: (query, tab) => this.deps.creationController.searchUnified(query, tab),
                 onSubmit: (contactId: number, _contactName: string) =>
                     this.deps.creationController.createDialog(contactId),
             });
@@ -29,6 +29,7 @@ export class ChatCreateWindowController {
             return new CreateGroupWindow({
                 router: this.deps.router,
                 contacts: await this.deps.creationController.loadContacts(),
+                onSearchUnified: (query, tab) => this.deps.creationController.searchUnified(query, tab),
                 onSubmit: (userIds: number[], groupName: string) =>
                     this.deps.creationController.createGroup(userIds, groupName),
             });
