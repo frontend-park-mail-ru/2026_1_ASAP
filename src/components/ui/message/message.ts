@@ -296,16 +296,25 @@ export class Message extends BaseComponent<MessageProps> {
         });
 
         const textEl = this.element?.querySelector<HTMLElement>('.message__text');
+        let textIsVisible = false;
         if (textEl) {
             const hasVoice = attachments.some(a => a.type === 'voice');
             const isVoiceOnlyText = this.props.message.text?.match(/^\[Голосовое[^\d]*(\d+:\d+)?\]$/i);
-            
+
             if (hasVoice && isVoiceOnlyText) {
                 textEl.hidden = true;
             } else {
                 textEl.hidden = !this.props.message.text;
             }
+            textIsVisible = !textEl.hidden;
         }
+
+        // Если в сообщении только вложения (без текста) — снимаем общий «бабл»-фон,
+        // чтобы каждое вложение читалось как самостоятельная карточка/пилюля.
+        this.element?.classList.toggle(
+            'message--attachments-only',
+            attachments.length > 0 && !textIsVisible,
+        );
     }
 
     private createFileAttachment(url?: string, fileName?: string): HTMLElement {

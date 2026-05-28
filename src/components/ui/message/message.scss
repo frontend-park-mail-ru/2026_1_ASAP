@@ -383,6 +383,29 @@
         box-shadow: none;
     }
 
+    // Сообщение только с вложениями (нет текста): убираем общий «бабл»,
+    // каждое вложение читается как самостоятельная карточка/пилюля,
+    // мета (время/статус) — компактная строка справа под ним.
+    &--attachments-only .message__content-wrapper {
+        background: transparent !important;
+        padding: 0;
+        box-shadow: none;
+        gap: 4px;
+    }
+
+    &--attachments-only .message__meta {
+        align-self: flex-end;
+        padding: 0 4px;
+    }
+
+    // Не растягиваем вложения на всю ширину «бабла» — пусть pill'ы остаются по контенту.
+    &--attachments-only .message__attachments {
+        align-items: flex-start;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
     &__sticker {
         display: block;
         width: 200px;
@@ -395,9 +418,10 @@
     }
 }
 
-// На прозрачном баббле стикера время рисуется поверх фона чата.
+// На прозрачном баббле стикера/attachments-only время рисуется поверх фона чата.
 // В светлой теме фон почти белый, обычный $color-text-hover плохо читается.
-[data-theme="light"] .message--sticker {
+[data-theme="light"] .message--sticker,
+[data-theme="light"] .message--attachments-only {
     .message__meta,
     .message__time,
     .message__edited,
