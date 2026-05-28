@@ -74,6 +74,10 @@ export class ContactListWrapper extends BaseForm<ContactListWrapperProps> {
         this.contactListItem?.showSearchResults(hits);
     }
 
+    public showContactResults(local: SearchContactHit[], global: SearchContactHit[]): void {
+        this.contactListItem?.showContactResults(local, global);
+    }
+
     public restoreContactList(): void {
         this.contactListItem?.restoreContactList();
     }

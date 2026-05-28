@@ -1,7 +1,8 @@
 import type { FrontendContact } from "../../../types/contact";
-import type { SearchContactsResult } from "../../../types/search";
+import type { UnifiedSearchResult } from "../../../types/search";
 import { ChatsUseCases, chatsUseCases } from "../model/chatsUseCases";
 import type { ContactSearchScope } from "../model/chatsViewModels";
+import type { SearchTab } from "../../../components/composite/searchTabs/searchTabs";
 
 interface ChatCreationControllerDeps {
     useCases?: ChatsUseCases;
@@ -21,8 +22,8 @@ export class ChatCreationController {
         return this.useCases.loadContacts();
     }
 
-    public searchContacts(query: string, scope: ContactSearchScope): Promise<SearchContactsResult | null> {
-        return this.useCases.searchContacts(query, scope);
+    public searchUnified(query: string, tab: SearchTab): Promise<UnifiedSearchResult | null> {
+        return this.useCases.searchUnified(query, tab);
     }
 
     public async createDialog(contactId: number, contactLogin?: string): Promise<void> {

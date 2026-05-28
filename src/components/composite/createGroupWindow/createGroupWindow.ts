@@ -7,14 +7,13 @@ import { Button } from "../../ui/button/button";
 import { Router } from "../../../core/router";
 import { InfoMenu } from "../infoMenu/infoMenu";
 import { FrontendContact } from "../../../types/contact";
-import type { SearchContactsResult } from "../../../types/search";
-
-type SearchScope = 'contacts' | 'local';
+import type { UnifiedSearchResult } from "../../../types/search";
+import type { SearchTab } from "../../composite/searchTabs/searchTabs";
 
 interface CreateGroupWindowProps extends IBaseComponentProps {
     router: Router;
     contacts: FrontendContact[];
-    onSearchContacts: (query: string, scope: SearchScope) => Promise<SearchContactsResult | null>;
+    onSearchUnified: (query: string, tab: SearchTab) => Promise<UnifiedSearchResult | null>;
     onSubmit: (userIds: number[], contactNames: string) => void;
 }
 
@@ -58,7 +57,7 @@ export class CreateGroupWindow extends BaseComponent<CreateGroupWindowProps> {
             contacts,
             listMode: "createGroup",
             hideAddButton: true,
-            onSearchContacts: this.props.onSearchContacts,
+            onSearchUnified: this.props.onSearchUnified,
             selectedContactIds: this.selectedUsers,
             onAction: (contactId: number, isSelected?: boolean, contactName?: string) => {
                 if (isSelected && contactName) {
@@ -76,7 +75,6 @@ export class CreateGroupWindow extends BaseComponent<CreateGroupWindowProps> {
         this.actionLayout.mount(layoutSlot as HTMLElement);
 
         if (contacts.length === 0) {
-            this.contactSearchList.activateGlobalSearch();
             this.contactSearchList.setSearchQuery("а");
         }
 
