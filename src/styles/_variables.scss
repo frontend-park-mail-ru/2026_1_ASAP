@@ -80,7 +80,13 @@
     --gradient-msg-reverse: linear-gradient(to right, #5A8A6E 0%, #455DBA 100%);
     --gradient-button: linear-gradient(to right, #6583FA 0%, #5A8A6E 100%);
     --gradient-button-hover: linear-gradient(to right, #3D5D4A 0%, #324487 100%);
-    --gradient-selected-chat: linear-gradient(to right, #455DBA 11%, #5A8A6E 100%);
+    // Лёгкая индиго-подложка под выбранным чатом/контактом/настройкой —
+    // акцент держит рамка-обводка (inset box-shadow), а сама заливка не отвлекает.
+    --gradient-selected-chat: linear-gradient(
+        to right,
+        rgba(69, 93, 186, 0.20) 0%,
+        rgba(69, 93, 186, 0.10) 100%
+    );
 
     // На странице входа в dark — обычный непрозрачный тёмный фон + блобы поверх.
     --login-background: var(--color-background);
