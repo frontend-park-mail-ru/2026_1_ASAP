@@ -198,6 +198,7 @@
     &__draft-attachments {
         display: flex;
         flex-wrap: wrap;
+        align-items: center;
         gap: 8px;
         margin-bottom: 8px;
 
@@ -222,6 +223,7 @@
             border-radius: 10px;
             color: #ffffff;
             min-height: 39px;
+            max-height: 45px;
             padding: 3px 8px 3px 4px;
             
             .message-input__draft-attachment-remove-icon {
@@ -234,6 +236,7 @@
             border: none;
             border-radius: 10px;
             color: #ffffff;
+            max-height: 45px;
             min-height: 40px;
             padding: 3px 8px 3px 4px;
             
