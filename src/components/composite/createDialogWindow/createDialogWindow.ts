@@ -6,9 +6,8 @@ import { ContactSearchList } from "../contactSearchList/contactSearchList";
 import { Button } from "../../ui/button/button";
 import { Router } from "../../../core/router";
 import type { FrontendContact } from "../../../types/contact";
-import type { SearchContactsResult } from "../../../types/search";
-
-type SearchScope = 'contacts' | 'local';
+import type { UnifiedSearchResult } from "../../../types/search";
+import type { SearchTab } from "../../composite/searchTabs/searchTabs";
 
 /**
  * @interface CreateDialogWindowProps
@@ -19,7 +18,7 @@ type SearchScope = 'contacts' | 'local';
 interface CreateDialogWindowProps extends IBaseComponentProps {
     router: Router;
     contacts: FrontendContact[];
-    onSearchContacts: (query: string, scope: SearchScope) => Promise<SearchContactsResult | null>;
+    onSearchUnified: (query: string, tab: SearchTab) => Promise<UnifiedSearchResult | null>;
     onSubmit: (contactId: number, contactName: string) => void;
 }
 
@@ -64,14 +63,13 @@ export class CreateDialogWindow extends BaseComponent<CreateDialogWindowProps> {
             contacts: this.props.contacts,
             listMode: 'createDialog',
             hideAddButton: true,
-            onSearchContacts: this.props.onSearchContacts,
+            onSearchUnified: this.props.onSearchUnified,
             onAction: (contactId: number, _isSelected?: boolean, contactName?: string) => {
                 this.props.onSubmit(contactId, contactName || "Новый диалог");
             },
         });
 
         if (this.props.contacts.length === 0) {
-            this.contactSearchList.activateGlobalSearch();
             this.contactSearchList.setSearchQuery("а");
         }
 

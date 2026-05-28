@@ -4,6 +4,7 @@ import type { ChannelChat, Chat, DialogChat, FrontendMessage, GroupChat, Outgoin
 import type { FrontendProfile } from "../../../types/profile";
 import type { SearchMessageHit, SearchMessagesResult, UnifiedSearchResult } from "../../../types/search";
 import type { SearchTab } from "../../../components/composite/searchTabs/searchTabs";
+import { getLastMessagePreview } from "../../../utils/lastMessagePreview";
 import { ChatsDataFacade, chatsDataFacade } from "./chatsDataFacade";
 import type {
     ActiveChatVM,
@@ -45,24 +46,7 @@ function hasSenderDisplayName(message?: FrontendMessage): boolean {
 }
 
 function getMessagePreview(message?: FrontendMessage): string | undefined {
-    if (!message) return undefined;
-    if (message.text) return message.text;
-
-    const attachment = message.attachments?.[0];
-    if (!attachment) return undefined;
-
-    switch (attachment.type) {
-        case "photo":
-            return "Фото";
-        case "video":
-            return "Видео";
-        case "file":
-            return attachment.fileName || "Файл";
-        case "contact":
-            return [attachment.contactFirstName, attachment.contactLastName].filter(Boolean).join(" ") || "Контакт";
-        default:
-            return undefined;
-    }
+    return getLastMessagePreview(message).text || undefined;
 }
 
 function toMessageVM(message: FrontendMessage, chat: Chat): MessageVM {
@@ -277,14 +261,7 @@ export class ChatsUseCases {
     }
 
     public mapRealtimeSidebarMessage(dto: MessageDto, currentUserId: number): FrontendMessage {
-        const message = this.data.convertWsMessageDto(dto, currentUserId);
-        // Для sidebar preview у стикеровых сообщений подменяем пустой текст на «Стикер».
-        if (message.sticker && !message.text) {
-            message.text = message.sticker.emoji
-                ? `${message.sticker.emoji} Стикер`
-                : 'Стикер';
-        }
-        return message;
+        return this.data.convertWsMessageDto(dto, currentUserId);
     }
 
     public async enrichRealtimeSidebarMessage(

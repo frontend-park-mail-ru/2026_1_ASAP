@@ -11,11 +11,12 @@ import {
 } from '../types/chat';
 import { SearchChatHit, SearchChatsResult, SearchMessageHit, SearchMessagesResult } from '../types/search';
 import { httpClient } from '../core/utils/httpClient';
-import { wsClient, MessageDto, ChatInformationDto, MessageAttachmentDto, WsErrorDto, parseVoiceTranscript } from '../core/utils/wsClient';
+import { wsClient, MessageDto, ChatInformationDto, MessageAttachmentDto, WsErrorDto, StickerDto, parseVoiceTranscript } from '../core/utils/wsClient';
 import { getFullUrl } from '../core/utils/url';
 import { presenceService } from './presenceService';
 import { offlineQueue, PendingMessage } from './offlineMessageQueue';
 import { subscriptionService } from './subscriptionService';
+import { isNonVoiceAttachmentPlaceholderText } from '../utils/lastMessagePreview';
 
 import { BASE_URL } from '../core/utils/apiBase';
 
@@ -34,6 +35,7 @@ interface BackendMessageLike {
     text?: string;
     created_at?: string;
     attachments?: MessageAttachmentDto[];
+    sticker?: StickerDto | null;
 }
 
 interface SearchChatApiHit {
@@ -103,6 +105,18 @@ function mapAttachmentDto(attachment: MessageAttachmentDto): MessageAttachment {
         canTranscribe: attachment.can_transcribe || subscriptionService.isPremium,
         transcript: attachment.transcript ? parseVoiceTranscript(attachment.transcript) : undefined,
         isBlur: attachment.is_blur,
+    };
+}
+
+function mapStickerDto(sticker: StickerDto) {
+    return {
+        id: sticker.id,
+        packId: sticker.pack_id,
+        fileUrl: sticker.file_url,
+        slug: sticker.slug,
+        emoji: sticker.emoji,
+        width: sticker.width,
+        height: sticker.height,
     };
 }
 
@@ -189,8 +203,7 @@ export class ChatService {
         const t = (text || '').trim();
         if (!t || !attachments || attachments.length === 0) return t;
 
-        const labels = ['[Фото]', '[Видео]', '[Файл]', '[Контакт]', '[Вложение]'];
-        if (labels.includes(t)) {
+        if (isNonVoiceAttachmentPlaceholderText(t)) {
             return '';
         }
         return t;
@@ -203,6 +216,7 @@ export class ChatService {
      */
     private convertToFrontendMessage(backendMessage: BackendMessageLike, currentUserId?: string | number): FrontendMessage {
         const login = backendMessage.sender?.login || backendMessage.login || (backendMessage.sender_id ? `user_${backendMessage.sender_id}` : 'unknown');
+        const stickerDto = backendMessage.sticker;
         
         return {
             id: backendMessage.id?.toString() || Math.random().toString(36).substring(2, 9),
@@ -219,6 +233,7 @@ export class ChatService {
                    (backendMessage.login === currentUserId) ||
                    (String(backendMessage.sender_id) === String(currentUserId)),
             attachments: backendMessage.attachments?.map(mapAttachmentDto),
+            sticker: stickerDto ? mapStickerDto(stickerDto) : undefined,
         };
     }
 
@@ -247,15 +262,7 @@ export class ChatService {
             isEdited: Boolean(dto.edited),
             status: dto.read ? 'read' : 'sent',
             attachments: dto.attachments?.map(mapAttachmentDto),
-            sticker: stickerDto ? {
-                id: stickerDto.id,
-                packId: stickerDto.pack_id,
-                fileUrl: stickerDto.file_url,
-                slug: stickerDto.slug,
-                emoji: stickerDto.emoji,
-                width: stickerDto.width,
-                height: stickerDto.height,
-            } : undefined,
+            sticker: stickerDto ? mapStickerDto(stickerDto) : undefined,
         };
     }
 
@@ -319,17 +326,7 @@ export class ChatService {
                 sender: { id: dto.last_message.sender_id } as User,
                 isOwn: Number(dto.last_message.sender_id) === Number(currentUserId),
                 attachments: dto.last_message.attachments?.map(mapAttachmentDto),
-                sticker: lastSticker
-                  ? {
-                      id: lastSticker.id,
-                      packId: lastSticker.pack_id,
-                      fileUrl: lastSticker.file_url,
-                      slug: lastSticker.slug,
-                      emoji: lastSticker.emoji,
-                      width: lastSticker.width,
-                      height: lastSticker.height,
-                    }
-                  : undefined,
+                sticker: lastSticker ? mapStickerDto(lastSticker) : undefined,
             };
         }
 

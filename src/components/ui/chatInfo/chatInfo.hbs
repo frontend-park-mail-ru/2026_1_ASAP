@@ -1,18 +1,28 @@
 <div class="{{class}}">
     {{#if (eq class "message-personal")}}
         <p class="user-name"><span class="name-text">{{name}}</span></p>
-        <p class="msg-text">{{lastMessage}}</p>
+        <p class="msg-text">
+            {{#if lastMessageIcon}}<img src="{{lastMessageIcon}}" alt="" class="msg-text__icon">{{/if}}
+            <span class="msg-text__label">{{lastMessage}}</span>
+        </p>
     {{else if (eq class "message-group")}}
         <p class="group-name">
             <span class="name-text">{{name}}</span>
             <img src="/assets/images/icons/createChatMenuIcons/group.svg" alt="" class="chat-info__group-icon">
         </p>
-        <p class="msg-text">{{#if sender}}<span class="sender-group">{{sender}}: </span>{{/if}}{{lastMessage}}</p>
+        <p class="msg-text">
+            {{#if sender}}<span class="sender-group">{{sender}}: </span>{{/if}}
+            {{#if lastMessageIcon}}<img src="{{lastMessageIcon}}" alt="" class="msg-text__icon">{{/if}}
+            <span class="msg-text__label">{{lastMessage}}</span>
+        </p>
     {{else if (eq class "message-chanel")}}
         <p class="chanel-name">
             <span class="name-text">{{name}}</span>
             <img src="/assets/images/icons/createChatMenuIcons/channel.svg" alt="" class="chat-info__channel-icon">
         </p>
-        <p class="msg-text">{{lastMessage}}</p>
+        <p class="msg-text">
+            {{#if lastMessageIcon}}<img src="{{lastMessageIcon}}" alt="" class="msg-text__icon">{{/if}}
+            <span class="msg-text__label">{{lastMessage}}</span>
+        </p>
     {{/if}}
 </div>

@@ -9,11 +9,23 @@ import { VoiceRecorder } from '../voiceRecorder/voiceRecorder';
 import template from './messageInput.hbs';
 
 type UploadableAttachmentType = Extract<MessageAttachmentType, 'photo' | 'video' | 'file' | 'voice'>;
+type AttachmentMenuAction = 'media' | 'file' | 'contact';
 
 type DraftAttachment = {
     id: string;
     attachment: MessageAttachment;
     outgoing: OutgoingMessageAttachment;
+};
+
+const ATTACHMENT_MENU_ITEMS: Array<{ action: AttachmentMenuAction; label: string; iconSrc: string }> = [
+    { action: 'media', label: 'Фото или видео', iconSrc: '/assets/images/icons/attachments/menu-media.svg' },
+    { action: 'file', label: 'Файл', iconSrc: '/assets/images/icons/attachments/menu-file.svg' },
+    { action: 'contact', label: 'Контакт', iconSrc: '/assets/images/icons/attachments/menu-contact.svg' },
+];
+
+const ATTACHMENT_CHIP_ICONS: Record<'file' | 'contact', string> = {
+    file: '/assets/images/icons/attachments/menu-file.svg',
+    contact: '/assets/images/icons/attachments/menu-contact.svg',
 };
 
 /**
@@ -286,11 +298,9 @@ export class MessageInput extends BaseForm<MessageInputProps> {
 
         this.attachmentMenu = document.createElement('div');
         this.attachmentMenu.className = 'message-input__attachment-menu';
-        this.attachmentMenu.innerHTML = `
-            <button type="button" class="message-input__attachment-menu-item" data-action="media">Фото или видео</button>
-            <button type="button" class="message-input__attachment-menu-item" data-action="file">Файл</button>
-            <button type="button" class="message-input__attachment-menu-item" data-action="contact">Контакт</button>
-        `;
+        ATTACHMENT_MENU_ITEMS.forEach((item) => {
+            this.attachmentMenu?.appendChild(this.createAttachmentMenuItem(item));
+        });
         this.attachmentMenu.addEventListener('click', this.handleAttachmentMenuClick);
         this.element.appendChild(this.attachmentMenu);
 
@@ -298,6 +308,25 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         const root = this.element.getBoundingClientRect();
         this.attachmentMenu.style.right = `${Math.max(0, root.right - anchor.right)}px`;
         this.attachmentMenu.style.bottom = `${root.bottom - anchor.top + 8}px`;
+    }
+
+    private createAttachmentMenuItem(item: { action: AttachmentMenuAction; label: string; iconSrc: string }): HTMLButtonElement {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'message-input__attachment-menu-item';
+        button.dataset.action = item.action;
+
+        const icon = document.createElement('img');
+        icon.className = 'message-input__attachment-menu-icon';
+        icon.src = item.iconSrc;
+        icon.alt = '';
+
+        const label = document.createElement('span');
+        label.className = 'message-input__attachment-menu-label';
+        label.textContent = item.label;
+
+        button.append(icon, label);
+        return button;
     }
 
     private closeAttachmentMenu(): void {
@@ -545,38 +574,57 @@ export class MessageInput extends BaseForm<MessageInputProps> {
 
             if (isMedia) {
                 item.classList.add('message-input__draft-attachment-media--loading');
-                const img = document.createElement('img');
-                img.className = 'message-input__draft-attachment-media';
-                img.style.opacity = '0';
-                img.style.transition = 'opacity 0.3s ease';
-                img.src = draft.attachment.url || '';
 
-                img.addEventListener('load', () => {
-                    item.classList.remove('message-input__draft-attachment-media--loading');
-                    img.style.opacity = '1';
-                }, { once: true });
+                if (type === 'video') {
+                    const video = document.createElement('video');
+                    video.className = 'message-input__draft-attachment-media';
+                    video.preload = 'metadata';
+                    video.muted = true;
+                    video.playsInline = true;
+                    video.crossOrigin = 'use-credentials';
+                    video.style.opacity = '0';
+                    video.style.transition = 'opacity 0.3s ease';
+                    video.src = draft.attachment.url || '';
 
-                img.addEventListener('error', () => {
-                    item.classList.remove('message-input__draft-attachment-media--loading');
-                    img.style.opacity = '1';
-                    img.src = '/assets/images/icons/videoFallback.svg';
-                    img.classList.add('message-input__draft-attachment-media--fallback');
-                }, { once: true });
+                    const revealVideoPreview = () => {
+                        item.classList.remove('message-input__draft-attachment-media--loading');
+                        video.style.opacity = '1';
+                    };
 
-                item.append(img, removeButton);
+                    video.addEventListener('loadeddata', revealVideoPreview, { once: true });
+                    video.addEventListener('loadedmetadata', revealVideoPreview, { once: true });
+                    video.addEventListener('error', revealVideoPreview, { once: true });
+
+                    const playOverlay = document.createElement('span');
+                    playOverlay.className = 'message-input__draft-attachment-play';
+                    playOverlay.setAttribute('aria-hidden', 'true');
+                    item.append(video, playOverlay, removeButton);
+                } else {
+                    const img = document.createElement('img');
+                    img.className = 'message-input__draft-attachment-media';
+                    img.style.opacity = '0';
+                    img.style.transition = 'opacity 0.3s ease';
+                    img.src = draft.attachment.url || '';
+
+                    img.addEventListener('load', () => {
+                        item.classList.remove('message-input__draft-attachment-media--loading');
+                        img.style.opacity = '1';
+                    }, { once: true });
+
+                    img.addEventListener('error', () => {
+                        item.classList.remove('message-input__draft-attachment-media--loading');
+                        img.style.opacity = '1';
+                        img.src = '/assets/images/icons/videoFallback.svg';
+                        img.classList.add('message-input__draft-attachment-media--fallback');
+                    }, { once: true });
+
+                    item.append(img, removeButton);
+                }
             } else {
                 const icon = document.createElement('img');
                 icon.className = 'message-input__draft-attachment-icon';
-                
-                if (type === 'contact' && draft.attachment.contactAvatarUrl) {
-                    icon.src = draft.attachment.contactAvatarUrl;
-                    icon.style.borderRadius = '50%';
-                    icon.style.objectFit = 'cover';
-                    // Убираем фильтр инверсии, так как это реальная картинка
-                    icon.style.filter = 'none';
-                } else {
-                    icon.src = type === 'contact' ? '/assets/images/icons/profile.svg' : '/assets/images/icons/upload.svg';
-                }
+                icon.src = type === 'contact' ? ATTACHMENT_CHIP_ICONS.contact : ATTACHMENT_CHIP_ICONS.file;
+                icon.alt = '';
 
                 const name = document.createElement('span');
                 name.className = 'message-input__draft-attachment-name';

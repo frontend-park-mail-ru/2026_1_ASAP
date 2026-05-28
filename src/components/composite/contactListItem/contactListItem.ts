@@ -22,6 +22,7 @@ interface ContactListItemProps extends IBaseFormProps {
     router: Router,
     contacts?: FrontendContact[];
     listMode?: 'default' | 'createDialog' | 'createGroup';
+    selectedContactIds?: { has(contactId: number): boolean };
     onAction?: (contactId: number, isSelected: boolean, contactName?: string) => void;
     onContactsLoaded?: (contacts: FrontendContact[]) => void;
 };
@@ -87,6 +88,41 @@ export class ContactListItem extends BaseForm<ContactListItemProps> {
         this.isSearchActive = true;
         const contacts = hits.map(hit => this.hitToContact(hit));
         this.renderContacts(contacts);
+    }
+
+    public showContactResults(local: SearchContactHit[], global: SearchContactHit[]): void {
+        if (!this.element) return;
+        this.isSearchActive = true;
+        this.resetList();
+        
+        // Удаляем баннеры от предыдущих поисков
+        this.element.querySelectorAll('.chat-list__system-row').forEach((el) => el.remove());
+
+        if (local.length === 0 && global.length === 0) {
+            this.element.classList.add('contact-list--empty');
+            this.emptyContactsList = document.createElement('p');
+            this.emptyContactsList.className = 'no-contacts';
+            this.emptyContactsList.innerHTML = "Ничего не найдено";
+            this.element.appendChild(this.emptyContactsList);
+            return;
+        }
+
+        if (local.length > 0) {
+            const localContacts = local.map(hit => this.hitToContact(hit));
+            this.appendContacts(localContacts);
+        }
+
+        if (global.length > 0) {
+            const banner = document.createElement('div');
+            banner.className = 'chat-list__system-row';
+            banner.textContent = 'Глобальный поиск';
+            this.element.appendChild(banner);
+
+            const globalContacts = global.map(hit => this.hitToContact(hit));
+            this.appendContacts(globalContacts);
+        }
+
+        this.setActiveContact(this.ActiveContactId);
     }
 
     public restoreContactList(): void {
@@ -167,6 +203,9 @@ export class ContactListItem extends BaseForm<ContactListItemProps> {
     private renderContacts(contacts: FrontendContact[]): void {
         if (!this.element) return;
         this.resetList();
+        
+        // Удаляем системные строки от прошлых глобальных поисков
+        this.element.querySelectorAll('.chat-list__system-row').forEach((el) => el.remove());
 
         if (contacts.length === 0) {
             this.element.classList.add('contact-list--empty');
@@ -179,26 +218,37 @@ export class ContactListItem extends BaseForm<ContactListItemProps> {
             return;
         }
 
+        this.appendContacts(contacts);
+        this.setActiveContact(this.ActiveContactId);
+    }
+
+    private appendContacts(contacts: FrontendContact[]): void {
+        if (!this.element) return;
+
         contacts.forEach(contact => {
             let rightControl: BaseComponent<IBaseComponentProps> | undefined = undefined;
             let onRowClick: ((item: ContactItem) => void) | undefined = undefined;
             const mode = this.props.listMode || 'default';
 
             switch (mode) {
-                case 'createDialog':
+                case 'createDialog': {
+                    const submitDialogContact = () => {
+                        if (this.props.onAction) {
+                            this.props.onAction(contact.contact_user_id, true, contact.contact_name);
+                        }
+                    };
+                    onRowClick = submitDialogContact;
                     rightControl = new Button({
                         class: "create-dialog-btn",
                         icon: "/assets/images/icons/createChatMenuIcons/createNewChat.svg",
-                        onClick: () => {
-                            if (this.props.onAction) {
-                                this.props.onAction(contact.contact_user_id, true, contact.contact_name);
-                            }
-                        }
+                        onClick: submitDialogContact,
                     });
                     break;
+                }
                 case 'createGroup':
                     rightControl = new Checkbox({
                         name: `user_${contact.contact_user_id}`,
+                        checked: this.props.selectedContactIds?.has(contact.contact_user_id) ?? false,
                         onChange: (isChecked: boolean) => {
                             if (this.props.onAction) {
                                 this.props.onAction(contact.contact_user_id, isChecked, contact.contact_name);
@@ -228,7 +278,6 @@ export class ContactListItem extends BaseForm<ContactListItemProps> {
             }
             this.contactItems.push(contactItem);
         });
-        this.setActiveContact(this.ActiveContactId);
     }
 
     /**
