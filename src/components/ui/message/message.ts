@@ -315,7 +315,7 @@ export class Message extends BaseComponent<MessageProps> {
 
         const icon = document.createElement('img');
         icon.className = 'message__attachment-icon';
-        icon.src = '/assets/images/icons/upload.svg';
+        icon.src = '/assets/images/icons/file.svg';
         icon.alt = '';
 
         const name = document.createElement('span');
@@ -530,7 +530,7 @@ export class Message extends BaseComponent<MessageProps> {
             icon.src = attachment.contactAvatarUrl;
         } else {
             icon.className = 'message__attachment-icon';
-            icon.src = '/assets/images/icons/profile.svg';
+            icon.src = '/assets/images/icons/contactAttachment.svg';
         }
         icon.alt = '';
 

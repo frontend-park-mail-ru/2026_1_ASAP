@@ -8,7 +8,8 @@ body:has(#rootSupport) {
     max-height: 100dvh;
     margin: 0;
     overflow: hidden;
-    background: $gradient-background-chats;
+    // Прозрачно — поверх aurora-блобов родительской страницы /settings.
+    background: transparent;
     font-family: $font-primary;
 }
 

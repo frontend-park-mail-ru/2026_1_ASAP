@@ -155,20 +155,16 @@ export class ContactsPage extends BasePage<ContactsPageProps> {
             router: this.props.router,
             listMode: 'default',
             hideAddButton: false,
-            onAddClick: () => this.contactSearchList?.setSearchQuery("а"),
+            // Клик по «+» — просто фокус на поле поиска, без авто-подстановки текста.
+            onAddClick: () => this.contactSearchList?.focusSearch(),
             // Унифицированный поиск (4 таба) — тот же, что используется на /chats.
             onSearchUnified: (query, tab) => chatsUseCases.searchUnified(query, tab),
-            onContactsLoaded: (contacts) => {
-                if (contacts.length === 0) {
-                    this.contactSearchList?.setSearchQuery("а");
-                }
-            }
         });
         this.contactSearchList.mount(sidebar as HTMLElement);
 
         if (sessionStorage.getItem('contacts_activate_global_search')) {
             sessionStorage.removeItem('contacts_activate_global_search');
-            this.contactSearchList.setSearchQuery("а");
+            this.contactSearchList.focusSearch();
         }
 
         this.menuBar = new MenuBar({

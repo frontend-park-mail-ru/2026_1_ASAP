@@ -90,6 +90,14 @@
 
     // На странице входа в dark — обычный непрозрачный тёмный фон + блобы поверх.
     --login-background: var(--color-background);
+
+    // Aurora-блобы внутренних страниц (/chats /contacts /settings).
+    // В тёмной теме — чистые насыщенные индиго+зелёный, поверх фона без blend'а.
+    --aurora-blob-1: #455DBA;
+    --aurora-blob-2: #5A8A6E;
+    --aurora-blob-opacity-1: 0.55;
+    --aurora-blob-opacity-2: 0.5;
+    --aurora-blob-blend: normal;
 }
 
 [data-theme="light"] {
@@ -136,6 +144,14 @@
     // В светлой теме на странице входа фон заполняет весь экран
     // переливанием синий→зелёный, а блобы поверх дают живость.
     --login-background: linear-gradient(135deg, #455DBA 0%, #5A8A6E 100%);
+
+    // Aurora-блобы на белом фоне: пастель индиго + бирюза (зелёный мутнеет),
+    // прокраска через multiply — цвет растворяется в фоне, а не лежит плашкой.
+    --aurora-blob-1: #9bb4ed;
+    --aurora-blob-2: #8fd2cf;
+    --aurora-blob-opacity-1: 0.5;
+    --aurora-blob-opacity-2: 0.45;
+    --aurora-blob-blend: multiply;
 }
 
 
@@ -143,6 +159,8 @@
 
 $color-primary: var(--color-primary);
 $color-background-blur: var(--color-background-blur);
+$aurora-blob-1: var(--aurora-blob-1);
+$aurora-blob-2: var(--aurora-blob-2);
 $color-bubble: var(--color-bubble);
 $color-secondary: var(--color-secondary);
 $color-checkbox-active: var(--color-checkbox-active);

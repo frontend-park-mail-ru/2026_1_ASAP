@@ -358,15 +358,16 @@ export class MessageInput extends BaseForm<MessageInputProps> {
     };
 
     private handleFileInputChange = (): void => {
-        const files = this.fileInput?.files;
+        // Снимок ДО `value = ''` — иначе сброс инпута опустошает FileList по ссылке.
+        const list = this.fileInput?.files ? Array.from(this.fileInput.files) : [];
         if (this.fileInput) this.fileInput.value = '';
-        this.attachFileList(files);
+        this.attachFileList(list);
     };
 
     private handleMediaInputChange = (): void => {
-        const files = this.mediaInput?.files;
+        const list = this.mediaInput?.files ? Array.from(this.mediaInput.files) : [];
         if (this.mediaInput) this.mediaInput.value = '';
-        this.attachFileList(files);
+        this.attachFileList(list);
     };
 
     /**
@@ -379,7 +380,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
     }
 
     /** Прикрепляет пачку файлов, не превышая лимит вложений. */
-    private attachFileList(files: FileList | null | undefined): void {
+    private attachFileList(files: FileList | File[] | null | undefined): void {
         const list = files ? Array.from(files) : [];
         if (list.length === 0) return;
 

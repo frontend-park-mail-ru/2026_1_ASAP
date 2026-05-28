@@ -102,28 +102,30 @@
     &__attachment {
         display: inline-flex;
         align-items: center;
-        gap: 5px;
+        gap: 8px;
         max-width: 320px;
-        min-height: 24px;
-        color: inherit;
+        min-height: 40px;
+        max-height: 45px;
+        padding: 3px 10px 3px 6px;
         border: none;
-        background: none;
+        border-radius: 10px;
         cursor: pointer;
         text-align: left;
         font: $text-main-style;
         letter-spacing: $text-main-ls;
+        color: #ffffff;
         transition: opacity 0.2s ease;
 
         &:hover {
-            opacity: 0.8;
+            opacity: 0.85;
         }
     }
 
     &__attachment-icon {
         flex-shrink: 0;
-        height: 25px;
+        width: 28px;
+        height: 28px;
         object-fit: contain;
-        filter: brightness(0) invert(1);
     }
 
     &__attachment-name {
@@ -131,30 +133,34 @@
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
-        text-decoration: underline;
     }
 
-    &__attachment--contact {
-        background: $gradient-button-hover;
-        padding: 4px 10px 4px 8px;
-        border-radius: 16px;
-        color: #ffffff;
-        cursor: pointer;
-        text-decoration: none;
+    // Файл: зелёный градиент-pill, тот же, что в draft-чипе в инпуте.
+    &__attachment--file {
+        background: linear-gradient(115deg, #5A8A6E 0%, #3A6648 100%);
 
-        .message__attachment-name {
-            text-decoration: none;
+        .message__attachment-icon {
+            filter: brightness(0) invert(1);
         }
+    }
 
+    // Контакт: индиго-градиент-pill, синхрон с draft-чипом контакта.
+    &__attachment--contact {
+        background: $gradient-msg;
+
+        // Фолбэк-иконка (нет аватара) — белая на градиенте; настоящий аватар не трогаем.
         .message__attachment-icon:not(.message__attachment-avatar) {
             filter: brightness(0) invert(1);
         }
     }
 
+    // Аватар контакта (когда есть) — круглый, без инверсии цвета.
     &__attachment-avatar {
         filter: none !important;
         border-radius: 50%;
         object-fit: cover;
+        width: 32px;
+        height: 32px;
     }
 
     &__attachment-media-link,

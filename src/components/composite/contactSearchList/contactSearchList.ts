@@ -174,6 +174,11 @@ export class ContactSearchList extends BaseComponent<ContactSearchListProps> {
         this.handleSearchInput(query);
     }
 
+    /** Просто перевести фокус на поле поиска, без подстановки текста. */
+    public focusSearch(): void {
+        this.searchForm?.focusInput();
+    }
+
     public reload(): void {
         this.contactListWrapper?.reload();
     }

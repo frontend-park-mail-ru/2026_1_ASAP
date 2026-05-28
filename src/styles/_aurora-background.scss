@@ -129,19 +129,24 @@
 
     // Оба блоба идут по одному и тому же контуру (периметру) с противоположных углов:
     // ::after стартует с фазой −50% длительности, поэтому всегда находится напротив ::before.
+    // Цвет/прозрачность/blend читаются из --aurora-blob-* токенов
+    // (см. _variables.scss): dark — насыщенные индиго+зелёный normal,
+    // light — пастельные индиго+бирюза multiply (растворяются в фоне).
     &::before {
         width: 960px;
         height: 960px;
-        background: $color-primary;
-        opacity: 0.55;
+        background: var(--aurora-blob-1);
+        opacity: var(--aurora-blob-opacity-1);
+        mix-blend-mode: var(--aurora-blob-blend);
         animation: aurora-perimeter 150s linear infinite;
     }
 
     &::after {
         width: 880px;
         height: 880px;
-        background: $color-background-blur;
-        opacity: 0.5;
+        background: var(--aurora-blob-2);
+        opacity: var(--aurora-blob-opacity-2);
+        mix-blend-mode: var(--aurora-blob-blend);
         animation: aurora-perimeter 150s linear infinite;
         animation-delay: -75s;
     }
@@ -166,11 +171,6 @@
         }
     }
 
-    // В светлой теме блобы не нужны — фон страницы спокойный, пастельный.
-    [data-theme="light"] &::before,
-    [data-theme="light"] &::after {
-        display: none;
-    }
 }
 
 /**

@@ -26,6 +26,10 @@
     }
 
     &--selected {
+        // position + overflow нужны для ::before-полосы light-варианта
+        // (см. блок [data-theme="light"] ниже). На тёмной теме безвредно.
+        position: relative;
+        overflow: hidden;
         background-image: $gradient-selected-chat;
         // Статичная рамка-обводка: нужна сама по себе (например при reduced-motion,
         // когда «дыхание» отключено), плюс keyframe ниже её перебивает в run-time.
@@ -107,7 +111,9 @@
 
 @media (prefers-reduced-motion: reduce) {
     .meta-chat-info__unread-count--pop,
-    .chat-item--selected {
+    .chat-item--selected,
+    [data-theme="light"] .chat-item--selected,
+    [data-theme="light"] .chat-item--selected::before {
         animation: none;
     }
 }
@@ -116,4 +122,44 @@
     .chat-item--default:hover {
         background-color: $color-text-hover2;
     }
+
+    // «Дышащий» выбранный чат для светлой темы:
+    // inset-glow на белом не виден — используем внешний halo-shadow + дышащую
+    // акцент-полосу слева. Ритм 3.6s такой же, как в тёмной теме.
+    .chat-item--selected {
+        animation: chat-item-selected-breathe-light 3.6s ease-in-out infinite;
+        box-shadow:
+            0 4px 16px rgba(69, 93, 186, 0.10),
+            inset 0 0 0 1px rgba(69, 93, 186, 0.14);
+
+        &::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 7px;
+            bottom: 7px;
+            width: 3px;
+            border-radius: 0 3px 3px 0;
+            background: $gradient-msg;
+            animation: chat-item-bar-breathe 3.6s ease-in-out infinite;
+        }
+    }
+}
+
+@keyframes chat-item-selected-breathe-light {
+    0%, 100% {
+        box-shadow:
+            0 4px 16px rgba(69, 93, 186, 0.10),
+            inset 0 0 0 1px rgba(69, 93, 186, 0.14);
+    }
+    50% {
+        box-shadow:
+            0 6px 22px rgba(69, 93, 186, 0.22),
+            inset 0 0 0 1px rgba(69, 93, 186, 0.30);
+    }
+}
+
+@keyframes chat-item-bar-breathe {
+    0%, 100% { opacity: 0.7; transform: scaleY(0.92); }
+    50%      { opacity: 1;   transform: scaleY(1); }
 }

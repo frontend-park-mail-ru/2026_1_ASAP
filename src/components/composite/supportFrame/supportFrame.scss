@@ -6,7 +6,8 @@
     height: 650px;
     max-width: calc(100vw - 24px);
     max-height: calc(100dvh - 100px);
-    background-color: var(--color-background);
+    // Прозрачно — пускаем aurora-фон страницы /settings под iframe.
+    background-color: transparent;
     border-radius: 12px;
     overflow: hidden;
 
