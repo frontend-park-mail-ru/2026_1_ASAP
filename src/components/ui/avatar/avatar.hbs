@@ -1,1 +1,1 @@
-<img class="{{ class }}" src="{{ src }}" data-user-id="{{ userId }}" alt="">
+<img class="{{ class }}{{#if online}} chat-avatar--online{{/if}}{{#if hasUnread}} chat-avatar--has-unread{{/if}}" src="{{ src }}" data-user-id="{{ userId }}" alt="">

@@ -10,6 +10,10 @@ export interface AvatarProps extends IBaseComponentProps {
     class?: string;
     src?: string;
     userId?: number | string;
+    /** Зелёный пульс «в сети» вокруг аватара (модификатор chat-avatar--online). */
+    online?: boolean;
+    /** Цветное кольцо «есть непрочитанные» (модификатор chat-avatar--has-unread). */
+    hasUnread?: boolean;
 }
 
 /**
