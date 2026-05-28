@@ -581,30 +581,50 @@ export class MessageInput extends BaseForm<MessageInputProps> {
 
             if (isMedia) {
                 item.classList.add('message-input__draft-attachment-media--loading');
-                const img = document.createElement('img');
-                img.className = 'message-input__draft-attachment-media';
-                img.style.opacity = '0';
-                img.style.transition = 'opacity 0.3s ease';
-                img.src = draft.attachment.url || '';
-
-                img.addEventListener('load', () => {
-                    item.classList.remove('message-input__draft-attachment-media--loading');
-                    img.style.opacity = '1';
-                }, { once: true });
-
-                img.addEventListener('error', () => {
-                    item.classList.remove('message-input__draft-attachment-media--loading');
-                    img.style.opacity = '1';
-                    img.src = '/assets/images/icons/videoFallback.svg';
-                    img.classList.add('message-input__draft-attachment-media--fallback');
-                }, { once: true });
 
                 if (type === 'video') {
+                    const video = document.createElement('video');
+                    video.className = 'message-input__draft-attachment-media';
+                    video.preload = 'metadata';
+                    video.muted = true;
+                    video.playsInline = true;
+                    video.crossOrigin = 'use-credentials';
+                    video.style.opacity = '0';
+                    video.style.transition = 'opacity 0.3s ease';
+                    video.src = draft.attachment.url || '';
+
+                    const revealVideoPreview = () => {
+                        item.classList.remove('message-input__draft-attachment-media--loading');
+                        video.style.opacity = '1';
+                    };
+
+                    video.addEventListener('loadeddata', revealVideoPreview, { once: true });
+                    video.addEventListener('loadedmetadata', revealVideoPreview, { once: true });
+                    video.addEventListener('error', revealVideoPreview, { once: true });
+
                     const playOverlay = document.createElement('span');
                     playOverlay.className = 'message-input__draft-attachment-play';
                     playOverlay.setAttribute('aria-hidden', 'true');
-                    item.append(img, playOverlay, removeButton);
+                    item.append(video, playOverlay, removeButton);
                 } else {
+                    const img = document.createElement('img');
+                    img.className = 'message-input__draft-attachment-media';
+                    img.style.opacity = '0';
+                    img.style.transition = 'opacity 0.3s ease';
+                    img.src = draft.attachment.url || '';
+
+                    img.addEventListener('load', () => {
+                        item.classList.remove('message-input__draft-attachment-media--loading');
+                        img.style.opacity = '1';
+                    }, { once: true });
+
+                    img.addEventListener('error', () => {
+                        item.classList.remove('message-input__draft-attachment-media--loading');
+                        img.style.opacity = '1';
+                        img.src = '/assets/images/icons/videoFallback.svg';
+                        img.classList.add('message-input__draft-attachment-media--fallback');
+                    }, { once: true });
+
                     item.append(img, removeButton);
                 }
             } else {
