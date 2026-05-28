@@ -43,6 +43,7 @@ export class ContactListItem extends BaseForm<ContactListItemProps> {
     private ActiveContactId: number | null = null;
     private originalContacts: FrontendContact[] = [];
     private isSearchActive: boolean = false;
+    private skeletonEls: HTMLElement[] = [];
 
     constructor(props: ContactListItemProps) {
         super(props);
@@ -150,8 +151,34 @@ export class ContactListItem extends BaseForm<ContactListItemProps> {
             return;
         }
 
+        // Пока бэк не отдал список — рисуем skeleton-строки, чтобы не было пустоты.
+        this.showSkeletons(6);
         this.loadContacts();
     };
+
+    /** Рисует N skeleton-строк контакта (avatar + 2 текстовые строки). */
+    private showSkeletons(count: number): void {
+        if (!this.element) return;
+        this.clearSkeletons();
+        for (let i = 0; i < count; i += 1) {
+            const row = document.createElement('div');
+            row.className = 'contact-list__skeleton';
+            row.innerHTML = `
+                <div class="contact-list__skeleton-avatar"></div>
+                <div class="contact-list__skeleton-content">
+                    <div class="contact-list__skeleton-line contact-list__skeleton-line--title"></div>
+                    <div class="contact-list__skeleton-line contact-list__skeleton-line--subtitle"></div>
+                </div>
+            `;
+            this.element.appendChild(row);
+            this.skeletonEls.push(row);
+        }
+    }
+
+    private clearSkeletons(): void {
+        this.skeletonEls.forEach((el) => el.remove());
+        this.skeletonEls = [];
+    }
 
     /**
      * Перезагружает список контактов: сбрасывает текущие элементы и перезапрашивает данные.
@@ -165,6 +192,7 @@ export class ContactListItem extends BaseForm<ContactListItemProps> {
      * Сбрасывает текущий DOM и состояние списка перед рендером.
      */
     private resetList(): void {
+        this.clearSkeletons();
         this.emptyContactsList?.remove();
         this.emptyContactsList = null;
         this.element?.classList.remove('contact-list--empty');
@@ -269,6 +297,7 @@ export class ContactListItem extends BaseForm<ContactListItemProps> {
      * @protected
      */
     protected beforeUnmount(): void {
+        this.clearSkeletons();
         this.emptyContactsList?.remove();
         this.contactItems.forEach(contactItem => contactItem.unmount());
         this.contactItems = [];

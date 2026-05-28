@@ -98,6 +98,7 @@ export class ChatItem extends BaseForm<ChatItemProps> {
             this.avatar = new Avatar({
                 class: "chat-avatar",
                 src: this.props.chat.avatarUrl || "/assets/images/avatars/defaultAvatar.svg",
+                hasUnread: (this.props.chat.unreadCount ?? 0) > 0,
             });
             this.avatar.mount(avatarSlot as HTMLElement);
         }
@@ -190,19 +191,42 @@ export class ChatItem extends BaseForm<ChatItemProps> {
             timeEl.textContent = this.props.formattedLastMessageTime || '';
         }
 
+        // Кольцо «есть непрочитанные» вокруг аватара: синхронизируем с unreadCount.
+        const avatarEl = this.element.querySelector('.chat-avatar');
+        avatarEl?.classList.toggle('chat-avatar--has-unread', (newData.unreadCount ?? 0) > 0);
+
         const unreadCountEl = this.element.querySelector('.meta-chat-info__unread-count');
         if (unreadCountEl) {
+            const prevCount = Number(unreadCountEl.textContent?.replace(/\D/g, '') || '0');
             if (newData.unreadCount && newData.unreadCount > 0) {
                 unreadCountEl.textContent = formatUnreadBadge(newData.unreadCount);
                 // Стираем inline display, чтобы CSS-правила (flex-центрирование)
                 // снова стали активны — иначе display:block ломает выравнивание текста.
                 (unreadCountEl as HTMLElement).style.display = '';
+
+                // Пружинка-pop при появлении или инкременте — глаз сразу замечает изменение.
+                if (newData.unreadCount > prevCount) {
+                    this.playBadgePop(unreadCountEl as HTMLElement);
+                }
             } else {
                 (unreadCountEl as HTMLElement).style.display = 'none';
             }
         }
     }
 
+    /** Разово проигрывает pop-анимацию счётчика непрочитанных. */
+    private playBadgePop(el: HTMLElement): void {
+        // Снимаем класс перед навешиванием, чтобы анимация перезапустилась
+        // на повторных инкрементах подряд (CSS-анимации не рестартуются от того же класса).
+        el.classList.remove('meta-chat-info__unread-count--pop');
+        // Принудительный reflow — обязателен для re-trigger'а animation.
+        void el.offsetWidth;
+        el.classList.add('meta-chat-info__unread-count--pop');
+        el.addEventListener(
+            'animationend',
+            () => el.classList.remove('meta-chat-info__unread-count--pop'),
+            { once: true },
+        );
     private renderLastMessagePreview(container: HTMLElement, message?: FrontendMessage, senderName?: string | null): void {
         container.textContent = '';
 

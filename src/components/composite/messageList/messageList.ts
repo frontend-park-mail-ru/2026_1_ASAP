@@ -457,6 +457,11 @@ export class MessageList extends BaseComponent<MessageListProps> {
         this.messages.set(newMessage.id, messageComponent);
         if (messageComponent.element) {
             this.flexContainer!.prepend(messageComponent.element);
+            // Slide+fade появления только для НОВЫХ сообщений (renderMessages/prependMessages
+            // эту ветку не вызывают — там батчевая отрисовка без анимации).
+            const el = messageComponent.element;
+            el.classList.add('message--enter');
+            el.addEventListener('animationend', () => el.classList.remove('message--enter'), { once: true });
         }
         this.childMessages.unshift(messageComponent);
 

@@ -61,7 +61,7 @@
         }
 
         &--typing {
-            color: $color-primary;
+            color: $color-background-blur;
             font-style: italic;
         }
     }
@@ -69,7 +69,7 @@
     &__typing-dots {
         display: inline-flex;
         align-items: center;
-        gap: 2px;
+        gap: 3px;
         margin-left: 4px;
         vertical-align: middle;
 
@@ -78,10 +78,11 @@
             height: 4px;
             border-radius: 50%;
             background: currentColor;
-            animation: dialog-header-typing-bounce 1.2s ease-in-out infinite;
+            // Волна: точки попеременно ныряют вверх с фазовым сдвигом.
+            animation: dialog-header-typing-wave 1.1s ease-in-out infinite;
 
-            &:nth-child(2) { animation-delay: 0.15s; }
-            &:nth-child(3) { animation-delay: 0.3s; }
+            &:nth-child(2) { animation-delay: 0.18s; }
+            &:nth-child(3) { animation-delay: 0.36s; }
         }
     }
 
@@ -121,7 +122,7 @@
     }
 }
 
-@keyframes dialog-header-typing-bounce {
-    0%, 60%, 100% { transform: scale(0.5); opacity: 0.4; }
-    30%          { transform: scale(1);   opacity: 1; }
+@keyframes dialog-header-typing-wave {
+    0%, 100% { transform: translateY(0);    opacity: 0.45; }
+    50%      { transform: translateY(-4px); opacity: 1; }
 }

@@ -1,16 +1,20 @@
 import { BaseComponent, IBaseComponentProps } from '../../../core/base/baseComponent';
-import { GroupChat } from '../../../types/chat';
+import { GroupChat, User } from '../../../types/chat';
 import { Avatar } from '../../ui/avatar/avatar';
 import { Button } from '../../ui/button/button';
 import template from './groupHeader.hbs'
 import { DeleteChatMenu } from '../deleteChatMenu/deleteChatMenu';
 import { ConfirmModal } from '../confirmModal/confirmModal';
 import { getFullUrl } from '../../../core/utils/url';
+import { presenceService } from '../../../services/presenceService';
+import { escapeHtml } from '../../../core/utils/escape';
 
 interface GroupHeaderProps extends IBaseComponentProps {
     chat: GroupChat;
     currentUserRole: 'owner' | 'member';
     membersCount: number;
+    /** ID текущего пользователя — нужен, чтобы исключить себя из «печатает» и «в сети». */
+    currentUserId?: number;
     onDeleteChat?: () => void;
     onLeaveGroup?: () => void;
     onOpenGroupInfo?: () => void;
@@ -26,6 +30,11 @@ export class GroupHeader extends BaseComponent<GroupHeaderProps> {
     private isDeleteMenuOpen: boolean = false;
     private isDeleteConfirmationOpen: boolean = false;
     private membersCount = 0;
+
+    /** Presence-агрегаты по участникам: кто онлайн, кто печатает сейчас в этом чате. */
+    private onlineIds = new Set<number>();
+    private typingIds = new Set<number>();
+    private presenceUnsubs: (() => void)[] = [];
 
     constructor(props: GroupHeaderProps) {
         super(props);
@@ -113,6 +122,66 @@ export class GroupHeader extends BaseComponent<GroupHeaderProps> {
         }
 
         this.setMemberCount(this.membersCount);
+        this.attachPresence();
+    }
+
+    /** Подписываемся на presence (online + typing) каждого участника группы. */
+    private attachPresence(): void {
+        const members = this.props.chat.members ?? [];
+        const selfId = this.props.currentUserId;
+        members.forEach((m: User) => {
+            if (typeof m.id !== 'number' || m.id === selfId) return;
+
+            // Прогреваем агрегат из кэша presenceService (если уже знаем состояние).
+            const seed = presenceService.get(m.id);
+            if (seed) this.applyPresenceFor(m.id, seed.isOnline ?? false, seed.typingInChat);
+
+            const unsub = presenceService.subscribe(m.id, (state) => {
+                this.applyPresenceFor(m.id, state.isOnline ?? false, state.typingInChat);
+            });
+            this.presenceUnsubs.push(unsub);
+        });
+        this.renderStatusLine();
+    }
+
+    private applyPresenceFor(userId: number, isOnline: boolean, typingInChat: number | string | undefined): void {
+        if (isOnline) this.onlineIds.add(userId); else this.onlineIds.delete(userId);
+
+        const myChatId = String(this.props.chat.id);
+        const typesHere = typingInChat !== undefined && String(typingInChat) === myChatId;
+        if (typesHere) this.typingIds.add(userId); else this.typingIds.delete(userId);
+
+        this.renderStatusLine();
+    }
+
+    /** Рисует подпись «N участников, M в сети» или «печатает Имя ⋯» если кто-то набирает. */
+    private renderStatusLine(): void {
+        const el = this.element?.querySelector<HTMLElement>('.group-header__members');
+        if (!el) return;
+
+        // Кто-то печатает — приоритет над «в сети».
+        if (this.typingIds.size > 0) {
+            const name = this.getTypingDisplayName();
+            el.classList.add('group-header__members--typing');
+            el.innerHTML = `печатает ${escapeHtml(name)}<span class="group-header__typing-dots"><span></span><span></span><span></span></span>`;
+            return;
+        }
+
+        el.classList.remove('group-header__members--typing');
+        const onlineCount = this.onlineIds.size;
+        const membersText = `${this.membersCount} ${this.getMemberWord(this.membersCount)}`;
+        el.textContent = onlineCount > 0 ? `${membersText}, ${onlineCount} в сети` : membersText;
+    }
+
+    /** Имя для подписи «печатает …». Если печатает один — его имя, иначе количество. */
+    private getTypingDisplayName(): string {
+        const first = this.typingIds.values().next().value as number | undefined;
+        if (this.typingIds.size > 1) return `${this.typingIds.size} участников`;
+        if (first === undefined) return '';
+        const user = (this.props.chat.members ?? []).find((m: User) => m.id === first);
+        if (!user) return '...';
+        const name = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() || user.login || '...';
+        return name;
     }
 
     public setAvatar(avatarUrl?: string | null): void {
@@ -139,11 +208,8 @@ export class GroupHeader extends BaseComponent<GroupHeaderProps> {
 
     public setMemberCount(count: number): void {
         this.membersCount = count;
-        
-        const countElement = this.element?.querySelector('.group-header__members');
-        if (!countElement) return;
-
-        countElement.textContent = `${count} ${this.getMemberWord(count)}`;
+        // Делегируем рендеру статусной строки — он учитывает «в сети» и «печатает».
+        this.renderStatusLine();
     }
 
     /**
@@ -210,6 +276,10 @@ export class GroupHeader extends BaseComponent<GroupHeaderProps> {
     }
 
     protected beforeUnmount(): void {
+        this.presenceUnsubs.forEach((unsub) => unsub());
+        this.presenceUnsubs = [];
+        this.onlineIds.clear();
+        this.typingIds.clear();
         this.avatarComponent?.unmount();
         this.searchButton?.unmount();
         this.settingsButton?.unmount();

@@ -10,6 +10,7 @@ export interface SearchTabsProps extends IBaseComponentProps {
 
 export class SearchTabs extends BaseComponent<SearchTabsProps> {
     private buttons: HTMLButtonElement[] = [];
+    private inkEl: HTMLElement | null = null;
 
     constructor(props: SearchTabsProps) {
         super(props);
@@ -23,10 +24,13 @@ export class SearchTabs extends BaseComponent<SearchTabsProps> {
         if (!this.element) return;
 
         this.buttons = Array.from(this.element.querySelectorAll('.search-tabs__btn'));
+        this.inkEl = this.element.querySelector('.search-tabs__ink');
         this.buttons.forEach((btn) => {
             btn.addEventListener('click', this.handleClick);
         });
-        this.applyActiveState(this.props.activeTab);
+        // Первый кадр — без анимации, чтобы «чернила» не выезжали с x=0
+        // в стартовую позицию при монтировании. Дальше переход включается обратно.
+        this.applyActiveState(this.props.activeTab, /* skipTransition */ true);
     }
 
     protected beforeUnmount(): void {
@@ -34,6 +38,7 @@ export class SearchTabs extends BaseComponent<SearchTabsProps> {
             btn.removeEventListener('click', this.handleClick);
         });
         this.buttons = [];
+        this.inkEl = null;
     }
 
     public setActiveTab(tab: SearchTab): void {
@@ -61,11 +66,38 @@ export class SearchTabs extends BaseComponent<SearchTabsProps> {
         this.props.onChange(tab);
     };
 
-    private applyActiveState(activeTab: SearchTab): void {
+    private applyActiveState(activeTab: SearchTab, skipTransition = false): void {
+        let activeBtn: HTMLButtonElement | null = null;
         this.buttons.forEach((btn) => {
             const isActive = btn.dataset.tab === activeTab;
             btn.classList.toggle('search-tabs__btn--active', isActive);
             btn.setAttribute('aria-selected', String(isActive));
+            if (isActive) activeBtn = btn;
         });
+        this.moveInk(activeBtn, skipTransition);
+    }
+
+    /** Двигает «чернильную» подложку под активный таб. */
+    private moveInk(target: HTMLButtonElement | null, skipTransition: boolean): void {
+        if (!this.inkEl || !target) return;
+        const ink = this.inkEl;
+
+        const apply = () => {
+            ink.style.width = `${target.offsetWidth}px`;
+            ink.style.transform = `translateX(${target.offsetLeft}px)`;
+        };
+
+        if (skipTransition) {
+            // Гасим transition на один кадр, ставим позицию, потом возвращаем —
+            // иначе ink при первом маунте поедет с x=0 в стартовое положение.
+            const prev = ink.style.transition;
+            ink.style.transition = 'none';
+            apply();
+            // Force reflow, затем восстанавливаем transition.
+            void ink.offsetWidth;
+            ink.style.transition = prev;
+            return;
+        }
+        apply();
     }
 }

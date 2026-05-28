@@ -39,6 +39,7 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
     private emptyComponent: ChatListEmpty | null = null;
     private originalChats: Chat[] = [];
     private isSearchAlive: boolean = false;
+    private skeletonEls: HTMLElement[] = [];
 
     constructor(props: ChatListItemProps) {
         super(props);
@@ -48,6 +49,31 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
 
     getTemplate() {
         return template;
+    }
+
+    /** Рисует N skeleton-строк чата (avatar + 2 текстовые строки + meta). */
+    private showSkeletons(count: number): void {
+        if (!this.element) return;
+        this.clearSkeletons();
+        for (let i = 0; i < count; i += 1) {
+            const row = document.createElement('div');
+            row.className = 'chat-list__skeleton';
+            row.innerHTML = `
+                <div class="chat-list__skeleton-avatar"></div>
+                <div class="chat-list__skeleton-content">
+                    <div class="chat-list__skeleton-line chat-list__skeleton-line--title"></div>
+                    <div class="chat-list__skeleton-line chat-list__skeleton-line--subtitle"></div>
+                </div>
+                <div class="chat-list__skeleton-meta"></div>
+            `;
+            this.element.appendChild(row);
+            this.skeletonEls.push(row);
+        }
+    }
+
+    private clearSkeletons(): void {
+        this.skeletonEls.forEach((el) => el.remove());
+        this.skeletonEls = [];
     }
 
     /**
@@ -87,6 +113,7 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
     private renderChats(chats: Chat[]): void {
         if (!this.element) return;
 
+        this.clearSkeletons();
         this.chatItems.forEach(item => item.unmount());
         this.chatItems = [];
         this.emptyComponent?.unmount();
@@ -211,6 +238,7 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
     public showContactResults(local: SearchContactHit[], global: SearchContactHit[]): void {
         if (!this.element) return;
 
+        this.clearSkeletons();
         this.isSearchAlive = true;
         this.chatItems.forEach((item) => item.unmount());
         this.chatItems = [];
@@ -293,6 +321,7 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
     }
 
     public showSearchResults(hits: SearchChatHit[]): void {
+        this.clearSkeletons();
         this.isSearchAlive = true;
         const chats = hits.map(hit => this.hitToChat(hit));
         this.renderChats(chats);
@@ -311,6 +340,12 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
      */
     protected afterMount() {
         this.chatItems = [];
+        // Если чатов на момент маунта ещё нет (бэк не ответил) — показываем
+        // skeleton-строки. setChats придёт позже и через renderChats их снимет.
+        if (this.originalChats.length === 0) {
+            this.showSkeletons(6);
+            return;
+        }
         this.renderChats(this.originalChats);
     }
 
@@ -320,6 +355,7 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
      * и **отписывается** от WS-событий для предотвращения утечек памяти.
      */
     beforeUnmount() {
+        this.clearSkeletons();
         this.chatItems.forEach(item => item.unmount());
         this.chatItems = [];
         this.activeChatId = null;

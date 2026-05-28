@@ -1,5 +1,6 @@
 @use "variables" as *;
 @use "mixins" as *;
+@use "aurora-background" as *;
 
 /**
  * @file chats.scss
@@ -9,7 +10,9 @@
 .chat-page {
     position: relative;
     isolation: isolate;
-    background: $gradient-background-chats;
+    // Фон + aurora-блобы живут на #app (см. _aurora-background.scss), чтобы анимация
+    // не сбрасывалась при переключении между /chats /contacts /settings.
+    background: transparent;
     height: 100vh;
     height: 100dvh;
     height: var(--app-height, 100dvh);

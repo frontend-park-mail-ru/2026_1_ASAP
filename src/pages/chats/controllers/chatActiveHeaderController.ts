@@ -98,6 +98,7 @@ export class ChatActiveHeaderController {
             chat: groupChat,
             currentUserRole: groupRole,
             membersCount: activeState.header.type === "group" ? activeState.header.membersCount : 0,
+            currentUserId: activeState.currentUser.id,
             onOpenSearch: () => this.deps.onOpenSearch(groupChat),
             onDeleteChat: async () => {
                 const res = await this.deps.sessionController.deleteChat(chatId);

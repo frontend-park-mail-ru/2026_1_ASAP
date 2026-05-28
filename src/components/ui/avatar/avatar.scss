@@ -11,6 +11,43 @@
     height: 100%;
     object-fit: cover;
     display: block;
+
+    // «В сети» — расширяющийся зелёный пульс вокруг аватара через box-shadow.
+    // Работает прямо на <img>, без оборачивания.
+    &--online {
+        border-radius: 50%;
+        animation: chat-avatar-pulse 2.2s ease-out infinite;
+    }
+
+    // «Есть непрочитанные» — статичное цветное кольцо вокруг аватара.
+    &--has-unread {
+        border-radius: 50%;
+        box-shadow: 0 0 0 2px $color-primary;
+    }
+
+    // Если включены оба модификатора — пульс уже включает второй слой тени с кольцом.
+    &--online#{&}--has-unread {
+        animation: chat-avatar-pulse-ring 2.2s ease-out infinite;
+    }
+}
+
+@keyframes chat-avatar-pulse {
+    0%   { box-shadow: 0 0 0 0   rgba(90, 138, 110, 0.55); }
+    70%  { box-shadow: 0 0 0 12px rgba(90, 138, 110, 0); }
+    100% { box-shadow: 0 0 0 0   rgba(90, 138, 110, 0); }
+}
+
+@keyframes chat-avatar-pulse-ring {
+    0%   { box-shadow: 0 0 0 2px var(--color-primary), 0 0 0 0   rgba(90, 138, 110, 0.55); }
+    70%  { box-shadow: 0 0 0 2px var(--color-primary), 0 0 0 12px rgba(90, 138, 110, 0); }
+    100% { box-shadow: 0 0 0 2px var(--color-primary), 0 0 0 0   rgba(90, 138, 110, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .chat-avatar--online,
+    .chat-avatar--online.chat-avatar--has-unread {
+        animation: none;
+    }
 }
 
 

@@ -102,3 +102,183 @@
         animation: none !important;
     }
 }
+
+/**
+ * Aurora-блобы фоном для внутренних страниц (chats / contacts / settings).
+ * Лайт-версия логин-блобов: 2 пятна (индиго + зелёный) через ::before/::after —
+ * без лишних div'ов в шаблонах. Контейнер должен быть position: relative + isolation: isolate
+ * (z-index: -1 в пределах stacking context даёт «между фоном и контентом»).
+ */
+/**
+ * Тёмная тема: два больших блоба (индиго + зелёный), бродят по всему вьюпорту.
+ * Якорь — top-left, перемещение через translate в vw/vh.
+ */
+@mixin aurora-blobs-pseudo {
+    &::before,
+    &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        border-radius: 50%;
+        filter: blur(220px);
+        pointer-events: none;
+        z-index: -1;
+        will-change: transform;
+    }
+
+    // Оба блоба идут по одному и тому же контуру (периметру) с противоположных углов:
+    // ::after стартует с фазой −50% длительности, поэтому всегда находится напротив ::before.
+    &::before {
+        width: 960px;
+        height: 960px;
+        background: $color-primary;
+        opacity: 0.55;
+        animation: aurora-perimeter 150s linear infinite;
+    }
+
+    &::after {
+        width: 880px;
+        height: 880px;
+        background: $color-background-blur;
+        opacity: 0.5;
+        animation: aurora-perimeter 150s linear infinite;
+        animation-delay: -75s;
+    }
+
+    @media (max-width: $breakpoint-mobile-max) {
+        &::before {
+            width: 560px;
+            height: 560px;
+            filter: blur(140px);
+        }
+        &::after {
+            width: 500px;
+            height: 500px;
+            filter: blur(140px);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        &::before,
+        &::after {
+            animation: none !important;
+        }
+    }
+
+    // В светлой теме блобы не нужны — фон страницы спокойный, пастельный.
+    [data-theme="light"] &::before,
+    [data-theme="light"] &::after {
+        display: none;
+    }
+}
+
+/**
+ * Светлая тема: повторяем фон страницы входа/регистрации —
+ * диагональный градиент blue→green + вращающийся conic-gradient через ::before,
+ * один акцентный блоб через ::after.
+ * Применять как override: `[data-theme="light"] .chat-page { @include aurora-light-override; }`.
+ */
+@mixin aurora-light-override {
+    background: $login-background;
+
+    &::before {
+        // ::before превращаем во вращающийся conic-gradient (как на логине).
+        top: 50%;
+        left: 50%;
+        width: 250vmax;
+        height: 250vmax;
+        border-radius: 50%;
+        background: conic-gradient(
+            from 0deg at 50% 50%,
+            #455DBA 0%,
+            #5A8A6E 50%,
+            #455DBA 100%
+        );
+        opacity: 1;
+        filter: none;
+        animation: aurora-conic-spin 20s linear infinite;
+    }
+
+    &::after {
+        // ::after — мягкий зелёный блоб поверх, добавляет «дыхание».
+        top: 30%;
+        left: 25%;
+        width: 520px;
+        height: 520px;
+        background: $color-background-blur;
+        opacity: 0.55;
+        filter: blur(120px);
+        animation: aurora-pseudo-drift-a 22s ease-in-out infinite;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        &::before,
+        &::after {
+            animation: none !important;
+        }
+    }
+}
+
+// Контур-периметр по часовой: оба блоба идут по нему, ::after с фазой −50% длительности
+// (см. animation-delay: -75s) — потому всегда оказываются в противоположных углах.
+// Точки выходят за пределы вьюпорта (-20vw/+85vw), чтобы блоб всегда подсматривал из-за края.
+@keyframes aurora-perimeter {
+    0%,
+    100% { transform: translate(-20vw, -20vh) scale(1); }    // верх-лево
+    12.5%{ transform: translate(35vw, -20vh)  scale(1.05); } // верх-середина
+    25%  { transform: translate(85vw, -20vh)  scale(1); }    // верх-право
+    37.5%{ transform: translate(85vw, 30vh)   scale(1.1); }  // право-середина
+    50%  { transform: translate(85vw, 75vh)   scale(1); }    // низ-право
+    62.5%{ transform: translate(35vw, 75vh)   scale(1.05); } // низ-середина
+    75%  { transform: translate(-20vw, 75vh)  scale(1); }    // низ-лево
+    87.5%{ transform: translate(-20vw, 30vh)  scale(1.1); }  // лево-середина
+}
+
+// Индиго: ломаная траектория с неровными интервалами keypoints.
+// При linear timing разные расстояния за одинаковые %-промежутки = переменная скорость →
+// движение перестаёт читаться как «по орбите», выглядит хаотично.
+@keyframes aurora-pseudo-drift-a {
+    0%,
+    100% { transform: translate(-25vw, -20vh) scale(1); }
+    9%   { transform: translate(20vw, -15vh)  scale(1.1); }
+    23%  { transform: translate(65vw, 10vh)   scale(0.95); }
+    34%  { transform: translate(50vw, 50vh)   scale(1.15); }
+    48%  { transform: translate(80vw, 30vh)   scale(1); }
+    61%  { transform: translate(25vw, 65vh)   scale(0.9); }
+    73%  { transform: translate(-15vw, 35vh)  scale(1.1); }
+    87%  { transform: translate(10vw, -5vh)   scale(1.05); }
+}
+
+// Зелёный: другой набор точек, другие %-интервалы — нет совпадений рисунка с ::before.
+@keyframes aurora-pseudo-drift-b {
+    0%,
+    100% { transform: translate(75vw, 65vh)   scale(1.1); }
+    12%  { transform: translate(40vw, 70vh)   scale(0.95); }
+    27%  { transform: translate(-20vw, 50vh)  scale(1.05); }
+    41%  { transform: translate(-10vw, 10vh)  scale(0.9); }
+    56%  { transform: translate(30vw, -15vh)  scale(1.15); }
+    69%  { transform: translate(70vw, -5vh)   scale(1); }
+    84%  { transform: translate(55vw, 35vh)   scale(0.95); }
+}
+
+@keyframes aurora-conic-spin {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to   { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/**
+ * Aurora живёт на `#app` (он один на всё приложение), а не на корне страницы,
+ * чтобы при SPA-навигации между /chats /contacts /settings блобы не прыгали
+ * к стартовой позиции — DOM-узлы ::before/::after не пересоздаются, анимация
+ * продолжается с того места, где была.
+ *
+ * Через :has() рулим только на тех страницах, где блобы нужны. Сама раскраска
+ * фона тоже переезжает на #app — иначе непрозрачный page-root перекрыл бы блобы.
+ */
+#app:has(.chat-page, .contacts-page, .settings-page) {
+    position: relative;
+    isolation: isolate;
+    background: $gradient-background-chats;
+    @include aurora-blobs-pseudo;
+}
