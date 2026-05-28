@@ -1,7 +1,6 @@
 import type { FrontendContact } from "../../../types/contact";
 import type { UnifiedSearchResult } from "../../../types/search";
 import { ChatsUseCases, chatsUseCases } from "../model/chatsUseCases";
-import type { ContactSearchScope } from "../model/chatsViewModels";
 import type { SearchTab } from "../../../components/composite/searchTabs/searchTabs";
 
 interface ChatCreationControllerDeps {

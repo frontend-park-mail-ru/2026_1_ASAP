@@ -115,7 +115,7 @@ export class ContactSearchList extends BaseComponent<ContactSearchListProps> {
         const myId = this.searchRequestId;
         const result = await this.props.onSearchUnified(query, this.currentTab);
         if (myId !== this.searchRequestId) return;
-        if (!result || !this.chatListWrapper) return;
+        if (!result) return;
 
         if (result.tab === 'contact') {
             this.contactListWrapper?.showContactResults(
