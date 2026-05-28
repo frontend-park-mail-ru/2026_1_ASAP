@@ -248,18 +248,19 @@
         &--media {
             position: relative;
             padding: 0;
-            width: 56px;
-            height: 56px;
-            border-radius: 12px;
+            width: clamp(88px, 18vw, 150px);
+            aspect-ratio: 3 / 4;
+            border-radius: 14px;
             border: none;
             background: transparent;
+            overflow: hidden;
 
             .message-input__draft-attachment-media {
                 display: block;
                 width: 100%;
                 height: 100%;
                 object-fit: cover;
-                border-radius: 8px;
+                border-radius: inherit;
                 background: rgba(0, 0, 0, 0.18);
 
                 &--fallback {
@@ -272,20 +273,24 @@
 
             .message-input__draft-attachment-remove {
                 position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                width: 24px;
-                height: 24px;
-                background: rgba(0, 0, 0, 0.5);
+                top: 6px;
+                right: 6px;
+                width: 28px;
+                height: 28px;
+                background: rgba(0, 0, 0, 0.58);
                 border-radius: 50%;
-                opacity: 0;
-                transition: opacity 0.2s ease;
+                opacity: 1;
+                transition: background-color 0.2s ease, transform 0.2s ease;
                 z-index: 10;
             }
 
-            &:hover .message-input__draft-attachment-remove,
+            &:hover .message-input__draft-attachment-remove {
+                background: rgba(0, 0, 0, 0.72);
+                transform: scale(1.04);
+            }
+
             .message-input__draft-attachment-remove:focus-visible {
+                background: rgba(0, 0, 0, 0.72);
                 opacity: 1;
             }
 
@@ -293,8 +298,8 @@
                 position: absolute;
                 top: 50%;
                 left: 50%;
-                width: 32px;
-                height: 32px;
+                width: 42px;
+                height: 42px;
                 border-radius: 50%;
                 background: rgba(0, 0, 0, 0.55);
                 transform: translate(-50%, -50%);
@@ -308,9 +313,9 @@
                     left: 52%;
                     width: 0;
                     height: 0;
-                    border-top: 7px solid transparent;
-                    border-bottom: 7px solid transparent;
-                    border-left: 11px solid #ffffff;
+                    border-top: 9px solid transparent;
+                    border-bottom: 9px solid transparent;
+                    border-left: 14px solid #ffffff;
                     transform: translate(-50%, -50%);
                 }
             }
