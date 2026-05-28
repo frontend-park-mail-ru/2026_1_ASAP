@@ -23,7 +23,8 @@
         flex-grow: 1;
         width: 100%;
         min-width: 0;
-        max-width: 230px;
+        // Без max-width слот растягивается на всё свободное место и прижимает send-кнопку
+        // к правому краю — иначе на мобиле она уезжает в центр.
 
         &[hidden] {
             display: none !important;

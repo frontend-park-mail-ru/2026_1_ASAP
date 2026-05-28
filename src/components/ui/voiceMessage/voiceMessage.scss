@@ -15,10 +15,11 @@
     gap: 10px;
     // Тот же индиго→зелёный градиент, что у контакт-чипа — единый язык вложений.
     background: $gradient-msg;
-    border-radius: 14px;
-    // ~38px по высоте — как обычное короткое сообщение, чтобы не выбивалось из ряда.
-    min-height: 38px;
-    padding: 4px 12px 4px 4px;
+    border-radius: 16px;
+    // Высота 48px — play-кнопка 40px + по 4px паддингов сверху/снизу.
+    // Файл/контакт подведены к этой же высоте, чтобы вложения выглядели единым рядом.
+    min-height: 48px;
+    padding: 4px 14px 4px 4px;
     min-width: 200px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     box-sizing: border-box;
@@ -27,8 +28,8 @@
 .voice-message__play {
     background: none;
     border: none;
-    width: 30px;
-    height: 30px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -47,8 +48,8 @@
     }
 
     img {
-        width: 30px;
-        height: 30px;
+        width: 40px;
+        height: 40px;
     }
 }
 
