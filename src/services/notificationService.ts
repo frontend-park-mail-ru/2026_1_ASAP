@@ -143,6 +143,12 @@ class NotificationService {
      */
     public attach(currentUserId: number): void {
         if (this.attached) return;
+        // Защита от испорченных payload'ов: если id не пришёл/не число — не подписываемся,
+        // иначе guard «своё/чужое» сорвётся и пользователь получит уведомление на собственное сообщение.
+        if (!Number.isFinite(currentUserId) || currentUserId <= 0) {
+            console.warn('notificationService.attach: invalid currentUserId, skip', currentUserId);
+            return;
+        }
         this.currentUserId = currentUserId;
         this.attached = true;
         wsClient.subscribe<MessageDto>('message.New', this.handleNewMessage);
@@ -237,8 +243,14 @@ class NotificationService {
     }
 
     private handleNewMessage = async (dto: MessageDto): Promise<void> => {
-        if (this.currentUserId === null) return;
-        if (String(dto.sender_id) === String(this.currentUserId)) return;
+        const myId = this.currentUserId;
+        // Нет валидного currentUserId — не рискуем, выходим (лучше не показать чужое,
+        // чем показать своё).
+        if (myId == null || !Number.isFinite(myId)) return;
+
+        // Сравниваем как числа — защита от случаев, когда sender_id приходит строкой.
+        const senderId = Number(dto.sender_id);
+        if (Number.isFinite(senderId) && senderId === myId) return;
 
         const chatId = String(dto.chat_id);
         const chat = this.chatMeta.get(chatId);
