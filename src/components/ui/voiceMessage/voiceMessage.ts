@@ -119,8 +119,12 @@ export class VoiceMessage extends BaseComponent<VoiceMessageProps> {
 
         if (!this.props.url) return;
 
-        this.audio = new Audio(this.props.url);
+        this.audio = new Audio();
+        // crossOrigin до установки src — иначе мобильный Safari/Chrome не отправит
+        // сессионные куки и получит 401 на CDN-аудио, после чего play() падает молча.
+        this.audio.crossOrigin = 'use-credentials';
         this.audio.preload = 'metadata';
+        this.audio.src = this.props.url;
 
         this.audio.addEventListener('loadedmetadata', this.handleLoadedMetadata);
         this.audio.addEventListener('ended', this.handleEnded);

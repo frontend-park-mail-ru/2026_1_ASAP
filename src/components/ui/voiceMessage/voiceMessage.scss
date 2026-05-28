@@ -12,11 +12,13 @@
 .voice-message {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     // Тот же индиго→зелёный градиент, что у контакт-чипа — единый язык вложений.
     background: $gradient-msg;
-    border-radius: 20px;
-    padding: 6px 14px 6px 6px;
+    border-radius: 14px;
+    // ~38px по высоте — как обычное короткое сообщение, чтобы не выбивалось из ряда.
+    min-height: 38px;
+    padding: 4px 12px 4px 4px;
     min-width: 200px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     box-sizing: border-box;
@@ -25,8 +27,8 @@
 .voice-message__play {
     background: none;
     border: none;
-    width: 36px;
-    height: 36px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -45,8 +47,8 @@
     }
 
     img {
-        width: 36px;
-        height: 36px;
+        width: 30px;
+        height: 30px;
     }
 }
 
@@ -194,6 +196,28 @@
     .voice-message__transcript {
         background: rgba(0, 0, 0, 0.04);
         border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+}
+
+// Мобильная адаптация: убираем min-width у плеера, чтобы он мог сжаться по ширине
+// пузыря, и слегка ужимаем гэп. Размеры play-кнопки и шрифта уже компактные.
+@media (max-width: $breakpoint-mobile-max) {
+    .voice-message-wrapper {
+        max-width: 100%;
+    }
+
+    .voice-message {
+        min-width: 0;
+        gap: 8px;
+        padding: 4px 10px 4px 4px;
+    }
+
+    .voice-message__visualizer {
+        min-width: 50px;
+    }
+
+    .voice-message__duration {
+        font-size: 10px;
     }
 }
 

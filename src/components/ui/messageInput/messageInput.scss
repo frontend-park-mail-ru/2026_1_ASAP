@@ -48,6 +48,12 @@
         &:focus-within {
             background: #525050;
         }
+
+        // При записи голосового JS ставит [hidden] на контейнер ввода —
+        // display: flex перекрывал бы это, поэтому форсим скрытие.
+        &[hidden] {
+            display: none !important;
+        }
     }
 
     &__record-button-container,
