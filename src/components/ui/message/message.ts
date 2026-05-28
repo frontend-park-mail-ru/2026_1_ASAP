@@ -461,6 +461,9 @@ export class Message extends BaseComponent<MessageProps> {
             text: 'Изображение может содержать слишком милый контент. Показать его?',
             confirmButtonText: 'Показать',
             cancelButtonText: 'Отмена',
+            // Glass-вариант — кнопки/контейнер в стиле выбранного чата
+            // (полупрозрачная индиго-заливка + backdrop-blur).
+            variant: 'glass',
             onConfirm: () => {
                 modal.unmount();
                 this.props.revealedAttachments?.add(this.blurKey(mediaIndex));

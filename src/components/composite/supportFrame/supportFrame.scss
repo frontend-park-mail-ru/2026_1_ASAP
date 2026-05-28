@@ -6,7 +6,8 @@
     height: 650px;
     max-width: calc(100vw - 24px);
     max-height: calc(100dvh - 100px);
-    // Прозрачно — пускаем aurora-фон страницы /settings под iframe.
+    // По умолчанию прозрачно — на /settings/chats пропускает aurora-фон.
+    // На /login ниже переопределяем: непрозрачный фон, чтобы накрывать auth-форму.
     background-color: transparent;
     border-radius: 12px;
     overflow: hidden;

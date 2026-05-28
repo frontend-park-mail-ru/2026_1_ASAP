@@ -19,6 +19,8 @@ interface ConfirmModalProps extends IBaseComponentProps {
     onCancel?(): void;
     hideCancel?: boolean;
     confirmButtonClass?: string;
+    /** Стилистический вариант модалки. `'glass'` — полупрозрачные кнопки с backdrop-blur. */
+    variant?: 'glass';
 }
 
 /**
