@@ -1,0 +1,72 @@
+import type { FrontendMessage, MessageAttachment } from "../types/chat";
+
+export type LastMessagePreviewKind =
+    | "text"
+    | "photo"
+    | "video"
+    | "file"
+    | "contact"
+    | "voice"
+    | "sticker"
+    | "empty";
+
+export interface LastMessagePreview {
+    text: string;
+    kind: LastMessagePreviewKind;
+    iconSrc?: string;
+}
+
+export const ATTACHMENT_SIDEBAR_ICONS = {
+    media: "/assets/images/icons/attachments/sidebar-media.svg",
+    file: "/assets/images/icons/attachments/sidebar-file.svg",
+    contact: "/assets/images/icons/attachments/sidebar-profile.svg",
+    voice: "/assets/images/icons/attachments/sidebar-voice.svg",
+    sticker: "/assets/images/icons/attachments/sidebar-smile.svg",
+} as const;
+
+const ATTACHMENT_PLACEHOLDER_TEXT =
+    /^\s*(?:\[(?:Фото|Видео|Файл|Контакт|Вложение|Голосовое(?:\s+сообщение)?[^\]]*)\]\s*)+$/iu;
+
+export function isAttachmentPlaceholderText(text?: string): boolean {
+    return ATTACHMENT_PLACEHOLDER_TEXT.test((text || "").trim());
+}
+
+function getContactPreview(attachment: MessageAttachment): string {
+    return [attachment.contactFirstName, attachment.contactLastName].filter(Boolean).join(" ") || "Контакт";
+}
+
+function getAttachmentPreview(attachment: MessageAttachment): LastMessagePreview {
+    switch (attachment.type) {
+        case "photo":
+            return { text: "Фото", kind: "photo", iconSrc: ATTACHMENT_SIDEBAR_ICONS.media };
+        case "video":
+            return { text: "Видео", kind: "video", iconSrc: ATTACHMENT_SIDEBAR_ICONS.media };
+        case "file":
+            return { text: attachment.fileName || "Файл", kind: "file", iconSrc: ATTACHMENT_SIDEBAR_ICONS.file };
+        case "contact":
+            return { text: getContactPreview(attachment), kind: "contact", iconSrc: ATTACHMENT_SIDEBAR_ICONS.contact };
+        case "voice":
+            return { text: "Голосовое сообщение", kind: "voice", iconSrc: ATTACHMENT_SIDEBAR_ICONS.voice };
+        default:
+            return { text: "", kind: "empty" };
+    }
+}
+
+export function getLastMessagePreview(message?: FrontendMessage): LastMessagePreview {
+    if (!message) return { text: "", kind: "empty" };
+
+    const text = (message.text || "").trim();
+    const hasRichPayload = Boolean(message.sticker || message.attachments?.length);
+    if (text && (!hasRichPayload || !isAttachmentPlaceholderText(text))) {
+        return { text, kind: "text" };
+    }
+
+    const attachment = message.attachments?.[0];
+    if (attachment) return getAttachmentPreview(attachment);
+
+    if (message.sticker) {
+        return { text: "Стикер", kind: "sticker", iconSrc: ATTACHMENT_SIDEBAR_ICONS.sticker };
+    }
+
+    return text ? { text, kind: "text" } : { text: "", kind: "empty" };
+}

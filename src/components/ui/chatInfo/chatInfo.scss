@@ -78,8 +78,25 @@ p {
     font: $text-main-style;
     font-size: 14px;
     letter-spacing: $text-main-ls;
+    display: flex;
+    align-items: center;
+    gap: 5px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     line-height: 1.4;
+}
+
+.msg-text__icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    object-fit: contain;
+}
+
+.msg-text__label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }

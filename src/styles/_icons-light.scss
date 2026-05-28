@@ -175,6 +175,10 @@
     .chat-info__channel-icon {
         @include icon-muted;
     }
+
+    img[src*="/assets/images/icons/attachments/"] {
+        filter: none;
+    }
 }
 
 

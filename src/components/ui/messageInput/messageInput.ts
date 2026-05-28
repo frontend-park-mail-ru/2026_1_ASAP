@@ -9,11 +9,23 @@ import { VoiceRecorder } from '../voiceRecorder/voiceRecorder';
 import template from './messageInput.hbs';
 
 type UploadableAttachmentType = Extract<MessageAttachmentType, 'photo' | 'video' | 'file' | 'voice'>;
+type AttachmentMenuAction = 'media' | 'file' | 'contact';
 
 type DraftAttachment = {
     id: string;
     attachment: MessageAttachment;
     outgoing: OutgoingMessageAttachment;
+};
+
+const ATTACHMENT_MENU_ITEMS: Array<{ action: AttachmentMenuAction; label: string; iconSrc: string }> = [
+    { action: 'media', label: 'Фото или видео', iconSrc: '/assets/images/icons/attachments/menu-media.svg' },
+    { action: 'file', label: 'Файл', iconSrc: '/assets/images/icons/attachments/menu-file.svg' },
+    { action: 'contact', label: 'Контакт', iconSrc: '/assets/images/icons/attachments/menu-contact.svg' },
+];
+
+const ATTACHMENT_CHIP_ICONS: Record<'file' | 'contact', string> = {
+    file: '/assets/images/icons/attachments/menu-file.svg',
+    contact: '/assets/images/icons/attachments/menu-contact.svg',
 };
 
 /**
@@ -284,11 +296,9 @@ export class MessageInput extends BaseForm<MessageInputProps> {
 
         this.attachmentMenu = document.createElement('div');
         this.attachmentMenu.className = 'message-input__attachment-menu';
-        this.attachmentMenu.innerHTML = `
-            <button type="button" class="message-input__attachment-menu-item" data-action="media">Фото или видео</button>
-            <button type="button" class="message-input__attachment-menu-item" data-action="file">Файл</button>
-            <button type="button" class="message-input__attachment-menu-item" data-action="contact">Контакт</button>
-        `;
+        ATTACHMENT_MENU_ITEMS.forEach((item) => {
+            this.attachmentMenu?.appendChild(this.createAttachmentMenuItem(item));
+        });
         this.attachmentMenu.addEventListener('click', this.handleAttachmentMenuClick);
         this.element.appendChild(this.attachmentMenu);
 
@@ -296,6 +306,25 @@ export class MessageInput extends BaseForm<MessageInputProps> {
         const root = this.element.getBoundingClientRect();
         this.attachmentMenu.style.right = `${Math.max(0, root.right - anchor.right)}px`;
         this.attachmentMenu.style.bottom = `${root.bottom - anchor.top + 8}px`;
+    }
+
+    private createAttachmentMenuItem(item: { action: AttachmentMenuAction; label: string; iconSrc: string }): HTMLButtonElement {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'message-input__attachment-menu-item';
+        button.dataset.action = item.action;
+
+        const icon = document.createElement('img');
+        icon.className = 'message-input__attachment-menu-icon';
+        icon.src = item.iconSrc;
+        icon.alt = '';
+
+        const label = document.createElement('span');
+        label.className = 'message-input__attachment-menu-label';
+        label.textContent = item.label;
+
+        button.append(icon, label);
+        return button;
     }
 
     private closeAttachmentMenu(): void {
@@ -570,20 +599,19 @@ export class MessageInput extends BaseForm<MessageInputProps> {
                     img.classList.add('message-input__draft-attachment-media--fallback');
                 }, { once: true });
 
-                item.append(img, removeButton);
+                if (type === 'video') {
+                    const playOverlay = document.createElement('span');
+                    playOverlay.className = 'message-input__draft-attachment-play';
+                    playOverlay.setAttribute('aria-hidden', 'true');
+                    item.append(img, playOverlay, removeButton);
+                } else {
+                    item.append(img, removeButton);
+                }
             } else {
                 const icon = document.createElement('img');
                 icon.className = 'message-input__draft-attachment-icon';
-                
-                if (type === 'contact' && draft.attachment.contactAvatarUrl) {
-                    icon.src = draft.attachment.contactAvatarUrl;
-                    icon.style.borderRadius = '50%';
-                    icon.style.objectFit = 'cover';
-                    // Убираем фильтр инверсии, так как это реальная картинка
-                    icon.style.filter = 'none';
-                } else {
-                    icon.src = type === 'contact' ? '/assets/images/icons/profile.svg' : '/assets/images/icons/upload.svg';
-                }
+                icon.src = type === 'contact' ? ATTACHMENT_CHIP_ICONS.contact : ATTACHMENT_CHIP_ICONS.file;
+                icon.alt = '';
 
                 const name = document.createElement('span');
                 name.className = 'message-input__draft-attachment-name';
