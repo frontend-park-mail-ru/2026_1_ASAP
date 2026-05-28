@@ -227,6 +227,8 @@ export class ChatItem extends BaseForm<ChatItemProps> {
             () => el.classList.remove('meta-chat-info__unread-count--pop'),
             { once: true },
         );
+    }
+
     private renderLastMessagePreview(container: HTMLElement, message?: FrontendMessage, senderName?: string | null): void {
         container.textContent = '';
 
