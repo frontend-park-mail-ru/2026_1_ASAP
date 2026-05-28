@@ -456,3 +456,18 @@
         }
     }
 }
+
+// Slide + fade появления только для новых сообщений (appendMessage).
+// На батчевой отрисовке истории не применяется — там просто mount.
+.message--enter {
+    animation: message-enter 320ms ease-out both;
+}
+
+@keyframes message-enter {
+    from { transform: translateY(8px); opacity: 0; }
+    to   { transform: translateY(0);   opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .message--enter { animation: none !important; }
+}

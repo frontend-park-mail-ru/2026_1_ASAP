@@ -130,6 +130,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             '.txt',
         ].join(',');
         this.fileInput.hidden = true;
+        this.fileInput.multiple = true;
         this.fileInput.addEventListener('change', this.handleFileInputChange);
         this.element.appendChild(this.fileInput);
 
@@ -154,6 +155,7 @@ export class MessageInput extends BaseForm<MessageInputProps> {
             '.qt',
         ].join(',');
         this.mediaInput.hidden = true;
+        this.mediaInput.multiple = true;
         this.mediaInput.addEventListener('change', this.handleMediaInputChange);
         this.element.appendChild(this.mediaInput);
 
@@ -327,24 +329,15 @@ export class MessageInput extends BaseForm<MessageInputProps> {
     };
 
     private handleFileInputChange = (): void => {
-        const file = this.fileInput?.files?.[0];
+        const files = this.fileInput?.files;
         if (this.fileInput) this.fileInput.value = '';
-        if (!file) return;
-        void this.attachUpload(file, 'file');
+        this.attachFileList(files);
     };
 
     private handleMediaInputChange = (): void => {
-        const file = this.mediaInput?.files?.[0];
+        const files = this.mediaInput?.files;
         if (this.mediaInput) this.mediaInput.value = '';
-        if (!file) return;
-
-        const type = this.detectMediaAttachmentType(file);
-        if (!type) {
-            this.showInlineError('Можно прикрепить изображение JPEG, PNG, WebP, GIF или видео MP4, WebM, MOV');
-            return;
-        }
-
-        void this.attachUpload(file, type);
+        this.attachFileList(files);
     };
 
     /**
