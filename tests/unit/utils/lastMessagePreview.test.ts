@@ -50,4 +50,20 @@ describe('attachment placeholder text', () => {
             iconSrc: ATTACHMENT_SIDEBAR_ICONS.sticker,
         });
     });
+
+    it('строит sidebar preview для backend sticker placeholder после refresh', () => {
+        expect(isAttachmentPlaceholderText('[стикер]')).toBe(true);
+        expect(getLastMessagePreview({
+            id: '1',
+            sender: { id: 1, login: 'alice' },
+            text: '[стикер]',
+            timestamp: new Date('2026-05-28T10:00:00Z'),
+            isOwn: false,
+            sticker: { id: 1, packId: 2, fileUrl: '/sticker.webp', emoji: '🔥' },
+        })).toEqual({
+            text: 'Стикер',
+            kind: 'sticker',
+            iconSrc: ATTACHMENT_SIDEBAR_ICONS.sticker,
+        });
+    });
 });

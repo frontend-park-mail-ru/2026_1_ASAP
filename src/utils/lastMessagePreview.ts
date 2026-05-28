@@ -25,7 +25,7 @@ export const ATTACHMENT_SIDEBAR_ICONS = {
 } as const;
 
 const ATTACHMENT_PLACEHOLDER_TEXT =
-    /^\s*(?:\[(?:Фото|Видео|Файл|Контакт|Вложение|Голосовое(?:\s+сообщение)?[^\]]*)\]\s*)+$/iu;
+    /^\s*(?:\[(?:Фото|Видео|Файл|Контакт|Вложение|Стикер|Голосовое(?:\s+сообщение)?[^\]]*)\]\s*)+$/iu;
 const NON_VOICE_ATTACHMENT_PLACEHOLDER_TEXT =
     /^\s*(?:\[(?:Фото|Видео|Файл|Контакт|Вложение)\]\s*)+$/iu;
 
@@ -59,7 +59,7 @@ function getAttachmentPreview(attachment: MessageAttachment): LastMessagePreview
 }
 
 function getPlaceholderPreview(text: string): LastMessagePreview | null {
-    const match = text.match(/\[(Фото|Видео|Файл|Контакт|Вложение|Голосовое(?:\s+сообщение)?[^\]]*)\]/iu);
+    const match = text.match(/\[(Фото|Видео|Файл|Контакт|Вложение|Стикер|Голосовое(?:\s+сообщение)?[^\]]*)\]/iu);
     const label = match?.[1]?.toLowerCase() || '';
 
     if (label.startsWith('фото')) {
@@ -79,6 +79,9 @@ function getPlaceholderPreview(text: string): LastMessagePreview | null {
     }
     if (label.startsWith('вложение')) {
         return { text: "Вложение", kind: "file", iconSrc: ATTACHMENT_SIDEBAR_ICONS.file };
+    }
+    if (label.startsWith('стикер')) {
+        return { text: "Стикер", kind: "sticker", iconSrc: ATTACHMENT_SIDEBAR_ICONS.sticker };
     }
 
     return null;
