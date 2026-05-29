@@ -42,6 +42,7 @@ interface SearchChatApiHit {
     chat_id: string | number;
     type: SearchChatHit['type'];
     title?: string;
+    avatar?: string | null;
     avatar_url?: string | null;
     last_message_preview?: string;
     last_message_at?: string;
@@ -488,7 +489,7 @@ export class ChatService {
                 chatId: String(c.chat_id),
                 type: c.type,
                 title: c.title || '',
-                avatarUrl: c.avatar_url ?? undefined,
+                avatarUrl: getFullUrl(c.avatar_url || c.avatar || undefined),
                 lastMessagePreview: c.last_message_preview ?? undefined,
                 lastMessageAt: c.last_message_at ? new Date(c.last_message_at) : undefined,
                 unreadCount: Number(c.unread_count ?? 0),

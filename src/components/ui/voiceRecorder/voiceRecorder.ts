@@ -1,6 +1,11 @@
 import { BaseComponent, IBaseComponentProps } from '../../../core/base/baseComponent';
 import template from './voiceRecorder.hbs';
 
+const MIN_VISUALIZER_BARS = 32;
+const MAX_VISUALIZER_BARS = 96;
+const FALLBACK_VISUALIZER_BARS = 48;
+const TARGET_BAR_WIDTH_PX = 8;
+
 /**
  * Свойства компонента записи голосового сообщения.
  * @interface VoiceRecorderProps
@@ -189,7 +194,8 @@ export class VoiceRecorder extends BaseComponent<VoiceRecorderProps> {
         if (!visEl) return;
 
         visEl.innerHTML = '';
-        for (let i = 0; i < 20; i++) {
+        const barCount = this.getVisualizerBarCount(visEl);
+        for (let i = 0; i < barCount; i++) {
             const bar = document.createElement('div');
             bar.className = 'voice-recorder__bar';
             visEl.appendChild(bar);
@@ -205,6 +211,15 @@ export class VoiceRecorder extends BaseComponent<VoiceRecorderProps> {
             this.visualizerTimerId = window.setTimeout(updateBars, 150);
         };
         updateBars();
+    }
+
+    private getVisualizerBarCount(visEl: Element): number {
+        if (!(visEl instanceof HTMLElement) || visEl.clientWidth <= 0) {
+            return FALLBACK_VISUALIZER_BARS;
+        }
+
+        const widthBasedCount = Math.floor(visEl.clientWidth / TARGET_BAR_WIDTH_PX);
+        return Math.min(MAX_VISUALIZER_BARS, Math.max(MIN_VISUALIZER_BARS, widthBasedCount));
     }
 
     /**

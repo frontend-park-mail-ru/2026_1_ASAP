@@ -7,6 +7,11 @@ import { SearchChatHit, SearchContactHit } from "../../../types/search";
 
 
 const CONTACT_HIT_ID_PREFIX = 'contact:';
+const DEFAULT_AVATAR_URL = '/assets/images/avatars/defaultAvatar.svg';
+
+function isDefaultAvatarUrl(url?: string): boolean {
+    return !url || url.includes('defaultAvatar.svg');
+}
 
 /**
  * @interface ChatListItemProps
@@ -190,6 +195,10 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
     }
 
     private hitToChat(hit: SearchChatHit): Chat {
+        const originalChat = this.originalChats.find(chat => String(chat.id) === String(hit.chatId));
+        const avatarUrl = isDefaultAvatarUrl(hit.avatarUrl)
+            ? originalChat?.avatarUrl || hit.avatarUrl || DEFAULT_AVATAR_URL
+            : hit.avatarUrl;
         const lastMessage = hit.lastMessagePreview ? {
             id: '',
             text: hit.lastMessagePreview,
@@ -202,7 +211,7 @@ export class ChatListItem extends BaseForm<ChatListItemProps> {
             id: hit.chatId,
             title: hit.title,
             type: hit.type,
-            avatarUrl: hit.avatarUrl,
+            avatarUrl,
             unreadCount: hit.unreadCount,
             lastMessage
         } as unknown as Chat;
