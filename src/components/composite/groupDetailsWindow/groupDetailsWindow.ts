@@ -242,6 +242,7 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
                 this.actionButtons.push(editBtn);
             }
 
+            if (this.props.currentUserRole === 'member') {
                 const leaveBtn = new Button({
                     label: "Выйти",
                     class: "group-details__btn ui-button exit-button",
@@ -249,8 +250,7 @@ export class GroupDetailsWindow extends BaseComponent<GroupDetailsWindowProps & 
                 });
                 leaveBtn.mount(buttonsSlot as HTMLElement);
                 this.actionButtons.push(leaveBtn);
-
-
+            }
         }
 
         const membersSlot = this.element?.querySelector('[data-component="members-list-slot"]');

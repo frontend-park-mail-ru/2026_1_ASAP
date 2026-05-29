@@ -58,6 +58,9 @@ export class SettingsListItem extends BaseComponent<SettingsListItemProps> {
             case "subscription":
                 this.setActiveSetting(this.subscriptionSetting!);
                 break;
+            case "support":
+                this.setActiveSetting(this.suportSetting!);
+                break;
             default:
                 this.setActiveSetting(null);
         }

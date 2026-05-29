@@ -7,6 +7,7 @@ import template from "./subscriptionWindow.hbs";
 
 interface SubscriptionWindowProps extends IBaseComponentProps {
     closeWindow: (event: MouseEvent) => void;
+    onSupportClick: () => void;
 }
 
 type SubscriptionStatusKind = "idle" | "loading" | "success" | "error" | "pending";
@@ -25,6 +26,7 @@ export class SubscriptionWindow extends BaseComponent<SubscriptionWindowProps> {
     private syncButton: Button | null = null;
     private statusElement: HTMLElement | null = null;
     private actionsElement: HTMLElement | null = null;
+    private supportLinkElement: HTMLElement | null = null;
     private isProcessing = false;
     private isActive = false;
 
@@ -52,6 +54,8 @@ export class SubscriptionWindow extends BaseComponent<SubscriptionWindowProps> {
 
         this.statusElement = this.element!.querySelector('[data-component="subscription-status"]');
         this.actionsElement = this.element!.querySelector('[data-component="subscription-actions"]');
+        this.supportLinkElement = this.element!.querySelector('[data-component="subscription-support-link"]');
+        this.supportLinkElement?.addEventListener("click", this.handleSupportLinkClick);
 
         this.mountActions();
 
@@ -62,6 +66,11 @@ export class SubscriptionWindow extends BaseComponent<SubscriptionWindowProps> {
 
         void this.refreshSubscriptionStatus();
     }
+
+    private handleSupportLinkClick = (event: MouseEvent): void => {
+        event.preventDefault();
+        this.props.onSupportClick();
+    };
 
     private mountActions(): void {
         if (!this.actionsElement) return;
@@ -281,6 +290,7 @@ export class SubscriptionWindow extends BaseComponent<SubscriptionWindowProps> {
     }
 
     protected beforeUnmount(): void {
+        this.supportLinkElement?.removeEventListener("click", this.handleSupportLinkClick);
         this.payButton?.unmount();
         this.syncButton?.unmount();
         this.profileHeader?.unmount();

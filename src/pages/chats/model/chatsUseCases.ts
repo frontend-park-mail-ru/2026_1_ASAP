@@ -282,7 +282,8 @@ export class ChatsUseCases {
         currentUser: CurrentUserVM,
         cachedChat?: Chat | null,
     ): Promise<ActiveChatVM | null> {
-        const baseChat: Chat | null = cachedChat ?? await this.data.getChatDetail(chatId);
+        const initialChat: Chat | null = cachedChat ?? await this.data.getChatDetail(chatId);
+        const baseChat = initialChat ? await this.ensureGroupOwnerLoaded(initialChat, chatId) : null;
         if (!baseChat) return null;
 
         const [resolvedChatBase, channelDetail, history, pendingMessages, groupMemberIds] = await Promise.all([
@@ -336,6 +337,21 @@ export class ChatsUseCases {
             hasMoreHistory: history?.hasMore ?? false,
             nextBeforeId: history?.nextBeforeId ?? null,
         };
+    }
+
+    private async ensureGroupOwnerLoaded(chat: Chat, chatId: string): Promise<Chat> {
+        if (chat.type !== "group") return chat;
+        if (chat.owner_id || chat.owner?.id) return chat;
+
+        const detail = await this.data.getChatDetail(chatId);
+        if (!detail || detail.type !== "group") return chat;
+
+        return {
+            ...chat,
+            owner_id: detail.owner_id,
+            owner: detail.owner?.id ? detail.owner : chat.owner,
+            members: detail.members.length > 0 ? detail.members : chat.members,
+        } satisfies GroupChat;
     }
 
     public async loadMoreMessages(

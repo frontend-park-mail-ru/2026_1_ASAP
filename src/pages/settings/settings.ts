@@ -69,7 +69,7 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
         this.settingsListWrapper = new SettingsListWrapper({
             router: this.props.router,
             onProfileClick: () => this.openSetting('profile'),
-            onSupportClick: () => this.openSetting('support'),
+            onSupportClick: () => this.props.router.navigate('/settings/support'),
             onSubscriptionClick: () => this.props.router.navigate('/settings/subscription'),
         });
         this.settingsListWrapper.mount(this.element!.querySelector('.settings-page__sidebar'));
@@ -121,6 +121,7 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
 
             this.activeSetting = target;
             await this.openSetting(this.activeSetting);
+            this.settingsListWrapper?.setActiveByKey(this.activeSetting);
         } finally {
             this.syncMobileLayoutState();
         }
@@ -194,6 +195,7 @@ export class SettingsPage extends BasePage<SettingsPageProps> {
                 if (seq !== this.openSettingSeq) return;
                 this.subscriptionWindow = new SubscriptionWindow({
                     closeWindow: this.closeSetting,
+                    onSupportClick: () => this.props.router.navigate('/settings/support'),
                 });
                 this.subscriptionWindow.mount(this.mainContentArea!);
                 return;

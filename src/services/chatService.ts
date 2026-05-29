@@ -62,6 +62,7 @@ interface ChatListApiItem {
     title: string;
     type: ChatDetail['type'];
     avatar?: string | null;
+    owner_id?: number;
     subscribers_count?: number;
     last_message?: BackendMessageLike;
     unread_count?: number;
@@ -717,6 +718,7 @@ export class ChatService {
                     avatarUrl: getFullUrl(chat.avatar),
                     unreadCount: Number(chat.unread_count ?? 0),
                     lastReadMessageId: Number(chat.last_read_message_id ?? 0),
+                    owner_id: chat.owner_id,
                 };
 
                 switch (chat.type) {
@@ -734,7 +736,7 @@ export class ChatService {
                         frontendChat = {
                             ...commonProps,
                             members: [], // Пока бек не отдает список участников
-                            owner: { id: 0, login: 'owner', avatarUrl: getFullUrl() },
+                            owner: { id: chat.owner_id || 0, login: 'owner', avatarUrl: getFullUrl() },
                         } as GroupChat;
                         break;
                     case 'channel':
